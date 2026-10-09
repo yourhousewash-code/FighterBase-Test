@@ -13171,6 +13171,74 @@ setInterval(link,2500);link();
 window.FH110={welcome:function(){showW(function(){})},tour:tourStart};
 })();
 
+/* FighterBase v132: member continuity and club access (decisions 10 Oct 2026).
+   Member side: "what happens when I leave" step, how far back a coach can see (12 months unless the member allows more), what another club sees.
+   Club side: choose what a leaving member can still read (gone at once, or readable for a set number of days) and unlink a member.
+   The real rules live in db/schema_rls.sql (section 9, tested in db/tests/continuity.test.mjs). This is the prototype's screens for them. */
+(function(){
+if(window.FH111)return;
+var TD=(function(){var d=new Date();return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0")})();
+function P(){return (typeof S!=="undefined"&&S.profile)||{}}
+function club(){try{return clubState&&clubState.club}catch(e){return null}}
+function e_(s){return typeof esc==="function"?esc(s):String(s==null?"":s).replace(/[&<>"]/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]})}
+function summary(o){var d=new Date((o.date||TD)+"T12:00").toLocaleDateString("en-GB",{day:"numeric",month:"long",year:"numeric"});
+ var st={completed:"Completed",partial:"Partly done",planned:"Planned only",unconfirmed:"Not confirmed"}[o.state||"completed"];
+ return d+" · "+(o.activity||"Training")+(o.state==="completed"||o.state==="partial"?(o.minutes?" · "+o.minutes+" minutes":""):"")+" · "+st}
+function policyText(c){return c&&c.leaveMode==="keep"&&+c.leaveDays>0?"stays readable for "+c.leaveDays+" days, then disappears":"disappears straight away"}
+/* ---------- member: leave ---------- */
+var lv=null;
+function showLeave(target){var c=club()||{},nm=c.name||"your club";hideLeave();
+ lv=document.createElement("div");lv.id="fb111Leave";lv.setAttribute("role","dialog");lv.setAttribute("aria-modal","true");lv.className="fb111-ov";
+ lv.innerHTML='<div class="fb111-card"><h3>Leave '+e_(nm)+'?</h3><p class="muted">Here is exactly what changes.</p><ul class="fb111-ul">'+
+  '<li><b>Stays with you:</b> your account, your goals, your own training history, your food and weight records and your fight record.</li>'+
+  '<li><b>Stops:</b> '+e_(nm)+' no longer sees anything you share. Your sharing choices and any older-history permission reset, so joining again (or joining another club) starts fresh.</li>'+
+  '<li><b>'+e_(nm)+'\'s own content</b> (class plans, coach notes, club workouts) '+e_(policyText(c))+'.</li>'+
+  '<li><b>Not changed here:</b> any membership you pay the club for. Sort that with them directly.</li></ul>'+
+  '<div class="row"><button class="btn" type="button" data-fb111go>Leave '+e_(nm)+'</button><button class="btn ghost" type="button" data-fb111stay>Stay</button></div></div>';
+ document.body.appendChild(lv);lv._t=target}
+function hideLeave(){if(lv&&lv.parentNode)lv.parentNode.removeChild(lv);lv=null}
+/* ---------- member: older history ---------- */
+function grantOn(){var g=P().histGrant,c=P().clubId;return !!(g&&g.club&&g.club===c)}
+function histHtml(){var g=P().histGrant||{},on=grantOn();
+ return '<div class="fb111-h" id="fb111Hist"><span class="label">How far back your coach can see</span><p class="small" style="margin:4px 0 8px">By default <b>the last 12 months</b> of the training you share. Only you can allow more, and you can take it back at any time. Your fight record is shown in full if you share it.</p>'+
+  '<label class="ob-tog"><input type="checkbox" id="fb111Old"'+(on?" checked":"")+'><span><b>Also share older history with this club</b><small>Applies to this club only, and ends if you leave it.</small></span></label>'+
+  '<div class="chips" id="fb111Opts"'+(on?"":" hidden")+' style="margin-top:8px">'+[["2","Up to 2 years"],["5","Up to 5 years"],["all","Everything"]].map(function(x){return '<button type="button" class="chip" data-fb111yrs="'+x[0]+'" aria-pressed="'+((g.yrs||"2")===x[0])+'">'+x[1]+'</button>'}).join("")+'</div>'+
+  '<p class="small muted" style="margin:10px 0 0"><b>If a session came from another club</b>, that club\'s coaches see only a summary, never the plan: <em>'+e_(summary({date:"2026-04-21",activity:"Pad work",minutes:60,state:"completed"}))+'</em></p></div>'}
+function wrapSheet(){if(!window.FB54||FB54.__w111)return;var os=FB54.sheet;FB54.sheet=function(c,d){var h=os(c,d),i=h.lastIndexOf('<div class="row"><button class="btn gold"');var s=histHtml();return i>=0?h.slice(0,i)+s+h.slice(i):h+s};FB54.__w111=true}
+/* ---------- club owner: leaving policy and unlink ---------- */
+var unl=null;
+function ownerPanel(){var host=document.getElementById("huboverBody"),c=club();if(!host||!c)return;var own=window.FHC&&FHC.isOwner&&FHC.isOwner();var w=document.getElementById("fb111Panel");if(!own){if(w)w.remove();return}
+ var mode=c.leaveMode==="keep"?"keep":"hide",days=+c.leaveDays||30,ms=(clubState.members||[]).filter(function(m){return m.uid!==S.uid});
+ var html='<div class="sec-h"><h3>Members leaving or unlinked</h3></div><p class="muted small" style="margin:0">When a member leaves, or you unlink them, you stop seeing what they share and their sharing choices reset. Choose what happens to your own content on their screen.</p>'+
+  '<div class="chips" style="margin:10px 0"><button type="button" class="chip" data-f111mode="hide" aria-pressed="'+(mode==="hide")+'">Disappears straight away (default)</button><button type="button" class="chip" data-f111mode="keep" aria-pressed="'+(mode==="keep")+'">Stays readable for a time</button></div>'+
+  (mode==="keep"?'<div class="field"><label class="label" for="f111days">Days it stays readable</label><input type="number" id="f111days" min="1" max="365" value="'+days+'" style="max-width:120px"></div>':'')+
+  '<div class="row"><button class="btn sm" type="button" data-f111save>Save</button></div>'+
+  '<div class="sec-h" style="margin-top:14px"><h3>Unlink a member</h3></div>'+(ms.length?'<div class="fb111-ml">'+ms.map(function(m){return '<div class="fb111-mr"><span>'+e_(m.name||m.leagueName||"Member")+'</span><button class="btn ghost sm" type="button" data-f111unlink="'+e_(m.uid)+'">'+(unl===m.uid?"Tap again to unlink":"Unlink")+'</button></div>'}).join("")+'</div><p class="muted small" style="margin:8px 0 0">Unlinking ends the connection only. It does not cancel their membership payments, and they keep their own account and records. They are told the link was ended.</p>':'<p class="muted small">No linked members yet.</p>');
+ if(!w){w=document.createElement("div");w.id="fb111Panel";w.className="panel";var a=document.getElementById("trkPanel");if(a&&a.parentNode===host)host.insertBefore(w,a.nextSibling);else host.appendChild(w)}
+ if(w.dataset.sig!==html){w.innerHTML=html;w.dataset.sig=html}}
+async function doUnlink(uid){var c=club();if(!c)return;var m=(clubState.members||[]).filter(function(x){return x.uid===uid})[0];
+ try{await db.doc("data/users/"+uid+"/profile").update({clubId:null,clubConsent:null,histGrant:null,unlinkedFrom:c.name||"your club"})}catch(e){}
+ try{await db.doc("league/"+uid).delete()}catch(e){}
+ try{var lg=(c.unlinkLog||[]).concat([{uid:uid,at:TD,by:S.uid}]).slice(-200);await db.doc("clubs/"+c.id).update({unlinkLog:lg});c.unlinkLog=lg}catch(e){}
+ unl=null;try{subscribeClub()}catch(e){}toast("Unlinked",(m&&(m.name||m.leagueName)||"Member")+" is no longer linked to your club");ownerPanel()}
+document.addEventListener("click",function(e){var t=e.target;if(!t.closest)return;var b;
+ if(!window.__fbLeaveOk&&(b=t.closest("#leaveClub,[data-csleave]"))){e.stopImmediatePropagation();e.preventDefault();showLeave(b);return}
+ if(t.closest("[data-fb111stay]")){hideLeave();return}
+ if(t.closest("[data-fb111go]")){var tg=lv&&lv._t;hideLeave();if(!tg)return;window.__fbLeaveOk=true;try{tg.click();if(tg.id==="leaveClub")tg.click()}finally{window.__fbLeaveOk=false}
+  setTimeout(function(){var p=P();p.histGrant=null;p.clubConsent=null;try{profChanged()}catch(e){}},400);return}
+ if(b=t.closest("[data-fb111yrs]")){var p=P();p.histGrant={club:p.clubId,yrs:b.dataset.fb111yrs,at:TD};try{profChanged()}catch(e){}b.parentNode.querySelectorAll("[data-fb111yrs]").forEach(function(x){x.setAttribute("aria-pressed",x===b?"true":"false")});return}
+ if(b=t.closest("[data-f111mode]")){var c=club();if(c){c.leaveMode=b.dataset.f111mode;if(c.leaveMode==="keep"&&!(+c.leaveDays>0))c.leaveDays=30;ownerPanel()}return}
+ if(t.closest("[data-f111save]")){var c2=club();if(!c2)return;var di=document.getElementById("f111days"),d=di?Math.max(1,Math.min(365,+di.value||30)):null,mode=c2.leaveMode==="keep"?"keep":"hide";
+  db.doc("clubs/"+c2.id).update({leaveMode:mode,leaveDays:mode==="keep"?d:null}).then(function(){c2.leaveDays=mode==="keep"?d:null;toast("Saved",mode==="keep"?"Members who leave can read your content for "+d+" days":"Your content disappears for members who leave");ownerPanel()}).catch(function(){toast("Couldn't save")});return}
+ if(b=t.closest("[data-f111unlink]")){var u=b.dataset.f111unlink;if(unl!==u){unl=u;ownerPanel();return}doUnlink(u);return}
+},true);
+document.addEventListener("change",function(e){var t=e.target;if(t&&t.id==="fb111Old"){var p=P();if(t.checked)p.histGrant={club:p.clubId,yrs:"2",at:TD};else p.histGrant=null;try{profChanged()}catch(x){}var o=document.getElementById("fb111Opts");if(o){o.hidden=!t.checked;o.querySelectorAll("[data-fb111yrs]").forEach(function(x){x.setAttribute("aria-pressed",x.dataset.fb111yrs==="2"?"true":"false")})}}});
+setInterval(function(){try{wrapSheet();ownerPanel();var p=P();if(p.onboarded&&p.unlinkedFrom){var f=p.unlinkedFrom;p.unlinkedFrom=null;profChanged();toast(f+" ended the link","Your account and records are unchanged")}}catch(e){}},1500);
+var css=document.createElement("style");css.textContent=".fb111-ov{position:fixed;inset:0;z-index:100002;background:rgba(0,0,0,.72);display:grid;place-items:center;padding:18px}.fb111-card{max-width:460px;width:100%;background:var(--card,#15161B);border:1px solid var(--line2,rgba(255,255,255,.16));border-radius:20px;padding:20px;max-height:90vh;overflow:auto}.fb111-card h3{margin:0 0 4px}.fb111-ul{margin:12px 0 16px;padding-left:18px;display:flex;flex-direction:column;gap:8px;font-size:14px;line-height:1.45}.fb111-h{margin:14px 0;padding:12px 14px;border:1px solid var(--line);border-radius:14px}.fb111-mr{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:8px 0;border-bottom:1px solid var(--line)}.fb111-ml{max-height:260px;overflow:auto}";
+document.head.appendChild(css);
+window.FH111={summary:summary,policyText:policyText,grantOn:grantOn};
+})();
+
 /* FighterBase v44: always a way back, always a next step. */
 var N31=N31||false;
 (function(){
