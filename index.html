@@ -1226,7 +1226,7 @@ store["clubs/"+CID].crep={"demo-alex_ah1":{t:"Saturday sparring plus the Wednesd
 store["clubs/"+CID].cfx={"demo-alex_af1":{s:"ok",by:uidO,at:ago(14)}};
 store["clubs/"+CID].track={training:true,goals:true,skills:true,weight:true,food:true,recovery:true,injury:true,fights:true};store["clubs/"+CID].show={training:true,goals:true,skills:true,weight:true,food:false,recovery:false,injury:true,fights:true};
 store["league/m1"].cons={training:true,goals:true,skills:true,weight:false,food:true,recovery:true,injury:true,fights:true};store["league/m1"].skills=[{n:"Guard retention",st:"prac"},{n:"Back takes",st:"intro"}];store["league/m1"].food={days:5,prot:118};store["league/m1"].rec={sleep:7.4,energy:3.8,n:6};
-store["league/m2"].campReq={k:"m2f_"+ago(-21),fid:"m2f",event:"Manchester MMA Amateur",date:ago(-21),at:Date.now()-3600000};store["league/m2"].fplan={k:ago(-21),at:Date.now()-7200000,support:"Full camp",spw:4,travel:"My coach",weigh:"My coach",cost:"",notes:"Happy to add Saturday sparring"};store["clubs/"+CID].corners={};store["clubs/"+CID].corners["demo-alex_"+ago(-26)]={list:[{id:"c1",name:"Mo Haddad",role:"Head coach",uid:uidO,st:"ok"},{id:"c2",name:"Jordan Hayes",role:"Second",uid:"m0",st:"wait"}],at:Date.now()-86400000};store["league/m2"].cons={training:true,goals:true,skills:true,weight:true,food:false,recovery:false,injury:true,fights:true};store["league/m2"].skills=[{n:"Wall work",st:"live"}];store["league/m2"].wt={pct:62,rate:-0.6,dir:"lose"};
+store["league/m2"].campReq={k:"m2f_"+ago(-21),fid:"m2f",event:"Manchester MMA Amateur",date:ago(-21),at:Date.now()-3600000};store["league/m2"].fplan={k:ago(-21),at:Date.now()-7200000,support:"Full camp",spw:4,travel:"My coach",weigh:"My coach",cost:"",notes:"Happy to add Saturday sparring"};store["clubs/"+CID].corners={};store["clubs/"+CID].corners["demo-alex_"+ago(-26)]={list:[{id:"c1",name:"Mo Haddad",role:"Head coach",uid:uidO,st:"ok"},{id:"c2",name:"Jordan Hayes",role:"Second",uid:"m0",st:"wait"}],at:Date.now()-86400000};(function(){var dd=(new Date().getDay()+6)%7,w0=ago(dd+7);store["league/m2"].campShare={k:ago(-21),on:true,items:{training:true,skills:true,recovery:true,injury:true,mood:true,weight:false,food:false},day:0,at:ago(20)};store["league/m2"].campReports={};store["league/m2"].campReports[ago(dd)]={ws:ago(dd),sent:Date.now()-3600000,note:"Legs heavy Thursday but sparring went well.",mood:3,snap:{sess:3,target:4,mins:210,hard:6,prev:4,skills:["Wall work"],rec:{e:3.5,s:3,sl:3.2},inj:[]}}})();store["league/m2"].cons={training:true,goals:true,skills:true,weight:true,food:false,recovery:false,injury:true,fights:true};store["league/m2"].skills=[{n:"Wall work",st:"live"}];store["league/m2"].wt={pct:62,rate:-0.6,dir:"lose"};
 store["clubs/"+CID].cnote={"demo-alex":{t:"Great camp so far. Keep Saturday rounds sharp and get your weigh-ins in each Friday. Proud of you.",by:uidO,byName:"Mo",at:ago(0)}};
 alexProf.rsvp[TODAYK+"_"+((TT.filter(function(c){return c.dow===dow(TODAYK)})[0]||{}).id||"c1")]=1;
 store["clubs/"+CID].frc[uidM+"_f1"]={s:"ok",res:"W",by:uidO,at:ago(39)};store["clubs/"+CID].frc[uidM+"_f2"]={s:"ok",res:"L",by:uidO,at:ago(101)};
@@ -13877,6 +13877,98 @@ var n=0,iv=setInterval(function(){if(window.FB54&&FB54.extend&&!FB54.extend.p119
 var st=document.createElement("style");st.textContent="#tab-today #fb119{order:1}#fb119[hidden]{display:none}#fb119 .c119{display:flex;flex-wrap:wrap;gap:6px;margin:4px 0 8px}";document.head.appendChild(st);
 setInterval(function(){try{mCard();cPanel()}catch(x){}},1500);
 window.FH119={};
+})();
+
+/* FighterBase v140: weekly camp report, camp sharing and the coach camp inbox.
+   Member: when a fight is on the calendar and a club is linked, a "Camp sharing" step asks what the coach may see during camp (default: training, skills, recovery, injuries, mood; weight and food OFF).
+   It ends automatically after the fight date. Each camp week the app drafts a one-screen report from the member's own logs; the member edits a note and sends it.
+   Coach: camp inbox lists fighters who turned sharing on, shows the latest report (only the parts shared), lets the coach mark it reviewed, reply, and send suggestions the fighter can accept or decline.
+   Nothing is generated as advice by the app; a missing report shows as "no report this week", never as a warning. Under 18s are excluded until the professional review. */
+var K120=K120||false;
+(function(){
+if(K120)return;K120=true;
+function e(s){return esc(String(s==null?"":s))}
+function P(){return S.profile}
+function club(){return (typeof clubState!=="undefined"&&clubState.club)||null}
+function mem(){return (typeof clubState!=="undefined"&&clubState.members)||[]}
+function save(){try{profChanged()}catch(x){}}
+function fight(){try{return window.FBE&&FBE.upcomingFight()}catch(x){return null}}
+function staff(){try{return !!(window.FHC&&FHC.isOwner())}catch(x){return false}}
+function adult(){var a=+P().age;return !(a>0&&a<18)}
+function ws(){return weekStartKey()}
+function dm(k){return new Date(k+"T12:00").toLocaleDateString("en-GB",{day:"numeric",month:"short"})}
+var ITEMS=[["training","Training and sessions",true],["skills","Skills I am working on",true],["recovery","Recovery and how I feel",true],["injury","Injuries and knocks",true],["mood","How camp feels (my note)",true],["weight","Weight trend",false],["food","How consistently I log food",false]];
+var MOODS=["Struggling","Tired","OK","Good","Great"];
+var SUGS=["Add an extra pad session","Keep it light before the weekend","Drill defence this week","Prioritise sleep","Let's chat after class"];
+var D={mood:3,note:""};
+/* ---------- member ---------- */
+function snap(sh){var w=FBE.week(ws()),prev=FBE.week(addDays(ws(),-7)),o={},it=sh.items||{};
+ if(it.training){o.sess=w.sessions;o.target=w.target;o.mins=w.mins;o.hard=w.hard;o.prev=prev.sessions;o.logged=w.logged}
+ if(it.skills){try{o.skills=FBE.focus().map(function(s){return s.n||s.name||String(s)})}catch(x){o.skills=[]}}
+ if(it.recovery){var r=w.rec;o.rec=r.length?{e:avg(r,"e"),s:avg(r,"s"),sl:avg(r,"sl")}:null}
+ if(it.injury){var inj=(P().inj||[]).filter(function(i){return !i.end});o.inj=inj.map(function(i){return i.head?"Head knock":(i.area||"Injury")})}
+ if(it.weight){var wt=FBE.weight();o.wt={now:wt.now,rate:wt.rate}}
+ if(it.food)o.food=w.foodDays;return o}
+function avg(a,k){var v=a.map(function(x){return x[k]}).filter(Boolean);return v.length?Math.round(v.reduce(function(s,x){return s+x},0)/v.length*10)/10:null}
+function snapHTML(s,sh){var h="";
+ if(s.sess!=null)h+='<li>Sessions: <b>'+s.sess+'</b> of '+s.target+' planned'+(s.hard?', '+s.hard+' hard rounds':'')+(s.mins?', '+s.mins+' min':'')+(s.prev!=null?' <span class="muted">(last week '+s.prev+')</span>':'')+'</li>';
+ if(s.skills&&s.skills.length)h+='<li>Working on: '+e(s.skills.join(", "))+'</li>';
+ if(s.rec)h+='<li>Recovery: energy '+(s.rec.e||"-")+'/5, soreness '+(s.rec.s||"-")+'/5, sleep '+(s.rec.sl?s.rec.sl+" h":"-")+'</li>';
+ if(s.inj)h+='<li>'+(s.inj.length?'Injuries: <b>'+e(s.inj.join(", "))+'</b>':'No injuries logged')+'</li>';
+ if(s.wt&&s.wt.now!=null)h+='<li>Weight (7-day average): '+s.wt.now+' kg'+(s.wt.rate!=null?', '+(s.wt.rate>0?"+":"")+s.wt.rate+' kg/week':'')+'</li>';
+ if(s.food!=null)h+='<li>Food logged on '+s.food+' of 7 days</li>';
+ return h?'<ul class="small" style="margin:4px 0 8px;padding-left:18px">'+h+'</ul>':'<p class="muted small">Not much logged yet this week.</p>'}
+function card(){var home=document.getElementById("tab-today"),el=document.getElementById("fb120"),f=fight(),c=club(),p=P();
+ if(!home||!f||!c||!p.clubId||!p.onboarded||!adult()||!document.getElementById("fb115")){if(el)el.hidden=true;return}
+ var sh=p.campShare&&p.campShare.k===f.date?p.campShare:null,h;
+ if(!sh){var d=D.sh||(D.sh={items:ITEMS.reduce(function(o,i){o[i[0]]=i[2];return o},{})});
+  h='<span class="fb-kick">Camp sharing</span><h2 style="margin:4px 0 2px">Share your camp week with your coach?</h2><p class="muted small" style="margin:0 0 8px">Each week the app can send your coach a short summary so they can help you stay on track. You choose what is in it. It stops after your fight, and you can turn it off any time.</p><div class="stack" style="gap:6px">'+
+   ITEMS.map(function(i){return '<label class="chk" style="display:flex;gap:8px;align-items:center"><input type="checkbox" data-f120it="'+i[0]+'"'+(d.items[i[0]]?" checked":"")+'> <span>'+e(i[1])+(i[2]?'':' <span class="muted small">(off unless you choose)</span>')+'</span></label>'}).join("")+
+   '</div><div class="row" style="margin-top:8px"><button class="btn gold sm" type="button" data-f120on>Turn on weekly reports</button><button class="btn ghost sm" type="button" data-f120off>Not now</button></div>';
+ }else if(!sh.on){h='<span class="fb-kick">Camp sharing</span><p class="muted small" style="margin:2px 0 6px">Weekly camp reports are off.</p><button class="linkbtn" type="button" data-f120reset>Turn on</button>'}
+ else{var rep=(p.campReports||{})[ws()],due=new Date().getDay()===(sh.day||0)||new Date().getDay()===0,s=snap(sh);
+  var rp=(c.campReplies||{})[S.uid+"_"+ws()]||(c.campReplies||{})[S.uid+"_"+addDays(ws(),-7)],acc=p.campAcc||{};
+  h='<span class="fb-kick">Camp week report · '+e(dm(ws()))+'</span>'+(rep?'<p style="margin:4px 0"><b>✓ Sent '+e(new Date(rep.sent).toLocaleDateString("en-GB",{weekday:"short"}))+'</b>'+(rp&&rp.st?' · <span class="d112-s s-ok">'+(rp.msg||(rp.sugs||[]).length?"Coach replied":"Reviewed")+'</span>':' <span class="muted small">Waiting for your coach</span>')+'</p>':'<p class="muted small" style="margin:2px 0 4px">'+(due?'Your report is ready to send. Check it and add a note.':'This week so far. Send it when you are ready (usually Sunday).')+'</p>')+snapHTML(rep?rep.snap:s,sh);
+  if(sh.items.mood!==false&&!rep)h+='<div class="chips" style="margin:4px 0">'+MOODS.map(function(m,i){return '<button type="button" class="chip" data-f120mood="'+(i+1)+'" aria-pressed="'+(D.mood===i+1)+'">'+m+'</button>'}).join("")+'</div>';
+  if(!rep)h+='<div class="field"><label class="label" for="f120n">Note for your coach (optional)</label><input type="text" id="f120n" maxlength="160" value="'+e(D.note)+'" placeholder="How did the week feel?"></div><div class="row"><button class="btn gold sm" type="button" data-f120send>Send to my coach</button><button class="linkbtn" type="button" data-f120off>Turn reports off</button></div>';
+  else if(rep.note)h+='<p class="small" style="margin:0 0 6px">Your note: '+e(rep.note)+'</p>';
+  if(rp&&(rp.msg||(rp.sugs||[]).length)){h+='<div class="d112-n" style="flex-direction:column;align-items:stretch"><b>'+e(rp.by||"Your coach")+'</b>'+(rp.msg?'<span class="small">'+e(rp.msg)+'</span>':'')+(rp.sugs||[]).map(function(x){var a=acc[x.id];return '<div class="row" style="justify-content:space-between"><span class="small">'+(a==="ok"?"✓ ":"")+e(x.t)+'</span>'+(a?'<span class="muted small">'+(a==="ok"?"In my week":"Not for me")+'</span>':'<span><button class="btn sm" type="button" data-f120acc="'+e(x.id)+'|ok">Add to my week</button> <button class="btn ghost sm" type="button" data-f120acc="'+e(x.id)+'|no">Not now</button></span>')+'</div>'}).join("")+'</div>'}}
+ if(!el){el=document.createElement("section");el.id="fb120";el.className="fb-card";home.appendChild(el)}
+ el.hidden=false;if(el.dataset.sig!==h&&!(document.activeElement&&el.contains(document.activeElement)&&document.activeElement.tagName==="INPUT"&&document.activeElement.type==="text")){el.innerHTML=h;el.dataset.sig=h}}
+/* ---------- coach ---------- */
+var G={};
+function fighters(){return mem().filter(function(m){return m.uid!==S.uid&&m.campShare&&m.campShare.on&&m.eg&&m.eg.fight&&m.eg.fight.date>=TODAY&&m.campShare.k===m.eg.fight.date&&!(+m.age>0&&+m.age<18)})}
+function upd(patch){var c=club();Object.assign(c,patch);return db.doc("clubs/"+c.id).update(patch).catch(function(){})}
+function inbox(){var host=document.getElementById("huboverBody"),c=club(),w=document.getElementById("fb120Panel");if(!host||!c||!staff()){if(w)w.remove();return}
+ var fs=fighters();if(!fs.length){if(w)w.remove();return}
+ var h='<div class="sec-h"><h3>Camp inbox</h3></div><p class="muted small" style="margin:0 0 6px">Fighters who turned on weekly camp reports. You only see what each one chose to share.</p>';
+ fs.sort(function(a,b){return a.eg.fight.date.localeCompare(b.eg.fight.date)}).forEach(function(m){var rep=(m.campReports||{})[ws()],rk=m.uid+"_"+ws(),rp=(c.campReplies||{})[rk],days=diffDays(TODAY,m.eg.fight.date),nm=m.name||m.leagueName||"Member",head=rep&&rep.snap&&(rep.snap.inj||[]).some(function(x){return /head/i.test(x)});
+  h+='<div class="d112-n" style="flex-wrap:wrap;align-items:flex-start"><span style="flex:1;min-width:170px"><b>'+e(nm)+'</b> · '+days+' days to '+e(m.eg.fight.event||"fight")+'<br><span class="muted small">'+(rep?'Report in · '+(rep.snap.sess!=null?rep.snap.sess+'/'+rep.snap.target+' sessions':'')+(rep.mood?' · feeling '+e(MOODS[rep.mood-1]).toLowerCase():'')+(rp&&rp.st?' · '+(rp.st==="replied"?"replied":"reviewed"):' · new'):'No report this week yet')+'</span>'+(head?' <span class="d112-s s-none">Head knock logged</span>':'')+'</span><div class="row">'+(rep?'<button class="btn '+(rp&&rp.st?"ghost ":"")+'sm" type="button" data-f120open="'+e(m.uid)+'">'+(G.open===m.uid?"Close":"Open")+'</button>':'')+'</div>'+
+  (G.open===m.uid&&rep?'<div style="width:100%" class="stack">'+snapHTML(rep.snap,m.campShare)+(rep.note?'<p class="small" style="margin:0">“'+e(rep.note)+'”</p>':'')+
+   '<div class="field"><label class="label" for="f120m">Message to '+e(nm.split(" ")[0])+'</label><input type="text" id="f120m" maxlength="240" value="'+e((rp&&rp.msg)||"")+'"></div><div class="chips">'+SUGS.map(function(s,i){return '<button type="button" class="chip" data-f120sg="'+i+'" aria-pressed="'+!!(G.sg&&G.sg[i])+'">'+e(s)+'</button>'}).join("")+'</div><div class="field"><label class="label" for="f120c">Own suggestion (optional)</label><input type="text" id="f120c" maxlength="100"></div>'+
+   '<div class="row"><button class="btn sm" type="button" data-f120rep="'+e(m.uid)+'">Send reply</button><button class="btn ghost sm" type="button" data-f120rv="'+e(m.uid)+'">Mark reviewed</button></div></div>':'')+'</div>'});
+ if(!w){w=document.createElement("div");w.id="fb120Panel";w.className="panel";host.insertBefore(w,host.firstChild)}
+ if(w.dataset.sig!==h&&!(document.activeElement&&w.contains(document.activeElement)&&document.activeElement.tagName==="INPUT")){w.innerHTML=h;w.dataset.sig=h}}
+function setReply(uid,r){var c=club(),all=Object.assign({},c.campReplies||{});all[uid+"_"+ws()]=Object.assign({by:(function(){var t=(c.teachers||[]).filter(function(x){return x.uid===S.uid})[0];return t?t.name.split(" ")[0]:"Your coach"})(),at:Date.now()},r);return upd({campReplies:all})}
+function refresh(){var w=document.getElementById("fb120Panel");if(w)w.dataset.sig="";var el=document.getElementById("fb120");if(el)el.dataset.sig="";inbox();card()}
+document.addEventListener("click",function(ev){var t=ev.target;if(!t.closest)return;var b,p=P(),f=fight();
+ if(b=t.closest("[data-f120it]")){var d=D.sh||(D.sh={items:{}});d.items[b.dataset.f120it]=b.checked;return}
+ if(t.closest("[data-f120on]")&&f){var items=(D.sh&&D.sh.items)||{};ITEMS.forEach(function(i){if(items[i[0]]==null)items[i[0]]=i[2]});p.campShare={k:f.date,on:true,items:items,day:0,at:TODAY};save();refresh();try{toast("Weekly camp reports on","You can change this any time")}catch(x){}return}
+ if(t.closest("[data-f120off]")&&f){p.campShare={k:f.date,on:false,items:(p.campShare||{}).items||{},at:TODAY};save();refresh();return}
+ if(t.closest("[data-f120reset]")&&f){D.sh={items:(p.campShare||{}).items||{}};p.campShare=null;save();refresh();return}
+ if(b=t.closest("[data-f120mood]")){D.mood=+b.dataset.f120mood;refresh();return}
+ if(t.closest("[data-f120send]")&&f&&p.campShare){D.note=((document.getElementById("f120n")||{}).value||"").trim();var sh=p.campShare;p.campReports=p.campReports||{};p.campReports[ws()]={ws:ws(),sent:Date.now(),note:D.note,mood:sh.items.mood!==false?D.mood:null,snap:snap(sh)};var ks=Object.keys(p.campReports).sort();while(ks.length>4)delete p.campReports[ks.shift()];D.note="";save();refresh();try{toast("Report sent to your coach")}catch(x){}return}
+ if(b=t.closest("[data-f120acc]")){var a=b.dataset.f120acc.split("|");p.campAcc=Object.assign({},p.campAcc||{});p.campAcc[a[0]]=a[1];save();refresh();return}
+ var c=club();if(!c)return;
+ if(b=t.closest("[data-f120open]")){G.open=G.open===b.dataset.f120open?null:b.dataset.f120open;G.sg={};refresh();return}
+ if(b=t.closest("[data-f120sg]")){G.sg=G.sg||{};G.sg[b.dataset.f120sg]=!G.sg[b.dataset.f120sg];var m0=(document.getElementById("f120m")||{}).value;G.msg=m0;refresh();return}
+ if(b=t.closest("[data-f120rep]")){var u=b.dataset.f120rep,msg=((document.getElementById("f120m")||{}).value||"").trim(),own=((document.getElementById("f120c")||{}).value||"").trim(),sugs=[];SUGS.forEach(function(s,i){if(G.sg&&G.sg[i])sugs.push({id:"s"+Date.now().toString(36)+i,t:s})});if(own)sugs.push({id:"s"+Date.now().toString(36)+"x",t:own});if(!msg&&!sugs.length)return;setReply(u,{st:"replied",msg:msg,sugs:sugs});G.open=null;G.sg={};refresh();try{toast("Reply sent")}catch(x){}return}
+ if(b=t.closest("[data-f120rv]")){setReply(b.dataset.f120rv,{st:"reviewed"});G.open=null;refresh()}
+},true);
+var n=0,iv=setInterval(function(){if(window.FB54&&FB54.extend&&!FB54.extend.p120){var ex=FB54.extend;FB54.extend=function(o){o=ex(o);o.campShare=P().campShare||null;o.campReports=P().campReports||{};o.campAcc=P().campAcc||{};return o};FB54.extend.p120=true}if(++n>60)clearInterval(iv)},500);
+var st=document.createElement("style");st.textContent="#tab-today #fb120{order:2}#fb120[hidden]{display:none}";document.head.appendChild(st);
+setInterval(function(){try{card();inbox()}catch(x){}},1500);
+window.FH120={};
 })();
 
 /* FighterBase v44: always a way back, always a next step. */
