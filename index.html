@@ -5563,7 +5563,7 @@ document.body.insertBefore(bg,document.body.firstChild);
 /* header ember line */
 var hd=document.querySelector("header.top");if(hd&&!hd.querySelector(".fb-line")){var ln=document.createElement("i");ln.className="fb-line";ln.setAttribute("aria-hidden","true");hd.appendChild(ln)}
 /* splash, once per session */
-var seen=false;try{seen=sessionStorage.getItem("fbSplash")==="1";sessionStorage.setItem("fbSplash","1")}catch(e){}
+var seen=false;try{seen=false}catch(e){}
 var reduce=false;try{reduce=window.matchMedia("(prefers-reduced-motion: reduce)").matches}catch(e){}
 if(!seen&&!reduce&&!window.__FB_NO_SPLASH){var sp=document.createElement("div");sp.id="fbSplash";sp.setAttribute("aria-hidden","true");
  var word=function(t,c){return t.split("").map(function(ch,i){return '<span class="'+c+'" style="--i:'+i+'">'+ch+'</span>'}).join("")};
@@ -13038,7 +13038,7 @@ async function loadEvents(){ST.events=[];ST.counts={};ST.mine={};ST.ents={};if(!
  if(ST.role==="owner"||ST.role==="coach"){var ids=ST.events.map(function(e){return e.id});if(ids.length){var en=await api("GET","event_entries?select=*&event_id=in.("+ids.join(",")+")&order=entered_at");(en||[]).forEach(function(x){(ST.ents[x.event_id]=ST.ents[x.event_id]||[]).push(x)})}}}
 function code(){return Math.random().toString(36).slice(2,8).toUpperCase()}
 /* ---------- view ---------- */
-function ov(){var o=document.getElementById("fb109");if(!o){o=document.createElement("div");o.id="fb109";o.style.cssText="position:fixed;inset:0;z-index:99999;background:var(--bg,#0f1012);color:var(--text,#f2f2f2);overflow:auto;padding:16px;display:none";document.body.appendChild(o)}return o}
+function ov(){var o=document.getElementById("fb109");if(!o){o=document.createElement("div");o.id="fb109";o.style.cssText="position:fixed;inset:0;z-index:2147483000;background:var(--bg,#0f1012);color:var(--text,#f2f2f2);overflow:auto;padding:16px;display:none";document.body.appendChild(o)}return o}
 function open(){load();var o=ov();o.style.display="block";draw();if(SS.tok&&ST.hasProfile===null)loadAll()}
 function close(){ov().style.display="none";if(location.hash==="#live")history.replaceState(null,"",location.pathname+location.search)}
 function fld(l,id,t,ph,v){return '<label class="ev94l"><span>'+esc(l)+'</span><input id="'+id+'" type="'+(t||"text")+'" placeholder="'+esc(ph||"")+'" value="'+esc(v||"")+'" style="width:100%"></label>'}
@@ -13050,7 +13050,7 @@ function draw(){var o=ov();if(o.style.display==="none")return;var h='<div style=
   '<div class="row"><button class="btn gold" type="button" data-l109="in">Sign in</button><button class="btn ghost" type="button" data-l109="up">Create account</button></div>'+
   '<p class="muted small" style="margin:0">New accounts must confirm by email first: click the link in the email, then come back and sign in. The link may open an empty page; that is fine, it has still confirmed you.</p></div>'}
  else{h+='<div class="panel"><div class="row" style="justify-content:space-between"><span class="small">Signed in as <b>'+esc(SS.email||"")+'</b></span><button class="btn ghost sm" type="button" data-l109="out">Sign out</button></div></div>';
-  if(ST.hasProfile===false)h+='<div class="panel stack"><h3 style="margin:0">Step 1: date of birth</h3><p class="muted small" style="margin:0">Needed before joining a club (age rules). Use a made-up adult date for a test account.</p>'+fld("Date of birth","l109dob","date","")+'<button class="btn gold" type="button" data-l109="dob">Save</button></div>';
+  if(ST.hasProfile===false)h+='<div class="panel stack"><h3 style="margin:0">Step 1: date of birth</h3><p class="muted small" style="margin:0">Needed before joining a club (age rules). Use a made-up adult date for a test account.</p>'+'<div class="ev94g" style="grid-template-columns:1fr 1fr 1.4fr">'+fld("Day","l109dd","text","DD")+fld("Month","l109dm","text","MM")+fld("Year","l109dy","text","YYYY")+'</div>'+'<button class="btn gold" type="button" data-l109="dob">Save</button></div>';
   else if(ST.hasProfile){
    h+='<div class="panel stack"><h3 style="margin:0">Clubs</h3>';
    var mine=Object.keys(ST.myClubs||{});
@@ -13081,7 +13081,7 @@ document.addEventListener("click",function(ev){var b=ev.target.closest&&ev.targe
  else if(a==="up")run(async function(){var e=val("l109e"),p=val("l109p");if(!e||p.length<8)throw new Error("Enter an email and a password of 8 or more characters.");var j=await authCall("signup",{email:e,password:p});if(j.access_token){setSess(j);await loadAll()}},"Account created. Check your email and click the confirmation link, then sign in here.");
  else if(a==="in")run(async function(){var e=val("l109e"),p=val("l109p");var j=await authCall("token?grant_type=password",{email:e,password:p});SS.email=e;setSess(j);ST.hasProfile=null;await loadAll()},"Signed in.");
  else if(a==="out"){SS={tok:null,ref:null,uid:null,email:null};save();ST.hasProfile=null;ST.club=null;ST.events=[];say("Signed out.")}
- else if(a==="dob")run(async function(){var d=val("l109dob");if(!d)throw new Error("Choose a date of birth.");await api("POST","profiles",{user_id:SS.uid,dob:d},{Prefer:"return=minimal"});await loadAll()},"Saved.");
+ else if(a==="dob")run(async function(){var dd=val("l109dd").trim(),dm=val("l109dm").trim(),dy=val("l109dy").trim();if(!/^\d{1,2}$/.test(dd)||!/^\d{1,2}$/.test(dm)||!/^\d{4}$/.test(dy))throw new Error("Type the day, month and 4-digit year, for example 14 03 1990.");var d=dy+"-"+("0"+dm).slice(-2)+"-"+("0"+dd).slice(-2),t=new Date(d+"T00:00:00");if(isNaN(t)||t.getDate()!==Number(dd)||Number(dy)<1900||t>new Date())throw new Error("That date is not valid.");await api("POST","profiles",{user_id:SS.uid,dob:d},{Prefer:"return=minimal"});await loadAll()},"Saved.");
  else if(a==="mk")run(async function(){var n=val("l109cn");if(!n)throw new Error("Give the club a name.");var id=await api("POST","rpc/create_club",{club_name:n,code:code()});ST.club=id;await loadAll()},"Test club created. You are its owner and safeguarding lead.");
  else if(a==="jn")run(async function(){var c=val("l109jc");if(!c)throw new Error("Enter the join code.");var id=await api("POST","rpc/join_club",{code:c});ST.club=id;await loadAll()},"Joined.");
  else if(a==="showcode")run(async function(){var r=await api("GET","club_secrets?select=join_code&club_id=eq."+ST.club);ST.code=r&&r[0]&&r[0].join_code||"(not available)"});
@@ -13098,7 +13098,7 @@ function link(){var tab=document.getElementById("tab-profile");if(!tab||document
 document.addEventListener("click",function(e){if(e.target.closest&&e.target.closest("[data-l109open]"))open()});
 window.addEventListener("hashchange",function(){if(location.hash==="#live")open()});
 setInterval(link,3000);link();
-if(location.hash==="#live")setTimeout(open,300);
+if(location.hash==="#live"){var t109=0,w109=setInterval(function(){t109++;if((!document.getElementById("fbSplash")&&!document.getElementById("fbw"))||t109>40){clearInterval(w109);open()}},300)}
 window.FH109={open:open,close:close,state:function(){return {signedIn:!!SS.tok,hasProfile:ST.hasProfile,club:ST.club,role:ST.role,events:ST.events.length}}};
 window.FB109={api:api,sess:function(){load();return SS},open:open};
 })();
@@ -14033,7 +14033,7 @@ async function loadClub(){var c=ST.club,s=sess();if(!c||!s)return;ST.role=ST.clu
   get("fight_plans?select=*&"+q),get("pt_slots?select=*&"+q+"&order=slot_date"),get("pt_agreements?select=*&"+q),get("pt_attendance?select=*&"+q),get("club_staff?select=user_id,role,title,pt_approved&"+q),get("club_members?select=user_id,status&"+q)]);
  D.share=all[0];D.reports=all[1];D.replies=all[2];D.sugs=all[3];D.support=all[4];D.corner=all[5];D.plans=all[6];D.slots=all[7];D.agree=all[8];D.att=all[9];D.staff=all[10];D.members=all[11];ST.d=D}
 /* ---------- view ---------- */
-function ov(){var o=document.getElementById("fb121");if(!o){o=document.createElement("div");o.id="fb121";o.style.cssText="position:fixed;inset:0;z-index:100000;background:var(--bg,#0f1012);color:var(--text,#f2f2f2);overflow:auto;padding:16px;display:none";document.body.appendChild(o);
+function ov(){var o=document.getElementById("fb121");if(!o){o=document.createElement("div");o.id="fb121";o.style.cssText="position:fixed;inset:0;z-index:2147483001;background:var(--bg,#0f1012);color:var(--text,#f2f2f2);overflow:auto;padding:16px;display:none";document.body.appendChild(o);
  o.addEventListener("input",function(e){var t=e.target;if(t.id&&t.id.indexOf("l121")===0)ST.f[t.id]=t.type==="checkbox"?t.checked:t.value});
  o.addEventListener("change",function(e){var t=e.target;if(t.id&&t.id.indexOf("l121")===0)ST.f[t.id]=t.type==="checkbox"?t.checked:t.value})}return o}
 function open(){var o=ov();o.style.display="block";if(B()&&B().sess().tok){if(!ST.loaded)loadAll();else draw()}else draw()}
@@ -14136,7 +14136,7 @@ document.addEventListener("click",function(e){var el=e.target.closest&&e.target.
 document.addEventListener("click",function(e){if(e.target.closest&&e.target.closest("[data-l121open]"))open()});
 window.addEventListener("hashchange",function(){if(location.hash==="#livecamp")open()});
 window.FH121={open:open};
-if(location.hash==="#livecamp")setTimeout(open,400);
+if(location.hash==="#livecamp"){var t121=0,w121=setInterval(function(){t121++;if((!document.getElementById("fbSplash")&&!document.getElementById("fbw"))||t121>40){clearInterval(w121);open()}},300)}
 })();
 
 /* FighterBase v44: always a way back, always a next step. */
