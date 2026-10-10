@@ -8866,7 +8866,7 @@ document.addEventListener("click",function(e){var t=e.target;if(!t.closest)retur
  if(b=t.closest("[data-ldv]")){LV=b.dataset.ldv;leadsPage();return}
  if(b=t.closest("[data-ldo]")){LO=LO===b.dataset.ldo?null:b.dataset.ldo;leadsPage();return}
  if(t.closest("[data-ldsave]")){var g=function(id){return ((document.getElementById(id)||{}).value||"").trim()},nm=g("ldN");if(!nm){toast("Add a name");return}var tr=g("ldT"),L=leads();L.push({id:"ld"+Date.now().toString(36),name:nm.slice(0,60),contact:g("ldC").slice(0,80),disc:g("ldD"),source:g("ldS"),enq:TD(),trial:tr||null,status:tr?"trial":"new",notes:g("ldNo").slice(0,160),at:new Date().toISOString(),by:S.uid});LADD=false;upd({leads:L}).then(function(){toast("Lead added");leadsPage()});return}
- if(b=t.closest("[data-ldst]")){var L2=leads().map(function(x){if(x.id!==b.dataset.id)return x;var y=Object.assign({},x,{status:b.dataset.ldst});if(b.dataset.ldst==="attended")y.trialDone=true;return y});upd({leads:L2}).then(leadsPage);return}
+ if(b=t.closest("[data-ldst]")){var L2=leads().map(function(x){if(x.id!==b.dataset.id)return x;var y=Object.assign({},x,{status:b.dataset.ldst});if(b.dataset.ldst==="attended")y.trialDone=true;if(b.dataset.ldst==="joined"&&!x.joined)y.joined=TODAY;return y});upd({leads:L2}).then(leadsPage);return}
  if(b=t.closest("[data-ldtrial]")){var d=((document.getElementById("ldT2")||{}).value||"");if(!d){toast("Pick a trial date");return}var L3=leads().map(function(x){return x.id===b.dataset.ldtrial?Object.assign({},x,{trial:d,status:"trial"}):x});upd({leads:L3}).then(function(){toast("Trial booked for "+fmt(d));leadsPage()});return}
  if(b=t.closest("[data-ldconv]")){var x=leads().filter(function(y){return y.id===b.dataset.ldconv})[0];if(!x)return;var mail=/@/.test(x.contact||"")?x.contact:"",ph=mail?"":(x.contact||"");var R=(c.roster||[]).concat([{id:"r"+Date.now().toString(36),name:x.name,email:mail,phone:ph,plan:"",fee:0,freq:"none",start:TD(),status:"active",open:0,pays:[],charges:[],uid:null,notes:"From lead ("+(x.source||"")+")"}]);
   var L4=leads().map(function(y){return y.id===x.id?Object.assign({},y,{status:"joined",trialDone:true}):y});upd({leads:L4,roster:R}).then(function(){toast(x.name+" added to your members","Set their plan in Accounts, and send them the invite link.");leadsPage()});return}
@@ -14311,7 +14311,7 @@ function addDaysM(k,m){var d=new Date(k+"T12:00");d.setMonth(d.getMonth()+m);ret
 /* cards */
 function card(){var tab=document.getElementById("tab-today");if(!tab)return;var el=document.getElementById("fb124"),sl=slip(),dv=!sl&&due(),h="";
  document.body.classList.toggle("f124on",!!sl);
- if(sl){var r=RS();if(r.lastEpisode!==sl.last||(r.lastNudge&&diffDays(r.lastNudge,TODAY)>=14)){if(!r.shownToday||r.shownToday!==TODAY){r.shownToday=TODAY;r.lastNudge=TODAY;r.lastEpisode=sl.last;r.ignored=(r.ignored||0)+1;if(sl.final)r.finalAsked=true;try{profChanged()}catch(x){}}}
+ if(sl){var r=RS();if(r.lastEpisode!==sl.last||(r.lastNudge&&diffDays(r.lastNudge,TODAY)>=14)){if(!r.shownToday||r.shownToday!==TODAY){r.shownToday=TODAY;r.lastNudge=TODAY;r.sent=(r.sent||[]).concat(TODAY).slice(-12);r.lastEpisode=sl.last;r.ignored=(r.ignored||0)+1;if(sl.final)r.finalAsked=true;try{profChanged()}catch(x){}}}
   h=sl.final?'<span class="fb-kick">One last thing</span><p style="margin:4px 0 8px">We have not heard from you for a while, so we will stop these reminders unless you want them.</p><div class="row"><button class="btn sm" type="button" data-f124="keep">Keep them coming</button><button class="btn ghost sm" type="button" data-f124="off">Stop them</button></div>'
   :'<span class="fb-kick">Ready when you are</span><p style="margin:4px 0 8px"><b>'+sl.gap+' days</b> since your last session. No catch-up needed. One easy session gets you going again.</p><div class="row" style="flex-wrap:wrap;gap:8px"><button class="btn sm" type="button" data-f124="plan">Plan a session</button><button class="btn ghost sm" type="button" data-f124="change">Change my plan</button><button class="btn ghost sm" type="button" data-f124="break">I am taking a break</button><button class="btn ghost sm" type="button" data-f124="later">Not now</button></div><p class="muted small" style="margin:8px 0 0"><button class="linkbtn" type="button" data-f124="off">Stop these reminders</button></p>'}
  else if(dv){var s=sugs();h='<span class="fb-kick">Time for a quick check-in</span><p style="margin:4px 0 8px">It has been a while. Is everything still right for you? Nothing to do if it is.</p>'+(s.length?s.map(function(x){return '<div class="d112-n" style="margin:6px 0"><span class="small">'+e(x.t)+'</span><div class="row" style="gap:6px"><button class="btn sm" type="button" data-f124s="'+x.id+'" data-a="'+x.a+'"'+(x.n?' data-n="'+x.n+'"':"")+'>'+e(x.b)+'</button><button class="btn ghost sm" type="button" data-f124x="'+x.id+'">Not for me</button></div></div>'}).join(""):'<p class="muted small">Nothing to suggest right now.</p>')+
@@ -14510,6 +14510,96 @@ function seed(){var c=club();if(!c||c.id!=="iron-temple"||c.teachLog)return;
  c.teachLog=log;
  c.teachers=(c.teachers||[]).map(function(t){var td=t.id==="tmo"?{type:"vol"}:t.id==="tjo"?{type:"class",rate:25}:t.id==="tsa"?{type:"mship",min:8}:null;return td&&!t.td?Object.assign({},t,{td:td}):t})}
 setInterval(function(){try{seed();sweep();panel();card()}catch(x){}},1500);
+})();
+
+/* FighterBase v148: did the win-back work? Every time the club or the app tries to bring someone back it is logged as a "touch", and later attendance (or a lead joining) says whether it worked.
+   Touches: the in-app "ready when you are" reminder (logged when shown, v146), a coach getting in touch with a slipped member (call, message or in person), a follow-up to a lead who went quiet.
+   Result window is 7, 14 or 30 days. Also shown: how many lapsed members came back WITHOUT a touch, so the club can see whether contact adds anything.
+   Honest limits: it is not a controlled test. People who get a call may differ from people who do not, and the app does not send messages itself yet, so coach and lead contacts are logged by hand.
+   Members who do not share attendance cannot be measured and are left out. Reminders are only counted for members who share attendance and are 18 or over. */
+var W126=W126||false;
+(function(){
+if(W126)return;W126=true;
+function e(s){return esc(String(s==null?"":s))}
+function P(){return S.profile||{}}
+function club(){return (typeof clubState!=="undefined"&&clubState.club)||null}
+function staff(){try{return !!FH118.role()||!!(window.FHC&&FHC.isOwner&&FHC.isOwner())}catch(x){return false}}
+function F(){return window.FH76}
+function slipDays(){var o=(club()||{}).retain||{};return +o.slip||14}
+var WIN=14,SHOW=false,MSG="";
+var CH={call:"Called",msg:"Messaged",person:"Spoke in person",offer:"Offered a free week"};
+/* member side: remember when a reminder was shown so the club can measure it (dates only) */
+(function(){var n=0,iv=setInterval(function(){if(window.FB54&&FB54.extend&&!FB54.extend.p126){var ex=FB54.extend;FB54.extend=function(o){o=ex(o);var p=P(),minor=+p.age>0&&+p.age<18,r=p.retain||{};o.nudgeAt=(!minor&&p.leagueOptIn!==false)?(r.sent||[]).slice(-12):[];return o};FB54.extend.p126=true}if(++n>60)clearInterval(iv)},500)})();
+/* ---------- data ---------- */
+function attDates(m){var L=F()?F().attList(m).map(function(q){return q.d}):[];L=L.filter(function(d,i,a){return a.indexOf(d)===i}).sort();return L}
+function measurable(m){return !(m.share&&m.share.c===false)}
+function touches(){var c=club();if(!c)return[];var out=(c.touches||[]).map(function(t){return Object.assign({},t,{k:t.k||"member"})});
+ (clubState.members||[]).forEach(function(m){if(m.uid===S.uid)return;(m.nudgeAt||[]).forEach(function(d){out.push({id:"n_"+m.uid+"_"+d,k:"member",ref:m.uid,name:m.name||m.leagueName||"Member",ch:"app",d:d,auto:true})})});
+ return out}
+function memberOf(uid){return ((clubState&&clubState.members)||[]).filter(function(m){return m.uid===uid})[0]||null}
+/* outcome of one touch */
+function outcome(t,w){var end=addDays(t.d,w),over=end<TODAY;
+ if(t.k==="lead"){var l=((club()||{}).leads||[]).filter(function(x){return x.id===t.ref})[0];if(!l)return {s:"gone"};
+  if(l.status==="joined"&&l.joined&&l.joined>=t.d){var dd=diffDays(t.d,l.joined);if(dd<=w)return {s:"back",days:dd}}
+  return {s:over?"no":"wait"}}
+ var m=memberOf(t.ref);if(!m)return {s:"gone"};if(!measurable(m))return {s:"na"};
+ var nx=attDates(m).filter(function(d){return d>t.d})[0];if(nx&&diffDays(t.d,nx)<=w)return {s:"back",days:diffDays(t.d,nx)};
+ return {s:over?"no":"wait"}}
+/* baseline: lapsed members who were not touched */
+function baseline(w){var M=F()?F().members():[],sl=slipDays(),T=touches(),n=0,back=0,from=addDays(TODAY,-200);
+ M.forEach(function(m){if(!measurable(m))return;var A=attDates(m);if(A.length<2)return;
+  for(var i=0;i<A.length-1;i++){var gap=diffDays(A[i],A[i+1]);if(gap<sl)continue;var trig=addDays(A[i],sl);if(trig<from||addDays(trig,w)>TODAY)continue;
+   var touched=T.some(function(t){return t.ref===m.uid&&t.d>=addDays(trig,-3)&&t.d<=addDays(trig,w)});if(touched)continue;n++;if(diffDays(trig,A[i+1])<=w)back++}});
+ return {n:n,back:back}}
+function pct(a,b){return b?Math.round(a/b*100)+"%":"–"}
+/* ---------- lists to act on ---------- */
+function slipped(){var M=F()?F().members():[],sl=slipDays(),T=touches(),out=[];
+ M.forEach(function(m){var A=attDates(m);if(!A.length||!measurable(m))return;var last=A[A.length-1],gap=diffDays(last,TODAY);if(gap<sl)return;
+  var recent=T.some(function(t){return t.ref===m.uid&&t.d>addDays(TODAY,-14)});if(recent)return;out.push({m:m,gap:gap})});
+ return out.sort(function(a,b){return a.gap-b.gap}).slice(0,6)}
+function quietLeads(){var T=touches();return ((club()||{}).leads||[]).filter(function(x){if(x.status==="joined")return false;var age=diffDays(x.enq||x.at||TODAY,TODAY);var q=x.status==="lost"||x.status==="attended"&&age>=4||(x.status==="new"||x.status==="contacted")&&age>=7;
+  if(!q)return false;return !T.some(function(t){return t.ref===x.id&&t.d>addDays(TODAY,-14)})}).slice(0,5)}
+/* ---------- panel ---------- */
+function panel(){var host=document.getElementById("huboverBody"),c=club(),w=document.getElementById("fb126Panel");
+ if(!host||!c||!staff()||!F()){if(w)w.remove();return}
+ var T=touches(),rows=T.map(function(t){return Object.assign({},t,{o:outcome(t,WIN)})}).filter(function(t){return t.o.s!=="na"&&t.o.s!=="gone"});
+ var from=addDays(TODAY,-90),R=rows.filter(function(t){return t.d>=from&&t.d<=TODAY});
+ var done=R.filter(function(t){return t.o.s==="back"||t.o.s==="no"}),back=R.filter(function(t){return t.o.s==="back"}),wait=R.filter(function(t){return t.o.s==="wait"});
+ var avg=back.length?Math.round(back.reduce(function(a,t){return a+t.o.days},0)/back.length):0;
+ function line(label,f){var a=done.filter(f),b=a.filter(function(t){return t.o.s==="back"}),wt=R.filter(function(t){return t.o.s==="wait"&&f(t)}).length;return '<div class="d112-n" style="display:flex;justify-content:space-between;gap:8px"><span><b>'+e(label)+'</b><br><span class="muted small">'+(a.length+wt)+' sent'+(wt?' · '+wt+' still waiting':'')+'</span></span><span style="text-align:right"><b>'+pct(b.length,a.length)+'</b><br><span class="muted small">'+b.length+' of '+a.length+' came back</span></span></div>'}
+ var bl=baseline(WIN);
+ var h='<div class="sec-h"><h3>Did win-back work?</h3></div><p class="muted small" style="margin:0 0 8px">Last 90 days. A "touch" is any try at bringing someone back. It counts as a win if they train (or a lead joins) within the window.</p>'+
+  '<div class="chips" style="margin-bottom:8px"><span class="muted small" style="align-self:center">Came back within</span>'+[7,14,30].map(function(n){return '<button type="button" class="chip" data-f126w="'+n+'" aria-pressed="'+(WIN===n)+'">'+n+' days</button>'}).join("")+'</div>';
+ if(!R.length)h+='<p class="muted small" style="margin:0 0 8px">No win-back attempts logged yet. Reminders in the app are logged automatically. Log a call, message or chat below and the result shows here.</p>';
+ else{h+='<div class="fbw" role="table"><div class="fbw-r fbw-h" role="row"><span>Tried</span><span>Back</span><span>Rate</span><span>Avg days</span></div><div class="fbw-r" role="row"><b>'+R.length+'</b><b>'+back.length+'</b><b>'+pct(back.length,done.length)+'</b><b>'+(back.length?avg:"–")+'</b></div></div>'+
+  '<div style="margin-top:8px">'+line("App reminder",function(t){return t.ch==="app"})+line("Coach got in touch",function(t){return t.k==="member"&&t.ch!=="app"})+line("Lead follow-up",function(t){return t.k==="lead"})+'</div>'+
+  '<p class="small" style="margin:8px 0 0">'+(bl.n>=5?'For comparison: of '+bl.n+' lapsed members nobody got in touch with, <b>'+pct(bl.back,bl.n)+'</b> came back within '+WIN+' days on their own.':'Not enough lapsed members without contact yet to compare.')+'</p><p class="muted small" style="margin:4px 0 0">This is a guide, not proof. People you contact may be different from people you do not.</p>'}
+ /* act */
+ var sl=slipped(),ql=quietLeads();
+ if(sl.length||ql.length){h+='<div class="sec-h" style="margin-top:14px"><h3>Worth getting in touch</h3></div><p class="muted small" style="margin:0 0 6px">Check for holidays and injuries first. FighterBase does not send these messages yet, so log it here once you have.</p>';
+  h+=sl.map(function(x){return '<div class="d112-n" style="display:block"><b>'+e(x.m.name||"Member")+'</b> <span class="muted small">last seen '+x.gap+' days ago</span><div class="row" style="gap:6px;flex-wrap:wrap;margin-top:4px">'+Object.keys(CH).map(function(k){return '<button class="btn ghost sm" type="button" data-f126m="'+e(x.m.uid)+'|'+k+'">'+CH[k]+'</button>'}).join("")+'</div></div>'}).join("");
+  h+=ql.map(function(x){return '<div class="d112-n" style="display:block"><b>'+e(x.name)+'</b> <span class="muted small">lead · '+e(x.status==="lost"?"not proceeding":x.status==="attended"?"trial, not joined":"gone quiet")+'</span><div class="row" style="gap:6px;flex-wrap:wrap;margin-top:4px">'+["call","msg","offer"].map(function(k){return '<button class="btn ghost sm" type="button" data-f126l="'+e(x.id)+'|'+k+'">'+CH[k]+'</button>'}).join("")+'</div></div>'}).join("")}
+ var mine=(club().touches||[]).slice(-6).reverse();
+ if(mine.length){h+='<div class="sec-h" style="margin-top:14px"><h3>Recent contacts</h3></div>'+mine.map(function(t){var o=outcome(Object.assign({k:"member"},t),WIN),lab=o.s==="back"?"Back after "+o.days+" d":o.s==="wait"?"Waiting":o.s==="no"?"Not back":"–";
+   return '<div class="small" style="display:flex;justify-content:space-between;gap:8px;padding:4px 0;border-top:1px solid rgba(255,255,255,.08)"><span>'+e(t.d.slice(8,10)+"/"+t.d.slice(5,7))+' · '+e(t.name||"")+' · '+e(CH[t.ch]||t.ch)+'</span><span><span class="muted">'+e(lab)+'</span> <button class="linkbtn small" type="button" data-f126x="'+e(t.id)+'" aria-label="Remove this entry">Remove</button></span></div>'}).join("")}
+ if(MSG)h+='<p class="small" style="margin:8px 0 0" role="status">'+e(MSG)+'</p>';
+ if(!w){w=document.createElement("div");w.id="fb126Panel";w.className="panel";host.appendChild(w)}
+ if(w.dataset.sig!==h){w.innerHTML=h;w.dataset.sig=h}}
+function save(patch){var c=club();if(!c)return Promise.resolve();Object.assign(c,patch);try{return db.doc("clubs/"+c.id).update(patch).catch(function(){})}catch(x){return Promise.resolve()}}
+function log(k,ref,name,ch){var c=club(),L=(c.touches||[]).slice();L.push({id:"t"+Date.now().toString(36)+Math.random().toString(36).slice(2,5),k:k,ref:ref,name:(name||"").slice(0,60),ch:ch,d:TODAY,by:S.uid||null});if(L.length>300)L=L.slice(-300);MSG="Logged. The result shows once the "+WIN+"-day window is up.";return save({touches:L}).then(panel)}
+document.addEventListener("click",function(ev){var t=ev.target,b;if(!t.closest||!staff())return;
+ if(b=t.closest("[data-f126w]")){WIN=+b.dataset.f126w;MSG="";panel();return}
+ if(b=t.closest("[data-f126m]")){var p=b.dataset.f126m.split("|"),m=memberOf(p[0]);log("member",p[0],m&&(m.name||m.leagueName),p[1]);return}
+ if(b=t.closest("[data-f126l]")){var q=b.dataset.f126l.split("|"),l=((club()||{}).leads||[]).filter(function(x){return x.id===q[0]})[0];log("lead",q[0],l&&l.name,q[1]);return}
+ if(b=t.closest("[data-f126x]")){var id=b.dataset.f126x;MSG="Removed.";save({touches:(club().touches||[]).filter(function(x){return x.id!==id})}).then(panel);return}
+},false);
+window.FH126={touches:touches,outcome:outcome,baseline:baseline,slipped:slipped,quietLeads:quietLeads,log:log};
+/* ---------- demo history (demo club only): contacts drawn from real gaps in the demo attendance ---------- */
+function seed(){var c=club();if(!c||c.id!=="iron-temple"||c.touches||!F())return;var M=F().members();if(!M.length)return;var sl=slipDays(),L=[],k=0,chs=["call","msg","msg","person","call"];
+ M.forEach(function(m){var A=attDates(m);for(var i=0;i<A.length-1;i++){var gap=diffDays(A[i],A[i+1]);if(gap<sl)continue;var trig=addDays(A[i],sl);if(diffDays(trig,TODAY)<8||diffDays(trig,TODAY)>150)continue;k++;if(k%5<2)continue;L.push({id:"dt"+k,k:"member",ref:m.uid,name:m.name||"Member",ch:chs[k%chs.length],d:addDays(trig,1+k%3),by:"demo"})}});
+ (c.leads||[]).forEach(function(x,i){if(x.status==="lost"||x.status==="joined"){var d=addDays(x.enq||TODAY,x.status==="joined"?2:10);if(d<=TODAY)L.push({id:"dl"+i,k:"lead",ref:x.id,name:x.name,ch:i%2?"call":"msg",d:d,by:"demo"});if(x.status==="joined"&&!x.joined)x.joined=addDays(d,3)}});
+ c.touches=L}
+setInterval(function(){try{seed();panel()}catch(x){}},1500);
 })();
 
 /* FighterBase v44: always a way back, always a next step. */
