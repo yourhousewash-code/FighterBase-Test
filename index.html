@@ -14265,6 +14265,101 @@ window.addEventListener("hashchange",function(){if(location.hash==="#help")open(
 setInterval(function(){try{cards()}catch(x){}},1500);
 })();
 
+/* FighterBase v146: keeping members. (1) A rare, gentle "ready when you are" nudge for members who have slipped away from training.
+   (2) A check-in every 6 months (or the interval the club chose, or the member chose) that offers suggestions and lets people leave things as they are.
+   Rules so it never becomes nagging: one nudge at most every 14 days, stops after 3 that were ignored (one last "still want these?" after 60 days, then silence),
+   never during fight camp, after a private "unwell / injured / away / planned rest" week, or after "taking a break". Members can switch it off. Clubs set the timing, never force it past the member's switch.
+   In the prototype the nudge shows when the member opens the app. Push or email nudges need the native wrapper and a consent and wording review (Sign-off Register). */
+var R124=R124||false;
+(function(){
+if(R124)return;R124=true;
+(function(){var st=document.createElement("style");st.textContent="body.f124on #comebackCard{display:none!important}";document.head.appendChild(st)})();
+function e(s){return esc(String(s==null?"":s))}
+function P(){return S.profile||{}}
+function club(){return (typeof clubState!=="undefined"&&clubState.club)||null}
+function RS(){var p=P();p.retain=p.retain||{};return p.retain}
+function cfg(){var c=club(),o=(c&&c.retain)||{};return {on:o.on!==false,slip:+o.slip||14,months:+o.months||6}}
+function staffView(){try{return !!(window.FH118&&FH118.role&&FH118.role())||!!(window.FHC&&FHC.isOwner&&FHC.isOwner())}catch(x){return false}}
+function trained(l){return l&&((l.sessions||[]).length>0||l.trained||l.clubCheckin)}
+function lastTrained(){var best=null,all=(S.logs||[]).slice();try{if(typeof cur!=="undefined"&&cur)all.push(cur)}catch(x){}
+ all.forEach(function(l){if(trained(l)&&l.date&&(!best||l.date>best))best=l.date});return best}
+function paused(){var w=P().wkc||{},ks=Object.keys(w).sort().slice(-2);return ks.some(function(k){var d=w[k];return d&&d.why&&diffDays(k,TODAY)<=14})}
+function mode(){try{return journey().mode}catch(x){return"normal"}}
+function slip(){var r=RS(),p=P();if(!p.onboarded||!S.loadedToday)return null;if(r.nudge==="off")return null;if(r.snoozeUntil&&r.snoozeUntil>TODAY)return null;
+ if(["camp","fightweek","weighin","fightday"].indexOf(mode())>=0)return null;if(paused())return null;
+ var lt=lastTrained();if(!lt)return null;var gap=diffDays(lt,TODAY),c=cfg();if(club()&&!c.on)return null;if(gap<c.slip)return null;
+ if(r.lastNudge&&r.lastEpisode===lt&&r.lastNudge!==TODAY&&diffDays(r.lastNudge,TODAY)<14)return null;
+ if((r.ignored||0)>=3){if(r.quietUntil&&r.quietUntil>TODAY)return null;if(!r.finalAsked)return {gap:gap,last:lt,final:true};return null}
+ return {gap:gap,last:lt}}
+/* suggestions for the check-in */
+function avgSessions(){var n=0,t=0;for(var i=0;i<8;i++){var s=addDays(TODAY,-7*(i+1)),c=0;for(var d=0;d<7;d++){var k=addDays(s,d),l=(S.logs||[]).filter(function(x){return x.date===k})[0];if(l&&(l.sessions||[]).length)c+=l.sessions.length}t+=c;n++}return t/n}
+function sugs(){var p=P(),r=RS(),sk=r.skip||{},o=[],g=(p.eg||{});
+ var target=+((g.train&&g.train.n)||p.sessions)||0,avg=avgSessions();
+ if(target&&avg>=target+1&&avg>0)o.push({id:"raise",t:"You are averaging "+avg.toFixed(1)+" sessions a week, above your plan of "+target+".",b:"Raise my plan to "+Math.min(7,Math.round(avg)),a:"raise",n:Math.min(7,Math.round(avg))});
+ else if(target&&avg>0&&avg<=target-1.5)o.push({id:"lower",t:"Your plan is "+target+" a week and lately it is closer to "+avg.toFixed(1)+". A plan that fits is easier to keep.",b:"Set my plan to "+Math.max(1,Math.round(avg)),a:"lower",n:Math.max(1,Math.round(avg))});
+ var hasGoal=(g.fight&&g.fight.date)||(g.body&&g.body.on)||(g.grading&&g.grading.on);if(!hasGoal)o.push({id:"goal",t:"You have no goal set. A goal gives your weeks a direction (a fight, a weight, a grading).",b:"Add a goal",a:"profile"});
+ if(!p.clubId&&!p.clubLinked)o.push({id:"club",t:"You have not linked a club. Linking lets your coach help, and your sessions can count automatically.",b:"Find a club",a:"club"});
+ else if(p.clubId&&!(p.helpAreas&&p.helpAreas.length))o.push({id:"help",t:"Tell your coach what you would like help with. It makes the next chat easier.",b:"Choose areas",a:"profile"});
+ if(p.clubId)o.push({id:"share",t:"Check what your coach can see. You can change it any time.",b:"Review sharing",a:"profile"});
+ var ch=p.compHist||{};if(!ch.has&&!(g.fight&&g.fight.date))o.push({id:"rec",t:"Thinking about competing? You can add a fight or interclub to your record.",b:"Add one",a:"profile"});
+ return o.filter(function(x){return !sk[x.id]}).slice(0,3)}
+function due(){var p=P(),r=RS();if(!p.onboarded||!S.loadedToday)return false;if(["camp","fightweek","weighin","fightday"].indexOf(mode())>=0)return false;
+ var months=+r.months||cfg().months;if(!r.next){r.next=addDaysM(TODAY,months);return false}return r.next<=TODAY}
+function addDaysM(k,m){var d=new Date(k+"T12:00");d.setMonth(d.getMonth()+m);return d.toISOString().slice(0,10)}
+/* cards */
+function card(){var tab=document.getElementById("tab-today");if(!tab)return;var el=document.getElementById("fb124"),sl=slip(),dv=!sl&&due(),h="";
+ document.body.classList.toggle("f124on",!!sl);
+ if(sl){var r=RS();if(r.lastEpisode!==sl.last||(r.lastNudge&&diffDays(r.lastNudge,TODAY)>=14)){if(!r.shownToday||r.shownToday!==TODAY){r.shownToday=TODAY;r.lastNudge=TODAY;r.lastEpisode=sl.last;r.ignored=(r.ignored||0)+1;if(sl.final)r.finalAsked=true;try{profChanged()}catch(x){}}}
+  h=sl.final?'<span class="fb-kick">One last thing</span><p style="margin:4px 0 8px">We have not heard from you for a while, so we will stop these reminders unless you want them.</p><div class="row"><button class="btn sm" type="button" data-f124="keep">Keep them coming</button><button class="btn ghost sm" type="button" data-f124="off">Stop them</button></div>'
+  :'<span class="fb-kick">Ready when you are</span><p style="margin:4px 0 8px"><b>'+sl.gap+' days</b> since your last session. No catch-up needed. One easy session gets you going again.</p><div class="row" style="flex-wrap:wrap;gap:8px"><button class="btn sm" type="button" data-f124="plan">Plan a session</button><button class="btn ghost sm" type="button" data-f124="change">Change my plan</button><button class="btn ghost sm" type="button" data-f124="break">I am taking a break</button><button class="btn ghost sm" type="button" data-f124="later">Not now</button></div><p class="muted small" style="margin:8px 0 0"><button class="linkbtn" type="button" data-f124="off">Stop these reminders</button></p>'}
+ else if(dv){var s=sugs();h='<span class="fb-kick">Time for a quick check-in</span><p style="margin:4px 0 8px">It has been a while. Is everything still right for you? Nothing to do if it is.</p>'+(s.length?s.map(function(x){return '<div class="d112-n" style="margin:6px 0"><span class="small">'+e(x.t)+'</span><div class="row" style="gap:6px"><button class="btn sm" type="button" data-f124s="'+x.id+'" data-a="'+x.a+'"'+(x.n?' data-n="'+x.n+'"':"")+'>'+e(x.b)+'</button><button class="btn ghost sm" type="button" data-f124x="'+x.id+'">Not for me</button></div></div>'}).join(""):'<p class="muted small">Nothing to suggest right now.</p>')+
+  '<div class="row" style="margin-top:10px;flex-wrap:wrap;gap:8px"><button class="btn sm" type="button" data-f124="allgood">All good, leave as is</button><button class="btn ghost sm" type="button" data-f124="remind">Ask me later</button></div><p class="muted small" style="margin:8px 0 0">Ask me every <select id="f124m" style="font-size:inherit"><option value="3">3 months</option><option value="6">6 months</option><option value="12">12 months</option></select></p>'}
+ if(!h){if(el)el.hidden=true;return}
+ if(!el){el=document.createElement("section");el.id="fb124";el.className="fb-card";el.style.order="3";tab.appendChild(el)}
+ el.hidden=false;if(el.dataset.sig!==h){el.innerHTML=h;el.dataset.sig=h;var m=document.getElementById("f124m");if(m)m.value=String(+RS().months||cfg().months)}}
+function save(){try{profChanged()}catch(x){}card()}
+document.addEventListener("click",function(ev){var t=ev.target,b,r=RS();if(!t.closest)return;
+ if(b=t.closest("[data-f124]")){var a=b.dataset.f124;r.ignored=0;
+  if(a==="plan"){try{showTab("train")}catch(x){}r.snoozeUntil=addDays(TODAY,14)}
+  else if(a==="change"){try{showTab("profile")}catch(x){}r.snoozeUntil=addDays(TODAY,14)}
+  else if(a==="break"){r.snoozeUntil=addDays(TODAY,45);try{toast("Welcome back whenever you are")}catch(x){}}
+  else if(a==="later"){r.snoozeUntil=addDays(TODAY,14)}
+  else if(a==="off"){r.nudge="off";try{toast("Reminders off. You can turn them on in Me")}catch(x){}}
+  else if(a==="keep"){r.nudge="on";r.ignored=0;r.quietUntil=null}
+  else if(a==="allgood"){r.next=addDaysM(TODAY,+r.months||cfg().months);r.last=TODAY;try{toast("Great, nothing changed")}catch(x){}}
+  else if(a==="remind"){r.next=addDays(TODAY,14)}
+  save();return}
+ if(b=t.closest("[data-f124x]")){r.skip=r.skip||{};r.skip[b.dataset.f124x]=true;save();return}
+ if(b=t.closest("[data-f124s]")){var a2=b.dataset.a,p=P();
+  if(a2==="raise"||a2==="lower"){var n=+b.dataset.n;p.eg=p.eg||{};p.eg.train=p.eg.train||{mode:"count",n:n,days:[]};p.eg.train.n=n;p.sessions=n;r.skip=r.skip||{};r.skip[b.dataset.f124s]=true;try{toast("Plan set to "+n+" a week")}catch(x){}}
+  else if(a2==="club"){r.skip=r.skip||{};try{if(window.FH116&&FH116.open)FH116.open();else showTab("profile")}catch(x){try{showTab("profile")}catch(y){}}}
+  else{try{showTab("profile")}catch(x){}}
+  save();return}},true);
+document.addEventListener("change",function(ev){var t=ev.target;if(t.id==="f124m"){RS().months=+t.value;RS().next=addDaysM(TODAY,+t.value);save()}});
+/* member setting in Me */
+function meSetting(){var tab=document.getElementById("tab-profile");if(!tab)return;var el=document.getElementById("fb124s"),r=RS();
+ var h='<span class="fb-kick">Reminders to come back</span><label class="small" style="display:flex;gap:6px;align-items:center;margin-top:6px"><input id="f124on" type="checkbox"'+(r.nudge==="off"?"":" checked")+'> A gentle reminder if I have been away a while (rarely)</label><p class="muted small" style="margin:6px 0 0">Check-in every '+(+r.months||cfg().months)+' months. Change it on the check-in card when it appears.</p>';
+ if(!el){el=document.createElement("section");el.id="fb124s";el.className="fb-card";tab.appendChild(el)}
+ if(el.dataset.sig!==h){el.innerHTML=h;el.dataset.sig=h}}
+document.addEventListener("change",function(ev){if(ev.target.id==="f124on"){var r=RS();r.nudge=ev.target.checked?"on":"off";if(ev.target.checked){r.ignored=0;r.quietUntil=null;r.finalAsked=false}try{profChanged()}catch(x){}}});
+/* club setting */
+function clubPanel(){var host=document.getElementById("huboverBody"),c=club(),w=document.getElementById("fb124c");
+ var can=false;try{can=(window.FH118&&FH118.can&&FH118.can("members"))||(window.FHC&&FHC.isOwner&&FHC.isOwner())}catch(x){}
+ if(!host||!c||!can){if(w)w.remove();return}var o=cfg();
+ var h='<div class="sec-h"><h3>Keeping members</h3></div><p class="small" style="margin:0 0 8px">Members who slip away get one gentle reminder in the app, never more than every 14 days, and it stops if they ignore it. Members can switch it off themselves.</p>'+
+ '<label class="small" style="display:flex;gap:6px;align-items:center"><input id="f124co" type="checkbox"'+(o.on?" checked":"")+'> Send gentle reminders to my members</label>'+
+ '<div class="row" style="gap:12px;margin-top:8px;flex-wrap:wrap"><label class="small">Remind after <select id="f124cs">'+[10,14,21,30].map(function(d){return '<option value="'+d+'"'+(d===o.slip?" selected":"")+'>'+d+' days away</option>'}).join("")+'</select></label>'+
+ '<label class="small">Check in with members every <select id="f124cm">'+[3,6,12].map(function(m){return '<option value="'+m+'"'+(m===o.months?" selected":"")+'>'+m+' months</option>'}).join("")+'</select></label></div>'+
+ '<p class="muted small" style="margin:8px 0 0">Your own lists (Needs a nudge, Might like a message) are separate. Use them to reach out personally.</p>';
+ if(!w){w=document.createElement("div");w.id="fb124c";w.className="panel";host.appendChild(w)}
+ if(document.activeElement&&/^f124c/.test(document.activeElement.id))return;if(w.dataset.sig!==h){w.innerHTML=h;w.dataset.sig=h}}
+document.addEventListener("change",function(ev){var t=ev.target,c=club();if(!c||!/^f124c/.test(t.id||""))return;var o=Object.assign({},c.retain||{});
+ if(t.id==="f124co")o.on=t.checked;if(t.id==="f124cs")o.slip=+t.value;if(t.id==="f124cm")o.months=+t.value;c.retain=o;try{db.doc("clubs/"+c.id).update({retain:o}).catch(function(){})}catch(x){}
+ var w=document.getElementById("fb124c");if(w)w.dataset.sig=""});
+window.FH124={slip:slip,due:due,sugs:sugs,lastTrained:lastTrained};
+setInterval(function(){try{card();meSetting();clubPanel()}catch(x){}},1500);
+})();
+
 /* FighterBase v44: always a way back, always a next step. */
 var N31=N31||false;
 (function(){
