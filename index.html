@@ -13271,6 +13271,218 @@ document.head.appendChild(css);
 window.FH111={summary:summary,policyText:policyText,grantOn:grantOn};
 })();
 
+/* FighterBase v135: the daily Home overview. One card at the top of Home that answers: what am I doing today, is it booked or only planned,
+   how am I doing against my goals, what food support applies to me, and is there one thing to do next.
+   It reuses existing data only: club timetable and "I'm coming" plans, check-ins (geofence or member-added), PT slots and requests,
+   the member's own planned sessions, goal headline, food diary and planned meals.
+   Kept separate on purpose: planned (intention), booked or requested (reservation), checked in (attendance), done (what was actually trained).
+   Food support has four levels: hidden, keep it simple (one weekly focus), track a few things, plan my meals. Profile: foodMode, foodFocus, f112Dis. */
+var K112=K112||false;
+(function(){
+if(K112)return;K112=true;
+function P(){return S.profile||{}}
+function e(s){return esc(String(s==null?"":s))}
+function club(){return (typeof clubState!=="undefined"&&clubState.club)||null}
+function members(){return (typeof clubState!=="undefined"&&clubState.members)||[]}
+function dowK(k){return (new Date(k+"T12:00").getDay()+6)%7}
+function mondayOf(k){return addDays(k,-dowK(k))}
+function hmNum(t){var m=/^(\d{1,2}):(\d{2})/.exec(t||"");return m?(+m[1])*60+(+m[2]):null}
+function nowMin(){var d=new Date();return d.getHours()*60+d.getMinutes()}
+function dayWord(k){return k===TODAY?"today":k===addDays(TODAY,1)?"tomorrow":new Date(k+"T12:00").toLocaleDateString("en-GB",{weekday:"long"})}
+function teacher(id){try{return (FH69.teachers()||[]).filter(function(t){return t.id===id})[0]||null}catch(x){return null}}
+
+/* ---------- today's list ---------- */
+function todayItems(){
+ var out=[],c=club(),linked=!!P().clubId,loading=linked&&!c;
+ if(c&&linked){
+  var cls=[];try{cls=classesOn(c,TODAY).filter(function(x){return !x.kids||S.canEdit})}catch(x){}
+  var rs=P().rsvp||{},att=P().att||{},planned=0;
+  cls.forEach(function(x){var key=TODAY+"_"+x.id,on=!!rs[key],at=att[key],end=(hmNum(x.time)||0)+(+x.mins||60);
+   var going=members().filter(function(m){return m.uid!==S.uid&&m.rsvp&&m.rsvp[key]}).length+(on?1:0),full=+x.cap&&going>=+x.cap&&!on;
+   var t=teacher(x.tid),who=t?t.name:(x.coach||""),sub=[x.time,who,going+" going"+(+x.cap?" of "+x.cap:"")].filter(Boolean).join(" · ");
+   if(at){planned++;out.push({t:x.time,k:"Club class",title:x.title,sub:sub,st:["ok","Checked in"],act:""});return}
+   if(on){planned++;out.push({t:x.time,k:"Club class",title:x.title,sub:sub,st:["plan",end<nowMin()?"Planned, not checked in":"Planned"],act:'<button class="linkbtn" type="button" data-rsvp="'+e(key)+'">Not coming</button>'});return}
+   x._k=key;x._full=full;x._past=end<nowMin();x._sub=sub});
+  if(!planned){var nx=cls.filter(function(x){return !x._past})[0];
+   if(nx)out.push({t:nx.time,k:"Club class",title:nx.title,sub:nx._sub,st:[nx._full?"no":"none",nx._full?"Full":"Not planned"],act:nx._full?"":'<button class="btn gold sm" type="button" data-rsvp="'+e(nx._k)+'">I\'m coming</button>'})}
+  var myReq=P().ptReq||[];
+  (c.ptSlots||[]).filter(function(s){return s.d===TODAY}).forEach(function(s){var asked=myReq.some(function(r){return r.slot===s.id}),mine=s.uid===S.uid&&s.status==="booked",t=teacher(s.tid),dec=(s.decl||{})[S.uid];
+   if(!mine&&!asked)return;
+   var st=mine?["ok","Booking confirmed"]:(dec||s.status==="booked")?["no","Not available"]:["wait","Request pending"];
+   out.push({t:s.time,k:"Personal training",title:"PT"+(t?" with "+t.name:""),sub:[s.time,(s.mins||60)+" min"].join(" · "),st:st,
+    act:st[0]==="wait"||st[0]==="ok"?'<button class="linkbtn" type="button" data-ptcancel="'+e(s.id)+'">Cancel</button>':""})})}
+ (P().psched||[]).filter(function(x){return x.date===TODAY}).forEach(function(x){
+  var st=x.st==="done"?["ok","Done"]:x.st==="skip"?["none","Skipped"]:x.st==="unk"?["none","Not sure"]:["plan","Planned"];
+  out.push({t:x.time||"",k:"My session",title:x.title||"Training",sub:[x.time,x.mins?(+x.mins)+" min":""].filter(Boolean).join(" · "),st:st,
+   act:x.st?"":'<button class="btn sm" type="button" data-psdone="'+e(x.id)+'">Done</button>'})});
+ out.sort(function(a,b){var x=hmNum(a.t),y=hmNum(b.t);return (x==null?9999:x)-(y==null?9999:y)});
+ return {list:out,loading:loading}}
+
+function isRestDay(){try{var g=FBE.eg(),t=g.train||{};return t.mode==="days"&&(t.days||[]).length&&t.days.indexOf(dowK(TODAY))<0}catch(x){return false}}
+
+/* ---------- progress summary ---------- */
+function summary(items){
+ var tiles=[],t7=null,tg=null;try{t7=FBW.n("sess",7);tg=FBW.tgt(7)}catch(x){}
+ var hasAny=false;try{hasAny=(FBW.n("sess",90)||0)>0}catch(x){}
+ if(t7!=null)tiles.push('<div class="d112-t"><span>Sessions, last 7 days</span><b>'+t7+'<i> of '+tg+'</i></b><small>Completed and logged</small></div>');
+ var nx=items.filter(function(i){return i.st[0]==="plan"||i.st[0]==="wait"})[0];
+ var nxt=nx?nx.title+(nx.t?", today "+nx.t:", today"):null;
+ if(!nxt){try{var up=(window.FH100&&FH100.upcoming?FH100.upcoming():[]).filter(function(x){return x.date>TODAY})[0];if(up)nxt=(up.title||"Session")+", "+dayWord(up.date)+(up.time?" "+up.time:"")}catch(x){}}
+ tiles.push('<div class="d112-t"><span>Next session</span><b class="sm">'+e(nxt||"Nothing planned")+'</b><small>'+(nxt?"Planned":"Plan one when you are ready")+'</small></div>');
+ try{var h=FBE.headline();if(h&&h.k!=="train"&&h.big&&h.big!=="—")tiles.push('<div class="d112-t"><span>'+e(h.label||"Your priority")+'</span><b>'+e(h.big)+'</b><small>'+e(h.sub||"")+'</small></div>')}catch(x){}
+ return {tiles:tiles,fresh:!hasAny}}
+
+/* ---------- food support ---------- */
+var FOCUS=[["post","Plan food around training","Have you decided what you'll eat after training?"],["lunch","Have lunch ready on busy days","Is lunch sorted for today?"],["veg","Fruit or veg with a meal","Fruit or veg with one meal today?"],["water","Water for training","Is your water bottle ready for training?"],["time","Make time for a meal","Have you got time for a proper meal today?"]];
+var MODES=[["simple","Keep it simple","One small focus a week. No diary, no calories."],["track","Track a few things","Only the targets you chose, like water or protein."],["plan","Plan my meals","Today's planned meals, logged as you eat them."],["off","Hide food support","Nothing about food on Home."]];
+function foodMode(){var m=P().foodMode;if(m)return m;try{var d=FBE.diet();if(d.on&&(d.protT||d.waterT))return "track"}catch(x){}return "simple"}
+function focus(){return P().foodFocus||null}
+var CHG=false,CHF=false;
+function trainingToday(items){return items.filter(function(i){return i.st[0]==="plan"||i.st[0]==="ok"||i.st[0]==="wait"})[0]||null}
+function foodHTML(items){
+ var m=foodMode(),h='';
+ if(m==="off")return '<div class="d112-off"><span class="muted small">Food support is hidden.</span> <button class="linkbtn" type="button" data-f112mode="open">Show it</button></div>'+(CHG?modeChooser(m):'');
+ h+='<div class="d112-h"><h3>Today\'s food focus</h3><button class="linkbtn" type="button" data-f112mode="open">'+({simple:"Keep it simple",track:"Tracking a few things",plan:"Planning my meals"}[m])+' · change</button></div>';
+ if(CHG)return h+modeChooser(m);
+ if(m==="simple"){
+  var f=focus(),wk=mondayOf(TODAY),def=null;if(f)def=FOCUS.filter(function(x){return x[0]===f.id})[0];
+  if(!f||!def||CHF){h+='<p class="d112-p">Pick one small thing for this week. You can change or switch it off any time.</p><div class="chips">'+FOCUS.map(function(x){return '<button type="button" class="chip" data-f112focus="'+x[0]+'">'+e(x[1])+'</button>'}).join("")+'</div>';return h}
+  if(f.wk!==wk)return h+'<p class="d112-p">New week. Last week\'s focus was <b>'+e(def[1])+'</b>.</p><div class="row"><button class="btn gold sm" type="button" data-f112keep>Keep it</button><button class="btn ghost sm" type="button" data-f112change>Change it</button><button class="btn ghost sm" type="button" data-f112modeset="off">Switch off</button></div>';
+  var ack=(f.ack||{})[TODAY],tr=trainingToday(items),q=def[2];
+  if(def[0]==="post"&&tr&&tr.t)q="You're training at "+tr.t+". Have you decided what you'll eat afterwards?";
+  h+='<p class="d112-p">'+e(q)+'</p>';
+  h+=ack==="sorted"?'<div class="row"><span class="d112-ok">✓ Sorted for today</span><button class="linkbtn" type="button" data-f112ack="undo">Undo</button></div>':'<div class="row"><button class="btn gold sm" type="button" data-f112ack="sorted">Sorted</button><button class="btn ghost sm" type="button" data-f112ack="later">Not yet</button></div>';
+  h+='<p class="muted small" style="margin:6px 0 0">This week\'s focus: '+e(def[1])+'. "Sorted" is just a reminder to yourself. It doesn\'t log any food.</p>';
+  return h}
+ if(m==="track"){
+  var d={};try{d=FBE.diet()}catch(x){}var rows=[];
+  if(d.waterT){var w=+cur.water||0;rows.push('<div class="d112-tr"><span>Water</span><b>'+(Math.round(w*100)/100)+' of '+d.waterT+' L</b><button class="btn ghost sm" type="button" data-water="0.25">+250 ml</button></div>')}
+  if(d.protT){var ea=(cur.eaten||[]).filter(function(x){return x.protein!=null&&x.protein!==""}),pr=ea.reduce(function(s,x){return s+(+x.protein||0)},0);
+   rows.push('<div class="d112-tr"><span>Protein</span><b>'+(ea.length?Math.round(pr)+' of '+d.protT+' g':'Not logged yet')+'</b><button class="btn ghost sm" type="button" data-goto="diary">'+(ea.length?'Add a meal':'Log a meal')+'</button></div>'+(ea.length?'<p class="muted small" style="margin:0">From '+ea.length+' logged meal'+(ea.length>1?'s':'')+'. Anything not logged isn\'t counted.</p>':''))}
+  if(!rows.length)return h+'<p class="d112-p">You haven\'t chosen anything to track yet.</p><div class="row"><button class="btn gold sm" type="button" data-goto="goals2">Choose what to track</button></div>';
+  return h+rows.join("")+'<p class="muted small" style="margin:6px 0 0">Not logged means not recorded, not that you didn\'t eat or drink.</p>'}
+ if(m==="plan"){
+  var dp=(P().mealPlan||{})[TODAY],R=P().regMeals||[],ids=dp?(dp.ids||[]).filter(function(id){return R.some(function(r){return r.id===id})}):[];
+  var got={};(cur.eaten||[]).forEach(function(x){if(x.reg)got[x.reg]=1});
+  if(!ids.length)return h+'<p class="d112-p">Nothing planned for today yet.</p><div class="row"><button class="btn gold sm" type="button" data-goto="diary">Plan today\'s meals</button></div>';
+  return h+ids.map(function(id){var r=R.filter(function(x){return x.id===id})[0],st=got[id]?"Logged":(dp.st&&dp.st[id]==="skip"?"Didn't eat it":dp.st&&dp.st[id]==="unknown"?"Not sure":"Planned");return '<div class="d112-tr"><span>'+e(r.name)+'</span><b class="'+(got[id]?"ok":"")+'">'+st+'</b></div>'}).join("")+'<div class="row"><button class="btn ghost sm" type="button" data-goto="diary">Open food diary</button></div><p class="muted small" style="margin:6px 0 0">Planned meals only count as eaten once you log them.</p>'}
+ return h}
+function modeChooser(cur0){return '<div class="d112-modes">'+MODES.map(function(x){return '<button type="button" class="d112-mode'+(cur0===x[0]?' on':'')+'" data-f112modeset="'+x[0]+'"><b>'+x[1]+'</b><span>'+x[2]+'</span></button>'}).join("")+'</div>'}
+
+/* ---------- needs attention ---------- */
+function dis(k){var d=(P().f112Dis||{})[k];return !!d&&d>=addDays(TODAY,-2)}
+function attention(){
+ var out=[];
+ (P().psched||[]).filter(function(x){return !x.st&&x.date<TODAY&&x.date>=addDays(TODAY,-3)}).slice(0,2).forEach(function(x){var k="ps"+x.id;if(dis(k))return;
+  out.push({k:k,t:'Did you do "'+e(x.title||"your session")+'" on '+e(dayWord(x.date))+'?',act:'<button class="btn sm" type="button" data-psdone="'+e(x.id)+'">Done</button><button class="btn ghost sm" type="button" data-psunk="'+e(x.id)+'">Not sure</button><button class="btn ghost sm" type="button" data-psskip="'+e(x.id)+'">Missed</button>'})});
+ try{if(window.FH53&&FH53.coachNote()&&!dis("coach")){out.push({k:"coach",t:"A note from your coach is waiting",act:'<button class="btn ghost sm" type="button" data-f112scroll=".fb-note">Read it</button>'})}}catch(x){}
+ try{if(window.FH67&&FH67.card&&!dis("week")&&(function(){try{return (FBW.n("sess",90)||0)>0}catch(x){return false}})()&&/wk-card/.test(FH67.card()||"")){out.push({k:"week",t:"Your weekly review is ready",act:'<button class="btn ghost sm" type="button" data-f112scroll=".wk-card">Open</button>'})}}catch(x){}
+ return out.slice(0,3)}
+
+/* ---------- draw ---------- */
+function draw(){var home=document.getElementById("tab-today");if(!home)return;var el=document.getElementById("fb112");
+ if(!el){el=document.createElement("div");el.id="fb112";el.className="fb-card d112";home.appendChild(el)}
+ var p=P();if(!p.onboarded){el.hidden=true;return}el.hidden=false;
+ var it=todayItems(),sm=summary(it.list),at=attention(),d=new Date(TODAY+"T12:00");
+ var h='<div class="d112-top"><div><span class="fb-kick">'+e(d.toLocaleDateString("en-GB",{weekday:"long",day:"numeric",month:"long"}))+'</span><h2>Your day</h2></div><button class="linkbtn" type="button" data-goto="stats">View progress</button></div>';
+ h+='<div class="d112-tiles">'+sm.tiles.join("")+'</div>';
+ h+='<div class="d112-sec"><h3>Today\'s training</h3>';
+ if(it.list.length){h+=it.list.map(function(i){return '<div class="d112-r"><div class="d112-w"><span class="d112-k">'+e(i.k)+'</span><b>'+e(i.title)+'</b><span class="muted small">'+e(i.sub)+'</span></div><div class="d112-a"><em class="d112-s s-'+i.st[0]+'">'+e(i.st[1])+'</em>'+(i.act||"")+'</div></div>'}).join("")}
+ else if(it.loading)h+='<p class="d112-p muted">Loading your club\'s schedule…</p>';
+ else if(isRestDay())h+='<p class="d112-p"><b>Recovery day.</b> Rest is part of the plan.</p>';
+ else if(sm.fresh)h+='<p class="d112-p">Your first step: plan a session, or '+(p.clubId?'check the schedule.':'link your gym to see its classes.')+'</p><div class="row"><button class="btn gold sm" type="button" data-psopen data-f112scroll=".ps-card">Plan a session</button>'+(p.clubId?'<button class="btn ghost sm" type="button" data-goto="schedule">Schedule</button>':'<button class="btn ghost sm" type="button" data-goto="club">Link my gym</button>')+'</div>';
+ else h+='<p class="d112-p">Nothing planned today.</p><div class="row"><button class="btn ghost sm" type="button" data-psopen data-f112scroll=".ps-card">Plan a session</button>'+(p.clubId?'<button class="btn ghost sm" type="button" data-goto="schedule">See classes</button>':'')+'</div>';
+ h+='<p class="muted small" style="margin:8px 0 0">Only what you log or check in counts as training.</p></div>';
+ h+='<div class="d112-sec d112-food">'+foodHTML(it.list)+'</div>';
+ if(at.length)h+='<div class="d112-sec"><h3>Needs you</h3>'+at.map(function(a){return '<div class="d112-n"><span>'+a.t+'</span><div class="row">'+a.act+'<button class="linkbtn" type="button" data-f112dis="'+e(a.k)+'">Dismiss</button></div></div>'}).join("")+'</div>';
+ if(el.dataset.sig!==h){el.innerHTML=h;el.dataset.sig=h}}
+function safe(){try{draw()}catch(x){try{console.warn("f112",x)}catch(_){}}}
+
+/* ---------- clicks ---------- */
+function save(){try{profChanged()}catch(x){}}
+document.addEventListener("click",function(ev){var t=ev.target;if(!t.closest)return;var b;
+ if(b=t.closest("[data-f112mode]")){CHG=!CHG;safe();return}
+ if(b=t.closest("[data-f112modeset]")){var v=b.dataset.f112modeset;P().foodMode=v;CHG=false;CHF=false;save();safe();return}
+ if(b=t.closest("[data-f112focus]")){P().foodFocus={id:b.dataset.f112focus,wk:mondayOf(TODAY),ack:{}};CHF=false;save();safe();return}
+ if(t.closest("[data-f112keep]")){var f=focus();if(f){f.wk=mondayOf(TODAY);f.ack={};save()}safe();return}
+ if(t.closest("[data-f112change]")){CHF=true;safe();return}
+ if(b=t.closest("[data-f112ack]")){var f2=focus();if(f2){f2.ack=f2.ack||{};var a=b.dataset.f112ack;if(a==="undo")delete f2.ack[TODAY];else f2.ack[TODAY]=a;save()}safe();return}
+ if(b=t.closest("[data-f112dis]")){P().f112Dis=P().f112Dis||{};P().f112Dis[b.dataset.f112dis]=TODAY;save();safe();return}
+ if(b=t.closest("[data-f112scroll]")){var sel=b.dataset.f112scroll;setTimeout(function(){var n=document.querySelector("#tab-today "+sel);if(n){n.scrollIntoView({block:"center",behavior:"smooth"})}else{try{P().homeMore=true;save()}catch(x){}}},250)}
+ if(t.closest("[data-water],[data-rsvp],[data-psdone],[data-psskip],[data-psunk],[data-ptcancel],[data-psopen],[data-psclose],[data-pssave]"))setTimeout(safe,350)},true);
+
+/* ---------- placement: today first, the big hero image lower down ---------- */
+var css=document.createElement("style");
+css.textContent="#tab-today #fb112{order:2}#tab-today #tape{order:24!important}#tab-today #hubCard{order:25}#tab-today #fbBase>.td-card{display:none}"+
+".d112{display:flex;flex-direction:column;gap:14px;border-left:4px solid #FF4B2E}.d112[hidden]{display:none}.d112-top{display:flex;justify-content:space-between;align-items:flex-start;gap:10px}.d112-top h2{margin:2px 0 0;font:900 30px var(--display,'Big Shoulders Display',sans-serif);text-transform:uppercase;letter-spacing:.02em}"+
+".d112-tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(100px,1fr));gap:10px}.d112-t{border:1px solid var(--line);border-radius:14px;padding:11px 12px;display:flex;flex-direction:column;gap:2px;background:rgba(255,255,255,.03)}.d112-t span{font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted,#9AA0AA)}.d112-t b{font:900 24px var(--display,'Big Shoulders Display',sans-serif);line-height:1.05}.d112-t b i{font:500 13px var(--body,inherit);font-style:normal;color:var(--muted,#9AA0AA)}.d112-t b.sm{font-size:15px;line-height:1.2}.d112-t small{font-size:12px;color:var(--muted,#9AA0AA)}"+
+".d112-sec{display:flex;flex-direction:column;gap:8px;border-top:1px solid var(--line);padding-top:12px}.d112-sec h3,.d112-h h3{margin:0;font-size:12px;letter-spacing:.1em;text-transform:uppercase;color:#F2C14E}.d112-h{display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap}"+
+".d112-r{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;padding:8px 0;border-bottom:1px solid var(--line)}.d112-r:last-of-type{border-bottom:0}.d112-w{display:flex;flex-direction:column;gap:1px;min-width:0;flex:1 1 160px}.d112-w b{font-size:17px}.d112-k{font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted,#9AA0AA)}.d112-a{display:flex;align-items:center;gap:8px;flex-wrap:wrap}"+
+".d112-s{font-style:normal;font-size:12px;font-weight:700;padding:4px 9px;border-radius:999px;border:1px solid var(--line);white-space:nowrap}.d112-s.s-ok{color:#3FC57E;border-color:rgba(63,197,126,.5)}.d112-s.s-plan{color:#F2C14E;border-color:rgba(242,193,78,.5)}.d112-s.s-wait{color:#4DA3FF;border-color:rgba(77,163,255,.5)}.d112-s.s-no{color:#E5484D;border-color:rgba(229,72,77,.5)}.d112-s.s-none{color:var(--muted,#9AA0AA)}"+
+".d112-p{margin:0;font-size:16px}.d112-ok{color:#3FC57E;font-weight:700}.d112-tr{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:6px 0;flex-wrap:wrap}.d112-tr span{color:var(--muted,#9AA0AA)}.d112-tr b.ok{color:#3FC57E}"+
+".d112-modes{display:grid;gap:8px}.d112-mode{text-align:left;border:1px solid var(--line);border-radius:12px;background:rgba(255,255,255,.03);color:inherit;padding:10px 12px;display:flex;flex-direction:column;gap:2px;cursor:pointer;min-height:44px}.d112-mode.on{border-color:#F2C14E}.d112-mode span{font-size:13px;color:var(--muted,#9AA0AA)}.d112-n{display:flex;flex-direction:column;gap:6px;padding:6px 0}.d112-off{padding:2px 0}";
+document.head.appendChild(css);
+var st=showTab;showTab=function(t){var r=st.apply(this,arguments);try{if(t==="today")safe()}catch(x){}return r};
+if(window.FHB49&&FHB49.drawBase){var d0=FHB49.drawBase;FHB49.drawBase=function(){var r=d0.apply(this,arguments);safe();return r}}
+setInterval(function(){try{var t=document.getElementById("tab-today");if(t&&!t.hidden&&!(document.activeElement&&/INPUT|TEXTAREA|SELECT/.test(document.activeElement.tagName)))safe()}catch(x){}},3000);
+setTimeout(safe,600);
+window.FH112={draw:safe,items:todayItems,foodMode:foodMode};
+})();
+
+/* FighterBase v135: club Home leads with today, not with statistics.
+   Today's classes (who is coming, how many have checked in), personal training today and requests waiting for a decision,
+   fights waiting to be confirmed, and a short, supportive list of members nobody has seen for a while.
+   Uses existing data only. Numbers come from check-ins and "I'm coming" plans, so "not seen" never means "has not trained".
+   No weight, food or private notes appear here. Not built yet: waiting lists for classes, timetable-change notices, payment status. */
+var K113=K113||false;
+(function(){
+if(K113)return;K113=true;
+function e(s){return esc(String(s==null?"":s))}
+function club(){return (typeof clubState!=="undefined"&&clubState.club)||null}
+function staff(){try{return !!(window.FHC&&FHC.isOwner())}catch(x){return false}}
+function mem(){return ((typeof clubState!=="undefined"&&clubState.members)||[]).filter(function(m){return m.uid!==S.uid&&m.status!=="left"&&m.status!=="paused"})}
+function dowK(k){return (new Date(k+"T12:00").getDay()+6)%7}
+function hm(t){var m=/^(\d{1,2}):(\d{2})/.exec(t||"");return m?(+m[1])*60+(+m[2]):null}
+function nowMin(){var d=new Date();return d.getHours()*60+d.getMinutes()}
+function first(m){return String(m.name||"Member").split(" ")[0]}
+function tname(x){try{var t=(FH69.teachers()||[]).filter(function(t){return t.id===x.tid})[0];return t?t.name:(x.coach||"")}catch(z){return x.coach||""}}
+function fmtDay(k){return k===TODAY?"today":k===addDays(TODAY,1)?"tomorrow":new Date(k+"T12:00").toLocaleDateString("en-GB",{weekday:"short",day:"numeric",month:"short"})}
+function html(){
+ var c=club();if(!c)return "";var M=mem(),h='',cls=[];
+ try{cls=classesOn(c,TODAY)}catch(x){}
+ h+='<div class="d112-top"><div><span class="fb-kick">'+e(new Date(TODAY+"T12:00").toLocaleDateString("en-GB",{weekday:"long",day:"numeric",month:"long"}))+'</span><h2>Today at the club</h2></div><button class="linkbtn" type="button" data-hubgo="hubclasses">Timetable</button></div>';
+ h+='<div class="d112-sec"><h3>Classes today</h3>';
+ if(!(c.timetable||[]).length)h+='<p class="d112-p">No timetable yet. Add your classes so members can see them and say they\'re coming.</p><div class="row"><button class="btn gold sm" type="button" data-hubgo="hubclasses">Add classes</button></div>';
+ else if(!cls.length)h+='<p class="d112-p">No classes today.</p>';
+ else h+=cls.map(function(x){var key=TODAY+"_"+x.id,coming=M.filter(function(m){return m.rsvp&&m.rsvp[key]}).length,here=M.filter(function(m){return m.att&&m.att[key]}).length,end=(hm(x.time)||0)+(+x.mins||60),st=(hm(x.time)||0)>nowMin()?"Not started":end>nowMin()?"On now":"Finished",cap=+x.cap||0,full=cap&&coming>=cap;
+  return '<div class="d112-r"><div class="d112-w"><span class="d112-k">'+e(x.time)+(x.mins?' · '+(+x.mins)+' min':'')+'</span><b>'+e(x.title)+'</b><span class="muted small">'+e([tname(x),x.level&&x.level!=="All levels"?x.level:""].filter(Boolean).join(" · "))+'</span></div><div class="d112-a"><em class="d112-s s-'+(full?"no":"none")+'">'+coming+' coming'+(cap?' of '+cap:'')+(full?' · full':'')+'</em><em class="d112-s s-'+(here?"ok":"none")+'">'+here+' checked in</em><em class="d112-s s-none">'+st+'</em></div></div>'}).join("")+'<p class="muted small" style="margin:6px 0 0">"Coming" is what members planned. "Checked in" is arrivals recorded by phone location or added by the member. Neither is a register.</p>';
+ h+='</div>';
+ /* personal training */
+ var slots=(c.ptSlots||[]),today=slots.filter(function(s){return s.d===TODAY}).sort(function(a,b){return String(a.time).localeCompare(String(b.time))});
+ var reqs=[];M.forEach(function(m){(m.ptReq||[]).forEach(function(r){var s=slots.filter(function(x){return x.id===r.slot})[0];if(s&&s.status!=="booked"&&s.d>=TODAY&&!((s.decl||{})[m.uid]))reqs.push({m:m,s:s})})});
+ reqs.sort(function(a,b){return (a.s.d+a.s.time).localeCompare(b.s.d+b.s.time)});
+ if(today.length||reqs.length){h+='<div class="d112-sec"><h3>Personal training</h3>';
+  h+=today.map(function(s){var ok=s.status==="booked";return '<div class="d112-r"><div class="d112-w"><span class="d112-k">'+e(s.time)+' · '+(s.mins||60)+' min</span><b>'+(ok?e(s.name||"Member"):"Open slot")+'</b><span class="muted small">'+e((function(){try{return (FH69.teachers()||[]).filter(function(t){return t.id===s.tid})[0].name}catch(z){return ""}})())+'</span></div><div class="d112-a"><em class="d112-s s-'+(ok?"ok":"none")+'">'+(ok?"Confirmed":"Open")+'</em></div></div>'}).join("");
+  if(reqs.length)h+='<span class="label" style="color:#F2C14E;margin-top:4px">Waiting for a decision</span>'+reqs.slice(0,4).map(function(r){return '<div class="d112-n"><span><b>'+e(first(r.m))+'</b> would like '+e(fmtDay(r.s.d))+' '+e(r.s.time)+'</span><div class="row"><button class="btn sm" type="button" data-ptconf="'+e(r.s.id)+'" data-u="'+e(r.m.uid)+'">Confirm</button><button class="btn ghost sm" type="button" data-ptdecl="'+e(r.s.id)+'" data-u="'+e(r.m.uid)+'">Decline</button></div></div>'}).join("")+(reqs.length>4?'<p class="muted small" style="margin:0">+'+(reqs.length-4)+' more in the timetable.</p>':'');
+  h+='</div>'}
+ /* fights to confirm */
+ var frc=c.frc||{},pend=0;M.forEach(function(m){(m.fr||[]).forEach(function(f){if(!frc[m.uid+"_"+f.id])pend++})});
+ if(pend)h+='<div class="d112-sec"><h3>Needs you</h3><div class="d112-n"><span>'+pend+' fight'+(pend>1?"s":"")+' waiting for you to confirm</span><div class="row"><button class="btn ghost sm" type="button" data-hubgo="hubins">Review</button></div></div></div>';
+ /* members who may appreciate a check-in */
+ var cut=addDays(TODAY,-14),quiet=M.filter(function(m){var keys=Object.keys(m.att||{}).map(function(k){return k.slice(0,10)});return keys.length&&keys.every(function(d){return d<cut})}).slice(0,4);
+ if(quiet.length)h+='<div class="d112-sec"><h3>Might like a message</h3><p class="d112-p">'+e(quiet.map(first).join(", "))+' ha'+(quiet.length>1?"ve":"s")+'n\'t checked in for two weeks or more.</p><p class="muted small" style="margin:0">Based on check-ins only. No check-in doesn\'t mean they haven\'t trained. A friendly message is better than a chase.</p><div class="row"><button class="btn ghost sm" type="button" data-hubgo="hubmem">Open members</button></div></div>';
+ return h}
+function draw(){var host=document.getElementById("huboverBody");if(!host||!staff())return;var c=club();if(!c)return;
+ var el=document.getElementById("fb113");if(!el){el=document.createElement("div");el.id="fb113";el.className="fb-card d112"}
+ if(host.firstChild!==el)host.insertBefore(el,host.firstChild);
+ var h=html();if(el.dataset.sig!==h){el.innerHTML=h;el.dataset.sig=h}}
+function safe(){try{draw()}catch(x){try{console.warn("f113",x)}catch(_){}}}
+var st=showTab;showTab=function(t){var r=st.apply(this,arguments);try{if(t==="hubover")setTimeout(safe,60)}catch(x){}return r};
+document.addEventListener("click",function(ev){var t=ev.target;if(t.closest&&t.closest("[data-ptconf],[data-ptdecl]"))setTimeout(safe,500)},true);
+setInterval(function(){try{var o=document.getElementById("tab-hubover");if(o&&!o.hidden)safe()}catch(x){}},2500);
+window.FH113={draw:safe};
+})();
+
 /* FighterBase v44: always a way back, always a next step. */
 var N31=N31||false;
 (function(){
