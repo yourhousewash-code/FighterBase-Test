@@ -13042,7 +13042,7 @@ function ov(){var o=document.getElementById("fb109");if(!o){o=document.createEle
 function open(){load();var o=ov();o.style.display="block";draw();if(SS.tok&&ST.hasProfile===null)loadAll()}
 function close(){ov().style.display="none";if(location.hash==="#live")history.replaceState(null,"",location.pathname+location.search)}
 function fld(l,id,t,ph,v){return '<label class="ev94l"><span>'+esc(l)+'</span><input id="'+id+'" type="'+(t||"text")+'" placeholder="'+esc(ph||"")+'" value="'+esc(v||"")+'" style="width:100%"></label>'}
-function draw(){var o=ov();if(o.style.display==="none")return;var h='<div style="max-width:560px;margin:0 auto" class="stack"><div class="row" style="justify-content:space-between"><h2 style="margin:0">Live database test</h2><button class="btn ghost sm" type="button" data-l109="close">Close</button></div>'+
+function draw(){var o=ov();if(o.style.display==="none")return;var h='<div style="max-width:560px;margin:0 auto" class="stack"><div class="row" style="justify-content:space-between"><h2 style="margin:0">Live database test</h2><button class="btn gold sm" type="button" data-l109="camp">Camp and PT test</button><button class="btn ghost sm" type="button" data-l109="close">Close</button></div>'+
  '<div class="panel"><p class="small" style="margin:0"><b>Dev project, made-up details only.</b> This talks to the real FighterBase test database, not the demo store. Nothing here is real member data. The access rules in the database decide what each signed-in person can see and do.</p></div>';
  if(ST.msg)h+='<div class="panel" style="border-color:#2e9e5b"><p class="small" style="margin:0">'+esc(ST.msg)+'</p></div>';
  if(ST.err)h+='<div class="panel" style="border-color:#e5484d"><p class="small" style="margin:0"><b>Problem:</b> '+esc(ST.err)+'</p></div>';
@@ -13076,6 +13076,7 @@ async function run(fn,ok){if(ST.busy)return;ST.busy=true;try{await fn();if(ok)ST
 document.addEventListener("click",function(ev){var b=ev.target.closest&&ev.target.closest("[data-l109],[data-l109club]");if(!b||!document.getElementById("fb109")||!document.getElementById("fb109").contains(b))return;
  var a=b.dataset.l109;
  if(b.dataset.l109club){ST.club=b.dataset.l109club;ST.code=null;run(loadEvents);return}
+ if(a==="camp"){close();if(window.FH121)FH121.open();return}
  if(a==="close")close();
  else if(a==="up")run(async function(){var e=val("l109e"),p=val("l109p");if(!e||p.length<8)throw new Error("Enter an email and a password of 8 or more characters.");var j=await authCall("signup",{email:e,password:p});if(j.access_token){setSess(j);await loadAll()}},"Account created. Check your email and click the confirmation link, then sign in here.");
  else if(a==="in")run(async function(){var e=val("l109e"),p=val("l109p");var j=await authCall("token?grant_type=password",{email:e,password:p});SS.email=e;setSess(j);ST.hasProfile=null;await loadAll()},"Signed in.");
@@ -13099,6 +13100,7 @@ window.addEventListener("hashchange",function(){if(location.hash==="#live")open(
 setInterval(link,3000);link();
 if(location.hash==="#live")setTimeout(open,300);
 window.FH109={open:open,close:close,state:function(){return {signedIn:!!SS.tok,hasProfile:ST.hasProfile,club:ST.club,role:ST.role,events:ST.events.length}}};
+window.FB109={api:api,sess:function(){load();return SS},open:open};
 })();
 /* FighterBase v131: first-time welcome and guided tour.
    1. Welcome story (swipeable cards) before the sign-up questions, for a brand-new member.
@@ -13991,6 +13993,150 @@ var st=document.createElement("style");st.textContent="#tab-today #fb120{order:2
 setInterval(function(){try{card();inbox();notify();expire()}catch(x){}},1500);
 function expire(){var p=P(),ex=p.extras;if(!ex||!ex.length)return;var keep=[],ch=false;ex.forEach(function(x){if(x.k<TODAY){if(x.applied){var g=p.eg=p.eg||{};g.train=g.train||{n:3};g.train.n=Math.max(1,(+g.train.n||3)-1);p.sessions=g.train.n}ch=true}else keep.push(x)});if(ch){p.extras=keep;save()}}
 window.FH120={};
+})();
+
+/* FighterBase v142: LIVE CAMP AND PT TEST (dev project only). Open with #livecamp or the button in the Live database test.
+   Talks to the real FighterBase-Dev database using the v141 functions (camp sharing, weekly report, coach inbox, suggestions,
+   camp support, corner team, fight plan, PT slots, PT agreements, PT statement). The database rules decide everything; this screen only asks.
+   The main demo screens are untouched. Made-up details only. */
+var P121=P121||false;
+(function(){
+if(P121)return;P121=true;
+var ST={club:null,role:"",clubs:{},names:{},d:{},err:"",msg:"",missing:false,f:{},busy:false,loaded:false};
+function esc(s){return String(s==null?"":s).replace(/[&<>"']/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]})}
+function B(){return window.FB109}
+function sess(){return B()&&B().sess()}
+function iso(d){return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0")}
+function plus(n){var d=new Date();d.setDate(d.getDate()+n);return iso(d)}
+function monday(){var d=new Date(),k=(d.getDay()+6)%7;d.setDate(d.getDate()-k);return iso(d)}
+function monthStart(){var d=new Date();return iso(new Date(d.getFullYear(),d.getMonth(),1))}
+function F(id,def){return ST.f[id]!=null?ST.f[id]:(def==null?"":def)}
+function short(u){return u?String(u).slice(0,8):""}
+function who(u){return u===(sess()||{}).uid?"you":short(u)}
+function pound(p){return "£"+(Number(p||0)/100).toFixed(2)}
+function isMissing(e){var m=(e&&e.message)||"";return /Could not find the (function|table)|schema cache|does not exist/i.test(m)}
+function say(m,e){ST.msg=e?"":m;ST.err=e?m:"";draw()}
+async function get(path){try{return (await B().api("GET",path))||[]}catch(e){if(isMissing(e))ST.missing=true;return[]}}
+async function rpc(fn,args){try{var r=await B().api("POST","rpc/"+fn,args||{});return{ok:true,data:r}}catch(e){if(isMissing(e))ST.missing=true;return{ok:false,err:e.message}}}
+async function act(fn,args,okmsg){if(ST.busy)return;ST.busy=true;var r=await rpc(fn,args);ST.busy=false;
+ if(!r.ok){if(ST.missing)ST.err="The database does not have the camp and PT part yet. Ask Steve to run v141_camp_roles.sql in the Supabase SQL editor.";else ST.err=r.err;ST.msg="";await loadClub();return draw()}
+ ST.err="";ST.msg=okmsg||"Done.";await loadClub();draw();return r}
+/* ---------- data ---------- */
+async function loadAll(){var s=sess();if(!s||!s.tok)return draw();ST.missing=false;
+ var st=await get("club_staff?select=club_id,role,title,pt_approved&user_id=eq."+s.uid),mem=await get("club_members?select=club_id,status&user_id=eq."+s.uid);
+ ST.clubs={};mem.forEach(function(m){if(m.status==="active")ST.clubs[m.club_id]="member"});st.forEach(function(x){ST.clubs[x.club_id]=x.role});
+ var cl=await get("clubs?select=id,name");ST.names={};cl.forEach(function(c){ST.names[c.id]=c.name});
+ if(!ST.club||!ST.clubs[ST.club])ST.club=Object.keys(ST.clubs)[0]||null;ST.loaded=true;await loadClub();draw()}
+async function loadClub(){var c=ST.club,s=sess();if(!c||!s)return;ST.role=ST.clubs[c]||"";var q="club_id=eq."+c,D={};
+ var all=await Promise.all([get("camp_share?select=*&"+q+"&member_id=eq."+s.uid),get("camp_reports?select=*&"+q+"&order=week_start.desc"),get("camp_replies?select=*&"+q+"&order=created_at.desc"),
+  get("camp_suggestions?select=*&"+q+"&order=created_at.desc"),get("camp_support_requests?select=*&"+q+"&order=created_at.desc"),get("corner_members?select=*&"+q+"&order=created_at"),
+  get("fight_plans?select=*&"+q),get("pt_slots?select=*&"+q+"&order=slot_date"),get("pt_agreements?select=*&"+q),get("pt_attendance?select=*&"+q),get("club_staff?select=user_id,role,title,pt_approved&"+q),get("club_members?select=user_id,status&"+q)]);
+ D.share=all[0];D.reports=all[1];D.replies=all[2];D.sugs=all[3];D.support=all[4];D.corner=all[5];D.plans=all[6];D.slots=all[7];D.agree=all[8];D.att=all[9];D.staff=all[10];D.members=all[11];ST.d=D}
+/* ---------- view ---------- */
+function ov(){var o=document.getElementById("fb121");if(!o){o=document.createElement("div");o.id="fb121";o.style.cssText="position:fixed;inset:0;z-index:100000;background:var(--bg,#0f1012);color:var(--text,#f2f2f2);overflow:auto;padding:16px;display:none";document.body.appendChild(o);
+ o.addEventListener("input",function(e){var t=e.target;if(t.id&&t.id.indexOf("l121")===0)ST.f[t.id]=t.type==="checkbox"?t.checked:t.value});
+ o.addEventListener("change",function(e){var t=e.target;if(t.id&&t.id.indexOf("l121")===0)ST.f[t.id]=t.type==="checkbox"?t.checked:t.value})}return o}
+function open(){var o=ov();o.style.display="block";if(B()&&B().sess().tok){if(!ST.loaded)loadAll();else draw()}else draw()}
+function close(){ov().style.display="none";if(location.hash==="#livecamp")history.replaceState(null,"",location.pathname+location.search)}
+function fld(l,id,t,ph,def){return '<label class="ev94l"><span>'+esc(l)+'</span><input id="'+id+'" type="'+(t||"text")+'" placeholder="'+esc(ph||"")+'" value="'+esc(F(id,def))+'" style="width:100%"></label>'}
+function sel(l,id,opts,def){var v=F(id,def);return '<label class="ev94l"><span>'+esc(l)+'</span><select id="'+id+'" style="width:100%">'+opts.map(function(o){var a=Array.isArray(o)?o:[o,o];return '<option value="'+esc(a[0])+'"'+(String(a[0])===String(v)?" selected":"")+'>'+esc(a[1])+'</option>'}).join("")+'</select></label>'}
+function chk(l,id,def){var v=ST.f[id]!=null?ST.f[id]:def;return '<label class="small" style="display:flex;gap:6px;align-items:center"><input id="'+id+'" type="checkbox"'+(v?" checked":"")+'> '+esc(l)+'</label>'}
+function btn(l,a,id,cls){return '<button class="btn '+(cls||"gold")+' sm" type="button" data-l121="'+a+'"'+(id?' data-id="'+esc(id)+'"':"")+'>'+esc(l)+'</button>'}
+function memOpts(){var s=sess();return (ST.d.members||[]).filter(function(m){return m.status==="active"&&m.user_id!==s.uid}).map(function(m){return [m.user_id,short(m.user_id)]})}
+function pane(t,body){return '<div class="panel stack"><h3 style="margin:0">'+esc(t)+'</h3>'+body+'</div>'}
+function snapTxt(s){var o=[];if(!s)return"";if(s.sess!=null)o.push("sessions "+s.sess+(s.target!=null?"/"+s.target:""));if(s.hard!=null)o.push("hard rounds "+s.hard);if(s.inj)o.push("injury: "+(typeof s.inj==="string"?s.inj:JSON.stringify(s.inj)));if(s.wt!=null)o.push("weight "+s.wt);if(s.food)o.push("food: "+(typeof s.food==="string"?s.food:JSON.stringify(s.food)));if(s.rec)o.push("recovery "+(typeof s.rec==="string"?s.rec:JSON.stringify(s.rec)));return o.join(", ")}
+function memberView(){var D=ST.d,s=sess(),fd=F("l121fd",plus(30)),h="";
+ h+=pane("Your fight date",fld("Fight date","l121fd","date","",fd)+'<p class="muted small" style="margin:0">Used for sharing, support request, fight plan and corner team below.</p>');
+ var sh=(D.share||[]).filter(function(x){return x.fight_date===fd})[0],it=sh?sh.items:{};
+ var keys=[["training","Training"],["skills","Skills"],["recovery","Recovery"],["injury","Injuries"],["mood","Mood"],["weight","Weight"],["food","Food"]];
+ h+=pane("Camp sharing",'<p class="small" style="margin:0">Now: <b>'+(sh&&sh.enabled?"ON":"OFF")+'</b> for '+esc(fd)+'. The database only lets your coaches see what you tick, and never if you are under 18.</p>'+
+  keys.map(function(k){return chk(k[1],"l121s_"+k[0],it[k[0]]!=null?it[k[0]]:(k[0]!=="weight"&&k[0]!=="food"))}).join("")+
+  '<div class="row">'+btn("Turn sharing on","shareon")+btn("Turn off","shareoff","","ghost")+'</div>');
+ h+=pane("Send this week's report",fld("Week starting (Monday)","l121wk","date","",monday())+'<div class="ev94g">'+fld("Sessions done","l121sess","number","",3)+fld("Target","l121tgt","number","",4)+'</div><div class="ev94g">'+fld("Hard rounds","l121hard","number","",6)+fld("Weight (kg, optional)","l121wt","number","")+'</div>'+
+  fld("Injury (optional)","l121inj","text","e.g. sore left shin")+fld("Food note (optional)","l121food","text","")+sel("Mood (1 low, 5 great)","l121mood",[1,2,3,4,5],4)+fld("Note to coach (160 max)","l121note","text","")+
+  '<p class="muted small" style="margin:0">Weight and food are only kept if you ticked them above. The database drops anything unticked.</p>'+btn("Send report","report"));
+ var myrep=(D.reports||[]).filter(function(r){return r.member_id===s.uid});
+ if(myrep.length)h+=pane("Your sent reports",myrep.map(function(r){var rp=(D.replies||[]).filter(function(x){return x.member_id===s.uid&&x.week_start===r.week_start})[0];return '<p class="small" style="margin:0"><b>'+esc(r.week_start)+'</b> mood '+esc(r.mood==null?"-":r.mood)+' · '+esc(snapTxt(r.snap))+(rp?'<br>Coach ('+esc(rp.status)+'): '+esc(rp.message||""):'<br><span class="muted">Not reviewed yet</span>')+'</p>'}).join(""));
+ var sg=(D.sugs||[]).filter(function(x){return x.member_id===s.uid});
+ if(sg.length)h+=pane("Suggestions from your coach",sg.map(function(x){return '<div class="row" style="justify-content:space-between"><span class="small">'+esc(x.body)+' <span class="muted">('+esc(x.kind)+', '+esc(x.freq)+')</span> '+(x.decision?'<b>'+(x.decision==="ok"?"Accepted":"Declined")+'</b>':"")+'</span>'+(x.decision?"":btn("Accept","sugok",x.id)+btn("No thanks","sugno",x.id,"ghost"))+'</div>'}).join(""));
+ var sr=(D.support||[]).filter(function(x){return x.member_id===s.uid&&x.fight_date===fd});
+ h+=pane("Ask for coach support",(sr.length?'<p class="small" style="margin:0">Status: <b>'+esc(sr[0].status)+'</b></p>':"")+fld("Note (160 max)","l121supn","text","What would help?")+btn("Request support","support"));
+ var pl=(D.plans||[]).filter(function(x){return x.member_id===s.uid&&x.fight_date===fd})[0];
+ h+=pane("Fight plan",(pl?'<p class="small" style="margin:0">Status: <b>'+esc(pl.status)+'</b> · '+esc(pl.support)+', '+pl.spw+' a week, travel '+esc(pl.travel)+', weigh-in '+esc(pl.weigh)+(pl.cost?', cost '+esc(pl.cost):"")+'</p>'+(pl.status==="offered"?btn("Accept coach's plan","planok"):""):'<p class="muted small" style="margin:0">No plan yet.</p>')+planForm("l121p",pl)+btn(pl?"Send my version":"Propose plan","plan"));
+ var cm=(D.corner||[]).filter(function(x){return x.member_id===s.uid&&x.fight_date===fd});
+ h+=pane("Your corner team",cm.length?cm.map(function(x){return '<p class="small" style="margin:0">'+esc(x.display_name)+' · '+esc(x.role)+' · <b>'+(x.status==="ok"?"Confirmed":x.status==="no"?"Can't make it":"Waiting")+'</b></p>'}).join(""):'<p class="muted small" style="margin:0">Your coach has not added a corner team yet.</p>');
+ var cp=(D.corner||[]).filter(function(x){return x.user_id===s.uid&&x.member_id!==s.uid&&x.status==="wait"});
+ if(cp.length)h+=pane("You were asked to be in a corner",cp.map(function(x){return '<div class="row" style="justify-content:space-between"><span class="small">'+esc(x.role)+' for '+short(x.member_id)+' on '+esc(x.fight_date)+'</span>'+btn("Yes","cornok",x.id)+btn("Can't","cornno",x.id,"ghost")+'</div>'}).join(""));
+ var mine=(D.slots||[]).filter(function(x){return x.member_id===s.uid});
+ if(mine.length)h+=pane("Your PT sessions",mine.map(function(x){var a=(D.att||[]).filter(function(y){return y.slot_id===x.id})[0];return '<div class="row" style="justify-content:space-between"><span class="small">'+esc(x.slot_date)+' '+esc(String(x.slot_time).slice(0,5))+' · '+pound(x.price_pence)+' · coach '+short(x.coach_id)+(a?' · <b>attended ('+esc(a.source)+')</b>':"")+'</span>'+(a?"":btn("Yes, I attended","ptatt",x.id))+'</div>'}).join(""));
+ return h}
+function planForm(p,pl){return sel("Support","l121"+"psup",["Full camp","Pads and sessions","Advice only"],pl&&pl.support)+'<div class="ev94g">'+fld("Sessions a week","l121pspw","number","",pl?pl.spw:4)+fld("Cost (optional)","l121pcost","text","",pl&&pl.cost)+'</div><div class="ev94g">'+sel("Travel handled by","l121ptrav",["Me","My coach","The club"],pl&&pl.travel)+sel("Weigh-in handled by","l121pwgh",["Me","My coach","The club"],pl&&pl.weigh)+'</div>'+fld("Notes (120 max)","l121pnts","text","",pl&&pl.notes)}
+function planArgs(){return{sup:F("l121psup","Full camp"),n:Number(F("l121pspw",4)),trav:F("l121ptrav","Me"),wgh:F("l121pwgh","Me"),cst:F("l121pcost")||null,nts:F("l121pnts")||null}}
+function staffView(){var D=ST.d,s=sess(),h="",fd=F("l121fd",plus(30)),own=ST.role==="owner",adm=own||(D.staff||[]).some(function(x){return x.user_id===s.uid&&x.role==="admin"});
+ h+=pane("Team (your id: "+short(s.uid)+")",'<p class="muted small" style="margin:0">Your full id (give this to the manager to be added as staff): <span style="user-select:all">'+esc(s.uid)+'</span></p>'+(D.staff||[]).map(function(x){return '<p class="small" style="margin:0">'+short(x.user_id)+' · <b>'+esc(x.role)+'</b>'+(x.title?" · "+esc(x.title):"")+(x.pt_approved?" · PT approved":"")+(own&&!x.pt_approved&&x.role!=="owner"?' '+btn("Allow PT","ptallow",x.user_id,"ghost"):"")+'</p>'}).join(""));
+ var reps=(D.reports||[]).filter(function(r){return r.member_id!==s.uid});
+ h+=pane("Camp inbox ("+reps.length+")",(reps.length?reps.map(function(r){var rp=(D.replies||[]).filter(function(x){return x.member_id===r.member_id&&x.week_start===r.week_start})[0];return '<p class="small" style="margin:0"><b>'+short(r.member_id)+'</b> · week '+esc(r.week_start)+' · mood '+esc(r.mood==null?"hidden":r.mood)+'<br>'+esc(snapTxt(r.snap)||"nothing shared")+(r.note?'<br>“'+esc(r.note)+'”':"")+(rp?'<br><b>'+esc(rp.status)+'</b> '+esc(rp.message||""):"")+'</p>'}).join(""):'<p class="muted small" style="margin:0">Nothing yet. A fighter must turn sharing on and send a report.</p>')+
+  (reps.length?sel("Reply to","l121rto",reps.map(function(r){return [r.member_id+"|"+r.week_start,short(r.member_id)+" "+r.week_start]}))+fld("Message (240 max)","l121rmsg","text","")+'<div class="ev94g">'+sel("Suggest","l121rk",[["","Nothing"],["class","Class"],["pt","PT"],["chat","Chat/planning/review"]])+sel("How often","l121rf",["once","weekly","monthly"])+'</div>'+fld("Suggestion text (100 max)","l121rt","text","")+'<div class="row">'+btn("Send reply","reply")+btn("Mark reviewed","reviewed","","ghost")+'</div>':""));
+ var rq=(D.support||[]).filter(function(x){return x.member_id!==s.uid});
+ if(rq.length)h+=pane("Support requests",rq.map(function(x){return '<div class="row" style="justify-content:space-between"><span class="small">'+short(x.member_id)+' · '+esc(x.fight_date)+' · '+esc(x.note||"")+' · <b>'+esc(x.status)+'</b></span>'+(x.status==="requested"?btn("I can help","supok",x.id)+btn("Can't","supno",x.id,"ghost"):"")+'</div>'}).join(""));
+ var mo=memOpts();
+ h+=pane("Corner team",(D.corner||[]).filter(function(x){return x.member_id!==s.uid}).map(function(x){return '<div class="row" style="justify-content:space-between"><span class="small">'+short(x.member_id)+' · '+esc(x.fight_date)+' · '+esc(x.display_name)+' ('+esc(x.role)+') <b>'+esc(x.status)+'</b></span>'+btn("Remove","cornrm",x.id,"ghost")+'</div>'}).join("")+
+  (mo.length?sel("Fighter","l121cm",mo)+fld("Name","l121cn","text","e.g. Mo")+sel("Role","l121cr",["Head coach","Cutman","Second","Other"])+fld("Their user id (optional)","l121cu","text","")+btn("Add to corner","corneradd")+'<p class="muted small" style="margin:0">Uses the fight date at the top of the member section ('+esc(fd)+').</p>':'<p class="muted small" style="margin:0">No linked fighters yet.</p>'));
+ var pls=(D.plans||[]).filter(function(x){return x.member_id!==s.uid});
+ h+=pane("Fight plans",(pls.length?pls.map(function(x){return '<div class="row" style="justify-content:space-between"><span class="small">'+short(x.member_id)+' · '+esc(x.fight_date)+' · '+esc(x.support)+', '+x.spw+'/wk, '+esc(x.cost||"no cost")+' · <b>'+esc(x.status)+'</b></span>'+(x.status==="proposed"?btn("Agree","planagree",x.member_id+"|"+x.fight_date):"")+'</div>'}).join(""):'<p class="muted small" style="margin:0">None yet.</p>')+
+  (mo.length?sel("Offer a plan to","l121om",mo)+planForm("l121p",null)+btn("Offer plan","planoffer")+'<p class="muted small" style="margin:0">Fight date: '+esc(fd)+'</p>':""));
+ var ag=D.agree||[];
+ h+=pane("PT deals and sessions",ag.map(function(x){return '<div class="row" style="justify-content:space-between"><span class="small">coach '+short(x.coach_id)+' · '+esc(x.kind)+' '+(x.kind==="flat"?pound(x.flat_pence)+" to club":x.kind==="split"?x.coach_pct+"% coach":pound(x.rent_pence)+"/month")+' · <b>'+esc(x.status)+'</b></span>'+(x.status==="proposed"&&adm?btn("Accept","agok",x.coach_id)+btn("Decline","agno",x.coach_id,"ghost"):"")+'</div>'}).join("")+
+  '<h4 style="margin:6px 0 0">Propose a deal</h4>'+sel("Coach","l121ac",(D.staff||[]).map(function(x){return [x.user_id,short(x.user_id)+" ("+x.role+")"]}),s.uid)+sel("Type","l121ak",[["flat","Flat amount to club per session"],["split","Percentage split"],["rent","Monthly rent"]])+'<div class="ev94g">'+fld("Flat £","l121af","number","",10)+fld("Coach %","l121ap","number","",80)+'</div>'+fld("Rent £ a month","l121ar","number","",100)+btn("Propose","agprop")+
+  '<h4 style="margin:6px 0 0">Add a PT slot</h4><div class="ev94g">'+fld("Date","l121sd","date","",plus(7))+fld("Time","l121st","time","","10:00")+'</div><div class="ev94g">'+fld("Price £","l121sp","number","",30)+sel("For fighter (optional)","l121sm",[["","Open slot"]].concat(mo))+'</div>'+btn("Create slot","slot")+
+  (D.slots||[]).filter(function(x){return x.coach_id===s.uid||adm}).map(function(x){return '<p class="small" style="margin:0">'+esc(x.slot_date)+' '+esc(String(x.slot_time).slice(0,5))+' · '+pound(x.price_pence)+' · '+esc(x.status)+(x.member_id?' · '+short(x.member_id):"")+'</p>'}).join(""));
+ h+=pane("PT statement",fld("Month start","l121ms","date","",monthStart())+btn("Show statement","stmt")+(ST.stmt?(ST.stmt.length?ST.stmt.map(function(x){return '<p class="small" style="margin:0">coach '+short(x.coach_id)+' · '+x.sessions+' sessions · gross '+pound(x.gross_pence)+' · club '+pound(x.club_pence)+' · coach '+pound(x.coach_pence)+(x.rent_due_pence?' · rent due '+pound(x.rent_due_pence):"")+'</p>'}).join(""):'<p class="muted small" style="margin:0">No confirmed sessions that month.</p>'):""));
+ return h}
+function draw(){var o=ov();if(o.style.display==="none")return;var s=B()&&sess(),h='<div style="max-width:560px;margin:0 auto" class="stack"><div class="row" style="justify-content:space-between"><h2 style="margin:0">Live camp and PT test</h2><button class="btn ghost sm" type="button" data-l121="close">Close</button></div>'+
+ '<div class="panel"><p class="small" style="margin:0"><b>Dev database, made-up details only.</b> This uses the real FighterBase test database and its safety rules. The normal demo screens still use demo data.</p></div>';
+ if(ST.msg)h+='<div class="panel" style="border-color:#2e9e5b"><p class="small" style="margin:0">'+esc(ST.msg)+'</p></div>';
+ if(ST.err)h+='<div class="panel" style="border-color:#e5484d"><p class="small" style="margin:0"><b>Not allowed / problem:</b> '+esc(ST.err)+'</p></div>';
+ if(ST.missing&&!ST.err)h+='<div class="panel" style="border-color:#e5484d"><p class="small" style="margin:0"><b>The database does not have the camp and PT part yet.</b> Ask Steve to run v141_camp_roles.sql in the Supabase SQL editor, then press Reload.</p></div>';
+ if(!s||!s.tok)h+='<div class="panel"><p class="small" style="margin:0">Sign in first in the Live database test, then come back here.</p><div class="row">'+'<button class="btn gold sm" type="button" data-l121="tolive">Open Live database test</button></div></div>';
+ else{h+='<div class="panel"><div class="row" style="justify-content:space-between"><span class="small">Signed in as <b>'+esc(s.email||"")+'</b></span>'+btn("Reload","reload","","ghost")+'</div></div>';
+  var ids=Object.keys(ST.clubs);
+  if(!ids.length)h+='<div class="panel"><p class="small" style="margin:0">You are not in a club yet. Create or join one in the Live database test.</p></div>';
+  else{h+='<div class="chips">'+ids.map(function(id){return '<button type="button" class="chip" data-l121club="'+id+'" aria-pressed="'+(ST.club===id)+'">'+esc(ST.names[id]||id)+' ('+esc(ST.clubs[id])+')</button>'}).join("")+'</div>';
+   h+='<h3 style="margin:8px 0 0">As a fighter</h3>'+memberView();
+   if(ST.role==="owner"||ST.role==="admin"||ST.role==="coach")h+='<h3 style="margin:14px 0 0">As staff ('+esc(ST.role)+')</h3>'+staffView()}}
+ o.innerHTML=h+'</div>'}
+/* ---------- actions ---------- */
+function V(id,d){return F(id,d)}
+async function handle(a,id){var s=sess(),c=ST.club,fd=V("l121fd",plus(30)),p;
+ if(a==="ptallow"){if(ST.busy)return;ST.busy=true;try{await B().api("PATCH","club_staff?club_id=eq."+c+"&user_id=eq."+id,{pt_approved:true},{Prefer:"return=representation"});ST.err="";ST.msg="PT allowed."}catch(e){ST.err=e.message;ST.msg=""}ST.busy=false;await loadClub();return draw()}
+ if(a==="close")return close();if(a==="tolive"){close();return B()&&B().open()}if(a==="reload")return loadAll();
+ if(a==="shareon"||a==="shareoff"){var it={};["training","skills","recovery","injury","mood","weight","food"].forEach(function(k){var d=(k!=="weight"&&k!=="food");var v=ST.f["l121s_"+k];it[k]=v==null?d:!!v});return act("set_camp_share",{c:c,d:fd,on_:a==="shareon",it:it},a==="shareon"?"Sharing is on.":"Sharing is off.")}
+ if(a==="report"){var snap={sess:Number(V("l121sess",3)),target:Number(V("l121tgt",4)),hard:Number(V("l121hard",6))};if(V("l121inj"))snap.inj=V("l121inj");if(V("l121wt"))snap.wt=Number(V("l121wt"));if(V("l121food"))snap.food=V("l121food");snap.skills=[];snap.rec={};
+  return act("submit_camp_report",{c:c,wk:V("l121wk",monday()),mood_:Number(V("l121mood",4)),note_:V("l121note"),snap_:snap},"Report sent.")}
+ if(a==="sugok"||a==="sugno")return act("decide_suggestion",{sid:id,accept:a==="sugok"},a==="sugok"?"Accepted.":"Declined.");
+ if(a==="support")return act("request_camp_support",{c:c,d:fd,note_:V("l121supn")},"Support requested.");
+ if(a==="plan"){p=planArgs();return act("propose_fight_plan",Object.assign({c:c,d:fd},p),"Plan sent.")}
+ if(a==="planok")return act("accept_fight_plan",{c:c,d:fd},"Plan agreed.");
+ if(a==="cornok"||a==="cornno")return act("respond_corner",{cid:id,accept:a==="cornok"},"Answer saved.");
+ if(a==="ptatt")return act("confirm_pt_attended",{sid:id},"Thanks, attendance confirmed.");
+ if(a==="reply"||a==="reviewed"){var t=(V("l121rto")||((ST.d.reports||[])[0]?ST.d.reports[0].member_id+"|"+ST.d.reports[0].week_start:"")).split("|"),sug=[];
+  if(a==="reply"&&V("l121rk")&&V("l121rt"))sug.push({t:V("l121rt"),kind:V("l121rk"),freq:V("l121rf","once")});
+  return act("coach_reply",{c:c,m:t[0],wk:t[1],st:a==="reply"?"replied":"reviewed",msg:a==="reply"?V("l121rmsg"):null,sugs:sug},a==="reply"?"Reply sent.":"Marked reviewed.")}
+ if(a==="supok"||a==="supno")return act("decide_camp_support",{rid:id,accept:a==="supok"},"Saved.");
+ if(a==="corneradd"){var m=V("l121cm")||(memOpts()[0]||[])[0];return act("add_corner",{c:c,m:m,d:fd,u:V("l121cu")||null,nm:V("l121cn"),rl:V("l121cr","Head coach")},"Added to corner.")}
+ if(a==="cornrm")return act("remove_corner",{cid:id},"Removed.");
+ if(a==="planagree"){var q=id.split("|");return act("coach_agree_plan",{c:c,m:q[0],d:q[1]},"Plan agreed.")}
+ if(a==="planoffer"){p=planArgs();var mm=V("l121om")||(memOpts()[0]||[])[0];return act("coach_offer_plan",Object.assign({c:c,m:mm,d:fd},p),"Plan offered to the fighter.")}
+ if(a==="agprop"){var k=V("l121ak","flat"),co=V("l121ac")||s.uid;return act("propose_pt_agreement",{c:c,coach:co,k:k,flat:k==="flat"?Math.round(Number(V("l121af",10))*100):null,pct:k==="split"?Number(V("l121ap",80)):null,rent:k==="rent"?Math.round(Number(V("l121ar",100))*100):null},"Deal proposed.")}
+ if(a==="agok"||a==="agno")return act("decide_pt_agreement",{c:c,coach:id,accept:a==="agok"},"Saved.");
+ if(a==="slot"){var mem=V("l121sm");var args={c:c,d:V("l121sd",plus(7)),t:V("l121st","10:00"),price:Math.round(Number(V("l121sp",30))*100)};if(mem)args.m=mem;return act("create_pt_slot",args,"Slot created.")}
+ if(a==="stmt"){var r=await rpc("pt_statement",{c:c,month_start:V("l121ms",monthStart())});if(!r.ok){ST.err=ST.missing?"The database does not have the camp and PT part yet.":r.err;ST.msg=""}else{ST.err="";ST.msg="";ST.stmt=r.data||[]}return draw()}}
+document.addEventListener("click",function(e){var el=e.target.closest&&e.target.closest("[data-l121],[data-l121club]");if(!el||!document.getElementById("fb121")||!document.getElementById("fb121").contains(el))return;
+ if(el.hasAttribute("data-l121club")){ST.club=el.getAttribute("data-l121club");ST.stmt=null;loadClub().then(draw);return}handle(el.getAttribute("data-l121"),el.getAttribute("data-id"))});
+document.addEventListener("click",function(e){if(e.target.closest&&e.target.closest("[data-l121open]"))open()});
+window.addEventListener("hashchange",function(){if(location.hash==="#livecamp")open()});
+window.FH121={open:open};
+if(location.hash==="#livecamp")setTimeout(open,400);
 })();
 
 /* FighterBase v44: always a way back, always a next step. */
