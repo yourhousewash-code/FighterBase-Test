@@ -14401,9 +14401,12 @@ function intercept(cl,classId,src){var m=me();if(!m||!cl)return false;
  try{toast(first?"Teaching logged":"Already logged",(cl.title||"Class")+" at "+club().name+". It isn't counted as your workout.")}catch(x){}
  setTimeout(function(){try{card();panel()}catch(x){}},50);return true}
 function hm(t){var p=String(t||"").split(":");return (+p[0]||0)*60+(+p[1]||0)}
-/* arriving by location with exactly one of my classes in the window: no question needed */
+/* same-day mix: a coach may train in one class and teach the next. If another class (not mine) is still running or about to start and I have not attended it yet, it is unclear which one I am here for, so ask (the picker offers both). */
+function nowMin(){var d=new Date();return d.getHours()*60+d.getMinutes()}
+function otherOpen(win,m){var n=nowMin();return (win||[]).filter(function(x){return x.tid!==m.id&&n<=hm(x.time)+(+x.mins||60)&&!(P().att||{})[TODAY+"_"+x.id]})}
+/* arriving by location with exactly one of my classes in the window and nothing else it could be: no question needed */
 function auto(winClasses){var m=me();if(!m)return false;var mine=(winClasses||[]).filter(function(x){return x.tid===m.id&&!((P().teachTrain||{})[TODAY+"_"+x.id])});
- if(mine.length!==1)return false;return intercept(mine[0],mine[0].id,"geo")}
+ if(mine.length!==1)return false;if(otherOpen(winClasses,m).length)return false;return intercept(mine[0],mine[0].id,"geo")}
 /* class picker: label the ones I teach and offer "training instead" */
 function decorate(sheet){var m=me();if(!m||!sheet)return;var c=club();
  sheet.querySelectorAll("[data-gpick]").forEach(function(b){var id=b.dataset.gpick;if(!id)return;var cl=cls(c,id);if(!cl||cl.tid!==m.id)return;
@@ -14415,7 +14418,9 @@ document.addEventListener("click",function(ev){var b=ev.target.closest&&ev.targe
 /* the code check-in has no class picker: if I teach a class that is on now, it is teaching */
 function codeGuard(){var m=me(),c=club();if(!m||!c)return false;var d=new Date(),now=d.getHours()*60+d.getMinutes(),cl=null;
  try{cl=classesOn(c,TODAY).filter(function(x){var st=hm(x.time),en=st+(+x.mins||60);return x.tid===m.id&&now>=st-30&&now<=en+15})[0]}catch(x){}
- if(!cl||(P().teachTrain||{})[TODAY+"_"+cl.id])return false;return intercept(cl,cl.id,"code")}
+ if(!cl||(P().teachTrain||{})[TODAY+"_"+cl.id])return false;
+ try{if(otherOpen(classesOn(c,TODAY).filter(function(x){var st=hm(x.time);return now>=st-30&&now<=st+(+x.mins||60)+15}),m).length)return false}catch(x){}
+ return intercept(cl,cl.id,"code")}
 /* catch-all: any attendance on a class I teach (weekly check-in, RSVP, manual) moves out of my training and into teaching */
 function sweep(){var c=club(),m=me();if(!c||!m)return;var p=P(),ch=false;p.teach=p.teach||{};
  Object.keys(p.att||{}).forEach(function(ak){var cid=ak.slice(11);if(!cid||cid==="open")return;var cl=cls(c,cid);if(!cl||cl.tid!==m.id)return;if((p.teachTrain||{})[ak])return;
@@ -14487,12 +14492,20 @@ function card(){var home=document.getElementById("tab-profile"),el=document.getE
  var list=entries().filter(function(x){return x.tid===m.id}),mk=mkey(TODAY),s=sum(m,mk,list);
  var h='<span class="fb-kick">Teaching at '+e(c.name)+'</span><p style="margin:6px 0">'+s.n+' class'+(s.n===1?"":"es")+' taught this month ('+e(hrs(s.mins))+')'+(s.wait?', '+s.wait+' waiting for your manager':'')+'.</p>'+
   '<p class="muted small" style="margin:0 0 8px">When you arrive for a class you teach, it is logged as teaching. It does not count as a workout, streak or check-in on your own record. Your deal: '+e(dtxt(deal(m)))+(deal(m).type==="mship"&&s.note?'. '+e(s.note):"")+'.</p>';
+ var mineToday=[];try{mineToday=classesOn(c,TODAY).filter(function(x){return x.tid===m.id})}catch(x){}
+ var nm=nowMin(),logged=function(x){return !!(P().teach||{})[TODAY+"_"+x.id]};
+ mineToday.forEach(function(x){var st=hm(x.time),en=st+(+x.mins||60);if(logged(x)||nm<st-30||nm>en+15)return;
+  var tr=!!(P().teachTrain||{})[TODAY+"_"+x.id],att=!!(P().att||{})[TODAY+"_"+x.id];
+  if(tr||att)return;
+  var other=classesOn(c,TODAY).filter(function(y){return y.tid!==m.id&&(P().att||{})[TODAY+"_"+y.id]});
+  h+='<div class="fb-nudge" style="margin:8px 0;padding:10px;border-radius:12px;background:rgba(255,59,85,.1)"><b>You teach '+e(x.title||x.name||"a class")+' at '+e(x.time)+'</b>'+(other.length?'<span class="muted small" style="display:block">Your '+e(other[0].title||"class")+' workout today is kept as a workout.</span>':'')+'<div class="row" style="gap:8px;margin-top:6px"><button class="btn gold sm" type="button" data-f125teach="'+e(x.id)+'">I am teaching it</button></div></div>'});
  var today=[];try{today=classesOn(c,TODAY).filter(function(x){return x.tid!==m.id})}catch(x){}
  if(COV){h+='<div class="stack" style="gap:6px">'+(today.length?today.map(function(x){return '<button class="btn ghost sm" type="button" data-f125cov="'+e(x.id)+'" style="justify-content:space-between;width:100%"><span>'+e(x.title||x.name||"Class")+'</span><span class="muted">'+e(x.time)+'</span></button>'}).join(""):'<p class="muted small" style="margin:0">No other classes today.</p>')+'<button class="linkbtn small" type="button" data-f125covx>Cancel</button></div>'}
  else if(today.length)h+='<button class="btn ghost sm" type="button" data-f125covb>I covered a class today</button>';
  if(!el){el=document.createElement("section");el.id="fb125";el.className="fb-card";home.appendChild(el)}
  if(el.dataset.sig!==h){el.innerHTML=h;el.dataset.sig=h}}
 document.addEventListener("click",function(ev){var t=ev.target,b;if(!t.closest)return;
+ if(b=t.closest("[data-f125teach]")){var c0=club(),cl0=cls(c0,b.dataset.f125teach);if(cl0){var ok0=record(cl0,"manual");try{toast(ok0?"Teaching logged":"Already logged",(cl0.title||"Class")+". It isn't counted as your workout.")}catch(x){}}card();panel();return}
  if(t.closest("[data-f125covb]")){COV=true;card();return}
  if(t.closest("[data-f125covx]")){COV=false;card();return}
  if(b=t.closest("[data-f125cov]")){var c=club(),cl=cls(c,b.dataset.f125cov);COV=false;if(cl){var from=cl.tid||null;var ok=record(cl,"manual",{cover:true,from:from});try{toast(ok?"Cover logged":"Already logged","Your manager will confirm it.")}catch(x){}}card();panel()}},false);
