@@ -1226,7 +1226,7 @@ store["clubs/"+CID].crep={"demo-alex_ah1":{t:"Saturday sparring plus the Wednesd
 store["clubs/"+CID].cfx={"demo-alex_af1":{s:"ok",by:uidO,at:ago(14)}};
 store["clubs/"+CID].track={training:true,goals:true,skills:true,weight:true,food:true,recovery:true,injury:true,fights:true};store["clubs/"+CID].show={training:true,goals:true,skills:true,weight:true,food:false,recovery:false,injury:true,fights:true};
 store["league/m1"].cons={training:true,goals:true,skills:true,weight:false,food:true,recovery:true,injury:true,fights:true};store["league/m1"].skills=[{n:"Guard retention",st:"prac"},{n:"Back takes",st:"intro"}];store["league/m1"].food={days:5,prot:118};store["league/m1"].rec={sleep:7.4,energy:3.8,n:6};
-store["league/m2"].cons={training:true,goals:true,skills:true,weight:true,food:false,recovery:false,injury:true,fights:true};store["league/m2"].skills=[{n:"Wall work",st:"live"}];store["league/m2"].wt={pct:62,rate:-0.6,dir:"lose"};
+store["league/m2"].campReq={k:"m2f_"+ago(-21),fid:"m2f",event:"Manchester MMA Amateur",date:ago(-21),at:Date.now()-3600000};store["league/m2"].cons={training:true,goals:true,skills:true,weight:true,food:false,recovery:false,injury:true,fights:true};store["league/m2"].skills=[{n:"Wall work",st:"live"}];store["league/m2"].wt={pct:62,rate:-0.6,dir:"lose"};
 store["clubs/"+CID].cnote={"demo-alex":{t:"Great camp so far. Keep Saturday rounds sharp and get your weigh-ins in each Friday. Proud of you.",by:uidO,byName:"Mo",at:ago(0)}};
 alexProf.rsvp[TODAYK+"_"+((TT.filter(function(c){return c.dow===dow(TODAYK)})[0]||{}).id||"c1")]=1;
 store["clubs/"+CID].frc[uidM+"_f1"]={s:"ok",res:"W",by:uidO,at:ago(39)};store["clubs/"+CID].frc[uidM+"_f2"]={s:"ok",res:"L",by:uidO,at:ago(101)};
@@ -13248,7 +13248,7 @@ function ownerPanel(){var host=document.getElementById("huboverBody"),c=club();i
   '<div class="sec-h" style="margin-top:14px"><h3>Unlink a member</h3></div>'+(ms.length?'<div class="fb111-ml">'+ms.map(function(m){return '<div class="fb111-mr"><span>'+e_(m.name||m.leagueName||"Member")+'</span><button class="btn ghost sm" type="button" data-f111unlink="'+e_(m.uid)+'">'+(unl===m.uid?"Tap again to unlink":"Unlink")+'</button></div>'}).join("")+'</div><p class="muted small" style="margin:8px 0 0">Unlinking ends the connection only. It does not cancel their membership payments, and they keep their own account and records. They are told the link was ended.</p>':'<p class="muted small">No linked members yet.</p>');
  if(!w){w=document.createElement("div");w.id="fb111Panel";w.className="panel";var a=document.getElementById("trkPanel");if(a&&a.parentNode===host)host.insertBefore(w,a.nextSibling);else host.appendChild(w)}
  if(w.dataset.sig!==html){w.innerHTML=html;w.dataset.sig=html}}
-async function doUnlink(uid){var c=club();if(!c)return;var m=(clubState.members||[]).filter(function(x){return x.uid===uid})[0];
+async function doUnlink(uid){var c=club();if(!c)return;if(window.FH118&&!FH118.can("unlink")){toast("Only a manager can unlink a member","Ask your club manager");return}var m=(clubState.members||[]).filter(function(x){return x.uid===uid})[0];
  try{await db.doc("data/users/"+uid+"/profile").update({clubId:null,clubConsent:null,histGrant:null,unlinkedFrom:c.name||"your club"})}catch(e){}
  try{await db.doc("league/"+uid).delete()}catch(e){}
  try{var lg=(c.unlinkLog||[]).concat([{uid:uid,at:TD,by:S.uid}]).slice(-200);await db.doc("clubs/"+c.id).update({unlinkLog:lg});c.unlinkLog=lg}catch(e){}
@@ -13654,6 +13654,138 @@ document.addEventListener("click",function(e){var t=e.target;if(!t.closest)retur
  var c=t.closest("[data-f116pick]");if(c){PICK=ALL.filter(function(x){return x.id===c.dataset.f116pick})[0]||null;MSG="";draw()}});
 document.addEventListener("input",function(e){if(e.target&&e.target.id==="fb116q"){Q=e.target.value;var el=document.getElementById("fb116l");if(!el)return;var r=list();el.innerHTML=r.length?r.map(function(c){return '<button class="cl" type="button" data-f116pick="'+esc(c.id)+'"><b>'+esc(c.name)+'</b><span>'+esc([c.city,c.sports.join(", ")].filter(Boolean).join(" · "))+'</span></button>'}).join(""):'<p class="sub">No clubs match.</p>'}});
 window.FH116={open:open};
+})();
+
+/* FighterBase v136b: Camp check. When a fight date is confirmed or a camp opens, the member is prompted to re-check details,
+   review food, think about training and goals, and optionally ask their coach for camp support. The coach confirms or declines.
+   No weight-cut or diet prescription here: food stays the member's choice (or their coach / a qualified professional's). */
+var K117=K117||false;
+(function(){
+if(K117)return;K117=true;
+function e(s){return esc(String(s==null?"":s))}
+function P(){return S.profile}
+function club(){return (typeof clubState!=="undefined"&&clubState.club)||null}
+function fight(){try{return window.FBE&&FBE.upcomingFight()}catch(x){return null}}
+function key(f){return f?f.id+"_"+f.date:""}
+function chk(f){var p=P();p.campChk=p.campChk||{};return p.campChk[key(f)]=p.campChk[key(f)]||{}}
+function save(){try{profChanged()}catch(x){}}
+function dec(f){var c=club();return c&&c.campDec&&c.campDec[S.uid+"_"+f.id]}
+var ST=[["details","Re-check your fight details","Date, event, rules and weight limit still right?","goals2","Check details"],
+ ["food","Review how you eat for camp","Your food is your call. Talk it through with your coach or a qualified professional before changing anything big.","nutrition","Open food"],
+ ["train","Plan your camp training","Camps usually mean more sessions and more specific work.",null,"Add a session a week"],
+ ["goals","Update your goals","Swap any goal that no longer fits the next few weeks.","goals2","Review goals"]];
+function draw(){var home=document.getElementById("tab-today");if(!home)return;var el=document.getElementById("fb117"),f=fight(),p=P();
+ if(!f||!p.onboarded||(chk(f).done)){if(el)el.hidden=true;return}
+ var c=chk(f),n=ST.filter(function(s){return c[s[0]]}).length,cl=club(),d=dec(f),rq=p.campReq&&p.campReq.k===key(f)?p.campReq:null;
+ var h='<span class="fb-kick">Camp check · '+n+' of '+(cl?5:4)+'</span><h2 style="margin:4px 0 2px">'+e(f.event||"Your fight")+' is on the calendar</h2><p class="muted small" style="margin:0 0 8px">A quick check so camp starts with the right plan. Tick each one when you are happy with it.</p>'+
+ ST.map(function(s){var on=c[s[0]];return '<div class="d112-n" style="align-items:flex-start"><span><b>'+(on?"✓ ":"")+e(s[1])+'</b><br><span class="muted small">'+e(s[2])+'</span></span><div class="row" style="flex-wrap:nowrap"><button class="btn ghost sm" type="button" data-f117go="'+s[0]+'">'+e(s[4])+'</button><button class="btn sm" type="button" data-f117tick="'+s[0]+'" aria-pressed="'+!!on+'">'+(on?"Done":"Mark done")+'</button></div></div>'}).join("");
+ if(cl){var st=d?d.st:rq?"asked":"";h+='<div class="d112-n" style="align-items:flex-start"><span><b>'+(st==="ok"?"✓ ":"")+'Coach support for camp</b><br><span class="muted small">'+(st==="ok"?e((d.by||"Your coach"))+' has confirmed. '+e(d.note||""):st==="no"?'Your coach can\'t take this on right now'+(d.note?': '+e(d.note):'')+'. You can still ask another coach.':st==="asked"?'Asked. Waiting for your coach to reply.':'Ask your coach to help with pads, a plan or corner support. They choose whether to take it on.')+'</span></span><div class="row"><button class="btn '+(st==="ok"||st==="asked"?"ghost ":"")+'sm" type="button" data-f117ask>'+(st==="asked"?"Asked":st==="ok"?"Confirmed":"Ask my coach")+'</button></div></div>'}
+ h+='<div class="row" style="margin-top:8px"><button class="linkbtn" type="button" data-f117done>All sorted, hide this</button></div>';
+ if(!el){el=document.createElement("section");el.id="fb117";el.className="fb-card";home.appendChild(el)}
+ el.hidden=false;if(el.dataset.sig!==h){el.innerHTML=h;el.dataset.sig=h}}
+function announce(){var f=fight(),p=P();if(!f||!p.onboarded)return;p.campSeen=p.campSeen||{};var k=key(f);if(p.campSeen.k===k)return;
+ p.campSeen={k:k,at:TODAY};save();try{toast("Camp check ready",(f.event||"Your fight")+": re-check details, food, training and goals.")}catch(x){}}
+document.addEventListener("click",function(ev){var t=ev.target;if(!t.closest)return;var b,f=fight();if(!f)return;
+ if(b=t.closest("[data-f117tick]")){var c=chk(f);c[b.dataset.f117tick]=!c[b.dataset.f117tick];save();draw();return}
+ if(b=t.closest("[data-f117go]")){var id=b.dataset.f117go;
+  if(id==="train"){var g=P().eg=P().eg||{};g.train=g.train||{mode:"count",n:3,days:[]};var n=+g.train.n||+P().sessions||3;if(n<7){g.train.n=n+1;P().sessions=n+1;chk(f).train=true;save();try{toast("Weekly target is now "+(n+1),"You can change it any time in Goals")}catch(x){}draw()}return}
+  var s=ST.filter(function(x){return x[0]===id})[0];try{if(s[3]==="goals2"){showTab("progress");setTimeout(function(){var q=document.querySelector('[data-goto="goals2"]');if(q)q.click()},200)}else showTab(s[3])}catch(x){}return}
+ if(b=t.closest("[data-f117ask]")){var cl=club();if(!cl||P().campReq&&P().campReq.k===key(f))return;P().campReq={k:key(f),fid:f.id,event:f.event||"Fight",date:f.date,at:Date.now()};chk(f).coach=true;save();draw();try{toast("Asked your coach","They will reply here")}catch(x){}return}
+ if(b=t.closest("[data-f117done]")){chk(f).done=true;save();draw()}},true);
+var tk=0;setInterval(function(){try{announce();draw()}catch(x){}},1500);
+window.FH117={draw:draw};
+var st=document.createElement("style");st.textContent="#tab-today #fb117{order:2}#tab-today #fb112{order:3}#fb117[hidden]{display:none}";document.head.appendChild(st);
+})();
+
+/* FighterBase v136b: club authority levels, coach approval and PT agreements.
+   Roles (club.roles[key]={role,title,pt}): manager (everything), admin (scheduling, payments, agreements, members; not roles or unlinking),
+   coach (teaches, runs PT only if approved). Titles are labels: Teacher, Trainer, Mentor. The club owner is always manager.
+   PT agreements (teacher.pt.deal): "flat" (set amount per session to club), "split" (coach % / club %), "rent" (monthly fee, coach keeps session income).
+   A coach proposes, the manager or an admin accepts. Statement counts a PT only once attendance is confirmed: location check-in on the day, or the member confirms.
+   Prototype figures only. No money moves here; payment handling is a later, separately reviewed step. Role limits are enforced on unlink, roles, agreements and statement;
+   older coach screens still treat any coach as staff. */
+var K118=K118||false;
+(function(){
+if(K118)return;K118=true;
+function e(s){return esc(String(s==null?"":s))}
+function P(){return S.profile}
+function club(){return (typeof clubState!=="undefined"&&clubState.club)||null}
+function mem(){return (typeof clubState!=="undefined"&&clubState.members)||[]}
+function TS(){try{return FH69.teachers()||[]}catch(x){return (club()&&club().teachers)||[]}}
+function keyOf(t){return t.uid||t.id}
+function role(uid){var c=club();if(!c)return null;if(arguments.length===0)uid=S.uid;if(!uid)return null;if(c.ownerUid===uid)return"manager";var r=(c.roles||{})[uid];if(r&&r.role)return r.role;if((c.coaches||[]).indexOf(uid)>=0||TS().some(function(t){return t.uid===uid}))return"coach";return null}
+var PERM={roles:["manager"],unlink:["manager"],schedule:["manager","admin"],payments:["manager","admin"],deals:["manager","admin"],members:["manager","admin","coach"]};
+function can(p){var r=role();return !!r&&(PERM[p]||[]).indexOf(r)>=0}
+function ptOK(t){var c=club(),r=(c.roles||{})[keyOf(t)];return !!(t.pt&&t.pt.on)&&(!r||r.pt!==false)}
+function money(p){return "£"+(p/100).toFixed(p%100?2:0)}
+function deal(t){var d=t.pt&&t.pt.deal;if(d)return d;var comm=t.pt&&t.pt.comm;return comm!=null?{type:"split",pct:100-comm,st:"agreed",legacy:true}:null}
+function dtxt(d){if(!d)return"No agreement yet";return(d.type==="flat"?money(Math.round((+d.flat||0)*100))+" per session to the club":d.type==="split"?(d.pct)+"% coach / "+(100-d.pct)+"% club":money(Math.round((+d.rent||0)*100))+" a month for gym access, coach keeps session income")+(d.st==="proposed"?" (proposed)":"")}
+function upd(patch){var c=club();if(!c)return Promise.resolve();Object.assign(c,patch);return db.doc("clubs/"+c.id).update(patch).catch(function(){})}
+function setRole(k,v){var c=club(),r=Object.assign({},c.roles||{});r[k]=Object.assign({role:"coach",title:"Teacher"},r[k]||{},v);return upd({roles:r})}
+function setDeal(t,d){var c=club(),ts=TS().map(function(x){return x.id===t.id?Object.assign({},x,{pt:Object.assign({},x.pt||{},{deal:d})}):x});return upd({teachers:ts})}
+var EDIT=null,F={};
+function sel(id,opts,v){return '<select id="'+id+'">'+opts.map(function(o){return '<option'+(o===v||o[0]===v?" selected":"")+' value="'+e(Array.isArray(o)?o[0]:o)+'">'+e(Array.isArray(o)?o[1]:o)+'</option>'}).join("")+'</select>'}
+function dealForm(t){var d=F[t.id]||deal(t)||{type:"split",pct:80,flat:10,rent:60};F[t.id]=d;
+ return '<div class="stack" style="gap:6px;margin-top:8px"><div class="chips">'+[["flat","Set amount to club"],["split","Percentage split"],["rent","Monthly gym access"]].map(function(o){return '<button type="button" class="chip" data-f118type="'+t.id+'|'+o[0]+'" aria-pressed="'+(d.type===o[0])+'">'+o[1]+'</button>'}).join("")+'</div>'+
+ (d.type==="flat"?'<div class="field"><label class="label">£ per session to the club</label><input type="number" min="0" max="500" step="0.5" id="f118v" value="'+e(d.flat)+'" style="max-width:120px"></div>':d.type==="split"?'<div class="field"><label class="label">Coach keeps (%)</label><input type="number" min="0" max="100" id="f118v" value="'+e(d.pct)+'" style="max-width:120px"></div><p class="muted small" style="margin:0">Club gets the rest.</p>':'<div class="field"><label class="label">£ per month paid by the coach</label><input type="number" min="0" max="2000" step="1" id="f118v" value="'+e(d.rent)+'" style="max-width:120px"></div><p class="muted small" style="margin:0">Lets them use the gym any time outside classes. They keep PT income.</p>')+
+ '<div class="row"><button class="btn sm" type="button" data-f118save="'+t.id+'">'+(can("deals")?"Save agreement":"Propose to manager")+'</button><button class="btn ghost sm" type="button" data-f118cancel>Cancel</button></div></div>'}
+function monthKey(){return TODAY.slice(0,7)}
+function attOf(s){var m=mem().filter(function(x){return x.uid===s.uid})[0],a=(m&&m.ptAtt||{})[s.id]||(s.att?{src:s.att}:null);return a||null}
+function stmt(){var c=club(),rows=[];TS().filter(function(t){return t.pt&&t.pt.on}).forEach(function(t){var d=deal(t),sl=(c.ptSlots||[]).filter(function(s){return s.tid===t.id&&s.status==="booked"&&s.price>0&&s.d.slice(0,7)===monthKey()&&s.d<=TODAY}),ok=sl.filter(attOf),gross=0,club$=0;
+  ok.forEach(function(s){gross+=s.price;club$+=!d?0:d.type==="flat"?Math.min(s.price,Math.round(d.flat*100)):d.type==="split"?Math.round(s.price*(100-d.pct)/100):0});
+  var rent=d&&d.type==="rent"&&d.st!=="proposed"?Math.round((+d.rent||0)*100):0;rows.push({t:t,d:d,n:ok.length,wait:sl.length-ok.length,gross:gross,club:club$+rent,coach:gross-club$,rent:rent})});return rows}
+function draw(){var host=document.getElementById("huboverBody"),c=club(),w=document.getElementById("fb118Panel");if(!host||!c||!role()){if(w)w.remove();return}
+ var r=role(),ed=can("roles"),h='<div class="sec-h"><h3>Team and permissions</h3></div><p class="muted small" style="margin:0 0 8px">You are signed in as <b>'+e(r==="admin"?"Admin manager":r==="manager"?"Manager":"Coach")+'</b>. '+(ed?'Managers control everything. Admins help with scheduling, payments and agreements. Coaches teach, and only run PT if approved.':'Only a manager changes roles.')+'</p>';
+ h+=TS().map(function(t){var k=keyOf(t),ro=(c.roles||{})[k]||{},rr=(t.uid?role(t.uid):null)||ro.role||"coach",own=c.ownerUid===t.uid;if(own)rr="manager";
+  return '<div class="d112-n" style="align-items:flex-start;flex-wrap:wrap"><span><b>'+e(t.name)+'</b><br><span class="muted small">'+e((rr==="admin"?"Admin manager":rr==="manager"?"Manager":"Coach")+" · "+(ro.title||"Teacher")+" · PT "+(ptOK(t)?"approved":t.pt&&t.pt.on?"not approved":"off"))+'</span></span>'+
+  (ed&&!own?'<div class="row" style="flex-wrap:wrap"><select data-f118role="'+e(k)+'" aria-label="Role for '+e(t.name)+'"><option value="coach"'+(rr==="coach"?" selected":"")+'>Coach</option><option value="admin"'+(rr==="admin"?" selected":"")+'>Admin manager</option><option value="manager"'+(rr==="manager"?" selected":"")+'>Manager</option></select><select data-f118title="'+e(k)+'" aria-label="Title for '+e(t.name)+'">'+["Teacher","Trainer","Mentor"].map(function(x){return '<option'+(x===(ro.title||"Teacher")?" selected":"")+'>'+x+'</option>'}).join("")+'</select><button class="btn ghost sm" type="button" data-f118pt="'+e(k)+'" aria-pressed="'+ptOK(t)+'">'+(ptOK(t)?"PT approved":"Approve PT")+'</button></div>':'')+'</div>'}).join("");
+ var cand=mem().filter(function(m){return m.uid!==S.uid&&m.uid!==c.ownerUid&&!role(m.uid)});
+ if(ed&&cand.length)h+='<div class="row" style="margin-top:8px"><select id="f118new" aria-label="Add a team member">'+cand.map(function(m){return '<option value="'+e(m.uid)+'">'+e(m.name||m.leagueName||"Member")+'</option>'}).join("")+'</select><button class="btn ghost sm" type="button" data-f118add>Add as coach</button></div>';
+ h+='<div class="sec-h" style="margin-top:14px"><h3>PT agreements</h3></div><p class="muted small" style="margin:0 0 6px">How PT income is shared. A coach can propose; a manager or admin accepts.</p>';
+ var mine=TS().filter(function(t){return t.uid===S.uid});
+ TS().filter(function(t){return t.pt&&t.pt.on}).forEach(function(t){var d=deal(t),own=t.uid===S.uid,pend=d&&d.st==="proposed";
+  h+='<div class="d112-n" style="align-items:flex-start;flex-wrap:wrap"><span><b>'+e(t.name)+'</b><br><span class="muted small">'+e(dtxt(d))+'</span></span><div class="row">'+(pend&&can("deals")?'<button class="btn sm" type="button" data-f118acc="'+t.id+'">Accept</button><button class="btn ghost sm" type="button" data-f118rej="'+t.id+'">Decline</button>':(can("deals")||own)&&EDIT!==t.id?'<button class="btn ghost sm" type="button" data-f118edit="'+t.id+'">'+(own&&!can("deals")?"Propose":"Change")+'</button>':'')+'</div>'+(EDIT===t.id?'<div style="width:100%">'+dealForm(t)+'</div>':'')+'</div>'});
+ if(can("payments")){var rows=stmt();h+='<div class="sec-h" style="margin-top:14px"><h3>PT statement, this month</h3></div>'+(rows.length?rows.map(function(x){return '<div class="d112-n" style="align-items:flex-start"><span><b>'+e(x.t.name)+'</b><br><span class="muted small">'+x.n+' attended · '+x.wait+' awaiting attendance confirmation</span></span><span class="small" style="text-align:right">Club '+money(x.club)+'<br>Coach '+money(x.coach)+(x.rent?'<br><span class="muted">incl. '+money(x.rent)+' monthly</span>':'')+'</span></div>'}).join(""):'<p class="muted small">No paid PT sessions yet.</p>')+'<p class="muted small" style="margin:6px 0 0">A session counts once attendance is confirmed by location check-in on the day or by the member. Nobody marks it for them. These are figures only; no money moves through the app yet.</p>'}
+ if(!w){w=document.createElement("div");w.id="fb118Panel";w.className="panel";host.appendChild(w)}
+ if(w.dataset.sig!==h){var f=document.activeElement&&document.activeElement.id==="f118v";w.innerHTML=h;w.dataset.sig=h}}
+document.addEventListener("click",function(ev){var t=ev.target;if(!t.closest)return;var b,c=club();if(!c)return;
+ function T(id){return TS().filter(function(x){return x.id===id})[0]}
+ if(b=t.closest("[data-f118edit]")){EDIT=b.dataset.f118edit;draw();return}
+ if(t.closest("[data-f118cancel]")){EDIT=null;draw();return}
+ if(b=t.closest("[data-f118type]")){var a=b.dataset.f118type.split("|"),d=F[a[0]]||{};d.type=a[1];F[a[0]]=d;draw();return}
+ if(b=t.closest("[data-f118save]")){var tt=T(b.dataset.f118save),d=F[tt.id]||{type:"split"},v=parseFloat((document.getElementById("f118v")||{}).value);if(isNaN(v)||v<0)return;
+  var nd={type:d.type,st:can("deals")?"agreed":"proposed",by:S.uid,at:TODAY};if(d.type==="flat")nd.flat=v;else if(d.type==="split")nd.pct=Math.min(100,v);else nd.rent=v;
+  setDeal(tt,nd);EDIT=null;delete F[tt.id];try{toast(can("deals")?"Agreement saved":"Proposal sent",tt.name)}catch(x){}draw();return}
+ if(b=t.closest("[data-f118acc]")&&t.closest("[data-f118acc]")){var tt=T(t.closest("[data-f118acc]").dataset.f118acc);if(can("deals")&&tt){setDeal(tt,Object.assign({},tt.pt.deal,{st:"agreed"}));draw()}return}
+ if(b=t.closest("[data-f118rej]")){var tt=T(b.dataset.f118rej);if(can("deals")&&tt){setDeal(tt,null);draw()}return}
+ if(b=t.closest("[data-f118pt]")){if(can("roles")){var tt=TS().filter(function(x){return keyOf(x)===b.dataset.f118pt})[0];setRole(b.dataset.f118pt,{pt:!ptOK(tt)});draw()}return}
+ if(t.closest("[data-f118add]")&&can("roles")){var u=document.getElementById("f118new").value;setRole(u,{role:"coach",title:"Teacher",pt:false});draw();return}
+ if(b=t.closest("[data-f118cd]")){return}
+},true);
+document.addEventListener("change",function(ev){var t=ev.target;if(!t||!t.dataset)return;if(t.dataset.f118role!=null&&can("roles")){setRole(t.dataset.f118role,{role:t.value});draw()}else if(t.dataset.f118title!=null&&can("roles")){setRole(t.dataset.f118title,{title:t.value});draw()}});
+/* camp support decisions (coach side) and member PT attendance */
+function campPanel(){var host=document.getElementById("huboverBody"),c=club(),w=document.getElementById("fb118Camp");if(!host||!c||!can("members")){if(w)w.remove();return}
+ var rq=mem().filter(function(m){return m.uid!==S.uid&&m.campReq&&m.campReq.date>=TODAY&&!((c.campDec||{})[m.uid+"_"+m.campReq.fid])});
+ if(!rq.length){if(w)w.remove();return}
+ var h='<div class="sec-h"><h3>Camp support requests</h3></div>'+rq.map(function(m){return '<div class="d112-n"><span><b>'+e(m.name||m.leagueName||"Member")+'</b> asked for camp support for '+e(m.campReq.event)+' on '+e(new Date(m.campReq.date+"T12:00").toLocaleDateString("en-GB",{day:"numeric",month:"short"}))+'</span><div class="row"><button class="btn sm" type="button" data-f118cc="'+e(m.uid)+'">I can help</button><button class="btn ghost sm" type="button" data-f118cn="'+e(m.uid)+'">Can\'t this time</button></div></div>'}).join("");
+ if(!w){w=document.createElement("div");w.id="fb118Camp";w.className="panel";host.insertBefore(w,host.firstChild)}
+ if(w.dataset.sig!==h){w.innerHTML=h;w.dataset.sig=h}}
+document.addEventListener("click",function(ev){var t=ev.target,b,c=club();if(!t.closest||!c)return;var cc=t.closest("[data-f118cc]"),cn=t.closest("[data-f118cn]");if(!cc&&!cn)return;
+ var u=(cc||cn).dataset.f118cc||(cc||cn).dataset.f118cn,m=mem().filter(function(x){return x.uid===u})[0];if(!m||!m.campReq)return;var me=TS().filter(function(x){return x.uid===S.uid})[0];
+ var d=Object.assign({},c.campDec||{});d[u+"_"+m.campReq.fid]={st:cc?"ok":"no",by:me?me.name.split(" ")[0]:"Your coach",at:TODAY};upd({campDec:d});campPanel()},true);
+function memberTick(){var c=club(),p=P();if(!c||role())return;
+ var mine=(c.ptSlots||[]).filter(function(s){return s.uid===S.uid&&s.status==="booked"&&s.d===TODAY});p.ptAtt=p.ptAtt||{};var ch=false;
+ mine.forEach(function(s){if(!p.ptAtt[s.id]&&typeof cur!=="undefined"&&cur.clubCheckin){p.ptAtt[s.id]={t:Date.now(),src:"geo"};ch=true}});if(ch)try{profChanged()}catch(x){}
+ var past=(c.ptSlots||[]).filter(function(s){return s.uid===S.uid&&s.status==="booked"&&s.d<=TODAY&&s.price>0&&!p.ptAtt[s.id]&&s.d>=addDays(TODAY,-14)});
+ var home=document.getElementById("tab-today"),el=document.getElementById("fb118m");if(!home)return;if(!past.length){if(el)el.hidden=true;return}
+ var s=past[0],h='<span class="fb-kick">Personal training</span><p style="margin:2px 0 8px">Did you do your PT session on '+e(new Date(s.d+"T12:00").toLocaleDateString("en-GB",{weekday:"long",day:"numeric",month:"short"}))+' at '+e(s.time)+'?</p><div class="row"><button class="btn sm" type="button" data-f118att="'+e(s.id)+'">Yes, I attended</button></div><p class="muted small" style="margin:6px 0 0">Only you or a location check-in confirms attendance. It lets the club and your coach square up the fee.</p>';
+ if(!el){el=document.createElement("section");el.id="fb118m";el.className="fb-card";home.appendChild(el)}el.hidden=false;if(el.dataset.sig!==h){el.innerHTML=h;el.dataset.sig=h}}
+document.addEventListener("click",function(ev){var b=ev.target.closest&&ev.target.closest("[data-f118att]");if(!b)return;var p=P();p.ptAtt=p.ptAtt||{};p.ptAtt[b.dataset.f118att]={t:Date.now(),src:"member"};try{profChanged()}catch(x){}memberTick();try{toast("Thanks, attendance confirmed")}catch(x){}},true);
+var n=0,iv=setInterval(function(){if(window.FB54&&FB54.extend&&!FB54.extend.p118){var ex=FB54.extend;FB54.extend=function(o){o=ex(o);o.campReq=P().campReq||null;o.ptAtt=P().ptAtt||{};return o};FB54.extend.p118=true}if(++n>60)clearInterval(iv)},500);
+var st=document.createElement("style");st.textContent="#tab-today #fb118m{order:2}";document.head.appendChild(st);
+setInterval(function(){try{draw();campPanel();memberTick()}catch(x){}},1500);
+/* member sees the coach reply and being unlinked is handled by the existing unlink flow */
+window.FH118={role:role,can:can,deal:deal};
 })();
 
 /* FighterBase v44: always a way back, always a next step. */
