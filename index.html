@@ -1226,6 +1226,7 @@ store["clubs/"+CID].crep={"demo-alex_ah1":{t:"Saturday sparring plus the Wednesd
 store["clubs/"+CID].cfx={"demo-alex_af1":{s:"ok",by:uidO,at:ago(14)}};
 store["clubs/"+CID].track={training:true,goals:true,skills:true,weight:true,food:true,recovery:true,injury:true,fights:true};store["clubs/"+CID].show={training:true,goals:true,skills:true,weight:true,food:false,recovery:false,injury:true,fights:true};
 store["league/m1"].cons={training:true,goals:true,skills:true,weight:false,food:true,recovery:true,injury:true,fights:true};store["league/m1"].skills=[{n:"Guard retention",st:"prac"},{n:"Back takes",st:"intro"}];store["league/m1"].food={days:5,prot:118};store["league/m1"].rec={sleep:7.4,energy:3.8,n:6};
+store["league/m2"].helpAreas=["fight","weight","inj"];store["league/m2"].helpNote="Want a plan for my first cut";if(store["league/m3"]){store["league/m3"].helpAreas=["conf","tech"];store["league/m3"].helpNote="Nervous about first sparring"}
 store["league/m2"].campReq={k:"m2f_"+ago(-21),fid:"m2f",event:"Manchester MMA Amateur",date:ago(-21),at:Date.now()-3600000};store["league/m2"].fplan={k:ago(-21),at:Date.now()-7200000,support:"Full camp",spw:4,travel:"My coach",weigh:"My coach",cost:"",notes:"Happy to add Saturday sparring"};store["clubs/"+CID].corners={};store["clubs/"+CID].corners["demo-alex_"+ago(-26)]={list:[{id:"c1",name:"Mo Haddad",role:"Head coach",uid:uidO,st:"ok"},{id:"c2",name:"Jordan Hayes",role:"Second",uid:"m0",st:"wait"}],at:Date.now()-86400000};(function(){var dd=(new Date().getDay()+6)%7,w0=ago(dd+7);store["league/m2"].campShare={k:ago(-21),on:true,items:{training:true,skills:true,recovery:true,injury:true,mood:true,weight:false,food:false},day:0,at:ago(20)};store["league/m2"].campReports={};store["league/m2"].campReports[ago(dd)]={ws:ago(dd),sent:Date.now()-3600000,note:"Legs heavy Thursday but sparring went well.",mood:3,snap:{sess:3,target:4,mins:210,hard:6,prev:4,skills:["Wall work"],rec:{e:3.5,s:3,sl:3.2},inj:[]}}})();store["league/m2"].cons={training:true,goals:true,skills:true,weight:true,food:false,recovery:false,injury:true,fights:true};store["league/m2"].skills=[{n:"Wall work",st:"live"}];store["league/m2"].wt={pct:62,rate:-0.6,dir:"lose"};
 store["clubs/"+CID].cnote={"demo-alex":{t:"Great camp so far. Keep Saturday rounds sharp and get your weigh-ins in each Friday. Proud of you.",by:uidO,byName:"Mo",at:ago(0)}};
 alexProf.rsvp[TODAYK+"_"+((TT.filter(function(c){return c.dow===dow(TODAYK)})[0]||{}).id||"c1")]=1;
@@ -7620,6 +7621,7 @@ var EXP=[["new","New to it"],["1y","Under a year"],["3y","1 to 3 years"],["exp",
 var A=null,step=0;
 function P(){return S.profile||{}}
 function fresh(){var p=P(),g=p.eg||{},ch=(p.compHist||{});return {stance:p.stance||null,name:(p.name||"").trim(),sports:(p.sports||[]).filter(function(s){return SPORTS.some(function(x){return x[0]===s})}),
+ help:(p.helpAreas||[]).slice(),helpNote:p.helpNote||"",helpShare:p.helpShare!==false,
  tmode:(g.train&&g.train.mode)||"count",tn:(g.train&&g.train.n)||+p.sessions||3,tdays:(g.train&&g.train.days)||[0,2,4],pack:JSON.parse(JSON.stringify(((p.g90||{}).train||{}).pack||{})),
  hidePr:!!p.hidePractice,rec:ch.has==null?null:ch.has,ic:ch.ic||"",w:ch.w||"",l:ch.l||"",d:ch.d||"",fin:ch.fin||"",
  fightQ:g.fight?true:null,fdate:(g.fight&&g.fight.date)||"",fevent:(g.fight&&g.fight.event)||"",fsport:(g.fight&&g.fight.sport)||"",ftype:(g.fight&&g.fight.ftype)||"",ftypeO:(g.fight&&g.fight.ftypeO)||"",fdiv:(g.fight&&g.fight.div)||"",frule:(g.fight&&g.fight.ruleset)||"",felb:(g.fight&&g.fight.elbows)||"",frulesO:(g.fight&&g.fight.otherRules)||"",frounds:(g.fight&&g.fight.rounds)||"",flen:(g.fight&&g.fight.roundLen)||"",flimit:(g.fight&&g.fight.limit)||"",
@@ -7628,7 +7630,7 @@ function fresh(){var p=P(),g=p.eg||{},ch=(p.compHist||{});return {stance:p.stanc
  foodQ:g.diet&&g.diet.on?true:null,prot:(g.diet&&g.diet.protein)||"",diet:p.diet||"none",diets:(p.diets&&p.diets.length?p.diets.slice():(p.diet&&p.diet!=="none"?[p.diet]:[])),preset:null,ck:p.ckMode||"weekly",
  skQ:(p.sk||[]).length?true:null,skills:(p.sk||[]).filter(function(s){return s.focus}).map(function(s){return s.name}),
  head:g.headline||null,exp:p.exp||null,injQ:(p.inj||[]).some(function(i){return !i.end})?true:null,injAreas:[],injNote:"",allergies:(p.allergies||[]).slice(),avoid:(p.avoidWords||[]).join(", "),tgt:!!(p.height&&p.age),height:p.height||"",age:p.age||"",sex:p.sex||"",wu:p.weightUnit||"kg",adult:!!p.adultOk,gymQ:p.clubId?true:null,code:"",club:null,clubId:p.clubId||null,cons:null,msg:""}}
-function steps(){var s=["you","quick","yesno","train"];if(A.rec)s.push("rec");if(A.fightQ)s.push("fight");if(A.grQ&&graded())s.push("grading");if(A.skQ)s.push("skills");if(A.wtQ)s.push("weight");if(A.foodQ)s.push("food");if(A.injQ)s.push("inj");s.push("check");if(heads().length>1)s.push("head");s.push("gym");if(A.gymQ&&A.club)s.push("share");s.push("done");return s}
+function steps(){var s=["you","quick","yesno","train","help"];if(A.rec)s.push("rec");if(A.fightQ)s.push("fight");if(A.grQ&&graded())s.push("grading");if(A.skQ)s.push("skills");if(A.wtQ)s.push("weight");if(A.foodQ)s.push("food");if(A.injQ)s.push("inj");s.push("check");if(heads().length>1)s.push("head");s.push("gym");if(A.gymQ&&A.club)s.push("share");s.push("done");return s}
 function heads(){var h=["train"];if(A.fightQ)h.push("fight");if(A.wtQ)h.push("weight");if(A.grQ&&graded())h.push("grading");if(A.skQ&&A.skills.length)h.push("skill");if(A.foodQ)h.push("diet");return h}
 function main(){return A.sports[0]||"Muay Thai"}
 function kinds(){return window.FH58?FH58.kindsFor(main()):[["fight","Fight","Fights",true],["interclub","Interclub","Interclubs",false]]}
@@ -7649,7 +7651,7 @@ function recPreset(){return A.exp==="comp"?"fighter":(A.exp==="3y"||A.exp==="exp
 function applyPreset(id){var d=PRE.filter(function(x){return x[0]===id})[0];if(!d)return;A.preset=id;if(!d[3]){YNQ().forEach(function(q){A[q[0]]=null});return}
  A.tmode="count";A.tn=d[3].tn;A.ck=d[3].ck;YNQ().forEach(function(q){A[q[0]]=d[3].yes.indexOf(q[0])>=0})}
 function dietNames(){if(!A.diets||!A.diets.length||typeof FB_DIETS==="undefined")return "";return A.diets.map(function(i){return (FB_DIETS.filter(function(d){return d.id===i})[0]||{}).name||""}).filter(Boolean).join(" + ")+" · "}
-var SEC=[["you","About you",["you"],"#C81E3A"],["setup","Your set-up",["quick","yesno"],"#E8DFC8"],["train","Training",["train"],"#C81E3A"],["fight","Fighting",["rec","fight","grading","skills"],"#E5484D"],["body","Body and fuel",["weight","food","inj"],"#3FC57E"],["goals","Check-ins and goals",["check","head"],"#4DA3FF"],["gym","Your gym",["gym","share"],"#E8DFC8"]];
+var SEC=[["you","About you",["you"],"#C81E3A"],["setup","Your set-up",["quick","yesno"],"#E8DFC8"],["train","Training",["train","help"],"#C81E3A"],["fight","Fighting",["rec","fight","grading","skills"],"#E5484D"],["body","Body and fuel",["weight","food","inj"],"#3FC57E"],["goals","Check-ins and goals",["check","head"],"#4DA3FF"],["gym","Your gym",["gym","share"],"#E8DFC8"]];
 function secOf(id){for(var i=0;i<SEC.length;i++)if(SEC[i][2].indexOf(id)>=0)return SEC[i];return null}
 function secFirst(sid){var st=steps();for(var i=0;i<st.length;i++){var c=secOf(st[i]);if(c&&c[0]===sid)return i}return -1}
 function activeSecs(){var st=steps();return SEC.filter(function(c){return st.some(function(x){return c[2].indexOf(x)>=0})})}
@@ -7690,7 +7692,8 @@ function body(){var s=steps()[step],h="";
   '<label class="ob-tog"><input type="checkbox" id="obAdult"'+(A.adult?" checked":"")+'><span><b>I\'m 18 or over</b><small>Junior accounts, run with a parent, are coming later.</small></span></label>';
  if(s==="quick"){var rc=recPreset();h='<h2>Pick a head start</h2><p class="ob-sub">Choose the set-up closest to you. It fills in the answers for you, and you can change any of them on the next screens.</p><div class="ob-list">'+PRE.slice().sort(function(a,b){return (b[0]===rc)-(a[0]===rc)}).map(function(x){return '<button type="button" class="ob-c wide'+(A.preset===x[0]?" on":"")+'" data-obpre="'+x[0]+'">'+(x[0]===rc?'<span class="ob-rec-tag">Recommended for you</span>':'')+'<b>'+esc(x[1])+'</b><span>'+esc(x[2])+'</span></button>'}).join("")+'</div>'}
  if(s==="yesno")h='<h2>Your tracking</h2><p class="ob-sub">'+(A.preset&&A.preset!=="own"?"Starting from <b>"+esc(PRE.filter(function(x){return x[0]===A.preset})[0][1])+"</b>. Switch anything on or off. ":"Yes or no. ")+'Only the yeses get a follow-up. Add anything else later.</p><div class="ob-ynl">'+YNQ().map(function(q){return '<div class="ob-ynr"><div><b>'+esc(q[1])+'</b><span>'+esc(q[2])+'</span></div><div class="ob-ynb"><button type="button" class="ob-p'+(A[q[0]]===true?" on":"")+'" data-obyn="'+q[0]+'" data-v="1">Yes</button><button type="button" class="ob-p'+(A[q[0]]===false?" no":"")+'" data-obyn="'+q[0]+'" data-v="0">No</button></div></div>'}).join("")+'</div><button class="linkbtn" type="button" data-obrestno>No to the rest</button>';
- if(s==="train")h='<h2>How often do you want to train?</h2><p class="ob-sub">This is your plan. Your progress is measured against it, not against anyone else.</p>'+
+ if(s==="help")h='<h2>What would you like help with?</h2><p class="ob-sub">Pick anything you would like help with or a chat with a coach about. Choose none if you are happy as you are. You can change this any time.</p><div class="chips">'+(window.FH122?FH122.AREAS:[]).map(function(a){return '<button type="button" class="chip" data-obhelp="'+a[0]+'" aria-pressed="'+(A.help.indexOf(a[0])>=0)+'">'+esc(a[1])+'</button>'}).join("")+'</div><div class="field"><label class="label" for="obHelpN">Anything else? (optional)</label><input id="obHelpN" maxlength="120" value="'+esc(A.helpNote||"")+'" placeholder="In your own words"></div><label class="small" style="display:flex;gap:6px;align-items:center;margin-top:10px"><input id="obHelpS" type="checkbox"'+(A.helpShare!==false?" checked":"")+'> If I link a club, let my coach see this</label>';
+  if(s==="train")h='<h2>How often do you want to train?</h2><p class="ob-sub">This is your plan. Your progress is measured against it, not against anyone else.</p>'+
   '<div class="chips"><button type="button" class="chip" data-obtm="count" aria-pressed="'+(A.tmode==="count")+'">Times a week</button><button type="button" class="chip" data-obtm="days" aria-pressed="'+(A.tmode==="days")+'">Set days</button></div>'+
   (A.tmode==="count"?'<div class="ob-grid n">'+[1,2,3,4,5,6].map(function(n){return '<button type="button" class="ob-c'+(+A.tn===n?" on":"")+'" data-obtn="'+n+'"><b>'+n+'</b><span>'+(n===1?"time":"times")+'</span></button>'}).join("")+'</div>'
   :'<div class="ob-grid n">'+DN.map(function(d,i){return '<button type="button" class="ob-c'+(A.tdays.indexOf(i)>=0?" on":"")+'" data-obtd="'+i+'"><b>'+d+'</b></button>'}).join("")+'</div>')+
@@ -7748,7 +7751,7 @@ function render(){var el=document.getElementById("fbOb");if(!el){el=document.cre
  el.hidden=false;document.body.style.overflow="hidden";var ns=el.querySelector(".ob-secs"),cu=el.querySelector(".ob-sec.cur");if(ns){ns.scrollLeft=px;if(cu){try{var l=cu.offsetLeft-12;if(l<ns.scrollLeft||l+cu.offsetWidth>ns.scrollLeft+ns.clientWidth)ns.scrollLeft=Math.max(0,l)}catch(e){}}}
  var f=el.querySelector(".ob-body input[type=text]:not([value]),.ob-body #obName");if(f&&st[step]==="you"&&!A.name)setTimeout(function(){try{f.focus()}catch(e){}},50)}
 function grab(){var g=function(id){var e=document.getElementById(id);return e?e.value:null},v;
- if((v=g("obName"))!=null)A.name=v.trim();if((v=g("obAv"))!=null)A.avoid=v;if((v=g("obHt"))!=null)A.height=v;if((v=g("obAge"))!=null)A.age=v;if((v=g("obInjN"))!=null)A.injNote=v;var tg=document.getElementById("obTgt");if(tg)A.tgt=tg.checked;var hp=document.getElementById("obHidePr");if(hp)A.hidePr=hp.checked;var ad=document.getElementById("obAdult");if(ad)A.adult=ad.checked;if((v=g("obIc"))!=null)A.ic=v;if((v=g("obW"))!=null)A.w=v;if((v=g("obL"))!=null)A.l=v;if((v=g("obD"))!=null)A.d=v;if((v=g("obFin"))!=null)A.fin=v;
+ if((v=g("obName"))!=null)A.name=v.trim();if((v=g("obHelpN"))!=null)A.helpNote=v.trim().slice(0,120);var hs=document.getElementById("obHelpS");if(hs)A.helpShare=hs.checked;if((v=g("obAv"))!=null)A.avoid=v;if((v=g("obHt"))!=null)A.height=v;if((v=g("obAge"))!=null)A.age=v;if((v=g("obInjN"))!=null)A.injNote=v;var tg=document.getElementById("obTgt");if(tg)A.tgt=tg.checked;var hp=document.getElementById("obHidePr");if(hp)A.hidePr=hp.checked;var ad=document.getElementById("obAdult");if(ad)A.adult=ad.checked;if((v=g("obIc"))!=null)A.ic=v;if((v=g("obW"))!=null)A.w=v;if((v=g("obL"))!=null)A.l=v;if((v=g("obD"))!=null)A.d=v;if((v=g("obFin"))!=null)A.fin=v;
  if((v=g("obFty"))!=null)A.ftypeO=v.trim();if((v=g("obFru"))!=null)A.frulesO=v.trim();if((v=g("obFlim"))!=null)A.flimit=v;if((v=g("obFrn"))!=null&&v!=="")A.frounds=v;if((v=g("obFrl"))!=null&&v!=="")A.flen=v;if((v=g("obFd"))!=null)A.fdate=v;if((v=g("obFe"))!=null)A.fevent=v;if((v=g("obWn"))!=null)A.wnow=v;if((v=g("obWt"))!=null)A.wtar=v;if((v=g("obBelt"))!=null)A.belt=v.trim();if((v=g("obGby"))!=null)A.gby=v;if((v=g("obProt"))!=null)A.prot=v;if((v=g("obCode"))!=null)A.code=v.trim().toUpperCase()}
 async function find(){grab();if(!A.code){A.msg="Type your club code first.";render();return}A.msg="Looking…";render();
  try{var s=await db.collection("clubs").where("code","==",A.code).limit(1).get();if(s.empty){A.msg="No gym with that code. Check it with your coach.";render();return}var d=s.docs[0];A.club=Object.assign({id:d.id},d.data());A.clubId=d.id;A.cons=null;A.msg="";render()}
@@ -7756,6 +7759,7 @@ async function find(){grab();if(!A.code){A.msg="Type your club code first.";rend
 function uid(){return Date.now().toString(36)+Math.random().toString(36).slice(2,5)}
 function finish(){var p=P(),sp=A.sports.length?A.sports:["Muay Thai"],g=p.eg?JSON.parse(JSON.stringify(p.eg)):{};
  p.name=A.name||p.name||"";p.leagueName=(A.name||p.leagueName||"Member").split(" ")[0];p.sports=(+(A.age||p.age)>0&&+(A.age||p.age)<18)?sp.filter(function(x){return x!=="Bare knuckle boxing"}):sp;if(A.stance)p.stance=A.stance;p.discipline=p.sports[0];p.role=p.role||"member";p.mode=p.mode||"simple";
+ p.helpAreas=(A.help||[]).slice();p.helpNote=A.helpNote||"";p.helpShare=A.helpShare!==false;
  p.sessions=A.tmode==="count"?+A.tn:A.tdays.length;
  g.train={mode:A.tmode,n:+A.tn||3,days:A.tdays.slice().sort(),sports:[]};
  p.g90=p.g90||{};p.g90.train=p.g90.train||{};p.g90.train.pack=Object.assign({},A.pack||{});p.g90.train.types=Object.keys(A.pack||{}).map(function(k){var q=window.FBS&&FBS.lookupPack(k);return q?q.t:k});
@@ -7799,6 +7803,7 @@ document.addEventListener("click",function(e){var t=e.target;if(!t.closest||!A)r
  if(b=t.closest("[data-obst]")){grab();A.stance=A.stance===b.dataset.obst?null:b.dataset.obst;render();return}
  if(b=t.closest("[data-obsp]")){grab();var s=b.dataset.obsp,i=A.sports.indexOf(s);if(i>=0)A.sports.splice(i,1);else A.sports.push(s);render();return}
  if(b=t.closest("[data-obpk]")){var pk=b.dataset.obpk;if(A.pack[pk])delete A.pack[pk];else A.pack[pk]=1;render();return}
+ if(b=t.closest("[data-obhelp]")){var hv=b.dataset.obhelp,hi=A.help.indexOf(hv);if(hi>=0)A.help.splice(hi,1);else A.help.push(hv);grab();render();return}
  if(b=t.closest("[data-obtm]")){A.tmode=b.dataset.obtm;render();return}
  if(b=t.closest("[data-obtn]")){A.tn=+b.dataset.obtn;render();return}
  if(b=t.closest("[data-obtd]")){var d=+b.dataset.obtd,j=A.tdays.indexOf(d);if(j>=0)A.tdays.splice(j,1);else A.tdays.push(d);render();return}
@@ -14137,6 +14142,43 @@ document.addEventListener("click",function(e){if(e.target.closest&&e.target.clos
 window.addEventListener("hashchange",function(){if(location.hash==="#livecamp")open()});
 window.FH121={open:open};
 if(location.hash==="#livecamp"){var t121=0,w121=setInterval(function(){t121++;if((!document.getElementById("fbSplash")&&!document.getElementById("fbw"))||t121>40){clearInterval(w121);open()}},300)}
+})();
+
+/* FighterBase v144: "What would you like help with?" Members pick the areas they want help or a chat with their coach about (setup step, editable later from Me).
+   Stored on the member (helpAreas, helpNote, helpShare). Coaches at a linked club see it only when the member left sharing on, never for under 18s.
+   Prototype: the coach list reads the shared member fields; the real database version would be one small table with the same rule. */
+var H122=H122||false;
+(function(){
+if(H122)return;H122=true;
+var AREAS=[["fit","Getting fitter"],["tech","Improving my technique"],["fight","Getting ready to fight"],["weight","Weight or diet"],["conf","Confidence and mindset"],["inj","Injuries and recovery"],["plan","A training plan that fits my week"],["comp","Starting to compete"],["fun","Just enjoying it, keeping it social"]];
+window.FH122={AREAS:AREAS,label:function(id){var a=AREAS.filter(function(x){return x[0]===id})[0];return a?a[1]:id}};
+function e(s){return esc(String(s==null?"":s))}
+function P(){return S.profile||{}}
+function club(){return (typeof clubState!=="undefined"&&clubState.club)||null}
+function mem(){return (typeof clubState!=="undefined"&&clubState.members)||[]}
+/* sync the shareable fields into the club-visible member record */
+var n=0,iv=setInterval(function(){if(window.FB54&&FB54.extend&&!FB54.extend.p122){var ex=FB54.extend;FB54.extend=function(o){o=ex(o);var p=P(),minor=+p.age>0&&+p.age<18;o.helpAreas=(p.helpShare!==false&&!minor)?(p.helpAreas||[]):[];o.helpNote=(p.helpShare!==false&&!minor)?(p.helpNote||""):"";return o};FB54.extend.p122=true}if(++n>60)clearInterval(iv)},500);
+/* coach list */
+function panel(){var host=document.getElementById("huboverBody"),c=club(),w=document.getElementById("fb122Panel");
+ var staff=false;try{staff=!!(window.FH118&&FH118.role())||(window.FHC&&FHC.isOwner&&FHC.isOwner())}catch(x){}
+ if(!host||!c||!staff){if(w)w.remove();return}
+ var rows=mem().filter(function(m){return m.uid!==S.uid&&m.helpAreas&&m.helpAreas.length});
+ if(!rows.length){if(w)w.remove();return}
+ var h='<div class="sec-h"><h3>What members want help with</h3></div><p class="muted small" style="margin:0 0 8px">Only shown for members who chose to share it. Good starting point for a chat.</p>'+rows.map(function(m){return '<div class="d112-n"><span><b>'+e(m.name||m.leagueName||"Member")+'</b>: '+m.helpAreas.map(function(a){return e(FH122.label(a))}).join(", ")+(m.helpNote?'<br><span class="muted small">“'+e(m.helpNote)+'”</span>':"")+'</span></div>'}).join("");
+ if(!w){w=document.createElement("div");w.id="fb122Panel";w.className="panel";host.appendChild(w)}
+ if(w.dataset.sig!==h){w.innerHTML=h;w.dataset.sig=h}}
+/* member: edit later from the Today tab footer card in Me */
+function editCard(){var home=document.getElementById("tab-profile"),el=document.getElementById("fb122");if(!home){return}
+ var p=P(),minor=+p.age>0&&+p.age<18;
+ var h='<span class="fb-kick">What I want help with</span><div class="chips" style="margin:8px 0">'+AREAS.map(function(a){return '<button type="button" class="chip" data-f122="'+a[0]+'" aria-pressed="'+((p.helpAreas||[]).indexOf(a[0])>=0)+'">'+e(a[1])+'</button>'}).join("")+'</div>'+
+  '<label class="label" for="f122n">Anything else to add? (optional)</label><input id="f122n" maxlength="120" style="width:100%" value="'+e(p.helpNote||"")+'">'+
+  (minor?'<p class="muted small" style="margin:6px 0 0">Not shared with a club under 18.</p>':'<label class="small" style="display:flex;gap:6px;align-items:center;margin-top:8px"><input id="f122s" type="checkbox"'+(p.helpShare!==false?" checked":"")+'> Let my coach at my club see this</label>');
+ if(!el){el=document.createElement("section");el.id="fb122";el.className="fb-card";home.appendChild(el)}
+ if(document.activeElement&&document.activeElement.id==="f122n")return;
+ if(el.dataset.sig!==h){el.innerHTML=h;el.dataset.sig=h}}
+document.addEventListener("click",function(ev){var b=ev.target.closest&&ev.target.closest("[data-f122]");if(!b)return;var p=P(),a=b.dataset.f122;p.helpAreas=p.helpAreas||[];var i=p.helpAreas.indexOf(a);if(i>=0)p.helpAreas.splice(i,1);else p.helpAreas.push(a);try{profChanged()}catch(x){}editCard()},true);
+document.addEventListener("change",function(ev){var t=ev.target;if(t.id==="f122n"){P().helpNote=t.value.trim().slice(0,120);try{profChanged()}catch(x){}}if(t.id==="f122s"){P().helpShare=t.checked;try{profChanged()}catch(x){}}});
+setInterval(function(){try{panel();editCard()}catch(x){}},1500);
 })();
 
 /* FighterBase v44: always a way back, always a next step. */
