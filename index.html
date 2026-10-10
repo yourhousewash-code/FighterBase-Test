@@ -15152,10 +15152,13 @@ function guide(id){var x=dietOf(id),g=FB_GUIDE[id],doc=FBPDF.create({title:x.nam
  doc.banner(SIGN);fighters(doc);return doc.build()}
 function make(id,kind){if(!has(id))return null;return kind==="guide"?guide(id):foodList(id)}
 function name(id,kind){var x=dietOf(id);return "fighterbase-"+id+(kind==="guide"?"-diet-guide":"-food-list")+".pdf"}
-function save(id,kind){var bytes=make(id,kind);if(!bytes){try{toast("No guide for this style yet")}catch(e){}return}
- var blob=new Blob([bytes],{type:"application/pdf"}),fn=name(id,kind),dl=(typeof downloads!=="undefined")?downloads:null;
- function fallback(){try{var u=URL.createObjectURL(blob),a=document.createElement("a");a.href=u;a.download=fn;document.body.appendChild(a);a.click();setTimeout(function(){a.remove();URL.revokeObjectURL(u)},3000);try{toast("Downloading")}catch(e){}}catch(e){try{toast("Could not save the file")}catch(er){}}}
- if(dl){dl.save({filename:fn,data:blob}).then(function(){try{toast("Saved")}catch(e){}}).catch(function(e){if(e&&e.code==="declined")return;if(e&&(e.code==="unavailable"||e.code==="not_granted"))fallback();else try{toast("Could not save the file")}catch(er){}})}else fallback()}
+function save(id,kind){if(!has(id)){try{toast("No guide for this style yet")}catch(e){}return}
+ var fn=name(id,kind),dl=(typeof downloads!=="undefined")?downloads:null;
+ function fallback(blob){try{var u=URL.createObjectURL(blob),a=document.createElement("a");a.href=u;a.download=fn;document.body.appendChild(a);a.click();setTimeout(function(){a.remove();URL.revokeObjectURL(u)},3000);try{toast("Downloading")}catch(e){}}catch(e){try{toast("Could not save the file")}catch(er){}}}
+ function deliver(blob){if(dl){dl.save({filename:fn,data:blob}).then(function(){try{toast("Saved")}catch(e){}}).catch(function(e){if(e&&e.code==="declined")return;if(e&&(e.code==="unavailable"||e.code==="not_granted"))fallback(blob);else try{toast("Could not save the file")}catch(er){}})}else fallback(blob)}
+ /* the designed PDF (photos and illustrations) is hosted with the app; if it is not there, build the plain version on the device */
+ function plain(){var bytes=make(id,kind);if(!bytes){try{toast("No guide for this style yet")}catch(e){}return}deliver(new Blob([bytes],{type:"application/pdf"}))}
+ try{fetch("guides/"+fn,{cache:"no-cache"}).then(function(r){if(!r.ok)throw 0;return r.blob()}).then(function(b){if(!b||b.size<2000)throw 0;deliver(new Blob([b],{type:"application/pdf"}))}).catch(plain)}catch(e){plain()}}
 function buttons(id){if(!has(id))return "";var g=FB_GUIDE[id];
  return '<div class="nu-sec"><span class="label">Download</span><div class="row" style="gap:8px;flex-wrap:wrap"><button class="btn gold" type="button" data-fbdg="'+id+':list">'+(g.timing?"Quick timing guide (PDF)":"Full food list (PDF)")+'</button><button class="btn ghost" type="button" data-fbdg="'+id+':guide">Diet guide (PDF)</button></div><p class="small muted" style="margin:4px 0 0">Every allowed and avoided food, and an explainer you can keep on your phone. Draft content, not yet reviewed by a dietitian.</p></div>'}
 document.addEventListener("click",function(e){var b=e.target.closest&&e.target.closest("[data-fbdg]");if(!b)return;var p=b.dataset.fbdg.split(":");e.preventDefault();save(p[0],p[1])});
