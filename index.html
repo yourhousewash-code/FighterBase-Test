@@ -1226,7 +1226,7 @@ store["clubs/"+CID].crep={"demo-alex_ah1":{t:"Saturday sparring plus the Wednesd
 store["clubs/"+CID].cfx={"demo-alex_af1":{s:"ok",by:uidO,at:ago(14)}};
 store["clubs/"+CID].track={training:true,goals:true,skills:true,weight:true,food:true,recovery:true,injury:true,fights:true};store["clubs/"+CID].show={training:true,goals:true,skills:true,weight:true,food:false,recovery:false,injury:true,fights:true};
 store["league/m1"].cons={training:true,goals:true,skills:true,weight:false,food:true,recovery:true,injury:true,fights:true};store["league/m1"].skills=[{n:"Guard retention",st:"prac"},{n:"Back takes",st:"intro"}];store["league/m1"].food={days:5,prot:118};store["league/m1"].rec={sleep:7.4,energy:3.8,n:6};
-store["league/m2"].campReq={k:"m2f_"+ago(-21),fid:"m2f",event:"Manchester MMA Amateur",date:ago(-21),at:Date.now()-3600000};store["league/m2"].cons={training:true,goals:true,skills:true,weight:true,food:false,recovery:false,injury:true,fights:true};store["league/m2"].skills=[{n:"Wall work",st:"live"}];store["league/m2"].wt={pct:62,rate:-0.6,dir:"lose"};
+store["league/m2"].campReq={k:"m2f_"+ago(-21),fid:"m2f",event:"Manchester MMA Amateur",date:ago(-21),at:Date.now()-3600000};store["league/m2"].fplan={k:ago(-21),at:Date.now()-7200000,support:"Full camp",spw:4,travel:"My coach",weigh:"My coach",cost:"",notes:"Happy to add Saturday sparring"};store["clubs/"+CID].corners={};store["clubs/"+CID].corners["demo-alex_"+ago(-26)]={list:[{id:"c1",name:"Mo Haddad",role:"Head coach",uid:uidO,st:"ok"},{id:"c2",name:"Jordan Hayes",role:"Second",uid:"m0",st:"wait"}],at:Date.now()-86400000};store["league/m2"].cons={training:true,goals:true,skills:true,weight:true,food:false,recovery:false,injury:true,fights:true};store["league/m2"].skills=[{n:"Wall work",st:"live"}];store["league/m2"].wt={pct:62,rate:-0.6,dir:"lose"};
 store["clubs/"+CID].cnote={"demo-alex":{t:"Great camp so far. Keep Saturday rounds sharp and get your weigh-ins in each Friday. Proud of you.",by:uidO,byName:"Mo",at:ago(0)}};
 alexProf.rsvp[TODAYK+"_"+((TT.filter(function(c){return c.dow===dow(TODAYK)})[0]||{}).id||"c1")]=1;
 store["clubs/"+CID].frc[uidM+"_f1"]={s:"ok",res:"W",by:uidO,at:ago(39)};store["clubs/"+CID].frc[uidM+"_f2"]={s:"ok",res:"L",by:uidO,at:ago(101)};
@@ -13786,6 +13786,91 @@ var st=document.createElement("style");st.textContent="#tab-today #fb118m{order:
 setInterval(function(){try{draw();campPanel();memberTick()}catch(x){}},1500);
 /* member sees the coach reply and being unlinked is handled by the existing unlink flow */
 window.FH118={role:role,can:can,deal:deal};
+})();
+
+/* FighterBase v138: corner team and fight plan.
+   Corner team (club doc corners[memberUid_fightKey]={list:[{id,name,role,uid,st:"wait"|"ok"|"no"}]}): the coach names who is in the fighter's corner;
+   people with an account accept or decline. The fighter sees "Your corner" under the countdown, including who is confirmed.
+   Fight plan: member proposes (own profile fplan), coach agrees as proposed or changes it and sends it back (club doc fplans[...]); either side changing it resets to waiting.
+   It states expectations only. It is not a contract, and weight or food targets are not part of it. Agreed sessions per week set the member's weekly target. */
+var K119=K119||false;
+(function(){
+if(K119)return;K119=true;
+function e(s){return esc(String(s==null?"":s))}
+function P(){return S.profile}
+function club(){return (typeof clubState!=="undefined"&&clubState.club)||null}
+function mem(){return (typeof clubState!=="undefined"&&clubState.members)||[]}
+function fk(f){return f&&f.date}
+function myFight(){try{return window.FBE&&FBE.upcomingFight()}catch(x){return null}}
+function key(uid,f){return uid+"_"+fk(f)}
+function upd(patch){var c=club();if(!c)return Promise.resolve();Object.assign(c,patch);return db.doc("clubs/"+c.id).update(patch).catch(function(){})}
+function save(){try{profChanged()}catch(x){}}
+function staff(){try{return !!(window.FHC&&FHC.isOwner())}catch(x){return false}}
+var ROLES=["Head coach","Cutman","Second","Other"],SUP=["Full camp","Pads and sessions","Advice only"],WHO=["Me","My coach","The club"];
+function dayWord(d){return new Date(d+"T12:00").toLocaleDateString("en-GB",{day:"numeric",month:"short"})}
+function stateOf(plan,fp){if(!fp||!fp.at)return plan&&plan.st?"coachfirst":"none";
+ if(!plan||(plan.base||0)<fp.at)return"wait";
+ if(plan.st==="agreed")return"agreed";if(plan.st==="offered")return fp.acc===plan.at?"agreed":"offered";return"wait"}
+/* ---------- member side ---------- */
+var F={};
+function selH(id,opts,v){return '<select id="'+id+'">'+opts.map(function(o){return '<option'+(o===v?" selected":"")+'>'+e(o)+'</option>'}).join("")+'</select>'}
+function planFields(src){return {support:src.support,spw:+src.spw,travel:src.travel,weigh:src.weigh,cost:src.cost||"",notes:src.notes||""}}
+function mCard(){var home=document.getElementById("tab-today"),el=document.getElementById("fb119"),f=myFight(),c=club(),p=P();
+ if(!home||!f||!p.onboarded||!c||!p.clubId||!document.getElementById("fb115")){if(el)el.hidden=true;return}
+ var k=key(S.uid,f),co=(c.corners||{})[k],plan=(c.fplans||{})[k],fp=p.fplan&&p.fplan.k===fk(f)?p.fplan:null,st=stateOf(plan,fp);
+ var h='<span class="fb-kick">Your corner and plan</span>';
+ if(co&&co.list&&co.list.length)h+='<div class="c119">'+co.list.map(function(x){return '<span class="chip" style="cursor:default">'+e(x.name)+' · '+e(x.role)+' <em class="d112-s s-'+(x.st==="ok"?"ok":x.st==="no"?"none":"wait")+'">'+(x.st==="ok"?"Confirmed":x.st==="no"?"Can\'t make it":"Waiting")+'</em></span>'}).join("")+'</div>';
+ else h+='<p class="muted small" style="margin:2px 0 6px">Your coach will name who is in your corner on the day, so you have one less thing to think about.</p>';
+ if(p.cornerSug&&p.cornerSug.k===fk(f))h+='<p class="muted small" style="margin:0 0 6px">You suggested: '+e(p.cornerSug.t)+'</p>';
+ h+='<div class="row" style="margin-bottom:8px"><input type="text" id="f119sug" maxlength="80" placeholder="Suggest someone for your corner" style="flex:1;min-width:0"><button class="btn ghost sm" type="button" data-f119sug>Suggest</button></div>';
+ var d=F.m||(F.m=Object.assign({support:SUP[0],spw:4,travel:WHO[1],weigh:WHO[1],cost:"",notes:""},fp?planFields(fp):{}));
+ if(st==="agreed"){h+='<p style="margin:6px 0 2px"><b>✓ Plan agreed</b></p><p class="muted small" style="margin:0 0 6px">'+e(plan.support)+' · '+e(plan.spw)+' sessions a week · travel: '+e(plan.travel)+' · weigh-in: '+e(plan.weigh)+(plan.cost?' · '+e(plan.cost):'')+(plan.notes?'<br>'+e(plan.notes):'')+'</p><button class="linkbtn" type="button" data-f119chg>Change the plan</button>'}
+ else if(st==="offered"){h+='<p style="margin:6px 0 2px"><b>Your coach suggested changes</b></p><p class="muted small" style="margin:0 0 6px">'+e(plan.support)+' · '+e(plan.spw)+' sessions a week · travel: '+e(plan.travel)+' · weigh-in: '+e(plan.weigh)+(plan.cost?' · '+e(plan.cost):'')+(plan.notes?'<br>'+e(plan.notes):'')+'</p><div class="row"><button class="btn sm" type="button" data-f119acc>Accept</button><button class="btn ghost sm" type="button" data-f119chg>Change it</button></div>'}
+ else if(st==="wait"&&!F.edit){h+='<p style="margin:6px 0 2px"><b>Plan sent</b></p><p class="muted small" style="margin:0 0 6px">Waiting for your coach to agree. '+e(fp.support)+' · '+e(fp.spw)+' sessions a week.</p><button class="linkbtn" type="button" data-f119chg>Edit it</button>'}
+ else{h+='<p style="margin:6px 0 4px"><b>Agree a fight plan with your club</b></p><p class="muted small" style="margin:0 0 6px">Both of you confirm it, so everyone knows what to expect. It covers expectations only, not weight or food targets.</p>'+
+  '<div class="grid2"><div class="field"><label class="label" for="f119s">Coach support</label>'+selH("f119s",SUP,d.support)+'</div><div class="field"><label class="label" for="f119n">Sessions a week</label><input type="number" id="f119n" min="1" max="12" value="'+e(d.spw)+'"></div>'+
+  '<div class="field"><label class="label" for="f119t">Travel handled by</label>'+selH("f119t",WHO,d.travel)+'</div><div class="field"><label class="label" for="f119w">Weigh-in day handled by</label>'+selH("f119w",WHO,d.weigh)+'</div></div>'+
+  '<div class="field"><label class="label" for="f119c">Any cost (optional)</label><input type="text" id="f119c" maxlength="80" value="'+e(d.cost)+'" placeholder="e.g. Camp fee agreed with the club"></div><div class="field"><label class="label" for="f119x">Anything else (optional)</label><input type="text" id="f119x" maxlength="120" value="'+e(d.notes)+'"></div>'+
+  '<div class="row"><button class="btn gold sm" type="button" data-f119send>Send to my coach</button></div>'}
+ if(!el){el=document.createElement("section");el.id="fb119";el.className="fb-card";home.appendChild(el)}
+ el.hidden=false;if(el.dataset.sig!==h&&!(document.activeElement&&el.contains(document.activeElement)&&document.activeElement.tagName==="INPUT")){el.innerHTML=h;el.dataset.sig=h}
+ /* agreed sessions per week become the weekly target once */
+ if(st==="agreed"&&plan&&p.fplanApplied!==plan.at){var g=p.eg=p.eg||{};g.train=g.train||{mode:"count",n:3,days:[]};g.train.n=+plan.spw;p.sessions=+plan.spw;p.fplanApplied=plan.at;save();try{toast("Weekly target set to "+plan.spw,"From your agreed fight plan")}catch(x){}}}
+function grab(){var g=function(i){var n=document.getElementById(i);return n?n.value:""};return {support:g("f119s"),spw:Math.max(1,Math.min(12,+g("f119n")||4)),travel:g("f119t"),weigh:g("f119w"),cost:g("f119c").trim(),notes:g("f119x").trim()}}
+/* ---------- coach side ---------- */
+var G={};
+function staffList(){var c=club(),out=[];((c.teachers)||[]).forEach(function(t){out.push({name:t.name,uid:t.uid||null})});return out}
+function fighters(){var c=club();return mem().filter(function(m){return m.uid!==S.uid&&m.eg&&m.eg.fight&&m.eg.fight.date>=TODAY})}
+function cPanel(){var host=document.getElementById("huboverBody"),c=club(),w=document.getElementById("fb119Panel");if(!host||!c||!staff()){if(w)w.remove();return}
+ var fs=fighters(),mine=[];Object.keys(c.corners||{}).forEach(function(k){((c.corners[k]||{}).list||[]).forEach(function(x){if(x.uid===S.uid&&x.st==="wait")mine.push({k:k,x:x})})});
+ if(!fs.length&&!mine.length){if(w)w.remove();return}
+ var h='<div class="sec-h"><h3>Corner teams and fight plans</h3></div>';
+ if(mine.length)h+='<span class="label">Asked to be in a corner</span>'+mine.map(function(o){var m=mem().filter(function(x){return o.k.indexOf(x.uid+"_")===0})[0];return '<div class="d112-n"><span><b>'+e(m?(m.name||m.leagueName):"A fighter")+'</b> wants you as '+e(o.x.role)+'</span><div class="row"><button class="btn sm" type="button" data-f119ca="'+e(o.k)+'|'+e(o.x.id)+'|ok">Accept</button><button class="btn ghost sm" type="button" data-f119ca="'+e(o.k)+'|'+e(o.x.id)+'|no">Can\'t</button></div></div>'}).join("");
+ fs.forEach(function(m){var f=m.eg.fight,k=key(m.uid,f),co=(c.corners||{})[k]||{list:[]},plan=(c.fplans||{})[k],fp=m.fplan&&m.fplan.k===fk(f)?m.fplan:null,st=stateOf(plan,fp),nm=m.name||m.leagueName||"Member";
+  h+='<div class="d112-n" style="flex-wrap:wrap;align-items:flex-start"><span style="flex:1;min-width:180px"><b>'+e(nm)+'</b> · '+e(f.event||"Fight")+', '+e(dayWord(f.date))+'<br><span class="muted small">Corner: '+(co.list.length?e(co.list.map(function(x){return x.name+" ("+x.role+(x.st==="ok"?" ✓":x.st==="no"?" ✗":"…")+")"}).join(", ")):"nobody yet")+(m.cornerSug&&m.cornerSug.k===fk(f)?' · they suggested: '+e(m.cornerSug.t):'')+'</span>'+
+   '<br><span class="muted small">Plan: '+(st==="agreed"?"agreed ✓ ("+e(plan.support)+", "+e(plan.spw)+"/week)":st==="offered"?"sent back to the fighter":st==="wait"&&fp?"proposed: "+e(fp.support)+", "+e(fp.spw)+"/week, travel: "+e(fp.travel)+", weigh-in: "+e(fp.weigh)+(fp.cost?", "+e(fp.cost):""):"not proposed yet")+'</span></span>'+
+   '<div class="row" style="flex-wrap:wrap">'+(st==="wait"&&fp?'<button class="btn sm" type="button" data-f119ag="'+e(m.uid)+'">Agree plan</button>':'')+'<button class="btn ghost sm" type="button" data-f119open="'+e(m.uid)+'">'+(G.open===m.uid?"Close":"Corner team")+'</button></div>'+
+   (G.open===m.uid?'<div style="width:100%" class="stack"><div class="row" style="flex-wrap:wrap">'+co.list.map(function(x){return '<button class="chip" type="button" data-f119rm="'+e(m.uid)+'|'+e(x.id)+'" title="Remove">'+e(x.name)+' · '+e(x.role)+' ✕</button>'}).join("")+'</div><div class="row" style="flex-wrap:wrap"><select id="f119p" aria-label="Choose a coach">'+staffList().map(function(s){return '<option value="'+e(s.uid||"")+'|'+e(s.name)+'">'+e(s.name)+'</option>'}).join("")+'<option value="|">Someone else…</option></select><input type="text" id="f119o" maxlength="40" placeholder="Name if someone else" style="max-width:150px"><select id="f119r" aria-label="Role">'+ROLES.map(function(r){return '<option>'+r+'</option>'}).join("")+'</select><button class="btn sm" type="button" data-f119add="'+e(m.uid)+'">Add</button></div></div>':'')+'</div>'});
+ if(!w){w=document.createElement("div");w.id="fb119Panel";w.className="panel";host.insertBefore(w,host.firstChild)}
+ if(w.dataset.sig!==h&&!(document.activeElement&&w.contains(document.activeElement)&&document.activeElement.tagName==="INPUT")){w.innerHTML=h;w.dataset.sig=h}}
+function setCorner(k,list){var co=Object.assign({},club().corners||{});co[k]={list:list,at:Date.now()};return upd({corners:co})}
+document.addEventListener("click",function(ev){var t=ev.target;if(!t.closest)return;var b,c=club(),f=myFight(),p=P();
+ if(b=t.closest("[data-f119sug]")){var v=(document.getElementById("f119sug")||{}).value.trim();if(v&&f){p.cornerSug={k:fk(f),t:v};save();F.sig=0;mCard();try{toast("Suggestion sent to your coach")}catch(x){}}return}
+ if(t.closest("[data-f119chg]")){F.edit=true;var el=document.getElementById("fb119");if(el)el.dataset.sig="";var cc=club(),pl=cc&&(cc.fplans||{})[key(S.uid,f)];if(pl)F.m=planFields(pl);mCard();return}
+ if(t.closest("[data-f119send]")&&f){var d=grab();F.m=d;p.fplan=Object.assign({k:fk(f),at:Date.now()},d);F.edit=false;save();document.getElementById("fb119").dataset.sig="";mCard();try{toast("Plan sent","Your coach will confirm or suggest changes")}catch(x){}return}
+ if(t.closest("[data-f119acc]")&&f){var pl=(c.fplans||{})[key(S.uid,f)];if(pl){p.fplan=Object.assign({},p.fplan,{acc:pl.at});save();document.getElementById("fb119").dataset.sig="";mCard()}return}
+ if(!c)return;
+ if(b=t.closest("[data-f119open]")){G.open=G.open===b.dataset.f119open?null:b.dataset.f119open;var w=document.getElementById("fb119Panel");if(w)w.dataset.sig="";cPanel();return}
+ if(b=t.closest("[data-f119add]")){var u=b.dataset.f119add,m=mem().filter(function(x){return x.uid===u})[0];if(!m)return;var k=key(u,m.eg.fight),sel=document.getElementById("f119p").value.split("|"),nm=sel[1],uid=sel[0]||null,other=(document.getElementById("f119o").value||"").trim();if(!uid&&!nm){nm=other}else if(other&&!uid)nm=other;if(!nm)return;
+  var list=(((c.corners||{})[k]||{}).list||[]).slice();list.push({id:Math.random().toString(36).slice(2,8),name:nm,role:document.getElementById("f119r").value,uid:uid,st:uid?(uid===S.uid?"ok":"wait"):"ok"});setCorner(k,list);var w=document.getElementById("fb119Panel");if(w)w.dataset.sig="";cPanel();return}
+ if(b=t.closest("[data-f119rm]")){var a=b.dataset.f119rm.split("|"),m=mem().filter(function(x){return x.uid===a[0]})[0];if(!m)return;var k=key(a[0],m.eg.fight);setCorner(k,(((c.corners||{})[k]||{}).list||[]).filter(function(x){return x.id!==a[1]}));var w=document.getElementById("fb119Panel");if(w)w.dataset.sig="";cPanel();return}
+ if(b=t.closest("[data-f119ca]")){var a=b.dataset.f119ca.split("|"),list=(((c.corners||{})[a[0]]||{}).list||[]).map(function(x){return x.id===a[1]?Object.assign({},x,{st:a[2]}):x});setCorner(a[0],list);var w=document.getElementById("fb119Panel");if(w)w.dataset.sig="";cPanel();return}
+ if(b=t.closest("[data-f119ag]")){var m=mem().filter(function(x){return x.uid===b.dataset.f119ag})[0];if(!m||!m.fplan)return;var k=key(m.uid,m.eg.fight),pl=Object.assign({},planFields(m.fplan),{st:"agreed",base:m.fplan.at,at:Date.now(),by:S.uid}),np=Object.assign({},c.fplans||{});np[k]=pl;upd({fplans:np});try{toast("Plan agreed",m.name||"")}catch(x){}var w=document.getElementById("fb119Panel");if(w)w.dataset.sig="";cPanel()}
+},true);
+var n=0,iv=setInterval(function(){if(window.FB54&&FB54.extend&&!FB54.extend.p119){var ex=FB54.extend;FB54.extend=function(o){o=ex(o);o.fplan=P().fplan||null;o.cornerSug=P().cornerSug||null;return o};FB54.extend.p119=true}if(++n>60)clearInterval(iv)},500);
+var st=document.createElement("style");st.textContent="#tab-today #fb119{order:1}#fb119[hidden]{display:none}#fb119 .c119{display:flex;flex-wrap:wrap;gap:6px;margin:4px 0 8px}";document.head.appendChild(st);
+setInterval(function(){try{mCard();cPanel()}catch(x){}},1500);
+window.FH119={};
 })();
 
 /* FighterBase v44: always a way back, always a next step. */
