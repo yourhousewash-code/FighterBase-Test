@@ -1233,7 +1233,7 @@ alexProf.rsvp[TODAYK+"_"+((TT.filter(function(c){return c.dow===dow(TODAYK)})[0]
 store["clubs/"+CID].frc[uidM+"_f1"]={s:"ok",res:"W",by:uidO,at:ago(39)};store["clubs/"+CID].frc[uidM+"_f2"]={s:"ok",res:"L",by:uidO,at:ago(101)};
 store["league/"+uidM]={uid:uidM,clubId:CID,name:"Alex",sports:alexProf.sports,optIn:true,week:wk(alexLogs),month:{points:wk(alexLogs).points*4},daily:daily(alexLogs,45),streak:12,rank:"Iron",share:{c:true,w:true},att:alexProf.att,first:ago(182),fr:[],updated:ago(0),eg:{headline:"fight",train:{mode:"days",days:[0,1,3,5]},wk:{s:2,t:4,streak:6},fight:{date:ago(-26),event:"Northern Muay Thai Series"},grading:{belt:"Blue belt, 2nd stripe"},focus:["Teep","Guard retention"],at:ago(12)},help:alexProf.eg.helps,rev:[{id:"o4",skill:"Guard retention",sport:"Brazilian Jiu-Jitsu",stage:"prac",date:ago(2),text:"",next:"Drill the inversion with Priya",url:"https://youtube.com/"}],gca:{},mod:false};
 /* owner */
-var ownerLogs=genLogs(182,82,80.5,["Muay Thai"],3,23);
+var ownerLogs=genLogs(182,82,80.5,["Muay Thai"],3,23);ownerLogs.forEach(function(l){/* v147: Mo teaches c1, c5 and c6, so those are not his own workouts */var n=l.sessions.length;l.sessions=l.sessions.filter(function(x){return !(x.club&&/^(c1|c5|c6)$/.test(String(x.cid||"")))});if(l.sessions.length!==n){l.trained=l.sessions.length>0;l.clubCheckin=l.sessions.some(function(x){return x.club})}});
 var ownerProf={onboarded:true,role:"club",name:"Mo",leagueName:"Mo",sex:"male",age:41,height:175,weight:80.5,goal:"maintain",sessions:3,sports:["Muay Thai"],tracks:["training","together"],mode:"simple",trk:["weight","sleep","energy"],clubId:CID,clubConsent:{at:ago(200),v:1,consistency:true,weight:false},viewMode:"club",qDay:TODAYK,roadSkip:true,created:ago(400)};
 store["league/"+uidO]={uid:uidO,clubId:CID,name:"Mo",sports:["Muay Thai"],optIn:true,week:wk(ownerLogs),daily:daily(ownerLogs,30),streak:5,rank:"Steel",share:{c:true,w:false},att:{},fr:[]};
 /* pending confirmations and arrivals for the owner view */
@@ -2755,6 +2755,7 @@ function bindClubJoin(){const jb=$("#joinBtn");if(jb)jb.onclick=async()=>{const 
 function bindClub(){const c=clubState.club;
   const lt=$("#lgTab");if(lt)lt.onclick=e=>{const b=e.target.closest("button");if(!b)return;clubState.tab=b.dataset.v;renderClub()};
   const ci=$("#ciBtn");if(ci)ci.onclick=()=>{const v=($("#ciCode").value||"").trim();if(!c.checkinCode||c.checkinDate!==TODAY){$("#ciMsg").textContent="No check-in code set for today yet. Ask your coach.";return}if(v!==String(c.checkinCode)){$("#ciMsg").textContent="That code doesn't match today's code.";return}
+    if(window.FH125&&FH125.codeGuard&&FH125.codeGuard()){$("#ciMsg").textContent="Logged as teaching.";return}
     cur.clubCheckin=true;if(!(cur.sessions||[]).some(s=>s.club)){cur.sessions=[...(cur.sessions||[]),{sport:sportsOf(S.profile)[0]||"General",type:"Technique / drilling",mins:60,rpe:6,club:true,notes:`Club session at ${c.name}`,t:nowHM()}];cur.trained=true}
     renderCheckin();markDirty();toast("Checked in at "+c.name,"+15 points");scheduleLeague()};
   
@@ -5293,6 +5294,7 @@ function hasGeo(c){return !!(c&&c.geo&&typeof c.geo.lat==="number")}
 /* ---------- record an arrival ---------- */
 function arrive(classId,label,src,note){var c=club();if(!c)return;src=src||"member";
  var cl=null;try{cl=classId?classesOn(c,TODAY).filter(function(x){return x.id===classId})[0]||null:null}catch(e){}
+ if(window.FH125&&FH125.intercept&&FH125.intercept(cl,classId,src)){try{sheet.hidden=true;draw()}catch(e){}return}
  var key=classId?classId:"open",ak=TODAY+"_"+key;
  S.profile.att=S.profile.att||{};S.profile.attSrc=S.profile.attSrc||{};
  var first=!S.profile.att[ak];if(first)S.profile.att[ak]=Date.now();
@@ -5321,14 +5323,14 @@ function pick(note,src){var c=club();if(!c)return;sheet.dataset.src=src||"member
   '<div class="list">'+cls.map(function(cl){return '<button class="btn ghost" type="button" style="justify-content:space-between;width:100%" data-gpick="'+esc(cl.id)+'" data-glab="'+esc(cl.time+" "+((cl.title||cl.name||"Class")))+'"><span>'+esc((cl.title||cl.name||"Class"))+'</span><span class="muted">'+esc(cl.time)+'</span></button>'}).join("")+
   '<button class="btn ghost" type="button" style="width:100%" data-gpick="" data-glab="Open mat / own training">Open mat or own training</button></div>'+
   '<div class="field"><label class="label" for="gNote">Note (optional)</label><input type="text" id="gNote" data-keep maxlength="120" placeholder="Only if you want to add one"></div>'+
-  '<div class="row"><button class="linkbtn" type="button" data-gclose>Not now</button></div></div>';sheet.hidden=false}
+  '<div class="row"><button class="linkbtn" type="button" data-gclose>Not now</button></div></div>';sheet.hidden=false;try{if(window.FH125)FH125.decorate(sheet)}catch(e){}}
 /* ---------- member check ---------- */
 async function locate(auto){var c=club();if(!c||busy)return;var m={set textContent(v){document.querySelectorAll("[id=geoMsg]").forEach(function(x){x.textContent=v})}};
  if(!hasGeo(c)){m.textContent="Your club hasn't set its gym location yet. Members can add their attendance themselves.";return}
  busy=true;m.textContent="Finding you…";
  try{var p=test?{latitude:c.geo.lat,longitude:c.geo.lng,accuracy:5}:await pos();
   var d=dist(p.latitude,p.longitude,c.geo.lat,c.geo.lng),eff=Math.max(0,d-Math.min(p.accuracy||0,100)),r=c.geo.r||100;
-  if(eff<=r){pick(test?"Test mode: pretending you're at the gym.":"Which class are you here for?",test?"member":"geo")}
+  if(eff<=r){if(!test&&window.FH125&&FH125.auto&&FH125.auto(windowMatches(c))){busy=false;return}pick(test?"Test mode: pretending you're at the gym.":"Which class are you here for?",test?"member":"geo")}
   else{m.textContent="You're about "+fmt(d)+" from "+c.name+". Get closer (within "+r+" m) and try again."}
  }catch(e){m.textContent=why(e);}
  busy=false}
@@ -14285,7 +14287,7 @@ function lastTrained(){var best=null,all=(S.logs||[]).slice();try{if(typeof cur!
  all.forEach(function(l){if(trained(l)&&l.date&&(!best||l.date>best))best=l.date});return best}
 function paused(){var w=P().wkc||{},ks=Object.keys(w).sort().slice(-2);return ks.some(function(k){var d=w[k];return d&&d.why&&diffDays(k,TODAY)<=14})}
 function mode(){try{return journey().mode}catch(x){return"normal"}}
-function slip(){var r=RS(),p=P();if(!p.onboarded||!S.loadedToday)return null;if(r.nudge==="off")return null;if(r.snoozeUntil&&r.snoozeUntil>TODAY)return null;
+function slip(){var r=RS(),p=P();if(!p.onboarded||!S.loadedToday)return null;if(r.nudge==="off")return null;try{if(window.FH125&&FH125.isTeacher()&&FH125.recent(14)>0)return null}catch(x){}if(r.snoozeUntil&&r.snoozeUntil>TODAY)return null;
  if(["camp","fightweek","weighin","fightday"].indexOf(mode())>=0)return null;if(paused())return null;
  var lt=lastTrained();if(!lt)return null;var gap=diffDays(lt,TODAY),c=cfg();if(club()&&!c.on)return null;if(gap<c.slip)return null;
  if(r.lastNudge&&r.lastEpisode===lt&&r.lastNudge!==TODAY&&diffDays(r.lastNudge,TODAY)<14)return null;
@@ -14358,6 +14360,156 @@ document.addEventListener("change",function(ev){var t=ev.target,c=club();if(!c||
  var w=document.getElementById("fb124c");if(w)w.dataset.sig=""});
 window.FH124={slip:slip,due:due,sugs:sugs,lastTrained:lastTrained};
 setInterval(function(){try{card();meSetting();clubPanel()}catch(x){}},1500);
+})();
+
+/* FighterBase v147: teaching presence. When a coach arrives at the gym for a class they are timetabled to teach, it is recorded as TEACHING, not as their own workout.
+   So (1) the coach's own training record stays clean (no workouts, streaks or check-in counts from teaching), and (2) the club gets an automatic teaching log:
+   who taught which class, when, for how long, with a deal per teacher (paid per class, paid per hour, free membership for teaching N classes a month, or volunteer).
+   Detected by the gym location check-in (counts as confirmed). Anything the coach adds by hand (covering a class, or a class converted from a manual attendance) waits for a manager to approve.
+   A coach who really is training in their own class can say so ("I'm training instead") and that visit counts as a normal workout.
+   Hours use the timetable length of the class, not the minutes on site. Prototype figures only: no money moves here. Pay handling is a later, separately reviewed step (same as PT statements). */
+var T125=T125||false;
+(function(){
+if(T125)return;T125=true;
+function e(s){return esc(String(s==null?"":s))}
+function P(){return S.profile||{}}
+function club(){return (typeof clubState!=="undefined"&&clubState.club)||null}
+function mem(){return (typeof clubState!=="undefined"&&clubState.members)||[]}
+function TS(){try{return FH69.teachers()||[]}catch(x){return (club()&&club().teachers)||[]}}
+function me(){var c=club();if(!c||!S.uid||!P().clubId)return null;return TS().filter(function(t){return t.uid&&t.uid===S.uid})[0]||null}
+function staffRole(){try{return FH118.role()}catch(x){return null}}
+function isMgr(){var r=staffRole();return r==="manager"||r==="admin"||!!(window.FHC&&FHC.isOwner&&FHC.isOwner())}
+function cls(c,id){return (c.timetable||[]).filter(function(x){return x.id===id})[0]||null}
+function money(p){return "£"+(p%100?(p/100).toFixed(2):(p/100))}
+function hrs(m){var h=m/60;return (Math.round(h*10)/10)+" h"}
+function mkey(d){return d.slice(0,7)}
+function mlabel(k){var n=["January","February","March","April","May","June","July","August","September","October","November","December"];return n[+k.slice(5,7)-1]+" "+k.slice(0,4)}
+/* ---------- recording ---------- */
+function record(cl,src,o){o=o||{};var p=P(),m=me();if(!m||!cl)return false;p.teach=p.teach||{};
+ var ak=TODAY+"_"+cl.id,had=!!p.teach[ak];
+ if(!had)p.teach[ak]={d:TODAY,cid:cl.id,title:cl.title||cl.name||"Class",tid:m.id,mins:+cl.mins||60,src:src,st:(src==="geo"&&!o.cover)?"ok":"pending",cover:!!o.cover,at:Date.now(),from:o.from||null};
+ Object.keys(p.teach).forEach(function(k){if(k.slice(0,10)<addDays(TODAY,-400))delete p.teach[k]});
+ try{markDirty()}catch(x){}try{profChanged()}catch(x){}
+ return !had}
+/* called by the location check-in: true means "handled as teaching, do not record a workout" */
+function intercept(cl,classId,src){var m=me();if(!m||!cl)return false;
+ if(cl.tid!==m.id)return false;
+ var ak=TODAY+"_"+cl.id,p=P();
+ if(window.__f125train===classId){window.__f125train=null;p.teachTrain=p.teachTrain||{};p.teachTrain[ak]=1;return false}
+ var first=record(cl,src==="geo"?"geo":"manual");
+ try{toast(first?"Teaching logged":"Already logged",(cl.title||"Class")+" at "+club().name+". It isn't counted as your workout.")}catch(x){}
+ setTimeout(function(){try{card();panel()}catch(x){}},50);return true}
+function hm(t){var p=String(t||"").split(":");return (+p[0]||0)*60+(+p[1]||0)}
+/* arriving by location with exactly one of my classes in the window: no question needed */
+function auto(winClasses){var m=me();if(!m)return false;var mine=(winClasses||[]).filter(function(x){return x.tid===m.id&&!((P().teachTrain||{})[TODAY+"_"+x.id])});
+ if(mine.length!==1)return false;return intercept(mine[0],mine[0].id,"geo")}
+/* class picker: label the ones I teach and offer "training instead" */
+function decorate(sheet){var m=me();if(!m||!sheet)return;var c=club();
+ sheet.querySelectorAll("[data-gpick]").forEach(function(b){var id=b.dataset.gpick;if(!id)return;var cl=cls(c,id);if(!cl||cl.tid!==m.id)return;
+  var sp=b.querySelectorAll("span");if(sp[1])sp[1].textContent=sp[1].textContent+" · you teach";
+  if(!b.nextElementSibling||!b.nextElementSibling.dataset.g125){var t=document.createElement("button");t.type="button";t.className="linkbtn small";t.dataset.g125=id;t.dataset.glab=b.dataset.glab;t.style.cssText="margin:-4px 0 4px 8px;text-align:left";t.textContent="I'm training in this one instead";b.after(t)}});
+ var note=sheet.querySelector(".muted.small");if(note&&!note.dataset.f125){note.dataset.f125=1;note.textContent="Classes you teach are logged as teaching, not as a workout. "+note.textContent}}
+document.addEventListener("click",function(ev){var b=ev.target.closest&&ev.target.closest("[data-g125]");if(!b)return;ev.stopPropagation();ev.preventDefault();window.__f125train=b.dataset.g125;
+ var pk=document.querySelector('[data-gpick="'+b.dataset.g125+'"]');if(pk)pk.click()},true);
+/* the code check-in has no class picker: if I teach a class that is on now, it is teaching */
+function codeGuard(){var m=me(),c=club();if(!m||!c)return false;var d=new Date(),now=d.getHours()*60+d.getMinutes(),cl=null;
+ try{cl=classesOn(c,TODAY).filter(function(x){var st=hm(x.time),en=st+(+x.mins||60);return x.tid===m.id&&now>=st-30&&now<=en+15})[0]}catch(x){}
+ if(!cl||(P().teachTrain||{})[TODAY+"_"+cl.id])return false;return intercept(cl,cl.id,"code")}
+/* catch-all: any attendance on a class I teach (weekly check-in, RSVP, manual) moves out of my training and into teaching */
+function sweep(){var c=club(),m=me();if(!c||!m)return;var p=P(),ch=false;p.teach=p.teach||{};
+ Object.keys(p.att||{}).forEach(function(ak){var cid=ak.slice(11);if(!cid||cid==="open")return;var cl=cls(c,cid);if(!cl||cl.tid!==m.id)return;if((p.teachTrain||{})[ak])return;
+  var geo=!!(p.attSrc&&p.attSrc[ak]&&p.attSrc[ak].geo);
+  if(!p.teach[ak])p.teach[ak]={d:ak.slice(0,10),cid:cid,title:cl.title||"Class",tid:m.id,mins:+cl.mins||60,src:geo?"geo":"converted",st:(geo||isMgr())?"ok":"pending",cover:false,at:+p.att[ak]||Date.now()};
+  delete p.att[ak];if(p.attSrc)delete p.attSrc[ak];ch=true;
+  var all=(S.logs||[]).slice();try{if(cur)all.push(cur)}catch(x){}
+  all.forEach(function(l){if(l.date!==ak.slice(0,10))return;var n=(l.sessions||[]).length;l.sessions=(l.sessions||[]).filter(function(s){return s.cid!==ak});if(l.sessions.length!==n){l.trained=l.sessions.length>0;l.clubCheckin=l.sessions.some(function(s){return s.club})}})});
+ var all2=(S.logs||[]).slice();try{if(cur)all2.push(cur)}catch(x){}
+ all2.forEach(function(l){var keep=[],moved=false;(l.sessions||[]).forEach(function(s){var cid=s.club&&s.cid?String(s.cid):"";if(!cid){keep.push(s);return}
+   var plain=cid.length>11&&cid.charAt(10)==="_"?cid.slice(11):cid,cl=cls(c,plain);if(!cl||cl.tid!==m.id||(p.teachTrain||{})[l.date+"_"+plain]){keep.push(s);return}
+   var k=l.date+"_"+plain;if(!p.teach[k])p.teach[k]={d:l.date,cid:plain,title:cl.title||"Class",tid:m.id,mins:+cl.mins||60,src:"converted",st:isMgr()?"ok":"pending",cover:false,at:Date.now()};moved=true;ch=true});
+  if(moved){l.sessions=keep;l.trained=keep.length>0;l.clubCheckin=keep.some(function(s){return s.club})}});
+ if(ch){try{markDirty()}catch(x){}try{profChanged()}catch(x){}}}
+/* ---------- gathering the log for the club ---------- */
+function entries(){var c=club();if(!c)return[];var out={},put=function(o,x){if(!x||!x.d)return;var k=x.d+"_"+x.cid+"_"+x.tid;out[k]=Object.assign({},out[k]||{},x)};
+ (c.teachLog||[]).forEach(function(x){put(0,x)});
+ mem().forEach(function(m){if(m.uid===S.uid)return;Object.keys(m.teach||{}).forEach(function(k){put(0,m.teach[k])})});
+ Object.keys(P().teach||{}).forEach(function(k){put(0,P().teach[k])});
+ var dec=c.teachDecisions||{};return Object.keys(out).map(function(k){var x=out[k];x.k=k;if(dec[k])x.st=dec[k];return x})}
+function deal(t){return t.td||{type:"none"}}
+function dtxt(d){var t=d.type;return t==="class"?money(Math.round((+d.rate||0)*100))+" per class":t==="hour"?money(Math.round((+d.rate||0)*100))+" per hour":t==="mship"?"Free membership for teaching "+(d.min||0)+" classes a month":t==="vol"?"Volunteer, no payment":"No deal set"}
+function sum(t,mk,list){var d=deal(t),mine=list.filter(function(x){return x.tid===t.id&&mkey(x.d)===mk&&x.d<=TODAY}),ok=mine.filter(function(x){return x.st!=="pending"&&x.st!=="declined"}),wait=mine.filter(function(x){return x.st==="pending"}),mins=ok.reduce(function(a,x){return a+(+x.mins||0)},0),r={t:t,d:d,mine:mine,n:ok.length,wait:wait.length,mins:mins,pay:0,note:""};
+ if(d.type==="class")r.pay=Math.round((+d.rate||0)*100)*ok.length;else if(d.type==="hour")r.pay=Math.round((+d.rate||0)*100*mins/60);
+ if(d.type==="mship"){var need=+d.min||0;r.note=ok.length>=need?"Membership earned ("+ok.length+" of "+need+")":(need-ok.length)+" short of the "+need+" classes ("+ok.length+" so far)"}
+ return r}
+/* ---------- club panel ---------- */
+var MK=null,EXP=null,EDIT=null,F={};
+function can(){return isMgr()}
+function panel(){var host=document.getElementById("huboverBody"),c=club(),w=document.getElementById("fb125Panel"),role=staffRole();
+ if(!host||!c||!(role||isMgr())){if(w)w.remove();return}
+ var list=entries(),teachers=TS(),m0=me();
+ if(!isMgr())teachers=teachers.filter(function(t){return m0&&t.id===m0.id});
+ if(!teachers.length){if(w)w.remove();return}
+ MK=MK||mkey(TODAY);var prev=mkey(addDays(MK+"-01",-1));
+ var h='<div class="sec-h"><h3>Teaching log</h3></div><p class="muted small" style="margin:0 0 8px">Recorded automatically when a coach arrives for a class they teach. It never counts as their own workout. Hours use the class length.</p>'+
+  '<div class="chips" style="margin-bottom:8px"><button type="button" class="chip" data-f125m="'+prev+'" aria-pressed="'+(MK===prev)+'">'+e(mlabel(prev))+'</button><button type="button" class="chip" data-f125m="'+mkey(TODAY)+'" aria-pressed="'+(MK===mkey(TODAY))+'">'+e(mlabel(mkey(TODAY)))+'</button></div>';
+ var tot=0,tw=0;
+ h+=teachers.map(function(t){var s=sum(t,MK,list);tot+=s.pay;tw+=s.wait;var open=EXP===t.id;
+  var line=s.n+" class"+(s.n===1?"":"es")+" · "+hrs(s.mins)+(s.d.type==="class"||s.d.type==="hour"?" · "+money(s.pay):"")+(s.note?" · "+s.note:"")+(s.wait?" · "+s.wait+" waiting for approval":"");
+  var x='<div class="d112-n" style="display:block"><div style="display:flex;justify-content:space-between;gap:8px;align-items:center"><span><b>'+e(t.name)+'</b><br><span class="muted small">'+e(dtxt(s.d))+'</span><br><span class="small">'+e(line)+'</span></span><span style="display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end"><button class="btn ghost sm" type="button" data-f125x="'+e(t.id)+'">'+(open?"Hide":"Classes")+'</button>'+(can()?'<button class="btn ghost sm" type="button" data-f125e="'+e(t.id)+'">Deal</button>':"")+'</span></div>';
+  if(EDIT===t.id){var d=F[t.id]||Object.assign({type:"none",rate:20,min:4},deal(t));F[t.id]=d;
+   x+='<div class="stack" style="gap:6px;margin-top:8px"><div class="chips">'+[["none","No deal"],["class","Paid per class"],["hour","Paid per hour"],["mship","Free membership"],["vol","Volunteer"]].map(function(o){return '<button type="button" class="chip" data-f125t="'+o[0]+'" aria-pressed="'+(d.type===o[0])+'">'+o[1]+'</button>'}).join("")+'</div>'+
+    (d.type==="class"||d.type==="hour"?'<div class="field"><label class="label" for="f125r">£ per '+(d.type==="class"?"class":"hour")+'</label><input type="number" id="f125r" min="0" max="500" step="0.5" value="'+e(d.rate)+'" style="max-width:120px"></div>':"")+
+    (d.type==="mship"?'<div class="field"><label class="label" for="f125n">Classes a month to keep the free membership</label><input type="number" id="f125n" min="1" max="40" step="1" value="'+e(d.min)+'" style="max-width:120px"></div>':"")+
+    '<div class="row"><button class="btn sm" type="button" data-f125s="'+e(t.id)+'">Save</button><button class="btn ghost sm" type="button" data-f125c>Cancel</button></div></div>'}
+  if(open){var mine=s.mine.slice().sort(function(a,b){return b.d.localeCompare(a.d)});
+   x+='<div style="margin-top:8px">'+(mine.length?mine.map(function(y){var st=y.st==="pending"?"Waiting":y.st==="declined"?"Declined":(y.src==="geo"||y.src==="code"?"Confirmed by location":"Approved");
+    return '<div class="small" style="display:flex;justify-content:space-between;gap:8px;padding:4px 0;border-top:1px solid rgba(255,255,255,.08)"><span>'+e(y.d.slice(8,10)+"/"+y.d.slice(5,7))+' · '+e(y.title||"Class")+(y.cover?' <span class="tag">cover</span>':"")+' · '+e(hrs(+y.mins||0))+'</span><span>'+(y.st==="pending"&&can()?'<button class="btn sm" type="button" data-f125a="'+e(y.k)+'|ok">Approve</button> <button class="btn ghost sm" type="button" data-f125a="'+e(y.k)+'|declined">Decline</button>':'<span class="muted">'+e(st)+'</span>')+'</span></div>'}).join(""):'<p class="muted small" style="margin:0">No classes logged this month.</p>')+'</div>'}
+  return x+'</div>'}).join("");
+ if(isMgr()&&tot>0)h+='<p class="small" style="margin:8px 0 0"><b>Teaching pay this month (prototype): '+e(money(tot))+'</b>'+(tw?' · '+tw+' class'+(tw===1?"":"es")+' not counted until approved':'')+'</p>';
+ if(!w){w=document.createElement("div");w.id="fb125Panel";w.className="panel";host.appendChild(w)}
+ if(w.dataset.sig!==h&&!(document.activeElement&&/^f125/.test(document.activeElement.id||""))){w.innerHTML=h;w.dataset.sig=h}}
+function saveClub(patch){var c=club();if(!c)return Promise.resolve();Object.assign(c,patch);try{return db.doc("clubs/"+c.id).update(patch).catch(function(){})}catch(x){return Promise.resolve()}}
+document.addEventListener("click",function(ev){var t=ev.target,b;if(!t.closest)return;
+ if(b=t.closest("[data-f125m]")){MK=b.dataset.f125m;panel();return}
+ if(b=t.closest("[data-f125x]")){EXP=EXP===b.dataset.f125x?null:b.dataset.f125x;panel();return}
+ if(b=t.closest("[data-f125e]")){EDIT=EDIT===b.dataset.f125e?null:b.dataset.f125e;panel();return}
+ if(t.closest("[data-f125c]")){EDIT=null;panel();return}
+ if(b=t.closest("[data-f125t]")){var id=EDIT;F[id]=Object.assign(F[id]||{},{type:b.dataset.f125t});var r=document.getElementById("f125r"),n=document.getElementById("f125n");if(r)F[id].rate=+r.value;if(n)F[id].min=+n.value;panel();return}
+ if(b=t.closest("[data-f125s]")){if(!can())return;var id2=b.dataset.f125s,d=Object.assign({},F[id2]||{}),r2=document.getElementById("f125r"),n2=document.getElementById("f125n");if(r2)d.rate=Math.max(0,Math.min(500,+r2.value||0));if(n2)d.min=Math.max(1,Math.min(40,Math.round(+n2.value)||1));
+  var L=TS().map(function(x){return x.id===id2?Object.assign({},x,{td:d}):x});EDIT=null;saveClub({teachers:L}).then(function(){try{toast("Teaching deal saved")}catch(x){}panel()});panel();return}
+ if(b=t.closest("[data-f125a]")){if(!can())return;var pr=b.dataset.f125a.split("|"),dec=Object.assign({},club().teachDecisions||{});dec[pr[0]]=pr[1];saveClub({teachDecisions:dec}).then(function(){try{toast(pr[1]==="ok"?"Approved":"Declined")}catch(x){}});panel();return}
+},false);
+/* ---------- the coach's own card (Me tab) ---------- */
+var COV=false;
+function card(){var home=document.getElementById("tab-profile"),el=document.getElementById("fb125"),m=me(),c=club();
+ if(!home||!m||!c){if(el)el.remove();return}
+ var list=entries().filter(function(x){return x.tid===m.id}),mk=mkey(TODAY),s=sum(m,mk,list);
+ var h='<span class="fb-kick">Teaching at '+e(c.name)+'</span><p style="margin:6px 0">'+s.n+' class'+(s.n===1?"":"es")+' taught this month ('+e(hrs(s.mins))+')'+(s.wait?', '+s.wait+' waiting for your manager':'')+'.</p>'+
+  '<p class="muted small" style="margin:0 0 8px">When you arrive for a class you teach, it is logged as teaching. It does not count as a workout, streak or check-in on your own record. Your deal: '+e(dtxt(deal(m)))+(deal(m).type==="mship"&&s.note?'. '+e(s.note):"")+'.</p>';
+ var today=[];try{today=classesOn(c,TODAY).filter(function(x){return x.tid!==m.id})}catch(x){}
+ if(COV){h+='<div class="stack" style="gap:6px">'+(today.length?today.map(function(x){return '<button class="btn ghost sm" type="button" data-f125cov="'+e(x.id)+'" style="justify-content:space-between;width:100%"><span>'+e(x.title||x.name||"Class")+'</span><span class="muted">'+e(x.time)+'</span></button>'}).join(""):'<p class="muted small" style="margin:0">No other classes today.</p>')+'<button class="linkbtn small" type="button" data-f125covx>Cancel</button></div>'}
+ else if(today.length)h+='<button class="btn ghost sm" type="button" data-f125covb>I covered a class today</button>';
+ if(!el){el=document.createElement("section");el.id="fb125";el.className="fb-card";home.appendChild(el)}
+ if(el.dataset.sig!==h){el.innerHTML=h;el.dataset.sig=h}}
+document.addEventListener("click",function(ev){var t=ev.target,b;if(!t.closest)return;
+ if(t.closest("[data-f125covb]")){COV=true;card();return}
+ if(t.closest("[data-f125covx]")){COV=false;card();return}
+ if(b=t.closest("[data-f125cov]")){var c=club(),cl=cls(c,b.dataset.f125cov);COV=false;if(cl){var from=cl.tid||null;var ok=record(cl,"manual",{cover:true,from:from});try{toast(ok?"Cover logged":"Already logged","Your manager will confirm it.")}catch(x){}}card();panel()}},false);
+/* ---------- public ---------- */
+function isTeacher(){return !!me()}
+function recent(days){var m=me();if(!m)return 0;var lim=addDays(TODAY,-(days||14));return entries().filter(function(x){return x.tid===m.id&&x.d>=lim&&x.st!=="declined"}).length}
+window.FH125={intercept:intercept,auto:auto,decorate:decorate,codeGuard:codeGuard,isTeacher:isTeacher,recent:recent,sweep:sweep,entries:entries,sum:sum,me:me,record:record};
+/* ---------- demo history: eight weeks of teaching for the demo club ---------- */
+function seed(){var c=club();if(!c||c.id!=="iron-temple"||c.teachLog)return;
+ if(!(c.teachers||[]).some(function(t){return t.id==="tmo"}))return;
+ var log=[];for(var i=1;i<=56;i++){var d=addDays(TODAY,-i);(c.timetable||[]).forEach(function(x){if(x.dow!==dowOf(d)||!x.tid||x.id==="c7")return;if((i+x.id.charCodeAt(1))%11===0)return;
+  log.push({d:d,cid:x.id,title:x.title,tid:x.tid,mins:+x.mins||60,src:"geo",st:"ok"})})}
+ /* one cover waiting for approval */
+ var cv=null;for(var j=1;j<10&&!cv;j++){var dd=addDays(TODAY,-j),cc=(c.timetable||[]).filter(function(x){return x.dow===dowOf(dd)&&x.tid==="tsa"&&x.id!=="c7"})[0];if(cc)cv={d:dd,cid:cc.id,title:cc.title,tid:"tjo",mins:+cc.mins||60,src:"manual",st:"pending",cover:true,from:"tsa"}}
+ if(cv){log=log.filter(function(x){return !(x.d===cv.d&&x.cid===cv.cid)});log.push(cv)}
+ c.teachLog=log;
+ c.teachers=(c.teachers||[]).map(function(t){var td=t.id==="tmo"?{type:"vol"}:t.id==="tjo"?{type:"class",rate:25}:t.id==="tsa"?{type:"mship",min:8}:null;return td&&!t.td?Object.assign({},t,{td:td}):t})}
+setInterval(function(){try{seed();sweep();panel();card()}catch(x){}},1500);
 })();
 
 /* FighterBase v44: always a way back, always a next step. */
