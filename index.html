@@ -14181,6 +14181,90 @@ document.addEventListener("change",function(ev){var t=ev.target;if(t.id==="f122n
 setInterval(function(){try{panel();editCard()}catch(x){}},1500);
 })();
 
+/* FighterBase v145: Help and support. One place for members, paying members and coaches: search the FAQs, contact details, and "Message us".
+   Prototype: messages are saved on the member's own record and shown back to them; nothing is delivered yet. Live chat needs a support tool (see docs/helpdesk-plan.md).
+   Contact details below are PLACEHOLDERS (reserved .example address) until Steve supplies the real ones. */
+var D123=D123||false;
+(function(){
+if(D123)return;D123=true;
+var CONTACT={email:"help@fighterbase.example",hours:"Monday to Friday, 9am to 5pm UK time",reply:"We aim to reply within one working day",placeholder:true};
+var MEMBER=[
+["Getting started","How do I change my training plan?","Open the Me tab and go to Your plan. You can change how many sessions you aim for, which days, and what your week includes. Your progress is measured against your own plan."],
+["Getting started","How do I change my sport, name or date of birth?","Name and sport are under About you on the Me tab. Date of birth is used for age rules, so it can only be corrected by contacting us. Use Message us below."],
+["Getting started","What does 'Skip' do in setup?","Nothing is lost. You can answer any skipped question later from Me or Goals."],
+["Your data and privacy","What can my coach see?","Only what you choose. Linking a club does not share everything. Each item (training, goals, skills, weight, food) has its own switch on the Me tab, under Coach and data. Weight and food are off unless you turn them on."],
+["Your data and privacy","How do I stop sharing or leave a club?","Turn the switches off on the Me tab (Coach and data), or unlink from the club. Unlinking ends sharing straight away. Your own records stay yours."],
+["Your data and privacy","Is the app medical advice?","No. FighterBase is a tracking and planning tool. For injuries, weight cuts or health questions, speak to your GP, a physio or a registered dietitian."],
+["Your data and privacy","Under 18s","Under-18s have extra protections: no weight or calorie targets, no camp sharing, and clubs deal with a parent or guardian. If you are a parent and have a question, use Message us."],
+["Training and goals","How is my weekly target counted?","A session counts when you log it or check in at your club. Your target is the number you chose. Extra sessions never count against you."],
+["Training and goals","I missed a week. What happens?","Nothing bad. Your streak pauses and you pick up where you are. The app says welcome back, not 'you missed'."],
+["Fight camps","How do I start a fight camp?","Add your next fight with its date from the Me tab. The Camp check card then helps you re-check details, food, training and goals, and ask your club for support."],
+["Fight camps","What is the weekly camp report?","If you are linked to a club and turn camp sharing on, you can send your coach a short weekly summary. You choose what is in it, and you always see it before it goes."],
+["Fight camps","Who is in my corner?","Your coach names your corner team. Each person accepts or can't make it, and you can see who is confirmed on your countdown."],
+["Clubs and linking","How do I link to my club?","Use Find a club (in setup or on the welcome screen), or enter your club's code. Your coach can see only what you share."],
+["Clubs and linking","Personal training sessions","A PT counts once you confirm you attended, or you check in at the club that day. Nobody else can mark it for you."],
+["Payments and membership","How do I pay my club?","Your club sets up how it takes payment. Paying through FighterBase is being added later, through a regulated payment provider. Until then, pay your club the way you do now."],
+["Payments and membership","Can I cancel or change my membership?","Contact your club for your gym membership. For your FighterBase subscription, use Message us and we will help."],
+["Problems","Something is not working","Try closing and reopening the app first. If it still fails, use Message us and tell us what you tapped and what you expected."],
+["Problems","I'm worried about someone's safety","If someone is in danger, call 999. For a concern about a child or vulnerable adult at your club, speak to the club's safeguarding lead. You can also use Message us to tell us about a problem with the app, but we are not an emergency service."]
+];
+var COACH=[
+["Getting your club set up","How do I invite my members?","Share your club code or the Find a club link. Members choose to link, and they choose what they share with you."],
+["Getting your club set up","How do I set up classes and the timetable?","Open the Classes tab in the club hub. Add a class with its day, time, level and teacher. Members see it straight away."],
+["Getting your club set up","How do I add another coach or a manager?","Only the manager can do this. Open Team and permissions in the club overview. Roles are Manager, Admin manager, and coaches (Teacher, Trainer, Mentor)."],
+["Roles and permissions","What can an admin manager do?","Help with scheduling, payments and agreements. They cannot change roles or unlink a member. Only the manager can do those."],
+["Roles and permissions","Can any coach offer personal training?","Only coaches the manager has approved. Agreements say how PT income is split: a set amount to the club, a percentage, or a monthly fee."],
+["Your members and their data","What can I see about a member?","Only what they share with you. If they turn sharing off, it disappears from your screen. Camp reports reach you only while the member has camp sharing on."],
+["Your members and their data","How do I unlink a member?","Only the manager can. Unlinking ends sharing at once and closes any camp, corner or PT bookings that depend on the link."],
+["Your members and their data","Members under 18","Under-18s have extra protections and are left out of camp sharing for now. Talk to a parent or guardian, and follow your safeguarding policy."],
+["Fight camps and coaching","How do weekly camp reports work?","Open the Camp inbox in the club hub. Read the report, reply, and send typed suggestions (a class, a PT, or a chat). The fighter accepts or declines each one."],
+["Fight camps and coaching","How do I set the corner team and fight plan?","Add corner people from the fighter's fight camp and offer a plan. The fighter accepts, or proposes changes, and you agree. It records expectations, not a contract."],
+["Payments","How do PT statements work?","The monthly statement counts only sessions the member confirmed or checked in for. Paying out through FighterBase is added later, after a payment review."],
+["Payments","Do you take a cut of my members' fees?","No fees are being taken in this test version. Pricing will be confirmed before launch."],
+["Problems","I can't see a feature a member mentions","It may be off for their account or they may not have linked. Ask them to check their sharing switches on the Me tab, or use Message us."]
+];
+function e(s){return esc(String(s==null?"":s))}
+function P(){return S.profile||{}}
+function staff(){try{return !!(window.FH118&&FH118.role&&FH118.role())||!!(window.FHC&&FHC.isOwner&&FHC.isOwner())}catch(x){return false}}
+var ST={q:"",open:false,sent:false};
+function faqs(){return (staff()?COACH.concat(MEMBER.filter(function(f){return f[0]==="Problems"})):MEMBER).filter(function(f){var q=ST.q.toLowerCase().trim();return !q||(f[1]+" "+f[2]+" "+f[0]).toLowerCase().indexOf(q)>=0})}
+function ov(){var o=document.getElementById("fb123");if(!o){o=document.createElement("div");o.id="fb123";o.style.cssText="position:fixed;inset:0;z-index:2147482000;background:var(--bg,#0f1012);color:var(--text,#f2f2f2);overflow:auto;padding:16px;display:none";o.setAttribute("role","dialog");o.setAttribute("aria-label","Help and support");document.body.appendChild(o);
+ o.addEventListener("input",function(ev){if(ev.target.id==="f123q"){ST.q=ev.target.value;drawList(true)}})}return o}
+function open(){ST.open=true;ST.sent=false;ov().style.display="block";draw()}
+function close(){ST.open=false;ov().style.display="none"}
+function listHtml(){var l=faqs(),h="",g="";if(!l.length)return '<p class="muted small">No answers match that. Try fewer words, or message us below.</p>';
+ l.forEach(function(f){if(f[0]!==g){g=f[0];h+='<h4 style="margin:14px 0 6px">'+e(g)+'</h4>'}h+='<details class="f123d" style="border-bottom:1px solid rgba(255,255,255,.1);padding:8px 0"><summary style="cursor:pointer;font-weight:600">'+e(f[1])+'</summary><p style="margin:8px 0 0" class="small">'+e(f[2])+'</p></details>'});return h}
+function drawList(only){var el=document.getElementById("f123list");if(el)el.innerHTML=listHtml();if(!only)return}
+function topics(){return staff()?["Using the club hub","Roles and permissions","A member's problem","Payments and agreements","Something is not working","Other"]:["Using the app","My data and sharing","My membership or payments","Fight camp","Something is not working","Other"]}
+function draw(){var o=ov();if(!ST.open)return;var p=P(),msgs=(p.supportMsgs||[]).slice().reverse();
+ var h='<div style="max-width:560px;margin:0 auto" class="stack"><div class="row" style="justify-content:space-between"><h2 style="margin:0">Help and support</h2><button class="btn ghost sm" type="button" data-f123="close">Close</button></div>'+
+ '<p class="muted small" style="margin:0">'+(staff()?"For coaches and club managers.":"For members.")+' Search the answers first. Most questions are covered.</p>'+
+ '<label class="label" for="f123q">Search the answers</label><input id="f123q" type="search" placeholder="e.g. weight, unlink, camp report" style="width:100%" value="'+e(ST.q)+'">'+
+ '<div id="f123list" class="panel">'+listHtml()+'</div>'+
+ '<div class="panel stack"><h3 style="margin:0">Contact us</h3><p class="small" style="margin:0">Email: <b>'+e(CONTACT.email)+'</b><br>'+e(CONTACT.hours)+'. '+e(CONTACT.reply)+'.</p>'+(CONTACT.placeholder?'<p class="muted small" style="margin:0">Demo contact details. The real support address will go here before launch.</p>':"")+
+ '<p class="small" style="margin:0"><b>In an emergency call 999.</b> A safeguarding concern about a child or vulnerable adult goes to your club\'s safeguarding lead. We are not an emergency service.</p></div>'+
+ '<div class="panel stack"><h3 style="margin:0">Message us</h3>'+(ST.sent?'<p class="small" style="margin:0"><b>Thanks, we have your message.</b> '+e(CONTACT.reply)+'. Your messages are listed below.</p>':'')+
+ '<label class="label" for="f123t">What is it about?</label><select id="f123t" style="width:100%">'+topics().map(function(t){return '<option>'+e(t)+'</option>'}).join("")+'</select>'+
+ '<label class="label" for="f123m">Your message</label><textarea id="f123m" maxlength="600" rows="4" style="width:100%" placeholder="Tell us what happened and what you expected."></textarea>'+
+ '<p class="muted small" style="margin:0">Please don\'t include passwords, card numbers or health details.</p><div class="row"><button class="btn gold" type="button" data-f123="send">Send message</button></div></div>'+
+ (msgs.length?'<div class="panel stack"><h3 style="margin:0">Your messages</h3>'+msgs.map(function(m){return '<p class="small" style="margin:0"><b>'+e(m.topic)+'</b> · '+e(new Date(m.at).toLocaleDateString("en-GB",{day:"numeric",month:"short"}))+' · <span class="muted">Received</span><br>'+e(m.msg)+'</p>'}).join("")+'</div>':"")+'</div>';
+ o.innerHTML=h}
+document.addEventListener("click",function(ev){var b=ev.target.closest&&ev.target.closest("[data-f123],[data-f123open]");if(!b)return;
+ if(b.hasAttribute("data-f123open")){ev.preventDefault();open();return}
+ var a=b.getAttribute("data-f123");if(a==="close")return close();
+ if(a==="send"){var m=(document.getElementById("f123m").value||"").trim(),t=document.getElementById("f123t").value;if(m.length<5){try{toast("Please write a little more")}catch(x){}return}
+  var p=P();p.supportMsgs=(p.supportMsgs||[]).concat([{id:"sm"+Date.now(),topic:t,msg:m.slice(0,600),at:Date.now()}]);try{profChanged()}catch(x){}ST.sent=true;draw();try{toast("Message saved")}catch(x){}}},true);
+/* entry cards */
+function cards(){var tab=document.getElementById("tab-profile");
+ if(tab&&!document.getElementById("fb123card")){var d=document.createElement("section");d.id="fb123card";d.className="fb-card";d.innerHTML='<span class="fb-kick">Help and support</span><p style="margin:4px 0 8px" class="small">Answers, contact details and a way to message us.</p><button class="btn sm" type="button" data-f123open>Get help</button>';tab.appendChild(d)}
+ var host=document.getElementById("huboverBody");
+ if(host&&staff()&&!document.getElementById("fb123hub")){var w=document.createElement("div");w.id="fb123hub";w.className="panel";w.innerHTML='<div class="sec-h"><h3>Help and support</h3></div><p class="small" style="margin:0 0 8px">Answers for coaches and managers, contact details and a way to message us.</p><button class="btn sm" type="button" data-f123open>Get help</button>';host.appendChild(w)}
+ if(host&&!staff()){var x=document.getElementById("fb123hub");if(x)x.remove()}}
+window.FH123={open:open,faqs:function(){return {member:MEMBER.length,coach:COACH.length}}};
+window.addEventListener("hashchange",function(){if(location.hash==="#help")open()});
+setInterval(function(){try{cards()}catch(x){}},1500);
+})();
+
 /* FighterBase v44: always a way back, always a next step. */
 var N31=N31||false;
 (function(){
