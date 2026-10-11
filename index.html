@@ -13662,16 +13662,22 @@ function apply(name,save){if(!TH[name]||name===CUR&&!save){drawDots();return}
 /* ---------- switch at the top of the page ---------- */
 var css=document.createElement("style");css.id="fbThemeCss";
 css.textContent="#fbThemeDots{display:inline-flex;align-items:center;gap:8px;padding:6px 10px;border-radius:999px;border:1px solid var(--line,rgba(255,255,255,.12));background:rgba(0,0,0,.25)}#fbThemeDots button{width:22px;height:22px;border-radius:50%;border:2px solid transparent;padding:0;cursor:pointer;box-shadow:0 0 0 1px rgba(255,255,255,.25) inset;min-height:0}#fbThemeDots button[aria-pressed=true]{border-color:#fff;transform:scale(1.12)}#fbThemeDots .thl{font:700 10px var(--body,inherit);letter-spacing:.1em;text-transform:uppercase;color:var(--muted,#9AA0AA);margin-right:2px}";
+css.textContent+="#fbModeBtn{margin-left:auto;width:34px;height:34px;border-radius:50%;border:1px solid var(--line,rgba(255,255,255,.18));background:rgba(0,0,0,.25);color:var(--fg,#fff);display:inline-flex;align-items:center;justify-content:center;padding:0;cursor:pointer;min-height:0;flex:none}#fbModeBtn:hover{border-color:var(--red,#C81E3A)}"+
+"html[data-mode=light]{filter:invert(1) hue-rotate(180deg);background:#fff;--red:#FF95B1;--red-soft:rgba(255,149,177,.14);--accent:#FF95B1;--bad:#8CC8FF}html[data-mode=light] img,html[data-mode=light] video,html[data-mode=light] canvas,html[data-mode=light] picture,html[data-mode=light] .fb-mark,html[data-mode=light] .fb-mini,html[data-mode=light] #fbSplash,html[data-mode=light] [style*=background-image],html[data-mode=light] .cb154{filter:invert(1) hue-rotate(180deg)}";
 document.head.appendChild(css);
 function host(){return document.querySelector(".modebar")||document.querySelector("header.top")}
-function drawDots(){var h=host();if(!h)return;var el=document.getElementById("fbThemeDots");
- if(!el){el=document.createElement("div");el.id="fbThemeDots";el.setAttribute("role","group");el.setAttribute("aria-label","Colour theme");h.appendChild(el)}
- var html='<span class="thl">Corner</span>'+Object.keys(TH).map(function(k){return '<button type="button" data-fbtheme="'+k+'" aria-pressed="'+(k===CUR)+'" aria-label="'+TH[k].n+'" title="'+TH[k].n+'" style="background:'+TH[k].dot+'"></button>'}).join("");
- if(el.dataset.sig!==CUR+html.length){el.innerHTML=html;el.dataset.sig=CUR+html.length}}
-document.addEventListener("click",function(e){var b=e.target.closest&&e.target.closest("[data-fbtheme]");if(!b)return;apply(b.dataset.fbtheme,true);try{toast(TH[b.dataset.fbtheme].n,TH[b.dataset.fbtheme].d)}catch(x){}},true);
+function modeNow(){var m="dark";try{m=(S.profile&&S.profile.mode)||localStorage.getItem("fbMode")||"dark"}catch(e){}return m==="light"?"light":"dark"}
+function setMode(m,save){m=m==="light"?"light":"dark";document.documentElement.setAttribute("data-mode",m);document.body&&document.body.classList.toggle("fb-lightmode",m==="light");try{localStorage.setItem("fbMode",m)}catch(e){}
+ if(save){try{S.profile.mode=m;profChanged()}catch(e){}}drawDots()}
+function drawDots(){var h=host();if(!h)return;var old=document.getElementById("fbThemeDots");if(old)old.remove();var el=document.getElementById("fbModeBtn");
+ var m=modeNow();if(!el){el=document.createElement("button");el.id="fbModeBtn";el.type="button";el.setAttribute("data-fbmode","1");h.appendChild(el)}
+ var lab=m==="light"?"Switch to dark view":"Switch to light view";el.setAttribute("aria-label",lab);el.setAttribute("data-tip",lab);el.title=lab;
+ var ic=m==="light"?'<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg>':'<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>';
+ if(el.dataset.sig!==m){el.innerHTML=ic;el.dataset.sig=m}}
+document.addEventListener("click",function(e){var b=e.target.closest&&e.target.closest("[data-fbmode]");if(!b)return;var n=modeNow()==="light"?"dark":"light";setMode(n,true);try{toast(n==="light"?"Light view":"Dark view","Your choice is saved")}catch(x){}},true);
 /* ---------- restore the saved choice once the profile has loaded ---------- */
-var tries=0,iv=setInterval(function(){tries++;try{var t=S.profile&&S.profile.theme;if(t&&TH[t]&&t!==CUR)apply(t,false);drawDots();if(S.profile&&(S.profile.onboarded!==undefined||tries>30))clearInterval(iv)}catch(e){if(tries>40)clearInterval(iv)}},500);
-setTimeout(drawDots,300);setInterval(function(){try{drawDots();var t=S.profile&&S.profile.theme;if(t&&TH[t]&&t!==CUR)apply(t,false)}catch(e){}},4000);
+var tries=0,iv=setInterval(function(){tries++;try{if(CUR!=="crimson")apply("crimson",false);if(S.profile&&S.profile.mode&&S.profile.mode!==modeNow())setMode(S.profile.mode,false);drawDots();if(S.profile&&(S.profile.onboarded!==undefined||tries>30))clearInterval(iv)}catch(e){if(tries>40)clearInterval(iv)}},500);
+try{setMode(modeNow(),false)}catch(e){}setTimeout(drawDots,300);setInterval(function(){try{drawDots();if(CUR!=="crimson")apply("crimson",false);if(S.profile&&S.profile.mode&&S.profile.mode!==modeNow())setMode(S.profile.mode,false)}catch(e){}},4000);
 window.FH114={apply:apply,current:function(){return CUR},themes:TH};
 })();
 
