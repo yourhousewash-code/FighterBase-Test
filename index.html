@@ -2206,7 +2206,7 @@ async function syncCoach(){
     const avg=f=>{const x=last7.map(l=>l[f]).filter(v=>v!=null&&v!=="");return x.length?r1(x.reduce((a,v)=>a+ +v,0)/x.length):null};
     await ref.set({uid:S.uid,name:S.profile.name||"",ring:String(S.profile.ring||"").trim().slice(0,40),sports:sportsOf(S.profile),record:fightRecord(),rank:rankOf(totalXP()).name,streak:streak(),readiness:(readiness()||{}).score??null,diet:S.profile.diet||"ketaleo",goal:S.profile.goal||"maintain",updated:new Date().toISOString(),weights,checkins7:last7.length,onPlan7:last7.filter(l=>l.carbsOnPlan).length,
       sessions7:st.n7,mins7:st.m7,load7:Math.round(st.acute),ratio:st.ratio==null?null:r1(st.ratio),energy7:avg("energy"),sleep7:avg("sleep"),soreness7:avg("soreness"),
-      smokeFree7:S.profile.quitDate?last7.filter(l=>l.smokeFree).length:null,cut:cutSummary(),quitDate:S.profile.quitDate||null,fightDate:S.profile.fightDate||null,weighIn:S.profile.weighIn||null});
+      smokeFree7:S.profile.quitDate?last7.filter(l=>l.smokeFree).length:null,cut:cutSummary(),quitDate:S.profile.quitDate||null,fightDate:S.profile.fightDate||null,weighIn:S.profile.weighIn||null,plan7:(window.FH138?FH138.share():null)});
     S.coachShared=true;
   }catch(e){}
 }
@@ -2220,7 +2220,7 @@ function renderCoach(){
     return `<div class="athlete"><div class="row" style="justify-content:space-between"><h3 data-athname="${esc(x.uid)}">${esc(x.name||"Athlete")}${x.ring?` <span class="ring-tag">“${esc(x.ring)}”</span>`:""}</h3>${flag}</div>
     <span class="small muted">${(x.sports||[]).length?esc(x.sports.slice(0,3).join(", "))+" · ":""}${esc((DIETS[x.diet]||{}).name||x.diet)} · ${esc({lose:"Lose fat",maintain:"Maintain",build:"Build muscle"}[x.goal]||"")} · updated ${x.updated?new Date(x.updated).toLocaleDateString("en-GB",{day:"numeric",month:"short"}):"–"}</span>
     ${spark(w)}
-    <div class="kv"><span>Record · level</span><span>${x.record?`${x.record.w}W ${x.record.d}D`:"–"} · ${esc(x.rank||"Spark")}</span><span>Weight</span><span>${last??"–"} kg${ch!=null?` (${ch>0?"+":""}${ch})`:""}</span><span>Check-ins (7 days)</span><span>${x.checkins7??0}/7</span><span>On plan</span><span>${x.onPlan7??0}/${x.checkins7??0}</span><span>Sessions · minutes</span><span>${x.sessions7??0} · ${x.mins7??0}</span><span>Load ratio</span><span>${x.ratio??"–"}</span>${x.readiness!=null?`<span>Readiness</span><span>${x.readiness}/100</span>`:""}<span>Energy · sleep</span><span>${x.energy7??"–"}/5 · ${x.sleep7??"–"}h</span>${x.smokeFree7!=null?`<span>Smoke-free (7 days)</span><span>${x.smokeFree7}</span>`:""}${days!=null&&days>=0?`<span>Fight</span><span>${days} days · ${x.weighIn??"?"} kg</span>`:""}${x.cut?`<span>${x.cut.sim?"Simulated cut":"Cut"}</span><span>${x.cut.target} kg by ${new Date(x.cut.weighDate+"T00:00").toLocaleDateString("en-GB",{day:"numeric",month:"short"})}${x.cut.delta!=null?` · ${x.cut.delta>0?"+":""}${x.cut.delta}`:""}</span>`:""}</div>${x.cut&&!x.cut.sim&&(x.cut.status==="bad"||x.cut.gapPct>5)?'<span class="badge bad-chip">Review this cut</span>':""}</div>`}).join(""):'<div class="empty">No athletes are sharing yet.</div>';
+    <div class="kv"><span>Record · level</span><span>${x.record?`${x.record.w}W ${x.record.d}D`:"–"} · ${esc(x.rank||"Spark")}</span><span>Weight</span><span>${last??"–"} kg${ch!=null?` (${ch>0?"+":""}${ch})`:""}</span><span>Check-ins (7 days)</span><span>${x.checkins7??0}/7</span><span>On plan</span><span>${x.onPlan7??0}/${x.checkins7??0}</span><span>Sessions · minutes</span><span>${x.sessions7??0} · ${x.mins7??0}</span><span>Load ratio</span><span>${x.ratio??"–"}</span>${x.readiness!=null?`<span>Readiness</span><span>${x.readiness}/100</span>`:""}<span>Energy · sleep</span><span>${x.energy7??"–"}/5 · ${x.sleep7??"–"}h</span>${x.smokeFree7!=null?`<span>Smoke-free (7 days)</span><span>${x.smokeFree7}</span>`:""}${x.plan7?`<span>Meal plan (7 days)</span><span>${x.plan7.eaten}/${x.plan7.planned} meals logged</span>${x.plan7.note?`<span>Week note</span><span>${esc(x.plan7.note)}</span>`:""}`:""}${days!=null&&days>=0?`<span>Fight</span><span>${days} days · ${x.weighIn??"?"} kg</span>`:""}${x.cut?`<span>${x.cut.sim?"Simulated cut":"Cut"}</span><span>${x.cut.target} kg by ${new Date(x.cut.weighDate+"T00:00").toLocaleDateString("en-GB",{day:"numeric",month:"short"})}${x.cut.delta!=null?` · ${x.cut.delta>0?"+":""}${x.cut.delta}`:""}</span>`:""}</div>${x.cut&&!x.cut.sim&&(x.cut.status==="bad"||x.cut.gapPct>5)?'<span class="badge bad-chip">Review this cut</span>':""}</div>`}).join(""):'<div class="empty">No athletes are sharing yet.</div>';
 }
 
 /* ---------- Export ---------- */
@@ -15917,6 +15917,46 @@ var css=document.createElement("style");css.textContent=
  ".a137-w{display:flex;align-items:center;gap:10px;margin-top:10px}.a137-w select{font-size:14px;padding:6px 8px;border-radius:8px}";
 document.head.appendChild(css);
 return {items:items,events:events,block:block,loggedW:loggedW,dot:dot,control:control}})();
+
+/* FighterBase v165: "Your eating plan" on Progress: this week's planned meals against what was logged, the member's weekly note and likes,
+   and an optional switch to share a short summary with their coach (profile.shareMeals; only sent when Coach sharing is also on).
+   Not logged means unknown, never "didn't eat". Reads profile.mealPlan {start,days,map:{date:{breakfast,am,lunch,pre,dinner,post,x}}}, nutNotes, nutFeed. */
+var FH138=(function(){
+var SL=["breakfast","am","lunch","pre","dinner","post"];
+function P(){return (typeof S!=="undefined"&&S.profile)||{}}
+function e(s){return esc(String(s==null?"":s))}
+function lab(k){return new Date(k+"T12:00").toLocaleDateString("en-GB",{day:"numeric",month:"short"})}
+function recName(id){try{var r=FH62.lib().filter(function(x){return x.id===id})[0];return r?r.name:""}catch(x){return ""}}
+function mon(k){return addDays(k,-((new Date(k+"T12:00").getDay()+6)%7))}
+function stats(back){var p=P().mealPlan,m={};try{m=logMap()||{}}catch(x){}
+ if(!p||!p.map)return null;var o={planned:0,eaten:0,unknown:0,days:0,logDays:0,end:p.start?addDays(p.start,(p.days||7)-1):null,liked:0,disliked:0,from:addDays(TODAY,-(back-1))};
+ for(var i=0;i<back;i++){var k=addDays(TODAY,-i),d=p.map[k];if(!d)continue;var got={},l=m[k];((l&&l.eaten)||[]).forEach(function(x){if(x.reg)got[x.reg]=1});var any=l&&(l.eaten||[]).length>0,n=0;
+  SL.forEach(function(s){if(d[s]){n++;o.planned++;if(got[d[s]])o.eaten++;else if(!any)o.unknown++}});if(n){o.days++;if(any)o.logDays++}}
+ var f=P().nutFeed||{};Object.keys(f).forEach(function(id){if(f[id]===1)o.liked++;else if(f[id]===-1)o.disliked++});
+ return o.planned?o:null}
+function note(){var n=P().nutNotes||{},k=mon(TODAY);return String(n[k]||"").trim()}
+/* short summary the coach may see (only if the member turned it on) */
+function share(){if(!P().shareMeals)return null;var s=stats(7);if(!s)return null;return {planned:s.planned,eaten:s.eaten,unknown:s.unknown,days:s.days,end:s.end,note:note().slice(0,200)}}
+function html(){var p=P(),s=stats(7);
+ if(!s)return '<div class="card"><h2>Your eating plan</h2><p class="muted small">No meal plan yet. Make one and this shows how the week went, so you can see what to change.</p><div class="row"><button class="btn ghost sm" type="button" data-f138plan="1">Make my meal plan</button></div></div>';
+ var nt=note(),on=!!p.shareMeals,co=!!p.shareCoach;
+ return '<div class="card"><h2>Your eating plan</h2><p class="muted small" style="margin-top:0">Last 7 days, '+e(lab(s.from))+' to '+e(lab(TODAY))+'.</p>'+
+  '<div class="a138-t"><div><b>'+s.eaten+'/'+s.planned+'</b><span>planned meals logged</span></div><div><b>'+s.logDays+'/'+s.days+'</b><span>plan days with food logged</span></div><div><b>'+(s.end?e(lab(s.end)):'-')+'</b><span>plan runs to</span></div></div>'+
+  (s.unknown?'<p class="muted small">'+s.unknown+' planned meal'+(s.unknown===1?'':'s')+' on days with nothing logged. Those stay unknown, not counted as missed.</p>':'')+
+  (nt?'<p class="a138-n"><span class="muted small">Your note this week</span><br>'+e(nt)+'</p>':'<p class="muted small">Add a short note about how the week went in the meal plan and it shows here.</p>')+
+  (s.liked||s.disliked?'<p class="muted small">You have marked '+s.liked+' meal'+(s.liked===1?'':'s')+' you like and '+s.disliked+' to avoid. The next plan uses them.</p>':'')+
+  '<div class="a138-s"><label class="a138-l"><input type="checkbox" data-f138share="1"'+(on?' checked':'')+'> <span><b>Share this summary with my coach</b><br><span class="muted small">Only the counts above and your weekly note. Never your recipes or what you ate.'+(co?'':' Needs Coach sharing switched on in your profile.')+' Switch off any time and it disappears from their screen.</span></span></label></div>'+
+  '<div class="row"><button class="linkbtn" type="button" data-f138plan="1">Open my meal plan</button></div></div>'}
+function draw(){var el=document.getElementById("fhPlanProg"),anchor=document.getElementById("fhInsights")||document.getElementById("pvReport");if(!anchor)return;
+ if(!el){el=document.createElement("div");el.id="fhPlanProg";el.className="stack pv-report";anchor.parentNode.insertBefore(el,anchor.nextSibling)}
+ try{el.innerHTML=html()}catch(x){el.innerHTML="";console.warn("p138",x)}}
+document.addEventListener("click",function(ev){var b=ev.target.closest&&ev.target.closest("[data-f138plan]");if(b){try{FH62.go("plan")}catch(x){try{showTab("nutrition")}catch(y){}}}});
+document.addEventListener("change",function(ev){var t=ev.target;if(!t.matches||!t.matches("[data-f138share]"))return;S.profile.shareMeals=t.checked;try{profChanged()}catch(x){}draw()});
+var css=document.createElement("style");css.textContent=".a138-t{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:8px 0}.a138-t div{display:flex;flex-direction:column;align-items:center;padding:8px 4px;border-radius:12px;border:1px solid var(--line,rgba(255,255,255,.12))}.a138-t b{font:900 20px var(--display,'Big Shoulders Display'),sans-serif}.a138-t span{font-size:11px;opacity:.7;text-align:center}.a138-n{margin:8px 0}.a138-s{margin:10px 0;padding-top:8px;border-top:1px solid var(--line,rgba(255,255,255,.12))}.a138-l{display:flex;gap:10px;align-items:flex-start;cursor:pointer}";
+document.head.appendChild(css);
+var _rp=(typeof renderProgress==="function")?renderProgress:null;
+if(_rp)renderProgress=function(){var r=_rp.apply(this,arguments);try{draw()}catch(x){}return r};
+return {stats:stats,share:share,draw:draw}})();
 
 /* FighterBase v44: always a way back, always a next step. */
 var N31=N31||false;
