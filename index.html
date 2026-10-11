@@ -13790,13 +13790,13 @@ var ST=[["details","Re-check your fight details","Date, event, rules and weight 
 function draw(){var home=document.getElementById("tab-today");if(!home)return;var el=document.getElementById("fb117"),f=fight(),p=P();
  if(!f||!p.onboarded||(chk(f).done)){if(el)el.hidden=true;return}
  var c=chk(f),n=ST.filter(function(s){return c[s[0]]}).length,cl=club(),d=dec(f),rq=p.campReq&&p.campReq.k===key(f)?p.campReq:null;
- var todo=ST.filter(function(q){return !c[q[0]]}).map(function(q){return {details:'fight details',food:'food',train:'training',goals:'goals'}[q[0]]});if(cl&&!(d&&d.st==='ok'||c.coach))todo.push('coach support');
- var tot=(cl?5:4),nn=n+(cl&&(d&&d.st==="ok"||c.coach)?1:0);
+ var off=!!(cl&&((cl.fsvc||{}).camp||d||rq));var todo=ST.filter(function(q){return !c[q[0]]}).map(function(q){return {details:'fight details',food:'food',train:'training',goals:'goals'}[q[0]]});if(off&&!(d&&d.st==='ok'||c.coach))todo.push('coach support');
+ var tot=(off?5:4),nn=n+(off&&(d&&d.st==="ok"||c.coach)?1:0);
  var h='<button type="button" class="c117-h" data-f117tog="1" aria-expanded="'+OPEN+'"><span><span class="fb-kick">Camp check · '+nn+' of '+tot+'</span><b class="c117-t">Check / amend goals</b>'+(todo.length?'<span class="c117-need"><em>Needs doing</em> '+e(todo.join(", "))+'</span>':'<span class="c117-ok">&#10003; All set. Tap to amend.</span>')+'</span><i aria-hidden="true">'+(OPEN?'&#9650;':'&#9660;')+'</i></button>';
  if(!OPEN){if(!el){el=document.createElement("section");el.id="fb117";el.className="fb-card";home.appendChild(el)}el.hidden=false;if(el.dataset.sig!==h){el.innerHTML=h;el.dataset.sig=h}return}
  h+='<p class="muted small" style="margin:8px 0">One place to check your camp. Tick each one when you are happy with it. The detailed week by week check stays in your weekly check-in.</p>'+
  ST.map(function(s){var on=c[s[0]];return '<div class="d112-n" style="align-items:flex-start"><span><b>'+(on?"✓ ":"")+e(s[1])+'</b><br><span class="muted small">'+e(s[2])+'</span></span><div class="row" style="flex-wrap:nowrap"><button class="btn ghost sm" type="button" data-f117go="'+s[0]+'">'+e(s[4])+'</button><button class="btn sm" type="button" data-f117tick="'+s[0]+'" aria-pressed="'+!!on+'">'+(on?"Done":"Mark done")+'</button></div></div>'}).join("");
- if(cl){var st=d?d.st:rq?"asked":"";h+='<div class="d112-n" style="align-items:flex-start"><span><b>'+(st==="ok"?"✓ ":"")+'Coach support for camp</b><br><span class="muted small">'+(st==="ok"?e((d.by||"Your coach"))+' has confirmed. '+e(d.note||""):st==="no"?'Your coach can\'t take this on right now'+(d.note?': '+e(d.note):'')+'. You can still ask another coach.':st==="asked"?'Asked. Waiting for your coach to reply.':'Ask your coach to help with pads, a plan or corner support. They choose whether to take it on.')+'</span></span><div class="row"><button class="btn '+(st==="ok"||st==="asked"?"ghost ":"")+'sm" type="button" data-f117ask>'+(st==="asked"?"Asked":st==="ok"?"Confirmed":"Ask my coach")+'</button></div></div>'}
+ if(off){var st=d?d.st:rq?"asked":"";h+='<div class="d112-n" style="align-items:flex-start"><span><b>'+(st==="ok"?"✓ ":"")+'Coach support for camp</b><br><span class="muted small">'+(st==="ok"?e((d.by||"Your coach"))+' has confirmed. '+e(d.note||""):st==="no"?'Your coach can\'t take this on right now'+(d.note?': '+e(d.note):'')+'. You can still ask another coach.':st==="asked"?'Asked. Waiting for your coach to reply.':'Ask your coach to help with pads, a plan or corner support. They choose whether to take it on.')+'</span></span><div class="row"><button class="btn '+(st==="ok"||st==="asked"?"ghost ":"")+'sm" type="button" data-f117ask>'+(st==="asked"?"Asked":st==="ok"?"Confirmed":"Ask my coach")+'</button></div></div>'}
  h+='<div class="row" style="margin-top:8px"><button class="linkbtn" type="button" data-f117done>All sorted, hide this</button></div>';
  if(!el){el=document.createElement("section");el.id="fb117";el.className="fb-card";home.appendChild(el)}
  el.hidden=false;if(el.dataset.sig!==h){el.innerHTML=h;el.dataset.sig=h}}
@@ -13923,6 +13923,7 @@ function myFight(){try{return window.FBE&&FBE.upcomingFight()}catch(x){return nu
 function key(uid,f){return uid+"_"+fk(f)}
 function upd(patch){var c=club();if(!c)return Promise.resolve();Object.assign(c,patch);return db.doc("clubs/"+c.id).update(patch).catch(function(){})}
 function save(){try{profChanged()}catch(x){}}
+function svc(c){return Object.assign({corner:false,plan:false,camp:false},(c&&c.fsvc)||{})}
 function staff(){try{return !!(window.FHC&&FHC.isOwner())}catch(x){return false}}
 var ROLES=["Head coach","Cutman","Second","Other"],SUP=["Full camp","Pads and sessions","Advice only"],WHO=["Me","My coach","The club"];
 function dayWord(d){return new Date(d+"T12:00").toLocaleDateString("en-GB",{day:"numeric",month:"short"})}
@@ -13936,12 +13937,15 @@ function planFields(src){return {support:src.support,spw:+src.spw,travel:src.tra
 function mCard(){var home=document.getElementById("tab-today"),el=document.getElementById("fb119"),f=myFight(),c=club(),p=P();
  if(!home||!f||!p.onboarded||!c||!p.clubId||!document.getElementById("fb115")){if(el)el.hidden=true;return}
  var k=key(S.uid,f),co=(c.corners||{})[k],plan=(c.fplans||{})[k],fp=p.fplan&&p.fplan.k===fk(f)?p.fplan:null,st=stateOf(plan,fp);
- var h='<span class="fb-kick">Your corner and plan</span>';
- if(co&&co.list&&co.list.length)h+='<div class="c119">'+co.list.map(function(x){return '<span class="chip" style="cursor:default">'+e(x.name)+' · '+e(x.role)+' <em class="d112-s s-'+(x.st==="ok"?"ok":x.st==="no"?"none":"wait")+'">'+(x.st==="ok"?"Confirmed":x.st==="no"?"Can\'t make it":"Waiting")+'</em></span>'}).join("")+'</div>';
+ var sv=svc(c),hasCo=!!(co&&co.list&&co.list.length),showCo=sv.corner||hasCo||!!(p.cornerSug&&p.cornerSug.k===fk(f)),showPl=sv.plan||!!plan||!!fp;
+ if(!showCo&&!showPl){if(el)el.hidden=true;return}
+ var h='<span class="fb-kick">'+(showCo&&showPl?'Your corner and plan':showCo?'Your corner':'Your fight plan')+'</span>';
+ if(!showCo){}else if(co&&co.list&&co.list.length)h+='<div class="c119">'+co.list.map(function(x){return '<span class="chip" style="cursor:default">'+e(x.name)+' · '+e(x.role)+' <em class="d112-s s-'+(x.st==="ok"?"ok":x.st==="no"?"none":"wait")+'">'+(x.st==="ok"?"Confirmed":x.st==="no"?"Can\'t make it":"Waiting")+'</em></span>'}).join("")+'</div>';
  else h+='<p class="muted small" style="margin:2px 0 6px">Your coach will name who is in your corner on the day, so you have one less thing to think about.</p>';
- if(p.cornerSug&&p.cornerSug.k===fk(f))h+='<p class="muted small" style="margin:0 0 6px">You suggested: '+e(p.cornerSug.t)+'</p>';
- h+='<div class="row" style="margin-bottom:8px"><input type="text" id="f119sug" maxlength="80" placeholder="Suggest someone for your corner" style="flex:1;min-width:0"><button class="btn ghost sm" type="button" data-f119sug>Suggest</button></div>';
+ if(showCo&&p.cornerSug&&p.cornerSug.k===fk(f))h+='<p class="muted small" style="margin:0 0 6px">You suggested: '+e(p.cornerSug.t)+'</p>';
+ if(showCo)h+='<div class="row" style="margin-bottom:8px"><input type="text" id="f119sug" maxlength="80" placeholder="Suggest someone for your corner" style="flex:1;min-width:0"><button class="btn ghost sm" type="button" data-f119sug>Suggest</button></div>';
  var d=F.m||(F.m=Object.assign({support:SUP[0],spw:4,travel:WHO[1],weigh:WHO[1],cost:"",notes:""},fp?planFields(fp):{}));
+ if(showPl){
  if(st==="agreed"){h+='<p style="margin:6px 0 2px"><b>✓ Plan agreed</b></p><p class="muted small" style="margin:0 0 6px">'+e(plan.support)+' · '+e(plan.spw)+' sessions a week · travel: '+e(plan.travel)+' · weigh-in: '+e(plan.weigh)+(plan.cost?' · '+e(plan.cost):'')+(plan.notes?'<br>'+e(plan.notes):'')+'</p><button class="linkbtn" type="button" data-f119chg>Change the plan</button>'}
  else if(st==="offered"||st==="coachfirst"){h+='<p style="margin:6px 0 2px"><b>'+(st==="coachfirst"?"Your coach suggested a plan":"Your coach suggested changes")+'</b></p><p class="muted small" style="margin:0 0 6px">'+e(plan.support)+' · '+e(plan.spw)+' sessions a week · travel: '+e(plan.travel)+' · weigh-in: '+e(plan.weigh)+(plan.cost?' · '+e(plan.cost):'')+(plan.notes?'<br>'+e(plan.notes):'')+'</p><div class="row"><button class="btn sm" type="button" data-f119acc>Accept</button><button class="btn ghost sm" type="button" data-f119chg>Change it</button></div>'}
  else if(st==="wait"&&!F.edit){h+='<p style="margin:6px 0 2px"><b>Plan sent</b></p><p class="muted small" style="margin:0 0 6px">Waiting for your coach to agree. '+e(fp.support)+' · '+e(fp.spw)+' sessions a week.</p><button class="linkbtn" type="button" data-f119chg>Edit it</button>'}
@@ -13950,6 +13954,7 @@ function mCard(){var home=document.getElementById("tab-today"),el=document.getEl
   '<div class="field"><label class="label" for="f119t">Travel handled by</label>'+selH("f119t",WHO,d.travel)+'</div><div class="field"><label class="label" for="f119w">Weigh-in day handled by</label>'+selH("f119w",WHO,d.weigh)+'</div></div>'+
   '<div class="field"><label class="label" for="f119c">Any cost (optional)</label><input type="text" id="f119c" maxlength="80" value="'+e(d.cost)+'" placeholder="e.g. Camp fee agreed with the club"></div><div class="field"><label class="label" for="f119x">Anything else (optional)</label><input type="text" id="f119x" maxlength="120" value="'+e(d.notes)+'"></div>'+
   '<div class="row"><button class="btn gold sm" type="button" data-f119send>Send to my coach</button></div>'}
+ }
  if(!el){el=document.createElement("section");el.id="fb119";el.className="fb-card";home.appendChild(el)}
  el.hidden=false;if(el.dataset.sig!==h&&!(document.activeElement&&el.contains(document.activeElement)&&document.activeElement.tagName==="INPUT")){el.innerHTML=h;el.dataset.sig=h}
  /* agreed sessions per week become the weekly target once */
@@ -13961,8 +13966,10 @@ function staffList(){var c=club(),out=[];((c.teachers)||[]).forEach(function(t){
 function fighters(){var c=club();return mem().filter(function(m){return m.uid!==S.uid&&m.eg&&m.eg.fight&&m.eg.fight.date>=TODAY})}
 function cPanel(){var host=document.getElementById("huboverBody"),c=club(),w=document.getElementById("fb119Panel");if(!host||!c||!staff()){if(w)w.remove();return}
  var fs=fighters(),mine=[];Object.keys(c.corners||{}).forEach(function(k){((c.corners[k]||{}).list||[]).forEach(function(x){if(x.uid===S.uid&&x.st==="wait")mine.push({k:k,x:x})})});
- if(!fs.length&&!mine.length){if(w)w.remove();return}
- var h='<div class="sec-h"><h3>Corner teams and fight plans</h3></div>';
+ var s0=svc(c),sw=function(k,t,d){return '<label class="d112-n" style="align-items:flex-start;cursor:pointer"><span><b>'+t+'</b><br><span class="muted small">'+d+'</span></span><input type="checkbox" data-f119svc="'+k+'"'+(s0[k]?' checked':'')+' aria-label="'+t+'"></label>'};
+ var sv='<div class="sec-h"><h3>Help your fighters with their goals</h3></div><p class="muted small" style="margin:0 0 4px">Switch on the services your club wants to offer. Fighters only see what you offer. You can also start any of them yourself for a single fighter below.</p>'+sw('corner','Corner team','You name who is in the fighter\'s corner on fight day. They can suggest people.')+sw('plan','Fight plan','You and the fighter agree support, sessions a week, travel and weigh-in handling. Expectations only, no weight or food targets.')+sw('camp','Camp support requests','Fighters can ask a coach for help in camp (pads, a plan or corner support). Your coach chooses whether to take it on.');
+ if(!fs.length&&!mine.length){if(!w){w=document.createElement("div");w.id="fb119Panel";w.className="panel";host.insertBefore(w,host.firstChild)}if(w.dataset.sig!==sv){w.innerHTML=sv;w.dataset.sig=sv}return}
+ var h=sv+'<div class="sec-h" style="margin-top:10px"><h3>Corner teams and fight plans</h3></div>';
  if(mine.length)h+='<span class="label">Asked to be in a corner</span>'+mine.map(function(o){var m=mem().filter(function(x){return o.k.indexOf(x.uid+"_")===0})[0];return '<div class="d112-n"><span><b>'+e(m?(m.name||m.leagueName):"A fighter")+'</b> wants you as '+e(o.x.role)+'</span><div class="row"><button class="btn sm" type="button" data-f119ca="'+e(o.k)+'|'+e(o.x.id)+'|ok">Accept</button><button class="btn ghost sm" type="button" data-f119ca="'+e(o.k)+'|'+e(o.x.id)+'|no">Can\'t</button></div></div>'}).join("");
  fs.forEach(function(m){var f=m.eg.fight,k=key(m.uid,f),co=(c.corners||{})[k]||{list:[]},plan=(c.fplans||{})[k],fp=m.fplan&&m.fplan.k===fk(f)?m.fplan:null,st=stateOf(plan,fp),nm=m.name||m.leagueName||"Member";
   h+='<div class="d112-n" style="flex-wrap:wrap;align-items:flex-start"><span style="flex:1;min-width:180px"><b>'+e(nm)+'</b> · '+e(f.event||"Fight")+', '+e(dayWord(f.date))+'<br><span class="muted small">Corner: '+(co.list.length?e(co.list.map(function(x){return x.name+" ("+x.role+(x.st==="ok"?" ✓":x.st==="no"?" ✗":"…")+")"}).join(", ")):"nobody yet")+(m.cornerSug&&m.cornerSug.k===fk(f)?' · they suggested: '+e(m.cornerSug.t):'')+'</span>'+
@@ -13980,6 +13987,7 @@ document.addEventListener("click",function(ev){var t=ev.target;if(!t.closest)ret
  if(t.closest("[data-f119send]")&&f){var d=grab();F.m=d;p.fplan=Object.assign({k:fk(f),at:Date.now()},d);F.edit=false;save();document.getElementById("fb119").dataset.sig="";mCard();try{toast("Plan sent","Your coach will confirm or suggest changes")}catch(x){}return}
  if(t.closest("[data-f119acc]")&&f){var pl=(c.fplans||{})[key(S.uid,f)];if(pl){p.fplan=Object.assign({k:fk(f),at:pl.at},p.fplan,{acc:pl.at});save();document.getElementById("fb119").dataset.sig="";mCard()}return}
  if(!c)return;
+ if(b=t.closest("[data-f119svc]")){if(!staff())return;var k=b.dataset.f119svc,ns=Object.assign({},svc(c));ns[k]=!ns[k];upd({fsvc:ns});var w0=document.getElementById("fb119Panel");if(w0)w0.dataset.sig="";cPanel();return}
  if(b=t.closest("[data-f119ed]")){G.edit=G.edit===b.dataset.f119ed?null:b.dataset.f119ed;G.d=null;var w=document.getElementById("fb119Panel");if(w)w.dataset.sig="";cPanel();return}
  if(t.closest("[data-f119ec]")){G.edit=null;var w=document.getElementById("fb119Panel");if(w)w.dataset.sig="";cPanel();return}
  if(b=t.closest("[data-f119es]")){var m=mem().filter(function(x){return x.uid===b.dataset.f119es})[0];if(!m)return;var g=function(i){return (document.getElementById(i)||{}).value||""},k=key(m.uid,m.eg.fight),fp=m.fplan&&m.fplan.k===fk(m.eg.fight)?m.fplan:null,now=Date.now();
