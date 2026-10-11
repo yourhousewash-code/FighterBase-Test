@@ -16089,7 +16089,7 @@ return {draw:draw,series:series,day:day,why:why,html:html}})();
 /* FighterBase v167: fight camp atmosphere. While a fight camp is running the app glows and slowly pulses (brighter, darker, brighter) in the
    member's own colour corner, so it feels different and says "you are in camp". The glow is on the page edges, the fight countdown card and the
    Home cards. Camp counts from the same rule as the camp journey (8 weeks out, through fight week, weigh-in and fight day).
-   Profile: campGlow = "on" (default: any time a fight is booked) | "auto" (last 8 weeks only) | "off". Respects "reduce motion": a steady glow, no pulse.
+   Profile: campGlow = "on" (default: any time a fight is booked) | "auto" (last 8 weeks only) | "off". Pulses for 10 seconds when Home or Progress is opened, then settles to a steady glow (so it never gets annoying). Respects "reduce motion": steady glow only.
    During camp the countdown card moves to the top of Home. */
 var FH140=(function(){
 function P(){return (typeof S!=="undefined"&&S.profile)||{}}
@@ -16106,19 +16106,20 @@ function control(){var p=P();if(!p.fightDate&&mode()==="on")return '<span></span
 document.addEventListener("change",function(ev){var t=ev.target;if(!t.matches||!t.matches("[data-f140]"))return;S.profile.campGlow=t.value;try{profChanged()}catch(x){}apply();try{FH139.draw()}catch(x){}});
 var css=document.createElement("style");css.textContent=
 "@keyframes fbCampEdge{0%{opacity:.18}100%{opacity:1}}@keyframes fbCampCard{0%{box-shadow:0 0 0 1px rgba(200,30,58,.22),0 0 12px -4px rgba(200,30,58,.22);border-color:rgba(200,30,58,.55)}100%{box-shadow:0 0 0 1px rgba(229,86,107,.7),0 0 38px 2px rgba(200,30,58,.7);border-color:#E5566B}}@keyframes fbCampBar{0%{border-left-color:#7d1224}100%{border-left-color:#E5566B}}"+
-".fb140{position:fixed;left:0;right:0;pointer-events:none;z-index:1;display:none;animation:fbCampEdge 3.4s ease-in-out infinite alternate}body.fb-camp-on .fb140{display:block}"+
+".fb140{position:fixed;left:0;right:0;pointer-events:none;z-index:1;display:none;opacity:.6;transition:opacity 1.2s}body.fb-camp-on .fb140{display:block}body.fb-camp-pulse .fb140{animation:fbCampEdge 3.4s ease-in-out infinite alternate}"+
 "#fb140t{top:0;height:32vh;background:radial-gradient(120% 100% at 50% 0%,rgba(200,30,58,.34),transparent 70%)}"+
 "#fb140b{bottom:0;height:26vh;background:radial-gradient(120% 100% at 50% 100%,rgba(200,30,58,.30),transparent 70%);animation-delay:-1.7s}"+
-"body.fb-camp-hot .fb140{animation-duration:1.9s}"+
-"body.fb-camp-on .cd115{animation:fbCampCard 3.4s ease-in-out infinite alternate}body.fb-camp-hot .cd115{animation-duration:1.9s}"+
-"body.fb-camp-on #fb139,body.fb-camp-on #fb112{animation:fbCampBar 3.4s ease-in-out infinite alternate}body.fb-camp-hot #fb139,body.fb-camp-hot #fb112{animation-duration:1.9s}"+
+"body.fb-camp-hot.fb-camp-pulse .fb140{animation-duration:1.9s}"+
+"body.fb-camp-on .cd115{border-color:rgba(229,86,107,.6);box-shadow:0 0 0 1px rgba(200,30,58,.4),0 0 22px -2px rgba(200,30,58,.45)}body.fb-camp-pulse .cd115{animation:fbCampCard 3.4s ease-in-out infinite alternate}body.fb-camp-hot.fb-camp-pulse .cd115{animation-duration:1.9s}"+
+"body.fb-camp-on #fb139,body.fb-camp-on #fb112{border-left-color:#C81E3A}body.fb-camp-pulse #fb139,body.fb-camp-pulse #fb112{animation:fbCampBar 3.4s ease-in-out infinite alternate}body.fb-camp-hot.fb-camp-pulse #fb139,body.fb-camp-hot.fb-camp-pulse #fb112{animation-duration:1.9s}"+
 "body.fb-camp-on #tab-today #fb115{order:0}body.fb-camp-on #tab-today #fb139{order:1}"+
 ".h139-cg select{margin-left:6px;font-size:13px;padding:5px 8px;border-radius:8px}"+
-"@media (prefers-reduced-motion:reduce){body.fb-camp-on .fb140,body.fb-camp-on .cd115,body.fb-camp-on #fb139,body.fb-camp-on #fb112{animation:none!important;opacity:.7}body.fb-camp-on .cd115{box-shadow:0 0 0 1px rgba(229,86,107,.6),0 0 26px 0 rgba(200,30,58,.5)}}";
+"@media (prefers-reduced-motion:reduce){body.fb-camp-on .fb140,body.fb-camp-on .cd115,body.fb-camp-on #fb139,body.fb-camp-on #fb112{animation:none!important}}";
 document.head.appendChild(css);
-setInterval(function(){try{apply()}catch(x){}},3000);setTimeout(apply,500);
-var st=showTab;showTab=function(t){var r=st.apply(this,arguments);try{apply()}catch(x){}return r};
-return {on:on,level:level,apply:apply,control:control}})();
+var PT=null;function pulse(){if(!on())return;var b=document.body;b.classList.add("fb-camp-pulse");clearTimeout(PT);PT=setTimeout(function(){b.classList.remove("fb-camp-pulse")},10000)}
+setInterval(function(){try{apply()}catch(x){}},3000);setTimeout(function(){apply();pulse()},500);
+var st=showTab;showTab=function(t){var r=st.apply(this,arguments);try{apply();if(t==="today"||t==="stats"||t==="progress")pulse()}catch(x){}return r};
+return {pulse:pulse,on:on,level:level,apply:apply,control:control}})();
 
 /* FighterBase v44: always a way back, always a next step. */
 var N31=N31||false;
