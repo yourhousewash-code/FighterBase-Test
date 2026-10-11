@@ -2695,7 +2695,7 @@ function challengeValue(ch,st){if(!ch)return 0;return ch.metric==="checkins"?st.
 let leagueTimer=null;function scheduleLeague(){clearTimeout(leagueTimer);leagueTimer=setTimeout(syncLeague,2500)}
 async function syncLeague(){if(!db||!S.uid||!S.profile.clubId)return;const wk=periodStats(weekStartKey()),mo=periodStats(monthStartKey());
   const events=(S.profile.clubEvents||[]).slice(-12);
-  try{await db.doc("league/"+S.uid).set({uid:S.uid,clubId:S.profile.clubId,name:S.profile.leagueName||(S.profile.name||"Member").split(" ")[0],ring:String(S.profile.ring||"").trim().slice(0,40),sports:sportsOf(S.profile).slice(0,3),optIn:S.profile.leagueOptIn===true,updated:new Date().toISOString(),weekStart:weekStartKey(),week:wk,month:mo,daily:dailySeries(45),streak:streak(),rank:rankOf(totalXP()).name,events,rsvp:rsvpPrune(S.profile.rsvp),att:S.profile.att||{},fr:(window.FHF&&FHF.req?FHF.req():[]),share:(S.profile.clubConsent?{c:S.profile.clubConsent.consistency!==false,w:!!S.profile.clubConsent.weight}:{c:false,w:false}),wv:(S.profile.wvPub&&S.profile.wv&&S.profile.wv.clubId===S.profile.clubId)?S.profile.wvPub:null,ms:(S.profile.mship&&S.profile.mship.clubId===S.profile.clubId)?S.profile.mship:null})}catch(e){}}
+  try{await db.doc("league/"+S.uid).set({uid:S.uid,clubId:S.profile.clubId,name:S.profile.leagueName||(S.profile.name||"Member").split(" ")[0],ring:String(S.profile.ring||"").trim().slice(0,40),sports:sportsOf(S.profile).slice(0,3),optIn:S.profile.leagueOptIn===true,updated:new Date().toISOString(),weekStart:weekStartKey(),week:wk,month:mo,daily:dailySeries(45),streak:streak(),rank:rankOf(totalXP()).name,events,rsvp:rsvpPrune(S.profile.rsvp),att:S.profile.att||{},det:(S.profile.det142||[]).slice(-10),cant:rsvpPrune(S.profile.cant142),mp:S.profile.msgPref||null,fr:(window.FHF&&FHF.req?FHF.req():[]),share:(S.profile.clubConsent?{c:S.profile.clubConsent.consistency!==false,w:!!S.profile.clubConsent.weight}:{c:false,w:false}),wv:(S.profile.wvPub&&S.profile.wv&&S.profile.wv.clubId===S.profile.clubId)?S.profile.wvPub:null,ms:(S.profile.mship&&S.profile.mship.clubId===S.profile.clubId)?S.profile.mship:null})}catch(e){}}
 function pushClubEvent(text){if(!S.profile.clubId)return;const ev=[...(S.profile.clubEvents||[]),{id:Date.now().toString(36),date:TODAY,text}].slice(-12);S.profile.clubEvents=ev;profChanged();scheduleLeague()}
 function subscribeClub(){clubState.unsubs.forEach(u=>{try{u()}catch(e){}});clubState.unsubs=[];if(!db||!S.profile.clubId){clubState.club=null;clubState.members=[];renderClub();updateNav();return}
   const id=S.profile.clubId,fail=()=>{};
@@ -5353,7 +5353,7 @@ function ownerPanel(){var c=club();if(!c)return;var host=document.getElementById
  var cls={};try{classesOn(c,TODAY).forEach(function(x){cls[x.id]=x})}catch(e){}
  var rows=arr.length?arr.map(function(a){var cl=cls[a.k];return '<div class="item"><div class="info"><b>'+esc(a.n)+'</b><span class="muted small">'+(cl?esc(cl.time+" "+((cl.title||cl.name||"Class"))):"Open mat / own training")+' · '+new Date(a.t).toLocaleTimeString("en-GB",{hour:"2-digit",minute:"2-digit"})+'</span></div></div>'}).join(""):'<p class="muted small" style="margin:0">Nobody has checked in with location yet today.</p>';
  var html='<div class="sec-h"><h3>Gym location and arrivals</h3><span class="badge '+(g&&typeof g.lat==="number"?"ok-chip":"")+'">'+(g&&typeof g.lat==="number"?"Set":"Not set")+'</span></div>'+
-  '<p class="muted small" style="margin:0">Stand inside the gym and tap the button. Members within the radius can check in by location and pick their class.</p>'+
+  '<p class="muted small" style="margin:0">Stand inside the gym and tap the button. Members within the radius can check in by location and pick their class. Default radius is 100 m. Phones can be out by tens of metres indoors, so a very small circle may miss arrivals: test 50 m with a few members before relying on it. Automatic attendance is switched on by each member, never by the club. If a member is detected here without a booking, you are told their name and arrival and leave times.</p>'+
   '<div class="row" style="align-items:flex-end"><div class="field"><label class="label" for="geoR">Radius</label><select id="geoR">'+RAD.map(function(r){return '<option value="'+r+'"'+((g&&g.r||100)===r?" selected":"")+'>'+r+' m</option>'}).join("")+'</select></div><button class="btn gold" type="button" data-gset>Use my current location</button>'+(g&&typeof g.lat==="number"?'<button class="btn ghost sm" type="button" data-gclear>Clear</button>':"")+'</div><p class="small" id="geoOMsg" style="margin:4px 0 8px;color:var(--muted)">'+(g&&typeof g.lat==="number"?"Saved "+esc((g.at||"").slice(0,10))+". Radius "+(g.r||100)+" m.":"")+'</p>'+
   '<div class="label" style="margin-top:6px">Arrived today</div>'+rows;
  if(!w){w=document.createElement("div");w.id="geoOwner";w.className="panel";var ps=host.querySelectorAll(".panel");host.insertBefore(w,ps.length>1?ps[2]||null:null);if(!w.parentNode)host.appendChild(w)}
@@ -5371,13 +5371,16 @@ document.addEventListener("click",function(e){var t=e.target;if(!t.closest)retur
 document.addEventListener("change",function(e){if(e.target&&e.target.id==="geoR"){var c=club();if(c&&hasGeo(c))db.doc("clubs/"+c.id).update({geo:Object.assign({},c.geo,{r:+e.target.value})}).catch(function(){})}});
 /* ---------- auto prompt when already allowed ---------- */
 var prompted="";
-async function auto(){try{var c=club();if(!inClub()||!hasGeo(c)||done()||dismissed()||prompted===TODAY||!navigator.permissions||!sheet.hidden)return;
+async function auto(){try{var c=club();if(!inClub()||!hasGeo(c)||done()||dismissed()||prompted===TODAY||!navigator.permissions||!sheet.hidden||S.profile.autoAtt!==true)return;
  var st=await navigator.permissions.query({name:"geolocation"});if(st.state!=="granted")return;
  prompted=TODAY;var p=await pos();var d=dist(p.latitude,p.longitude,c.geo.lat,c.geo.lng);if(Math.max(0,d-Math.min(p.accuracy||0,100))>(c.geo.r||100))return;
- var m=windowMatches(c);
- if(m.length===1){arrive(m[0].id,m[0].time+" "+(m[0].title||m[0].name||"Class"),"geo");return}
- if(m.length>1){pick("Which class are you here for?","geo");return}
- arrive(null,"Club visit","geo")}catch(e){}}
+ var m=windowMatches(c),bk=m.filter(function(x){return (S.profile.rsvp||{})[TODAY+"_"+x.id]});
+ /* booked class: recorded straight away. No booking: held as unconfirmed, the club is told, the member is asked (FH142). */
+ if(bk.length){arrive(bk[0].id,bk[0].time+" "+(bk[0].title||bk[0].name||"Class"),"geo");return}
+ var go=function(){if(m.length===1)arrive(m[0].id,m[0].time+" "+(m[0].title||m[0].name||"Class"),"geo");else if(m.length>1)pick("Which class are you here for?","geo");else arrive(null,"Club visit","geo")};
+ if(window.FH142&&FH142.hold(m.length===1?m[0].id:"",m.length===1?m[0].time+" "+(m[0].title||m[0].name||"Class"):"Club visit",null,go))return;
+ go()}catch(e){}}
+window.FH39={confirmClass:function(cid,label){arrive(cid,label,"confirm")}};
 /* ---------- wiring ---------- */
 var rc=renderClub;renderClub=function(){var r=rc.apply(this,arguments);try{draw();ownerPanel()}catch(e){}return r};
 var rt=renderClubToday;renderClubToday=function(){var r=rt.apply(this,arguments);try{draw()}catch(e){}return r};
@@ -16195,6 +16198,176 @@ var css=document.createElement("style");css.textContent=".cb141{margin:10px 0 6p
 "body.fb-camp-on .d112-t,body.fb-camp-on .a132-tiles div,body.fb-camp-on .h139-ro{border-color:rgba(200,30,58,.55);background:rgba(200,30,58,.09)}body.fb-camp-on .d112-t b,body.fb-camp-on .a132-tiles b{text-shadow:0 0 14px rgba(200,30,58,.55)}body.fb-camp-on .d112-t span{color:#E8DFC8}";
 document.head.appendChild(css);
 return {mount:mount,data:data}})();
+
+/* FighterBase v175: club messaging, class attendance links, detected-visit alerts, automatic-attendance opt-in.
+   Plan: docs/club-messaging-plan-v1.md and docs/geofencing-requirements-v1.md.
+   1. Coach "Message members" panel + composer: audience (overdue payments, everyone, a class, one member), template, then
+      WhatsApp one tap per person (the coach taps send, nothing automatic), copy for a group, or an in-app notice. Log of what was sent.
+      Payment reminders are never offered for a group. News and offers only reach app members who opted in.
+   2. Attendance link: coach picks a class, sends a link; member opens it and says I'm coming / Can't make it (or "Were you there?" after).
+      Link: base#att=clubId|date|classId|uid|kind (kind c=coming, w=were you there). The member must be signed in; the link only sets their own answer.
+   3. Detected without a booking: a location visit with no RSVP is held as "unconfirmed" and the member is asked. The club always sees the
+      name, status, arrival and departure times for those visits (booked sessions stay totals only). Never a map position.
+   4. Member opt-in "Automatic attendance" with the disclosure wording, and "Messages from my club" (news and offers off by default).
+   Profile: det142[{id,d,arr,dep,st,lab}], cant142{key:ts}, autoAtt, msgPref{news}. Club doc: msglog[{id,at,by,tpl,ch,to}]. */
+var K142=K142||false;
+(function(){
+if(K142)return;K142=true;
+var $=function(s){return document.querySelector(s)};
+function club(){return (typeof clubState!=="undefined"&&clubState.club)||null}
+function P(){return S.profile||{}}
+function members(){return (typeof clubState!=="undefined"&&clubState.members)||[]}
+function isCoach(){try{return !!(window.FHC&&FHC.isOwner()&&club())}catch(e){return false}}
+function e2(s){return esc(String(s==null?"":s))}
+function first(n){return String(n||"").trim().split(/\s+/)[0]||"there"}
+function gbp(v){v=Math.round((+v||0)*100)/100;return "£"+Math.abs(v).toFixed(2).replace(/\.00$/,"")}
+function uid5(){return Date.now().toString(36)+Math.random().toString(36).slice(2,5)}
+function upd(o){var c=club();if(!c||!db)return Promise.resolve();Object.assign(c,o);return db.doc("clubs/"+c.id).update(o).catch(function(){toast("Couldn't save","Check your connection and try again")})}
+function waLink(num,text){var n=String(num||"").replace(/[^\d+]/g,"");if(/^0\d{9,10}$/.test(n))n="44"+n.slice(1);n=n.replace(/^\+/,"");return "https://wa.me/"+(n||"")+"?text="+encodeURIComponent(text||"")}
+function hhmm(ms){return ms?new Date(ms).toLocaleTimeString("en-GB",{hour:"2-digit",minute:"2-digit"}):""}
+function classKey(date,id){return date+"_"+id}
+function baseUrl(){return location.href.split("#")[0]}
+function linkFor(date,cid,u,kind){var c=club();return baseUrl()+"#att="+[c.id,date,cid,u||"",kind||"c"].map(encodeURIComponent).join("|")}
+/* ---------- who can be messaged ---------- */
+function acct(r){try{return window.FH57&&FH57.acct?FH57.acct(r):null}catch(e){return null}}
+function people(){var c=club()||{},out=[],seen={};
+ (c.roster||[]).forEach(function(r){if(r.status&&r.status!=="active")return;var a=acct(r),k=r.uid||("r:"+r.id);seen[k]=1;if(r.uid)seen[r.uid]=1;
+  var m=r.uid?members().filter(function(x){return x.uid===r.uid})[0]:null;
+  out.push({k:k,uid:r.uid||"",name:r.name||(m&&m.name)||"Member",phone:r.phone||"",bal:a?a.bal:0,od:a?a.status==="overdue":false,news:!!(m&&m.mp&&m.mp.news),app:!!m})});
+ members().forEach(function(m){if(seen[m.uid]||m.uid===S.uid&&false)return;out.push({k:m.uid,uid:m.uid,name:m.name||"Member",phone:"",bal:0,od:false,news:!!(m.mp&&m.mp.news),app:true})});
+ return out}
+/* ---------- templates ---------- */
+var TPL=[
+ {id:"pay",n:"Payment reminder",kind:"service",nogroup:true,t:"Hi {first}, a friendly reminder from {club}: your fee of {amt} is now overdue. If there is a problem, just let me know. Thanks."},
+ {id:"cls",n:"Today's class: are you coming?",kind:"service",t:"{club}: {class} today at {time}. Tap to say if you're coming: {link}"},
+ {id:"chg",n:"Class change",kind:"service",t:"{club}: change of plan. "},
+ {id:"news",n:"News or offer",kind:"marketing",t:"{club} news: "},
+ {id:"blank",n:"Write my own",kind:"service",t:""}];
+function tpl(id){return TPL.filter(function(t){return t.id===id})[0]||TPL[4]}
+var M={open:false,aud:"overdue",cls:"",one:"",tpl:"pay",text:TPL[0].t,sent:{},date:null};
+function todayClasses(){var c=club();try{return classesOn(c,TODAY)}catch(e){return []}}
+function audience(){var all=people(),t=tpl(M.tpl),a=M.aud,skip=0,L;
+ if(a==="overdue")L=all.filter(function(p){return p.od});else if(a==="one")L=all.filter(function(p){return p.k===M.one});else L=all.slice();
+ if(t.kind==="marketing"){var n0=L.length;L=L.filter(function(p){return p.news});skip=n0-L.length}
+ return {L:L,skip:skip}}
+function render1(t,p){var c=club(),cl=todayClasses().filter(function(x){return x.id===M.cls})[0]||todayClasses()[0]||{};
+ var link=(M.tpl==="cls"&&cl.id)?linkFor(TODAY,cl.id,p&&p.uid,"c"):"";
+ return String(t).replace(/\{first\}/g,first(p&&p.name)).replace(/\{club\}/g,c.name||"the club").replace(/\{amt\}/g,gbp(p&&p.bal)).replace(/\{class\}/g,cl.title||cl.name||"class").replace(/\{time\}/g,cl.time||"").replace(/\{link\}/g,link)}
+function health(t){return /\b(weigh|weight|kg|lbs|injur|diet|calor|macro|medical|ill\b|pregnan|mental)/i.test(t)}
+/* ---------- composer sheet ---------- */
+var sh=document.createElement("div");sh.id="m142";sh.className="cs";sh.hidden=true;sh.style.zIndex=98;sh.setAttribute("role","dialog");sh.setAttribute("aria-modal","true");document.body.appendChild(sh);
+function sheetHTML(){var c=club(),t=tpl(M.tpl),A=audience(),cls=todayClasses(),all=people();
+ var audOpts=[["overdue","Members with overdue payments"],["all","Everyone"],["one","One member"]];
+ var h='<div class="cs-in" style="max-height:92vh;overflow:auto"><div class="sec-h"><h2 style="margin:0">Message members</h2><button class="linkbtn" type="button" data-m142x>Close</button></div>'+
+ '<p class="muted small" style="margin:0">You send each message yourself: tap and WhatsApp opens with the words ready. Nothing goes out automatically. No health, weight, injury or food details in messages.</p>'+
+ '<div class="field"><label class="label" for="m142t">What kind of message</label><select id="m142t">'+TPL.map(function(x){return '<option value="'+x.id+'"'+(x.id===M.tpl?" selected":"")+'>'+e2(x.n)+'</option>'}).join("")+'</select></div>'+
+ '<div class="field"><label class="label" for="m142a">Who to</label><select id="m142a">'+audOpts.map(function(x){return '<option value="'+x[0]+'"'+(x[0]===M.aud?" selected":"")+'>'+e2(x[1])+'</option>'}).join("")+'</select></div>'+
+ (M.aud==="one"?'<div class="field"><label class="label" for="m142o">Member</label><select id="m142o"><option value="">Choose…</option>'+all.map(function(p){return '<option value="'+e2(p.k)+'"'+(p.k===M.one?" selected":"")+'>'+e2(p.name)+'</option>'}).join("")+'</select></div>':'')+
+ (M.tpl==="cls"?'<div class="field"><label class="label" for="m142c">Class</label>'+(cls.length?'<select id="m142c">'+cls.map(function(x){return '<option value="'+e2(x.id)+'"'+((M.cls||cls[0].id)===x.id?" selected":"")+'>'+e2(x.time+" "+(x.title||x.name||"Class"))+'</option>'}).join("")+'</select>':'<p class="muted small" style="margin:0">No classes on the timetable today.</p>')+'</div>':'')+
+ '<div class="field"><label class="label" for="m142m">Message (use {first} for their first name)</label><textarea id="m142m" data-keep rows="4" maxlength="500">'+e2(M.text)+'</textarea></div>'+
+ (health(M.text)?'<p class="small" style="margin:0;color:#e0a44a">This looks like it mentions health, weight, injury or food. Please remove that: messages should never include it.</p>':'')+
+ (t.kind==="marketing"?'<p class="muted small" style="margin:0">News and offers only go to members who said yes to them. '+(A.skip?A.skip+' left out because they have not opted in.':'')+'</p>':'')+
+ '<span class="label">'+A.L.length+' '+(A.L.length===1?'person':'people')+'</span>';
+ if(!A.L.length)h+='<p class="muted small" style="margin:0">'+(M.aud==="overdue"?"Nobody is overdue right now.":"Nobody to message with these choices.")+'</p>';
+ else h+='<div class="list">'+A.L.slice(0,60).map(function(p){var txt=render1(M.text,p),done=M.sent[p.k];
+  return '<div class="row" style="align-items:center;justify-content:space-between;gap:8px"><span><b>'+e2(p.name)+'</b>'+(M.tpl==="pay"&&p.bal>0?' <span class="muted small">owes '+gbp(p.bal)+'</span>':'')+(p.phone?'':' <span class="muted small">no number</span>')+'</span>'+
+  '<span class="row" style="gap:6px;margin:0">'+(done?'<span class="badge ok-chip">Sent</span>':'')+'<button class="btn sm" type="button" style="background:#25D366;color:#06210f" data-m142wa="'+e2(p.k)+'"'+(txt.trim()?'':' disabled')+'>'+(done?'Again':'WhatsApp')+'</button></span></div>'}).join("")+(A.L.length>60?'<p class="muted small">Showing the first 60.</p>':'')+'</div>';
+ h+='<div class="row" style="margin-top:6px;flex-wrap:wrap">'+
+  (t.nogroup?'<span class="muted small">Payment reminders go to the person only, never a group.</span>':'<button class="btn ghost sm" type="button" data-m142grp>Copy for a group chat</button>')+
+  '<button class="btn ghost sm" type="button" data-m142app'+(A.L.some(function(p){return p.uid})?'':' disabled')+'>Send an in-app notice</button>'+
+  '<button class="btn ghost sm" type="button" disabled title="Coming next: send from your linked email">Email (coming next)</button></div>';
+ var lg=(c.msglog||[]).slice(-6).reverse();
+ if(lg.length)h+='<span class="label" style="margin-top:8px">Recently sent</span>'+lg.map(function(x){return '<div class="small"><span class="muted">'+e2(new Date(x.at).toLocaleString("en-GB",{day:"numeric",month:"short",hour:"2-digit",minute:"2-digit"}))+'</span> · '+e2(x.tpl)+' · '+e2(x.ch)+' · '+e2(x.to)+'</div>'}).join("");
+ return h+'</div>'}
+function openSheet(o){o=o||{};if(o.tpl){M.tpl=o.tpl;M.text=tpl(o.tpl).t}if(o.aud)M.aud=o.aud;if(o.cls)M.cls=o.cls;M.sent={};M.open=true;sh.innerHTML=sheetHTML();sh.hidden=false}
+function redraw(){if(!M.open)return;var st=sh.firstChild?sh.firstChild.scrollTop:0;sh.innerHTML=sheetHTML();if(sh.firstChild)sh.firstChild.scrollTop=st}
+function logSend(tp,ch,to){var c=club();if(!c)return;var arr=(c.msglog||[]).concat([{id:uid5(),at:new Date().toISOString(),by:S.uid,tpl:tpl(tp).n,ch:ch,to:to}]).slice(-100);upd({msglog:arr})}
+sh.addEventListener("input",function(e){if(e.target.id==="m142m"){M.text=e.target.value;var bs=sh.querySelectorAll("[data-m142wa]");/* keep focus: only refresh the buttons' disabled state */bs.forEach(function(b){b.disabled=!M.text.trim()})}});
+sh.addEventListener("change",function(e){var t=e.target;if(t.id==="m142t"){M.tpl=t.value;M.text=tpl(t.value).t;if(M.tpl==="pay")M.aud="overdue";M.sent={};redraw()}
+ else if(t.id==="m142a"){M.aud=t.value;M.sent={};redraw()}else if(t.id==="m142o"){M.one=t.value;redraw()}else if(t.id==="m142c"){M.cls=t.value;redraw()}});
+sh.addEventListener("click",function(e){var t=e.target,b;if(t===sh||t.closest("[data-m142x]")){M.open=false;sh.hidden=true;return}
+ if(b=t.closest("[data-m142wa]")){var p=audience().L.filter(function(x){return x.k===b.dataset.m142wa})[0];if(!p)return;var txt=render1(M.text,p);
+  var a=document.createElement("a");a.href=waLink(p.phone,txt);a.target="_blank";a.rel="noopener";document.body.appendChild(a);a.click();a.remove();M.sent[p.k]=1;logSend(M.tpl,"WhatsApp",p.name);redraw();return}
+ if(t.closest("[data-m142grp]")){var v=render1(M.text,{name:"everyone",bal:0,uid:""});try{navigator.clipboard.writeText(v).then(function(){toast("Copied","Paste it into your group chat");logSend(M.tpl,"Group copy","group")},function(){toast("Couldn't copy")})}catch(er){toast("Couldn't copy")}return}
+ if(t.closest("[data-m142app]")){var L=audience().L.filter(function(x){return x.uid}),uids=L.map(function(x){return x.uid});if(!uids.length)return;var body=render1(M.text,{name:"",bal:0,uid:""}).replace(/\s+/g," ").trim().slice(0,300);
+  var arr=(club().push||[]).concat([{id:"mm"+uid5(),at:new Date().toISOString(),t:tpl(M.tpl).n.slice(0,60),b:body,aud:"list",uids:uids,by:S.uid,tag:"Club"}]).slice(-50);
+  upd({push:arr}).then(function(){toast("Sent",uids.length+" member"+(uids.length===1?"":"s")+" with the app");logSend(M.tpl,"In-app",uids.length+" members")});return}});
+/* ---------- coach panel on the club overview ---------- */
+var DOW_HINT="";
+function det(){var out=[],cut=addDays(TODAY,-6);members().forEach(function(m){(m.det||[]).forEach(function(d){if(d.d>=cut)out.push({name:m.name||"Member",d:d})})});return out.sort(function(a,b){return (b.d.arr||0)-(a.d.arr||0)})}
+function panelHTML(){var c=club(),od=people().filter(function(p){return p.od}).length,ds=det(),un=ds.filter(function(x){return x.d.st==="unconfirmed"}).length,cls=todayClasses();
+ var h='<div class="sec-h"><h2>Message members</h2></div><p class="muted small" style="margin:0">Payment reminders, class links and news, sent from your own WhatsApp with the words ready. You approve every send.</p>'+
+  '<div class="row" style="flex-wrap:wrap"><button class="btn gold" type="button" data-m142open>Write a message</button>'+
+  (od?'<button class="btn ghost" type="button" data-m142pay>Chase '+od+' overdue payment'+(od===1?"":"s")+'</button>':'')+
+  (cls.length?'<button class="btn ghost" type="button" data-m142cls>Send today\'s class link</button>':'')+'</div>';
+ var cn=cls.length?cls.map(function(x){var key=classKey(TODAY,x.id),yes=members().filter(function(m){return m.rsvp&&m.rsvp[key]}).length,no=members().filter(function(m){return m.cant&&m.cant[key]}).length;return '<div class="small">'+e2(x.time)+' '+e2(x.title||x.name||"Class")+': <b>'+yes+'</b> coming'+(no?', '+no+' can\'t':'')+'</div>'}).join(""):"";
+ if(cn)h+='<span class="label" style="margin-top:6px">Today\'s replies</span>'+cn;
+ h+='<span class="label" style="margin-top:8px">Detected without a booking'+(un?' · '+un+' to confirm':'')+'</span>';
+ if(!ds.length)h+='<p class="muted small" style="margin:0">Nobody detected without a booking this week. When a member\'s phone puts them at the club with no booking, you\'ll see their name and times here.</p>';
+ else h+=ds.slice(0,8).map(function(x){var d=x.d;return '<div class="small" style="margin:3px 0"><b>'+e2(x.name)+'</b> · '+e2(new Date(d.d+"T12:00").toLocaleDateString("en-GB",{weekday:"short",day:"numeric",month:"short"}))+' · arrived '+e2(hhmm(d.arr))+(d.dep?', left about '+e2(hhmm(d.dep)):', not left yet or not recorded')+' <span class="badge'+(d.st==="confirmed"?" ok-chip":"")+'">'+(d.st==="confirmed"?"Confirmed by member":d.st==="dismissed"?"Member says no":"Awaiting confirmation")+'</span></div>'}).join("")+'<p class="muted small" style="margin:4px 0 0">Booked classes show in your attendance totals only, with no times.</p>';
+ return h}
+function panel(){var o=$("#tab-hubover"),host=$("#huboverBody");if(!o||o.hidden||!host||!isCoach())return;var w=$("#m142p");if(!w){w=document.createElement("div");w.id="m142p";w.className="panel";var a=$("#td76");if(a&&a.parentNode===host)host.insertBefore(w,a.nextSibling);else host.insertBefore(w,host.children[1]||null)}
+ var h=panelHTML();if(w.dataset.sig!==h){if(document.activeElement&&w.contains(document.activeElement)&&document.activeElement.tagName==="BUTTON"&&false)return;w.innerHTML=h;w.dataset.sig=h}}
+document.addEventListener("click",function(e){var t=e.target;if(t.closest("[data-m142open]")){openSheet({tpl:"blank",aud:"all"});return}
+ if(t.closest("[data-m142pay]")){openSheet({tpl:"pay",aud:"overdue"});return}
+ if(t.closest("[data-m142cls]")){var c0=todayClasses()[0];openSheet({tpl:"cls",aud:"all",cls:c0&&c0.id});return}
+ var b=t.closest("[data-m142class]");if(b){openSheet({tpl:"cls",aud:"all",cls:b.dataset.m142class});return}});
+/* a "Send attendance link" button on each class in the Schedule page, for coaches (today's classes only) */
+function schedBtns(){try{var el=$("#scheduleBody"),tb=$("#tab-schedule");if(!el||!tb||tb.hidden||!isCoach())return;el.querySelectorAll(".sc-r").forEach(function(r){if(r.querySelector("[data-m142class]"))return;var rb=r.querySelector("[data-rsvp]");if(!rb)return;var k=rb.dataset.rsvp,i=k.indexOf("_"),d=k.slice(0,i),id=k.slice(i+1);if(d!==TODAY)return;var b=document.createElement("button");b.type="button";b.className="btn ghost sm";b.dataset.m142class=id;b.textContent="Send link";b.title="Send this class's attendance link on WhatsApp";var bb=r.querySelector(".sc-b");if(bb)bb.appendChild(b)})}catch(e){}}
+/* ---------- member: open an attendance link ---------- */
+var AS=document.createElement("div");AS.id="a142";AS.className="cs";AS.hidden=true;AS.style.zIndex=99;AS.setAttribute("role","dialog");AS.setAttribute("aria-modal","true");document.body.appendChild(AS);
+var pend=null;
+function parseHash(){var h=location.hash||"";if(h.indexOf("#att=")!==0)return null;var a=h.slice(5).split("|").map(function(x){try{return decodeURIComponent(x)}catch(e){return x}});if(a.length<5)return null;return {club:a[0],d:a[1],cid:a[2],u:a[3],kind:a[4]}}
+function tryLink(){if(!pend)return true;var c=club();if(!S.uid||!c||!P().clubId)return false;if(c.id!==pend.club){AS.innerHTML='<div class="cs-in"><h2 style="margin:0">Different club</h2><p class="muted small">This link is for another club. Open it from the account you use at that club.</p><div class="row"><button class="btn" type="button" data-a142x>OK</button></div></div>';AS.hidden=false;pend=null;try{history.replaceState(null,"",baseUrl())}catch(e){}return true}
+ var cl=null;try{cl=((c.timetable||[]).filter(function(x){return x.id===pend.cid})[0])||null}catch(e){}var nm=cl?(cl.title||cl.name||"class"):"class",when=cl?cl.time:"",key=classKey(pend.d,pend.cid),wrong=pend.u&&pend.u!==S.uid;
+ var going=!!(P().rsvp||{})[key];
+ if(pend.kind==="w"){AS.innerHTML='<div class="cs-in"><h2 style="margin:0">Were you at '+e2(nm)+'?</h2><p class="muted small" style="margin:6px 0 0">'+e2(c.name)+' · '+e2(pend.d===TODAY?"today":pend.d)+(when?" · "+e2(when):"")+'</p>'+(wrong?'<p class="small" style="color:#e0a44a">This link was made for someone else. Only answer if it is about you.</p>':'')+'<div class="row"><button class="btn gold" type="button" data-a142yes>Yes, I was there</button><button class="btn ghost" type="button" data-a142no>No</button></div></div>'}
+ else AS.innerHTML='<div class="cs-in"><h2 style="margin:0">'+e2(nm)+(when?' at '+e2(when):'')+'</h2><p class="muted small" style="margin:6px 0 0">'+e2(c.name)+' · '+e2(pend.d===TODAY?"today":pend.d)+'</p>'+(wrong?'<p class="small" style="color:#e0a44a">This link was made for someone else. Only answer if it is about you.</p>':'')+(going?'<p class="small">You said you are coming.</p>':'')+'<div class="row"><button class="btn gold" type="button" data-a142in>I\'m coming</button><button class="btn ghost" type="button" data-a142out>Can\'t make it</button></div></div>';
+ AS.hidden=false;AS.dataset.key=key;AS.dataset.cid=pend.cid;AS.dataset.d=pend.d;AS.dataset.nm=nm;AS.dataset.when=when;try{history.replaceState(null,"",baseUrl())}catch(e){}pend=null;return true}
+AS.addEventListener("click",function(e){var t=e.target;if(t===AS||t.closest("[data-a142x]")){AS.hidden=true;return}
+ var key=AS.dataset.key,p=P();
+ if(t.closest("[data-a142in]")){p.rsvp=p.rsvp||{};if(!p.rsvp[key]){try{toggleRsvp(key)}catch(er){p.rsvp[key]=true}}if(p.cant142)delete p.cant142[key];profChanged();try{scheduleLeague()}catch(er){}AS.hidden=true;toast("You're down as coming","See you there");return}
+ if(t.closest("[data-a142out]")){p.cant142=p.cant142||{};p.cant142[key]=Date.now();if(p.rsvp&&p.rsvp[key]){try{toggleRsvp(key)}catch(er){delete p.rsvp[key]}}profChanged();try{scheduleLeague()}catch(er){}AS.hidden=true;toast("Thanks, we've told the club","You can change it from the Schedule page");return}
+ if(t.closest("[data-a142yes]")){AS.hidden=true;try{window.FH39&&FH39.confirmClass?FH39.confirmClass(AS.dataset.cid,AS.dataset.when+" "+AS.dataset.nm):toast("Thanks")}catch(er){}return}
+ if(t.closest("[data-a142no]")){AS.hidden=true;toast("Thanks, noted");return}});
+function linkWatch(){pend=parseHash();if(!pend)return;var n=0,iv=setInterval(function(){n++;if(tryLink()||n>120)clearInterval(iv)},500)}
+window.addEventListener("hashchange",linkWatch);setTimeout(linkWatch,300);
+/* ---------- detected visits: hold the unbooked ones until the member confirms ---------- */
+var pass=false;
+function booked(cid){return !!(cid&&(P().rsvp||{})[classKey(TODAY,cid)])}
+function hold(cid,label,cl,cb){if(pass)return false;if(booked(cid))return false;
+ var d=(P().det142=P().det142||[]),ex=d.filter(function(x){return x.d===TODAY&&(x.cid||"")===(cid||"")&&x.st==="confirmed"})[0];if(ex)return false;
+ var open=d.filter(function(x){return x.d===TODAY&&(x.cid||"")===(cid||"")&&x.st==="unconfirmed"})[0];
+ if(!open){open={id:uid5(),d:TODAY,arr:Date.now(),dep:null,st:"unconfirmed",cid:cid||"",lab:label||"Club visit"};d.push(open);P().det142=d.slice(-20);profChanged();try{scheduleLeague()}catch(e){}}
+ var c=club();AS.innerHTML='<div class="cs-in"><h2 style="margin:0">Were you at training today?</h2><p class="muted small" style="margin:6px 0 0">Your phone puts you at '+e2(c?c.name:"your club")+' and you did not book a class. Your club is told your name and your arrival and leave times when this happens. Confirm so it counts as attendance.</p><div class="row"><button class="btn gold" type="button" data-d142yes>Yes, I trained</button><button class="btn ghost" type="button" data-d142no>No</button></div></div>';
+ AS.dataset.det=open.id;AS._cb=cb;AS.hidden=false;return true}
+AS.addEventListener("click",function(e){var t=e.target,id=AS.dataset.det,d=(P().det142||[]).filter(function(x){return x.id===id})[0];
+ if(t.closest("[data-d142yes]")){if(d)d.st="confirmed";profChanged();try{scheduleLeague()}catch(er){}AS.hidden=true;var cb=AS._cb;AS._cb=null;if(cb){pass=true;try{cb()}finally{pass=false}}return}
+ if(t.closest("[data-d142no]")){if(d){d.st="dismissed";d.dep=d.dep||Date.now()}profChanged();try{scheduleLeague()}catch(er){}AS.hidden=true;AS._cb=null;toast("Thanks, noted");return}});
+/* departure: when the member is next seen outside the radius after arriving today */
+function outside(){var c=club();if(!c||!c.geo||typeof c.geo.lat!=="number"||!P().autoAtt||!navigator.geolocation)return;var op=(P().det142||[]).filter(function(x){return x.d===TODAY&&x.arr&&!x.dep&&x.st!=="dismissed"})[0];if(!op)return;
+ navigator.geolocation.getCurrentPosition(function(p){var R=6371000,q=Math.PI/180,x=(c.geo.lat-p.coords.latitude)*q,y=(c.geo.lng-p.coords.longitude)*q,h=Math.sin(x/2)*Math.sin(x/2)+Math.cos(p.coords.latitude*q)*Math.cos(c.geo.lat*q)*Math.sin(y/2)*Math.sin(y/2),dist=2*R*Math.asin(Math.min(1,Math.sqrt(h)));
+  if(Math.max(0,dist-Math.min(p.coords.accuracy||0,100))>(c.geo.r||100)){op.dep=Date.now();profChanged();try{scheduleLeague()}catch(e){}}},function(){},{enableHighAccuracy:false,timeout:10000,maximumAge:60000})}
+setInterval(outside,180000);
+/* coach hears about a new detection while the app is open */
+var seenDet={};function watchDet(){if(!isCoach())return;det().forEach(function(x){if(seenDet[x.d.id]===undefined){seenDet[x.d.id]=1;if(seenDet._init&&x.d.st==="unconfirmed")toast(x.name+" detected at the club","No booking. Awaiting their confirmation.")}});seenDet._init=true}
+/* ---------- member settings card: automatic attendance + messages from my club ---------- */
+var DISC="When this is on, the FighterBase phone app notices when you arrive at and leave your club, even when the app is closed, and logs your visit. It only compares your phone's position with the club, within 100 m by default. Your position is not saved and is never shown to the club. For classes you booked, your club sees attendance totals only. If you are detected at the club without a booking, your club is told your name and your arrival and leave times, so they know who is in the building, and you are asked to confirm. You can switch this off at any time; the app works fully without it.";
+function memberCard(){var c=club(),p=P(),on=p.autoAtt===true,mp=p.msgPref||{};if(!c||!p.clubId||isCoach())return "";
+ return '<div class="panel" id="m142c"><div class="sec-h"><h3>Automatic attendance</h3><span class="badge'+(on?' ok-chip':'')+'">'+(on?'On':'Off')+'</span></div>'+
+  '<p class="small" style="margin:0">'+e2(DISC)+'</p>'+
+  '<div class="row"><button class="btn '+(on?'ghost':'gold')+'" type="button" data-a142auto="'+(on?'off':'on')+'">'+(on?'Switch off':'Turn on automatic attendance')+'</button></div>'+
+  '<p class="muted small" style="margin:6px 0 0">In this web preview it works while the app is open and location is allowed. The phone app does it in the background.</p>'+
+  '<div class="sec-h" style="margin-top:10px"><h3>Messages from '+e2(c.name)+'</h3></div><p class="muted small" style="margin:0">Class and payment messages from your club always come through. News and offers only if you say yes.</p>'+
+  '<label class="row" style="align-items:center;gap:8px;margin-top:6px"><input type="checkbox" data-m142news'+(mp.news?' checked':'')+'> <span class="small">Yes, send me news and offers</span></label></div>'}
+function drawMember(){var host=$("#clubBody"),c=club();if(!host||!c||!P().clubId||document.body.classList.contains("hubview")){var o=$("#m142c");if(o&&!isCoach()&&!host)o.remove();return}
+ var w=$("#m142w");if(!w){w=document.createElement("div");w.id="m142w";var g=$("#geoWrap");if(g&&g.parentNode===host)host.insertBefore(w,g.nextSibling);else host.insertBefore(w,host.firstChild)}
+ var h=memberCard();if(w.dataset.sig!==h){w.innerHTML=h;w.dataset.sig=h}}
+document.addEventListener("click",function(e){var b=e.target.closest&&e.target.closest("[data-a142auto]");if(!b)return;P().autoAtt=b.dataset.a142auto==="on";if(P().autoAtt)P().autoAttAt=new Date().toISOString();profChanged();try{scheduleLeague()}catch(er){}drawMember();toast(P().autoAtt?"Automatic attendance is on":"Automatic attendance is off")});
+document.addEventListener("change",function(e){if(e.target&&e.target.matches&&e.target.matches("[data-m142news]")){P().msgPref=Object.assign({},P().msgPref||{},{news:e.target.checked});profChanged();try{scheduleLeague()}catch(er){}toast(e.target.checked?"You'll get news and offers":"No news or offers")}});
+setInterval(function(){try{panel();schedBtns();drawMember();watchDet()}catch(e){}},2000);
+window.FH142={open:openSheet,hold:hold,link:linkFor,disclosure:DISC,det:det,outside:outside,autoOn:function(){return P().autoAtt===true}};
+})();
 
 /* FighterBase v44: always a way back, always a next step. */
 var N31=N31||false;
