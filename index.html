@@ -15681,12 +15681,79 @@ async function save(){
 async function undo(){
   if(!db||!S.uid){document.getElementById("hlMsg").textContent="Sign in first.";return}
   var map=logMap(),n=0;
-  for(var d of Object.keys(map)){var w=map[d]&&map[d].wear;if(w&&w.source==="apple-health"){await editDay(d,function(day){delete day.wear;if(day.weight&&map[d].weight===day.weight&&w.weight===day.weight)delete day.weight;if(day.sleep&&w.sleepH===day.sleep)delete day.sleep});n++}}
+  for(var d of Object.keys(map)){var w=map[d]&&map[d].wear;if(w&&(w.source==="apple-health"||w.source==="phone-health")){await editDay(d,function(day){delete day.wear;if(day.weight&&map[d].weight===day.weight&&w.weight===day.weight)delete day.weight;if(day.sleep&&w.sleepH===day.sleep)delete day.sleep});n++}}
   document.getElementById("hlMsg").textContent=n?"Removed "+n+" days.":"Nothing imported to remove.";
   if(typeof renderWearCharts==="function")renderWearCharts();if(typeof renderReadiness==="function")renderReadiness()}
 var _rd=window.renderDevices||(typeof renderDevices==="function"?renderDevices:null);
 if(_rd){renderDevices=function(){_rd();try{mount()}catch(x){}}}
-return {mount:mount,finish:finish,newAgg:newAgg,scan:scan,readGpx:readGpx,readTcx:readTcx};
+return {union:union,mount:mount,finish:finish,newAgg:newAgg,scan:scan,readGpx:readGpx,readTcx:readTcx};
+})();
+
+/* FighterBase v158: Automatic phone health (the phone-app version only). Inside the Android app it reads Health Connect, inside the iPhone app it
+   reads Apple Health, through one plugin (@capgo/capacitor-health). One permission screen, then steps, sleep, resting heart rate, HRV, active
+   calories, weight and workouts fill in by themselves. In a normal browser this panel is hidden and the file import (fh133) is used instead.
+   Saves to the same daily device data (wear) as the other imports, with source "phone-health". */
+var FH134=(function(){
+var READ=["steps","calories","restingHeartRate","heartRateVariability","weight","sleep","workouts"],busy=false;
+function plug(){try{var C=window.Capacitor;if(!C||!(C.isNativePlatform&&C.isNativePlatform()))return null;return (C.Plugins&&C.Plugins.Health)||null}catch(x){return null}}
+function P(){return (typeof S!=="undefined"&&S.profile)||{}}
+function dk(iso){var d=new Date(iso);return isNaN(d)?null:d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0")}
+function hm(iso){var d=new Date(iso);return String(d.getHours()).padStart(2,"0")+":"+String(d.getMinutes()).padStart(2,"0")}
+function pretty(t){return String(t||"").replace(/([a-z])([A-Z])/g,"$1 $2").replace(/^./,function(c){return c.toUpperCase()})}
+async function agg(H,type,aggr,start,end){
+  try{var r=await H.queryAggregated({dataType:type,startDate:start,endDate:end,bucket:"day",aggregation:aggr});return r.samples||[]}catch(x){return []}}
+async function pull(days){
+  var H=plug();if(!H)throw new Error("none");var end=new Date(),start=new Date(end.getTime()-days*864e5);start.setHours(0,0,0,0);
+  var s=start.toISOString(),e=end.toISOString(),by={},acts={};function put(d,k,v){if(!d||v==null||isNaN(v))return;(by[d]||(by[d]={}))[k]=v}
+  (await agg(H,"steps","sum",s,e)).forEach(function(x){var v=Math.round(x.value);if(v>0)put(dk(x.startDate),"steps",v)});
+  (await agg(H,"calories","sum",s,e)).forEach(function(x){var v=Math.round(x.value);if(v>0)put(dk(x.startDate),"activeKcal",v)});
+  (await agg(H,"restingHeartRate","average",s,e)).forEach(function(x){if(x.value>0)put(dk(x.startDate),"rhr",Math.round(x.value))});
+  (await agg(H,"heartRateVariability","average",s,e)).forEach(function(x){if(x.value>0)put(dk(x.startDate),"hrv",Math.round(x.value*10)/10)});
+  (await agg(H,"weight","average",s,e)).forEach(function(x){if(x.value>0)put(dk(x.startDate),"weight",Math.round(x.value*10)/10)});
+  try{var sl=await H.readSamples({dataType:"sleep",startDate:s,endDate:e,limit:2000}),iv={};
+    (sl.samples||[]).forEach(function(x){var segs=[];
+      if(x.stages&&x.stages.length)x.stages.forEach(function(g){if(g.stage!=="inBed"&&g.stage!=="awake")segs.push([Date.parse(g.startDate),Date.parse(g.endDate)])});
+      else if(!x.sleepState||(x.sleepState!=="inBed"&&x.sleepState!=="awake"))segs.push([Date.parse(x.startDate),Date.parse(x.endDate)]);
+      var d=dk(x.endDate);segs.forEach(function(g){if(g[1]>g[0])(iv[d]||(iv[d]=[])).push(g)})});
+    Object.keys(iv).forEach(function(d){var h=FH133.union(iv[d])/36e5;if(h>=1)put(d,"sleepH",Math.round(h*10)/10)})}catch(x){}
+  try{var wk=await H.queryWorkouts({startDate:s,endDate:e,limit:500});
+    (wk.workouts||[]).forEach(function(w){var d=dk(w.startDate);if(!d)return;(acts[d]||(acts[d]=[])).push({s:hm(w.startDate),type:pretty(w.workoutType),mins:Math.round((w.duration||0)/60),km:w.totalDistance?Math.round(w.totalDistance/10)/100:null})})}catch(x){}
+  return {days:by,acts:acts}}
+async function sync(days,say){
+  if(busy)return;busy=true;
+  try{if(!db||!S.uid){say("Sign in first.");return}
+    var r=await pull(days),all={};Object.keys(r.days).forEach(function(d){(all[d]=all[d]||{}).v=r.days[d]});Object.keys(r.acts).forEach(function(d){(all[d]=all[d]||{}).a=r.acts[d]});
+    var ds=Object.keys(all).sort(),n=0;if(!ds.length){say("Connected. No health data found yet.");P().healthSyncAt=Date.now();return}
+    for(var d of ds){say("Syncing "+(++n)+"/"+ds.length+"…");var x=all[d];
+      await editDay(d,function(day){var w=Object.assign({},day.wear||{});
+        if(x.v){Object.assign(w,x.v);if(!w.source||w.source==="apple-health")w.source="phone-health";if(x.v.weight&&!day.weight)day.weight=x.v.weight;if(x.v.sleepH&&!day.sleep)day.sleep=x.v.sleepH}
+        if(x.a){var have=(w.acts||[]).slice();x.a.forEach(function(a){if(!have.some(function(h){return h.s===a.s&&h.type===a.type}))have.push(a)});w.acts=have}
+        day.wear=w})}
+    P().healthSyncAt=Date.now();if(typeof profChanged==="function")profChanged();
+    say("Up to date ("+ds.length+" days).");
+    if(typeof renderWearCharts==="function")renderWearCharts();if(typeof renderReadiness==="function")renderReadiness()
+  }catch(er){say("Couldn't read your phone's health data. Check the permission in your phone settings.")}finally{busy=false}}
+async function connect(say){
+  var H=plug();if(!H)return;
+  try{var a=await H.isAvailable();if(!a.available){say(a.reason||"Health Connect isn't set up on this phone. Install “Health Connect by Android” from the Play Store, then try again.");return}
+    var r=await H.requestAuthorization({read:READ,requestHistoryAccess:true});
+    if(!(r.readAuthorized||[]).length){say("No permission given, so nothing was read. You can allow it any time.");return}
+    P().healthAuto=true;if(typeof profChanged==="function")profChanged();await sync(120,say)
+  }catch(er){say("Couldn't open the permission screen.")}}
+function mount(){
+  if(!plug())return;var host=document.getElementById("devicesBody");if(!host||document.getElementById("fhNative"))return;
+  var on=!!P().healthAuto,div=document.createElement("div");div.id="fhNative";div.className="panel plate";
+  div.innerHTML='<div class="sec-h"><h2>Phone health, automatic</h2><span class="muted small">'+(on?"On":"Off")+'</span></div>'
+   +'<p class="small" style="margin:0 0 8px">'+(on?"FighterBase keeps your steps, sleep, resting heart rate, HRV, active calories, weight and workouts up to date from your phone.":"One tap and FighterBase fills in your steps, sleep, resting heart rate, HRV, active calories, weight and workouts from your phone. Nothing to type or export. Your phone asks you to allow it once.")+' Your health data is private to you and you can switch this off or remove it any time.</p>'
+   +'<div class="row"><button class="btn" type="button" id="hnGo">'+(on?"Sync now":"Connect my phone health")+'</button>'+(on?'<button class="btn ghost" type="button" id="hnOff">Switch off</button>':'')+'<span class="saved" id="hnMsg"></span></div>';
+  host.insertBefore(div,host.children[0]||null);var say=function(t){var m=document.getElementById("hnMsg");if(m)m.textContent=t};
+  document.getElementById("hnGo").onclick=function(){on?sync(120,say):connect(say)};
+  var off=document.getElementById("hnOff");if(off)off.onclick=function(){P().healthAuto=false;if(typeof profChanged==="function")profChanged();var d=document.getElementById("fhNative");if(d)d.remove();mount()}}
+function auto(){if(!plug()||!P().healthAuto||!(typeof db!=="undefined"&&db&&S.uid))return;if(Date.now()-(P().healthSyncAt||0)<3*36e5)return;sync(7,function(){})}
+var _rd2=(typeof renderDevices==="function")?renderDevices:null;
+if(_rd2){renderDevices=function(){_rd2();try{mount()}catch(x){}}}
+if(typeof document!=="undefined"){setTimeout(auto,6000);document.addEventListener("visibilitychange",function(){if(document.visibilityState==="visible")setTimeout(auto,1500)})}
+return {mount:mount,sync:sync,connect:connect,pull:pull,plug:plug};
 })();
 
 /* FighterBase v44: always a way back, always a next step. */
