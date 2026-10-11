@@ -15486,24 +15486,26 @@ function train(k){var out=[],c=club(),pr=P(),rs=pr.rsvp||{},att=pr.att||{},past=
   (c.ptSlots||[]).forEach(function(s){if(s.d===k&&s.uid===pr.uid&&0)return;if(s.d===k&&s.uid===S.uid&&s.status==="booked")out.push({t:s.time,title:"Personal training",k:"PT",st:past?"ok":"plan",s:past?"Booked":"Booked"})})}
  (pr.psched||[]).filter(function(x){return x.date===k}).forEach(function(x){var st=x.st==="done"?"ok":x.st==="skip"?"none":x.st==="unk"?"none":"plan";if(x.st==="done")doneAny=true;out.push({t:x.time||"",title:x.title||"Training",k:"My session",st:st,s:x.st==="done"?"Done":x.st==="skip"?"Skipped":x.st==="unk"?"Not sure":"Planned"})});
  if(!doneAny){var l=logs()[k],ss=[];try{ss=FBE.sessOf(l)||[]}catch(x){}ss.forEach(function(s){out.push({t:"",title:(s.notes&&!/^Club session/.test(s.notes)?s.notes:(s.type||"Session")),k:"Logged",st:"ok",s:"Done"+(s.mins?" · "+s.mins+" min":"")})})}
+ try{if(window.FH135)FH135.items(k).forEach(function(i){out.push(i)})}catch(x){}
  out.sort(function(a,b){var x=hmNum(a.t),y=hmNum(b.t);return (x==null?9999:x)-(y==null?9999:y)});return out}
 function events(k){var o=[],p=P();if(p.fightDate===k)o.push("Fight day");return o}
-function summaryDays(keys){var plan=0,done=0,mealDays=0;keys.forEach(function(k){train(k).forEach(function(i){if(i.st==="ok")done++;else if(i.st==="plan")plan++});if(meals(k))mealDays++});return {plan:plan,done:done,mealDays:mealDays}}
+function summaryDays(keys){var plan=0,done=0,mealDays=0,acts=0;keys.forEach(function(k){train(k).forEach(function(i){if(i.st==="ok")done++;else if(i.st==="act")acts++;else if(i.st==="plan")plan++});if(meals(k))mealDays++});return {plan:plan,done:done,mealDays:mealDays,acts:acts}}
 /* ---- bits ---- */
 function chips(items){return items.map(function(i){return '<span class="a132-c s-'+i.st+'" title="'+e(i.k)+'">'+(i.t?e(i.t)+' ':'')+e(i.title)+' <em>'+e(i.s)+'</em></span>'}).join("")}
 function mealLine(k,full){var m=meals(k);if(!m)return '';if(full)return '<div class="a132-m">'+m.list.map(function(x){return '<div><span class="muted small">'+e(x[0])+'</span> <b>'+e(x[1])+'</b></div>'}).join("")+(m.x.length?'<div class="muted small">Extras: '+m.x.map(e).join(", ")+'</div>':'')+'</div>';
  var pick=m.list.filter(function(x){return /^(Breakfast|Lunch|Dinner)$/.test(x[0])}).map(function(x){return e(x[1])});return pick.length?'<div class="a132-ml muted small">Meals: '+pick.join(" · ")+'</div>':''}
 function dayBlock(k,full){var t=train(k),ev=events(k),m=mealLine(k,full),rest=isRest(k)&&!t.length;
  return '<div class="a132-day'+(k===TODAY?' today':'')+'"><div class="a132-dh"><b>'+e(k===TODAY?"Today":lab(k))+'</b>'+(k===TODAY?'<span class="muted small">'+e(lab(k))+'</span>':'')+ev.map(function(x){return '<span class="a132-ev">'+e(x)+'</span>'}).join("")+(rest?'<span class="muted small">Rest day</span>':'')+'</div>'+
-  (t.length?'<div class="a132-t">'+chips(t)+'</div>':(rest?'':'<div class="muted small">Nothing planned</div>'))+m+'</div>'}
+  (t.length?'<div class="a132-t">'+chips(t)+'</div>':(rest?'':'<div class="muted small">Nothing planned</div>'))+stepsLine(k)+m+'</div>'}
+function stepsLine(k){try{var n=window.FH135&&FH135.steps(k);return n?'<div class="a132-ml muted small">Steps: '+FH135.n(n)+'</div>':''}catch(x){return ''}}
 /* ---- parts used by fh112 ---- */
-function bar(){return '<div class="a132-bar">'+[["today","Today"],["week","This week"],["month","This month"]].map(function(x){return '<button type="button" class="a132-b'+(V===x[0]?' on':'')+'" data-f132v="'+x[0]+'">'+x[1]+'</button>'}).join("")+'</div>'}
+function bar(){return '<div class="a132-bar">'+[["today","Today"],["week","This week"],["month","This month"]].map(function(x){return '<button type="button" class="a132-b'+(V===x[0]?' on':'')+'" data-f132v="'+x[0]+'">'+x[1]+'</button>'}).join("")+'<button type="button" class="a132-b" data-f135add="1" aria-label="Add an activity">+ Activity</button></div>'}
 function todayMeals(){var m=meals(TODAY);
  if(!m)return '<div class="d112-sec"><h3>Today\'s meals</h3><p class="d112-p muted">No meal plan yet. Make one in a minute and your meals, extras and shopping list show up here every day.</p><div class="row"><button class="btn ghost sm" type="button" data-f132plan="1">Make my meal plan</button></div></div>';
  return '<div class="d112-sec"><h3>Today\'s meals</h3>'+m.list.map(function(x){return '<div class="d112-r"><div class="d112-w"><span class="d112-k">'+e(x[0])+'</span><b>'+e(x[1])+'</b></div></div>'}).join("")+(m.x.length?'<p class="d112-p muted small" style="margin:6px 0 0">Extras for vitamins and minerals: '+m.x.map(e).join(", ")+'.</p>':'')+'<div class="row" style="margin-top:6px"><button class="linkbtn" type="button" data-f132plan="1">Open my meal plan and shopping list</button></div></div>'}
 function weekView(){var mon=addDays(mondayOf(TODAY),WK*7),keys=[];for(var i=0;i<7;i++)keys.push(addDays(mon,i));var s=summaryDays(keys),tg=null;try{if(WK===0)tg=FBW.tgt(7)}catch(x){}
  var h='<div class="a132-nav"><button type="button" class="linkbtn" data-f132w="-1">&lsaquo; Earlier</button><b>'+(WK===0?'This week':WK===1?'Next week':WK===-1?'Last week':lab(keys[0],{day:"numeric",month:"short"})+' to '+lab(keys[6],{day:"numeric",month:"short"}))+'</b><button type="button" class="linkbtn" data-f132w="1">Later &rsaquo;</button></div>';
- h+='<div class="a132-tiles"><div><b>'+s.done+'</b><span>done</span></div><div><b>'+s.plan+'</b><span>still planned</span></div><div><b>'+(tg?tg:'-')+'</b><span>weekly target</span></div><div><b>'+s.mealDays+'/7</b><span>days with meals</span></div></div>';
+ var wk=window.FH135?FH135.week(keys):{active:0,avg:null};h+='<div class="a132-tiles"><div><b>'+s.done+'</b><span>trained</span></div><div><b>'+s.plan+'</b><span>still planned</span></div><div><b>'+(tg?tg:'-')+'</b><span>weekly target</span></div><div><b>'+wk.active+'/7</b><span>active days</span></div><div><b>'+(wk.avg?FH135.n(wk.avg):'-')+'</b><span>avg steps a day</span></div><div><b>'+s.mealDays+'/7</b><span>days with meals</span></div></div>';
  h+=keys.map(function(k){return dayBlock(k,false)}).join("");
  if(!s.mealDays)h+='<p class="muted small" style="margin:8px 0 0">No meals planned this week. <button class="linkbtn" type="button" data-f132plan="1">Make a meal plan</button></p>';
  return h}
@@ -15512,11 +15514,11 @@ function monthView(){var base=new Date(TODAY+"T12:00");base.setDate(1);base.setM
  var h='<div class="a132-nav"><button type="button" class="linkbtn" data-f132m="-1">&lsaquo; Earlier</button><b>'+e(base.toLocaleDateString("en-GB",{month:"long",year:"numeric"}))+'</b><button type="button" class="linkbtn" data-f132m="1">Later &rsaquo;</button></div>';
  h+='<div class="a132-cal">'+["M","T","W","T","F","S","S"].map(function(x){return '<span class="a132-dw">'+x+'</span>'}).join("");
  for(var j=0;j<lead;j++)h+='<span></span>';
- keys.forEach(function(k){var t=train(k),d=t.some(function(i){return i.st==="ok"}),p=t.some(function(i){return i.st==="plan"}),ml=!!meals(k),ev=events(k).length;
+ keys.forEach(function(k){var t=train(k),d=t.some(function(i){return i.st==="ok"||i.st==="act"}),p=t.some(function(i){return i.st==="plan"}),ml=!!meals(k),ev=events(k).length;
   h+='<button type="button" class="a132-cell'+(k===TODAY?' today':'')+(k===SEL?' sel':'')+'" data-f132d="'+k+'"><span>'+(+k.slice(8))+'</span><i>'+(d?'<u class="d"></u>':'')+(p?'<u class="p"></u>':'')+(ml?'<u class="m"></u>':'')+(ev?'<u class="f"></u>':'')+'</i></button>'});
  h+='</div><div class="a132-key muted small"><span><u class="d"></u> done</span><span><u class="p"></u> planned</span><span><u class="m"></u> meals planned</span><span><u class="f"></u> fight</span></div>';
  if(SEL&&SEL.slice(0,7)===first.slice(0,7))h+=dayBlock(SEL,true);
- h+='<div class="a132-sum"><div class="a132-r"><span>Sessions this month</span><b>'+s.done+' done'+(s.plan?' · '+s.plan+' planned':'')+'</b></div>'+
+ h+='<div class="a132-sum"><div class="a132-r"><span>Sessions this month</span><b>'+s.done+' done'+(s.plan?' · '+s.plan+' planned':'')+(s.acts?' · '+s.acts+' other activit'+(s.acts===1?'y':'ies'):'')+'</b></div>'+
   '<div class="a132-r"><span>Meal plan</span><b>'+(planEnd?'covers '+s.mealDays+' days here, runs to '+e(lab(planEnd,{day:"numeric",month:"short"})):'none yet')+'</b></div>'+
   (fd&&fd>=TODAY?'<div class="a132-r"><span>Fight</span><b>'+e(lab(fd,{day:"numeric",month:"short"}))+' · '+diffDays(TODAY,fd)+' days to go</b></div>':'')+'</div>';
  if(!planEnd||planEnd<last)h+='<p class="muted small" style="margin:8px 0 0">'+(planEnd?'Your meal plan ends before the end of this month.':'No meal plan yet.')+' <button class="linkbtn" type="button" data-f132plan="1">'+(planEnd?'Extend it':'Make one')+'</button></p>';
@@ -15533,7 +15535,7 @@ var css=document.createElement("style");css.textContent=
  ".a132-bar{display:flex;gap:6px;margin:10px 0 4px;flex-wrap:wrap}.a132-b{all:unset;cursor:pointer;box-sizing:border-box;padding:8px 14px;border-radius:999px;border:1px solid var(--line);font-size:14px;font-weight:700}.a132-b.on{background:#A9172F;border-color:#A9172F;color:#fff}"+
  ".a132-nav{display:flex;justify-content:space-between;align-items:center;gap:8px;margin:2px 0 10px}.a132-tiles{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:10px}.a132-tiles div{display:flex;flex-direction:column;align-items:center;padding:8px 4px;border-radius:12px;border:1px solid var(--line);background:rgba(0,0,0,.18)}.a132-tiles b{font:900 22px var(--display,'Big Shoulders Display'),sans-serif}.a132-tiles span{font-size:11px;color:var(--muted);text-align:center}"+
  ".a132-day{padding:10px 0;border-top:1px solid var(--line);display:flex;flex-direction:column;gap:5px}.a132-day.today{border-left:3px solid #A9172F;padding-left:10px}.a132-dh{display:flex;gap:8px;align-items:baseline;flex-wrap:wrap}.a132-ev{font-size:11px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:#FF5A8A;border:1px solid #FF5A8A;border-radius:999px;padding:1px 8px}"+
- ".a132-t{display:flex;flex-wrap:wrap;gap:6px}.a132-c{font-size:13px;padding:4px 10px;border-radius:999px;border:1px solid var(--line)}.a132-c em{font-style:normal;opacity:.7;font-size:11px}.a132-c.s-ok{background:rgba(63,197,126,.14);border-color:rgba(63,197,126,.5)}.a132-c.s-plan{background:rgba(232,223,200,.12);border-color:rgba(232,223,200,.5)}.a132-c.s-no{background:rgba(255,90,95,.12);border-color:rgba(255,90,95,.45)}"+
+ ".a132-tiles{grid-template-columns:repeat(3,1fr)!important}.a132-c.s-act{background:rgba(90,150,255,.14);border-color:rgba(90,150,255,.5)}.a132-t{display:flex;flex-wrap:wrap;gap:6px}.a132-c{font-size:13px;padding:4px 10px;border-radius:999px;border:1px solid var(--line)}.a132-c em{font-style:normal;opacity:.7;font-size:11px}.a132-c.s-ok{background:rgba(63,197,126,.14);border-color:rgba(63,197,126,.5)}.a132-c.s-plan{background:rgba(232,223,200,.12);border-color:rgba(232,223,200,.5)}.a132-c.s-no{background:rgba(255,90,95,.12);border-color:rgba(255,90,95,.45)}"+
  ".a132-m{display:flex;flex-direction:column;gap:2px}.a132-cal{display:grid;grid-template-columns:repeat(7,1fr);gap:4px}.a132-dw{text-align:center;font-size:11px;color:var(--muted)}.a132-cell{all:unset;cursor:pointer;box-sizing:border-box;min-height:46px;border-radius:10px;border:1px solid var(--line);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;font-size:13px}.a132-cell.today{border-color:#A9172F}.a132-cell.sel{background:rgba(255,106,61,.2)}"+
  ".a132-cell i,.a132-key u{display:inline-flex;gap:3px;font-style:normal}.a132-cell u,.a132-key u{display:inline-block;width:7px;height:7px;border-radius:50%;text-decoration:none}.u,.a132-cell u.d,.a132-key u.d{background:#3FC57E}.a132-cell u.p,.a132-key u.p{background:#E8DFC8}.a132-cell u.m,.a132-key u.m{background:#55C7D9}.a132-cell u.f,.a132-key u.f{background:#FF5A8A}"+
  ".a132-key{display:flex;gap:12px;flex-wrap:wrap;margin:8px 0}.a132-key span{display:inline-flex;align-items:center;gap:5px}.a132-sum{margin-top:10px;display:flex;flex-direction:column;gap:6px}.a132-r{display:flex;justify-content:space-between;gap:10px;font-size:14px;padding:6px 0;border-top:1px solid var(--line)}";
@@ -15756,6 +15758,44 @@ var _rd2=(typeof renderDevices==="function")?renderDevices:null;
 if(_rd2){renderDevices=function(){_rd2();try{mount()}catch(x){}}}
 if(typeof document!=="undefined"){setTimeout(auto,6000);document.addEventListener("visibilitychange",function(){if(document.visibilityState==="visible")setTimeout(auto,1500)})}
 return {mount:mount,sync:sync,connect:connect,pull:pull,plug:plug};
+})();
+
+/* FighterBase v162: Activities (wearables stage C). Walks, runs, rides, swims, hikes, yoga, mobility or anything else count toward the day and week
+   as "active", separate from "trained" (club classes and logged sessions) so the weekly target is not changed. Steps are shown on their own.
+   Activities come from the phone or file import (wear.acts) or a quick add here. Shown in the Home agenda (Today / This week / This month). */
+var FH135=(function(){
+var TYPES=["Walk","Run","Ride","Swim","Hike","Yoga","Mobility","Other"];
+function P(){return (typeof S!=="undefined"&&S.profile)||{}}
+function e(s){return esc(String(s==null?"":s))}
+function L(k){try{return (logMap()||{})[k]||null}catch(x){return null}}
+function acts(k){var l=L(k),w=l&&l.wear;return (w&&w.acts)||[]}
+function steps(k){var l=L(k),w=l&&l.wear,n=w&&+w.steps;return n>0?Math.round(n):null}
+function fmt(a){var p=[];if(a.mins)p.push(a.mins+" min");if(a.km)p.push(a.km+" km");return p.join(" · ")||"Done"}
+function items(k){return acts(k).map(function(a){return {t:a.s||"",title:a.type||"Activity",k:"Activity",st:"act",s:fmt(a)}})}
+function n(x){return x.toLocaleString("en-GB")}
+function week(keys){var days=0,act=0,st=0,sd=0,active=0;keys.forEach(function(k){var a=acts(k).length,s=steps(k);if(a)act+=a;if(s){st+=s;sd++}var ses=false;try{var l=L(k);ses=!!(l&&FBE.sessOf(l).length)}catch(x){}var at=(P().att||{});var cls=Object.keys(at).some(function(q){return q.indexOf(k+"_")===0});if(a||ses||cls)active++});return {acts:act,active:active,steps:st,stepDays:sd,avg:sd?Math.round(st/sd):null}}
+async function save(o){var t=o.type==="Other"&&o.name?o.name:o.type;var rec={s:o.time,type:t,mins:o.mins,km:o.km||null,src:"manual"};
+ return editDay(o.date,function(day){var w=Object.assign({},day.wear||{});var have=(w.acts||[]).slice();have.push(rec);w.acts=have;if(!w.source)w.source="manual";day.wear=w})}
+function close(){var o=document.getElementById("fh135");if(o)o.remove()}
+function open(date){close();var d=date||TODAY,o=document.createElement("div");o.id="fh135";o.setAttribute("role","dialog");o.setAttribute("aria-modal","true");o.setAttribute("aria-label","Add an activity");
+ o.style.cssText="position:fixed;inset:0;z-index:150;background:rgba(0,0,0,.6);display:flex;align-items:flex-end;justify-content:center;padding:12px";
+ var tm=new Date();var now=String(tm.getHours()).padStart(2,"0")+":"+String(tm.getMinutes()).padStart(2,"0");
+ o.innerHTML='<div style="background:var(--card,#14151b);border:1px solid var(--line,#333);border-radius:16px;padding:16px;width:100%;max-width:440px;max-height:90vh;overflow:auto"><h3 style="margin:0 0 4px">Add an activity</h3><p class="small muted" style="margin:0 0 10px">Walks, runs, rides, swims and more count as active time. They do not change your training target.</p>'
+  +'<div class="row" id="a135t" style="gap:6px;flex-wrap:wrap">'+TYPES.map(function(t,i){return '<button type="button" class="btn ghost sm" data-a135t="'+t+'" aria-pressed="'+(i===0)+'">'+t+'</button>'}).join("")+'</div>'
+  +'<div class="field" id="a135nw" hidden style="margin-top:8px"><label class="label" for="a135n">What was it?</label><input id="a135n" maxlength="30" placeholder="e.g. Paddleboarding"></div>'
+  +'<div class="grid2" style="margin-top:8px"><div class="field"><label class="label" for="a135m">Minutes</label><input id="a135m" type="number" min="1" max="1440" inputmode="numeric" placeholder="30"></div><div class="field"><label class="label" for="a135k">Distance km (optional)</label><input id="a135k" type="number" min="0" step="0.1" inputmode="decimal"></div>'
+  +'<div class="field"><label class="label" for="a135d">Date</label><input id="a135d" type="date" max="'+TODAY+'" value="'+d+'"></div><div class="field"><label class="label" for="a135s">Start time</label><input id="a135s" type="time" value="'+now+'"></div></div>'
+  +'<div class="row" style="margin-top:10px"><button class="btn" type="button" id="a135go">Save</button><button class="btn ghost" type="button" id="a135x">Cancel</button><span class="saved" id="a135msg"></span></div></div>';
+ document.body.appendChild(o);var sel="Walk";
+ o.addEventListener("click",function(ev){var b=ev.target.closest&&ev.target.closest("[data-a135t]");if(b){sel=b.dataset.a135t;o.querySelectorAll("[data-a135t]").forEach(function(x){x.setAttribute("aria-pressed",x===b)});document.getElementById("a135nw").hidden=sel!=="Other";return}if(ev.target===o)close()});
+ document.getElementById("a135x").onclick=close;
+ document.getElementById("a135go").onclick=async function(){var mins=Math.round(+document.getElementById("a135m").value),dt=document.getElementById("a135d").value||TODAY,msg=document.getElementById("a135msg");
+  if(!(mins>0)){msg.textContent="Add how many minutes.";return}if(dt>TODAY){msg.textContent="Pick today or an earlier date.";return}
+  var km=+document.getElementById("a135k").value||null;msg.textContent="Saving…";
+  var ok=await save({type:sel,name:(document.getElementById("a135n").value||"").trim(),mins:mins,km:km,date:dt,time:document.getElementById("a135s").value||""});
+  if(!ok){msg.textContent="Couldn't save. Sign in and try again.";return}close();try{toast("Activity added",sel+" · "+mins+" min")}catch(x){}try{FH112.draw()}catch(x){}}}
+document.addEventListener("click",function(ev){var b=ev.target.closest&&ev.target.closest("[data-f135add]");if(b){open()}});
+return {items:items,steps:steps,acts:acts,week:week,open:open,n:n,fmt:fmt};
 })();
 
 /* FighterBase v44: always a way back, always a next step. */
