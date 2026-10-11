@@ -15958,6 +15958,131 @@ var _rp=(typeof renderProgress==="function")?renderProgress:null;
 if(_rp)renderProgress=function(){var r=_rp.apply(this,arguments);try{draw()}catch(x){}return r};
 return {stats:stats,share:share,draw:draw}})();
 
+/* FighterBase v166: Home chart. A shaded "activity level" line for the last 7 / 14 / 30 days with steps, calories logged, training sessions
+   and weight that can be switched on over it, a day readout, and a plain "why did my weight change" panel that compares this period with the one before.
+   Everything comes from what the member logs, imports or checks in. Not logged = unknown, drawn as a gap, never as zero.
+   Activity level (0-100) = up to 50 from steps (10,000 = 50) + up to 50 from training and logged activities (60 minutes = 50). With no steps it is
+   training only and says so. A relative picture for the member, not a medical measure. Profile: homeChartDays (7|14|30), homeChartOver {s,k,t,w}, homeChartOff.
+   Under-18 profiles and anyone who switches it off do not see weight or calorie figures. */
+var FH139=(function(){
+var COL={s:"#55C7D9",k:"#E8DFC8",t:"#3FC57E",w:"#B482FF",a:"#C81E3A"},NAME={s:"Steps",k:"Calories",t:"Sessions",w:"Weight"};
+function P(){return (typeof S!=="undefined"&&S.profile)||{}}
+function e(s){return esc(String(s==null?"":s))}
+function n0(x){return Math.round(x).toLocaleString("en-GB")}
+function r1(x){return Math.round(x*10)/10}
+function days(){var d=+P().homeChartDays;return d===14||d===30?d:7}
+function young(){var a=+P().age;return a>0&&a<18}
+function bodyHidden(){return young()||!!P().homeChartNoBody}
+function over(){var o=P().homeChartOver;return o||{s:true,k:false,t:true,w:false}}
+function lab(k,o){return new Date(k+"T12:00").toLocaleDateString("en-GB",o||{weekday:"short",day:"numeric",month:"short"})}
+function day(k,m){var l=m[k],r={k:k,steps:null,kcal:null,sess:0,mins:0,w:null,score:null,hasTrack:false};if(!l)return r;
+ var wr=l.wear||{},tr=l.tr||{},st=+wr.steps||+tr.steps||0;try{if(window.FH135&&FH135.steps(k))st=FH135.steps(k)}catch(x){}if(st>0)r.steps=Math.round(st);
+ var ss=[];try{ss=FBE.sessOf(l)||[]}catch(x){}ss.forEach(function(s){r.sess++;r.mins+=(+s.mins>0?+s.mins:45)});
+ try{(wr.acts||[]).forEach(function(a){r.mins+=(+a.mins>0?+a.mins:0)})}catch(x){}
+ var at=P().att||{};if(!r.sess&&Object.keys(at).some(function(q){return q.indexOf(k+"_")===0})){r.sess=1;r.mins+=60}
+ if(l.weight>0)r.w=+l.weight;
+ if((l.eaten||[]).length){try{var su=sumEaten(l.eaten);if(su&&su.kcal>0)r.kcal=Math.round(su.kcal)}catch(x){}}
+ var known=r.steps!=null||r.sess>0||r.mins>0||l.restDay||isLoggedSafe(l);
+ if(r.steps!=null||r.mins>0||known){var sp=r.steps!=null?Math.min(50,r.steps/10000*50):0,tp=Math.min(50,r.mins/60*50);r.score=Math.round(r.steps!=null?sp+tp:Math.min(100,r.mins/60*100));r.hasTrack=r.steps!=null}
+ if(r.steps==null&&r.mins===0&&!l.restDay&&!isLoggedSafe(l))r.score=null;
+ return r}
+function isLoggedSafe(l){try{return !!isLogged(l)}catch(x){return false}}
+function series(n,back){var m={};try{m=logMap()||{}}catch(x){}var out=[];for(var i=n-1;i>=0;i--)out.push(day(addDays(TODAY,-(i+(back||0))),m));return out}
+function vals(a,f){return a.map(f).filter(function(x){return x!=null})}
+function avg(a){return a.length?a.reduce(function(s,x){return s+x},0)/a.length:null}
+/* ---- svg ---- */
+var W=340,H=150,PL=8,PR=8,PT=10,PB=22;
+function X(i,n){return PL+(n>1?i*(W-PL-PR)/(n-1):0)}
+function Y(v,mn,mx){return PT+(1-(v-mn)/((mx-mn)||1))*(H-PT-PB)}
+function path(pts){var d="",open=false;pts.forEach(function(p){if(p[1]==null){open=false;return}d+=(open?"L":"M")+p[0].toFixed(1)+","+p[1].toFixed(1);open=true});return d}
+function areaPath(pts){var segs=[],cur=[];pts.forEach(function(p){if(p[1]==null){if(cur.length)segs.push(cur);cur=[]}else cur.push(p)});if(cur.length)segs.push(cur);var base=H-PB;
+ return segs.map(function(s){return "M"+s[0][0].toFixed(1)+","+base+s.map(function(p){return "L"+p[0].toFixed(1)+","+p[1].toFixed(1)}).join("")+"L"+s[s.length-1][0].toFixed(1)+","+base+"Z"}).join("")}
+function norm(a,f){var v=vals(a,f);if(!v.length)return null;var mn=Math.min.apply(null,v),mx=Math.max.apply(null,v);if(mn===mx){mn-=1;mx+=1}return {mn:mn,mx:mx}}
+function svg(D,SEL){var n=D.length,o=over(),h='<svg class="h139-svg" viewBox="0 0 '+W+' '+H+'" role="img" aria-label="Activity level over the last '+n+' days">';
+ h+='<defs><linearGradient id="h139g" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="'+COL.a+'" stop-opacity=".55"/><stop offset="1" stop-color="'+COL.a+'" stop-opacity=".04"/></linearGradient></defs>';
+ [0,50,100].forEach(function(g){var y=Y(g,0,100);h+='<line x1="'+PL+'" x2="'+(W-PR)+'" y1="'+y+'" y2="'+y+'" class="h139-gl"/>'});
+ var ap=D.map(function(d,i){return [X(i,n),d.score==null?null:Y(d.score,0,100)]});
+ h+='<path d="'+areaPath(ap)+'" fill="url(#h139g)"/><path d="'+path(ap)+'" fill="none" stroke="'+COL.a+'" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"/>';
+ function line(key,f,dash){var r=norm(D,f);if(!r)return;var pts=D.map(function(d,i){var v=f(d);return [X(i,n),v==null?null:Y(v,r.mn,r.mx)]});
+  h+='<path d="'+path(pts)+'" fill="none" stroke="'+COL[key]+'" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"'+(dash?' stroke-dasharray="4 3"':'')+'/>';
+  if(n<=14)pts.forEach(function(p){if(p[1]!=null)h+='<circle cx="'+p[0].toFixed(1)+'" cy="'+p[1].toFixed(1)+'" r="2.6" fill="'+COL[key]+'" stroke="var(--bg,#0b0b0d)" stroke-width="1.5"/>'})}
+ if(o.s)line("s",function(d){return d.steps});
+ if(o.t)line("t",function(d){return d.sess>0?d.sess:(d.score!=null?0:null)});
+ if(!bodyHidden()){if(o.k)line("k",function(d){return d.kcal});if(o.w)line("w",function(d){return d.w})}
+ var step=n<=7?1:n<=14?3:7;D.forEach(function(d,i){if(i%step===0&&(n<=7||i<=n-1-Math.ceil(step/2)||i===n-1)&&(i===n-1||n-1-i>=step-1||n<=7))h+='<text x="'+X(i,n)+'" y="'+(H-6)+'" class="h139-ax" text-anchor="'+(i===0?'start':i===n-1?'end':'middle')+'">'+e(n<=7?lab(d.k,{weekday:"short"}):lab(d.k,{day:"numeric",month:"short"}))+'</text>'});
+ if(SEL!=null){var x=X(SEL,n);h+='<line x1="'+x+'" x2="'+x+'" y1="'+PT+'" y2="'+(H-PB)+'" class="h139-sel"/>'}
+ D.forEach(function(d,i){var w=(W-PL-PR)/Math.max(1,n-1);h+='<rect x="'+(X(i,n)-w/2)+'" y="0" width="'+w+'" height="'+H+'" fill="transparent" data-h139d="'+i+'" style="cursor:pointer"/>'});
+ return h+'</svg>'}
+function readout(d){if(!d)return '';var parts=[];parts.push('<b>'+e(d.k===TODAY?"Today":lab(d.k))+'</b>');
+ parts.push('Activity level '+(d.score==null?'<span class="muted">not enough logged</span>':'<b style="color:'+COL.a+'">'+d.score+'</b>/100'+(d.hasTrack?'':' <span class="muted small">(training only)</span>')));
+ parts.push('<span style="color:'+COL.s+'">Steps</span> '+(d.steps!=null?n0(d.steps):'<span class="muted">none</span>'));
+ parts.push('<span style="color:'+COL.t+'">Sessions</span> '+(d.sess?d.sess+(d.mins?' · '+Math.round(d.mins)+' min':''):'<span class="muted">none logged</span>'));
+ if(!bodyHidden()){parts.push('<span style="color:'+COL.k+'">Calories</span> '+(d.kcal!=null?n0(d.kcal):'<span class="muted">not logged</span>'));parts.push('<span style="color:'+COL.w+'">Weight</span> '+(d.w!=null?r1(d.w)+' kg':'<span class="muted">not weighed</span>'))}
+ return '<div class="h139-ro">'+parts.map(function(x,i){return '<div'+(i===0?' class="h139-d"':'')+'>'+x+'</div>'}).join('')+'</div>'}
+/* ---- why did my weight change ---- */
+function why(){if(bodyHidden())return '';var n=days(),cur=series(n,0),prev=series(n,n);
+ var wc=cur.filter(function(d){return d.w!=null});
+ if(wc.length<2)return '<div class="h139-why"><b>Why did my weight change?</b><p class="muted small">Weigh yourself two or more times in these '+n+' days and this will line your weight up against your activity, training and eating.</p></div>';
+ var first=wc[0].w,last=wc[wc.length-1].w,dl=r1(last-first),dir=Math.abs(dl)<0.3?0:dl>0?1:-1;
+ var H2=[];
+ function cmp(name,c,p,unit,fmt,upBad){if(c==null||p==null||p===0)return null;var ch=(c-p)/p;if(Math.abs(ch)<0.1)return {t:name+" about the same ("+fmt(c)+unit+" vs "+fmt(p)+unit+" before)",dir:0};
+  var up=ch>0;return {t:name+(up?" up ":" down ")+Math.round(Math.abs(ch)*100)+"% ("+fmt(c)+unit+" vs "+fmt(p)+unit+" before)",dir:up?1:-1}}
+ var sc=avg(vals(cur,function(d){return d.score})),sp=avg(vals(prev,function(d){return d.score}));
+ var stc=avg(vals(cur,function(d){return d.steps})),stp=avg(vals(prev,function(d){return d.steps}));
+ var ssc=cur.reduce(function(s,d){return s+d.sess},0),ssp=prev.reduce(function(s,d){return s+d.sess},0);
+ var kc=vals(cur,function(d){return d.kcal}),kp=vals(prev,function(d){return d.kcal});
+ var rows=[cmp("Overall activity level",sc,sp,"",function(x){return Math.round(x)}),cmp("Steps a day",stc,stp,"",n0),cmp("Training sessions",ssc,ssp,"",function(x){return x})];
+ var kcmp=null;if(kc.length>=3&&kp.length>=3)kcmp=cmp("Calories logged a day",avg(kc),avg(kp),"",n0);rows.push(kcmp);
+ rows=rows.filter(Boolean);
+ var up=[],dn=[];if(sc!=null&&sp!=null){var c=cmp("a",sc,sp,"",String);if(c&&c.dir)(c.dir>0?up:dn).push("your activity level")}
+ if(kcmp&&kcmp.dir)(kcmp.dir>0?"up":"dn")&&(kcmp.dir>0?up:dn).push("the calories you logged");
+ var head,note;
+ if(dir===0)head="Your weight is steady: "+r1(first)+" kg to "+r1(last)+" kg over "+n+" days.";
+ else head="Your weight went "+(dir>0?"up":"down")+" "+Math.abs(dl)+" kg ("+r1(first)+" to "+r1(last)+" kg) over "+n+" days.";
+ var story="";
+ if(dir>0){var more=[],less=[];if(sc!=null&&sp!=null&&sc<sp*0.9)less.push("your activity level fell");if(kcmp&&kcmp.dir>0)more.push("you logged more calories");
+  if(less.length||more.length)story="Compared with the "+n+" days before, "+less.concat(more).join(" and ")+". That can push weight up. ";else if(rows.length)story=(rows.some(function(r){return r.dir!==0})?"What you logged moved in ways that do not clearly explain it, so some of it may be water, salt, or what is still in your gut. ":"Nothing you logged changed much, so this may be water, salt, or what is still in your gut. ");}
+ if(dir<0){var l2=[];if(sc!=null&&sp!=null&&sc>sp*1.1)l2.push("your activity level rose");if(kcmp&&kcmp.dir<0)l2.push("you logged fewer calories");
+  story=l2.length?"Compared with the "+n+" days before, "+l2.join(" and ")+". That can bring weight down. ":(rows.length?(rows.some(function(r){return r.dir!==0})?"What you logged moved in ways that do not clearly explain it, so some of it may be water or a lighter gut. ":"Nothing you logged changed much, so this may be water or a lighter gut. "):"")}
+ var cover=kc.length<n*0.6?'Calories are only counted on the '+kc.length+' of '+n+' days you logged food, so treat that part as a guess. ':'';
+ return '<div class="h139-why"><b>Why did my weight change?</b><p>'+e(head)+'</p>'+(story?'<p>'+e(story+cover)+'</p>':(cover?'<p class="muted small">'+e(cover)+'</p>':''))+
+  (rows.length?'<ul class="h139-ul">'+rows.map(function(r){return '<li>'+e(r.t)+'</li>'}).join("")+'</ul>':'')+
+  '<p class="muted small">Weight moves a few hundred grams day to day with water and salt, so look at the trend, not one morning. General information, not medical advice.</p></div>'}
+/* ---- card ---- */
+var SELI=null;
+function html(){var p=P();if(!p.onboarded)return '';var n=days(),D=series(n,0),o=over(),any=D.some(function(d){return d.score!=null||d.w!=null||d.kcal!=null});
+ if(SELI==null||SELI>=D.length)SELI=D.length-1;
+ var h='<div class="h139-top"><div><span class="fb-kick">Last '+n+' days</span><h2>Your progress</h2></div><div class="h139-rng">'+[7,14,30].map(function(x){return '<button type="button" class="h139-r'+(x===n?' on':'')+'" data-h139n="'+x+'">'+x+'</button>'}).join("")+'</div></div>';
+ if(!any)return h+'<p class="muted small">Log a session, your steps or a check-in and your activity line appears here.</p>';
+ var keys=["s","t"].concat(bodyHidden()?[]:["k","w"]);
+ h+='<div class="h139-lg"><span class="h139-chip fixed" style="--c:'+COL.a+'"><i></i>Activity level</span>'+keys.map(function(k){return '<button type="button" class="h139-chip'+(o[k]?' on':'')+'" style="--c:'+COL[k]+'" data-h139o="'+k+'" aria-pressed="'+!!o[k]+'"><i></i>'+NAME[k]+'</button>'}).join("")+'</div>';
+ h+=svg(D,SELI)+readout(D[SELI]);
+ h+='<details class="h139-how"><summary>How is activity level worked out?</summary><p class="muted small">Up to 50 points from steps (10,000 steps is 50) plus up to 50 from training and logged activities (60 minutes is 50). With no steps it is training only. It is a relative picture of your own week, not a medical score. Days with nothing logged are gaps, not zero. Other lines are scaled to their own range, so tap a day to see the real numbers.</p></details>';
+ h+=why();
+ h+='<div class="h139-ft"><button class="linkbtn" type="button" data-h139body="1">'+(young()?'':(p.homeChartNoBody?'Show weight and calories':'Hide weight and calories'))+'</button></div>';
+ return h}
+function draw(){var home=document.getElementById("tab-today");if(!home)return;var el=document.getElementById("fb139");
+ if(!el){el=document.createElement("div");el.id="fb139";el.className="fb-card h139";home.insertBefore(el,home.firstChild)}
+ try{var h=html();el.hidden=!h;if(el.dataset.sig!==h){el.innerHTML=h;el.dataset.sig=h}}catch(x){el.innerHTML="";console.warn("h139",x)}}
+function setP(f){try{f(P());profChanged()}catch(x){}el0();draw()}
+function el0(){var el=document.getElementById("fb139");if(el)el.dataset.sig=""}
+document.addEventListener("click",function(ev){var t=ev.target;if(!t.closest)return;var b;
+ if(b=t.closest("[data-h139n]")){var v=+b.dataset.h139n;SELI=null;setP(function(p){p.homeChartDays=v});return}
+ if(b=t.closest("[data-h139o]")){var k=b.dataset.h139o;setP(function(p){var o=Object.assign({},over());o[k]=!o[k];p.homeChartOver=o});return}
+ if(b=t.closest("[data-h139d]")){SELI=+b.dataset.h139d;el0();draw();return}
+ if(b=t.closest("[data-h139body]")){setP(function(p){p.homeChartNoBody=!p.homeChartNoBody});return}});
+var css=document.createElement("style");css.textContent="#tab-today #fb139{order:0}.h139{display:flex;flex-direction:column;gap:10px;border-left:4px solid #C81E3A}.h139[hidden]{display:none}.h139-top{display:flex;justify-content:space-between;align-items:flex-start;gap:10px}.h139-top h2{margin:2px 0 0;font:900 28px var(--display,'Big Shoulders Display',sans-serif);text-transform:uppercase;letter-spacing:.02em}"+
+".h139-rng{display:flex;gap:4px}.h139-r{all:unset;cursor:pointer;box-sizing:border-box;min-width:38px;text-align:center;padding:7px 10px;border-radius:999px;border:1px solid var(--line,rgba(255,255,255,.14));font-size:13px;font-weight:700}.h139-r.on{background:#C81E3A;border-color:#C81E3A;color:#fff}"+
+".h139-lg{display:flex;flex-wrap:wrap;gap:6px}.h139-chip{all:unset;box-sizing:border-box;cursor:pointer;display:inline-flex;align-items:center;gap:6px;padding:6px 11px;border-radius:999px;border:1px solid var(--line,rgba(255,255,255,.14));font-size:13px;opacity:.6}.h139-chip.fixed{opacity:1;cursor:default}.h139-chip.on{opacity:1;border-color:var(--c)}.h139-chip i{width:10px;height:10px;border-radius:3px;background:var(--c);display:inline-block}"+
+".h139-svg{width:100%;height:auto;display:block;touch-action:manipulation}.h139-gl{stroke:var(--line,rgba(255,255,255,.12));stroke-width:1}.h139-ax{fill:var(--muted,#9AA0AA);font-size:9px}.h139-sel{stroke:var(--muted,#9AA0AA);stroke-width:1;stroke-dasharray:3 3}"+
+".h139-ro{display:grid;grid-template-columns:1fr 1fr;gap:6px 12px;font-size:13px;padding:8px 10px;border-radius:12px;border:1px solid var(--line,rgba(255,255,255,.12));background:rgba(255,255,255,.03)}.h139-d{grid-column:1/-1}.h139-how summary{cursor:pointer;font-size:13px;color:var(--muted,#9AA0AA)}.h139-how p{margin:6px 0 0}"+
+".h139-why{border-top:1px solid var(--line,rgba(255,255,255,.12));padding-top:10px}.h139-why p{margin:6px 0}.h139-ul{margin:6px 0;padding-left:18px;font-size:14px}.h139-ul li{margin:2px 0}.h139-ft{display:flex;justify-content:flex-end}";
+document.head.appendChild(css);
+var st=showTab;showTab=function(t){var r=st.apply(this,arguments);try{if(t==="today")draw()}catch(x){}return r};
+setInterval(function(){try{var t=document.getElementById("tab-today");if(t&&!t.hidden)draw()}catch(x){}},4000);
+setTimeout(draw,700);
+return {draw:draw,series:series,day:day,why:why,html:html}})();
+
 /* FighterBase v44: always a way back, always a next step. */
 var N31=N31||false;
 (function(){
