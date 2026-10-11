@@ -15965,22 +15965,22 @@ return {stats:stats,share:share,draw:draw}})();
    training only and says so. A relative picture for the member, not a medical measure. Profile: homeChartDays (7|14|30), homeChartOver {s,k,t,w}, homeChartOff.
    Under-18 profiles and anyone who switches it off do not see weight or calorie figures. */
 var FH139=(function(){
-var COL={s:"#55C7D9",k:"#E8DFC8",t:"#3FC57E",w:"#B482FF",a:"#C81E3A"},NAME={s:"Steps",k:"Calories",t:"Sessions",w:"Weight"};
+var COL={s:"#55C7D9",k:"#E8DFC8",t:"#3FC57E",w:"#B482FF",m:"#FF9F6B",z:"#7A8CFF",a:"#C81E3A"},NAME={s:"Steps",k:"Calories",t:"Sessions",m:"Active minutes",z:"Sleep",w:"Weight"};
 function P(){return (typeof S!=="undefined"&&S.profile)||{}}
 function e(s){return esc(String(s==null?"":s))}
 function n0(x){return Math.round(x).toLocaleString("en-GB")}
 function r1(x){return Math.round(x*10)/10}
-function days(){var d=+P().homeChartDays;return d===14||d===30?d:7}
+function days(){var d=+P().homeChartDays;return d===7||d===14?d:30}
 function young(){var a=+P().age;return a>0&&a<18}
 function bodyHidden(){return young()||!!P().homeChartNoBody}
-function over(){var o=P().homeChartOver;return o||{s:true,k:false,t:true,w:false}}
+function over(){var o=P().homeChartOver;return o||{s:true,k:false,t:true,m:false,z:false,w:false}}
 function lab(k,o){return new Date(k+"T12:00").toLocaleDateString("en-GB",o||{weekday:"short",day:"numeric",month:"short"})}
-function day(k,m){var l=m[k],r={k:k,steps:null,kcal:null,sess:0,mins:0,w:null,score:null,hasTrack:false};if(!l)return r;
+function day(k,m){var l=m[k],r={k:k,sleep:null,steps:null,kcal:null,sess:0,mins:0,w:null,score:null,hasTrack:false};if(!l)return r;
  var wr=l.wear||{},tr=l.tr||{},st=+wr.steps||+tr.steps||0;try{if(window.FH135&&FH135.steps(k))st=FH135.steps(k)}catch(x){}if(st>0)r.steps=Math.round(st);
  var ss=[];try{ss=FBE.sessOf(l)||[]}catch(x){}ss.forEach(function(s){r.sess++;r.mins+=(+s.mins>0?+s.mins:45)});
  try{(wr.acts||[]).forEach(function(a){r.mins+=(+a.mins>0?+a.mins:0)})}catch(x){}
  var at=P().att||{};if(!r.sess&&Object.keys(at).some(function(q){return q.indexOf(k+"_")===0})){r.sess=1;r.mins+=60}
- if(l.weight>0)r.w=+l.weight;
+ if(l.weight>0)r.w=+l.weight;var sl=+wr.sleepH||+l.sleep||0;if(sl>0)r.sleep=sl;
  if((l.eaten||[]).length){try{var su=sumEaten(l.eaten);if(su&&su.kcal>0)r.kcal=Math.round(su.kcal)}catch(x){}}
  var known=r.steps!=null||r.sess>0||r.mins>0||l.restDay||isLoggedSafe(l);
  if(r.steps!=null||r.mins>0||known){var sp=r.steps!=null?Math.min(50,r.steps/10000*50):0,tp=Math.min(50,r.mins/60*50);r.score=Math.round(r.steps!=null?sp+tp:Math.min(100,r.mins/60*100));r.hasTrack=r.steps!=null}
@@ -16007,6 +16007,8 @@ function svg(D,SEL){var n=D.length,o=over(),h='<svg class="h139-svg" viewBox="0 
   h+='<path d="'+path(pts)+'" fill="none" stroke="'+COL[key]+'" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"'+(dash?' stroke-dasharray="4 3"':'')+'/>';
   if(n<=14)pts.forEach(function(p){if(p[1]!=null)h+='<circle cx="'+p[0].toFixed(1)+'" cy="'+p[1].toFixed(1)+'" r="2.6" fill="'+COL[key]+'" stroke="var(--bg,#0b0b0d)" stroke-width="1.5"/>'})}
  if(o.s)line("s",function(d){return d.steps});
+ if(o.m)line("m",function(d){return d.mins>0?Math.round(d.mins):(d.score!=null?0:null)});
+ if(o.z)line("z",function(d){return d.sleep});
  if(o.t)line("t",function(d){return d.sess>0?d.sess:(d.score!=null?0:null)});
  if(!bodyHidden()){if(o.k)line("k",function(d){return d.kcal});if(o.w)line("w",function(d){return d.w})}
  var step=n<=7?1:n<=14?3:7;D.forEach(function(d,i){if(i%step===0&&(n<=7||i<=n-1-Math.ceil(step/2)||i===n-1)&&(i===n-1||n-1-i>=step-1||n<=7))h+='<text x="'+X(i,n)+'" y="'+(H-6)+'" class="h139-ax" text-anchor="'+(i===0?'start':i===n-1?'end':'middle')+'">'+e(n<=7?lab(d.k,{weekday:"short"}):lab(d.k,{day:"numeric",month:"short"}))+'</text>'});
@@ -16016,6 +16018,7 @@ function svg(D,SEL){var n=D.length,o=over(),h='<svg class="h139-svg" viewBox="0 
 function readout(d){if(!d)return '';var parts=[];parts.push('<b>'+e(d.k===TODAY?"Today":lab(d.k))+'</b>');
  parts.push('Activity level '+(d.score==null?'<span class="muted">not enough logged</span>':'<b style="color:'+COL.a+'">'+d.score+'</b>/100'+(d.hasTrack?'':' <span class="muted small">(training only)</span>')));
  parts.push('<span style="color:'+COL.s+'">Steps</span> '+(d.steps!=null?n0(d.steps):'<span class="muted">none</span>'));
+parts.push('<span style="color:'+COL.m+'">Active minutes</span> '+(d.mins>0?Math.round(d.mins):'<span class="muted">none</span>'));parts.push('<span style="color:'+COL.z+'">Sleep</span> '+(d.sleep!=null?r1(d.sleep)+' h':'<span class="muted">not logged</span>'));
  parts.push('<span style="color:'+COL.t+'">Sessions</span> '+(d.sess?d.sess+(d.mins?' · '+Math.round(d.mins)+' min':''):'<span class="muted">none logged</span>'));
  if(!bodyHidden()){parts.push('<span style="color:'+COL.k+'">Calories</span> '+(d.kcal!=null?n0(d.kcal):'<span class="muted">not logged</span>'));parts.push('<span style="color:'+COL.w+'">Weight</span> '+(d.w!=null?r1(d.w)+' kg':'<span class="muted">not weighed</span>'))}
  return '<div class="h139-ro">'+parts.map(function(x,i){return '<div'+(i===0?' class="h139-d"':'')+'>'+x+'</div>'}).join('')+'</div>'}
@@ -16052,14 +16055,14 @@ function why(){if(bodyHidden())return '';var n=days(),cur=series(n,0),prev=serie
 var SELI=null;
 function html(){var p=P();if(!p.onboarded)return '';var n=days(),D=series(n,0),o=over(),any=D.some(function(d){return d.score!=null||d.w!=null||d.kcal!=null});
  if(SELI==null||SELI>=D.length)SELI=D.length-1;
- var h='<div class="h139-top"><div><span class="fb-kick">Last '+n+' days</span><h2>Your progress</h2></div><div class="h139-rng">'+[7,14,30].map(function(x){return '<button type="button" class="h139-r'+(x===n?' on':'')+'" data-h139n="'+x+'">'+x+'</button>'}).join("")+'</div></div>';
+ var h='<div class="h139-top"><div><span class="fb-kick">'+(window.FH140&&FH140.on()?"Fight camp · ":"")+'Last '+n+' days</span><h2>Your progress</h2></div><div class="h139-rng">'+[7,14,30].map(function(x){return '<button type="button" class="h139-r'+(x===n?' on':'')+'" data-h139n="'+x+'">'+x+'</button>'}).join("")+'</div></div>';
  if(!any)return h+'<p class="muted small">Log a session, your steps or a check-in and your activity line appears here.</p>';
- var keys=["s","t"].concat(bodyHidden()?[]:["k","w"]);
+ var keys=["s","t","m","z"].concat(bodyHidden()?[]:["k","w"]);
  h+='<div class="h139-lg"><span class="h139-chip fixed" style="--c:'+COL.a+'"><i></i>Activity level</span>'+keys.map(function(k){return '<button type="button" class="h139-chip'+(o[k]?' on':'')+'" style="--c:'+COL[k]+'" data-h139o="'+k+'" aria-pressed="'+!!o[k]+'"><i></i>'+NAME[k]+'</button>'}).join("")+'</div>';
  h+=svg(D,SELI)+readout(D[SELI]);
  h+='<details class="h139-how"><summary>How is activity level worked out?</summary><p class="muted small">Up to 50 points from steps (10,000 steps is 50) plus up to 50 from training and logged activities (60 minutes is 50). With no steps it is training only. It is a relative picture of your own week, not a medical score. Days with nothing logged are gaps, not zero. Other lines are scaled to their own range, so tap a day to see the real numbers.</p></details>';
  h+=why();
- h+='<div class="h139-ft"><button class="linkbtn" type="button" data-h139body="1">'+(young()?'':(p.homeChartNoBody?'Show weight and calories':'Hide weight and calories'))+'</button></div>';
+ h+='<div class="h139-ft">'+(window.FH140?FH140.control():'')+'<button class="linkbtn" type="button" data-h139body="1">'+(young()?'':(p.homeChartNoBody?'Show weight and calories':'Hide weight and calories'))+'</button></div>';
  return h}
 function draw(){var home=document.getElementById("tab-today");if(!home)return;var el=document.getElementById("fb139");
  if(!el){el=document.createElement("div");el.id="fb139";el.className="fb-card h139";home.insertBefore(el,home.firstChild)}
@@ -16076,12 +16079,46 @@ var css=document.createElement("style");css.textContent="#tab-today #fb139{order
 ".h139-lg{display:flex;flex-wrap:wrap;gap:6px}.h139-chip{all:unset;box-sizing:border-box;cursor:pointer;display:inline-flex;align-items:center;gap:6px;padding:6px 11px;border-radius:999px;border:1px solid var(--line,rgba(255,255,255,.14));font-size:13px;opacity:.6}.h139-chip.fixed{opacity:1;cursor:default}.h139-chip.on{opacity:1;border-color:var(--c)}.h139-chip i{width:10px;height:10px;border-radius:3px;background:var(--c);display:inline-block}"+
 ".h139-svg{width:100%;height:auto;display:block;touch-action:manipulation}.h139-gl{stroke:var(--line,rgba(255,255,255,.12));stroke-width:1}.h139-ax{fill:var(--muted,#9AA0AA);font-size:9px}.h139-sel{stroke:var(--muted,#9AA0AA);stroke-width:1;stroke-dasharray:3 3}"+
 ".h139-ro{display:grid;grid-template-columns:1fr 1fr;gap:6px 12px;font-size:13px;padding:8px 10px;border-radius:12px;border:1px solid var(--line,rgba(255,255,255,.12));background:rgba(255,255,255,.03)}.h139-d{grid-column:1/-1}.h139-how summary{cursor:pointer;font-size:13px;color:var(--muted,#9AA0AA)}.h139-how p{margin:6px 0 0}"+
-".h139-why{border-top:1px solid var(--line,rgba(255,255,255,.12));padding-top:10px}.h139-why p{margin:6px 0}.h139-ul{margin:6px 0;padding-left:18px;font-size:14px}.h139-ul li{margin:2px 0}.h139-ft{display:flex;justify-content:flex-end}";
+".h139-why{border-top:1px solid var(--line,rgba(255,255,255,.12));padding-top:10px}.h139-why p{margin:6px 0}.h139-ul{margin:6px 0;padding-left:18px;font-size:14px}.h139-ul li{margin:2px 0}.h139-ft{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}";
 document.head.appendChild(css);
 var st=showTab;showTab=function(t){var r=st.apply(this,arguments);try{if(t==="today")draw()}catch(x){}return r};
 setInterval(function(){try{var t=document.getElementById("tab-today");if(t&&!t.hidden)draw()}catch(x){}},4000);
 setTimeout(draw,700);
 return {draw:draw,series:series,day:day,why:why,html:html}})();
+
+/* FighterBase v167: fight camp atmosphere. While a fight camp is running the app glows and slowly pulses (brighter, darker, brighter) in the
+   member's own colour corner, so it feels different and says "you are in camp". The glow is on the page edges, the fight countdown card and the
+   Home cards. Camp counts from the same rule as the camp journey (8 weeks out, through fight week, weigh-in and fight day).
+   Profile: campGlow = "on" (default: any time a fight is booked) | "auto" (last 8 weeks only) | "off". Respects "reduce motion": a steady glow, no pulse.
+   During camp the countdown card moves to the top of Home. */
+var FH140=(function(){
+function P(){return (typeof S!=="undefined"&&S.profile)||{}}
+function mode(){var m=P().campGlow;return m==="auto"||m==="off"?m:"on"}
+function jm(){try{return journey().mode}catch(x){return ""}}
+function level(){var m=mode(),p=P();if(m==="off"||!p.onboarded)return 0;var j=jm();
+ if(j==="fightweek"||j==="weighin"||j==="fightday")return 2;
+ if(j==="camp")return 1;
+ if(m==="on"&&p.fightDate&&p.fightDate>=TODAY)return 1;return 0}
+function on(){return level()>0}
+function apply(){var l=level(),b=document.body;if(l&&!document.getElementById("fb140t")){["t","b"].forEach(function(x){var d=document.createElement("div");d.id="fb140"+x;d.className="fb140";d.setAttribute("aria-hidden","true");b.appendChild(d)})}b.classList.toggle("fb-camp-on",l>0);b.classList.toggle("fb-camp-hot",l>1)}
+function control(){var p=P();if(!p.fightDate&&mode()==="on")return '<span></span>';var m=mode();
+ return '<label class="h139-cg muted small">Fight camp glow <select data-f140="1"><option value="on'+'"'+(m==="on"?' selected':'')+'>Whenever a fight is booked</option><option value="auto"'+(m==="auto"?' selected':'')+'>Last 8 weeks only</option><option value="off"'+(m==="off"?' selected':'')+'>Off</option></select></label>'}
+document.addEventListener("change",function(ev){var t=ev.target;if(!t.matches||!t.matches("[data-f140]"))return;S.profile.campGlow=t.value;try{profChanged()}catch(x){}apply();try{FH139.draw()}catch(x){}});
+var css=document.createElement("style");css.textContent=
+"@keyframes fbCampEdge{0%{opacity:.18}100%{opacity:1}}@keyframes fbCampCard{0%{box-shadow:0 0 0 1px rgba(200,30,58,.22),0 0 12px -4px rgba(200,30,58,.22);border-color:rgba(200,30,58,.55)}100%{box-shadow:0 0 0 1px rgba(229,86,107,.7),0 0 38px 2px rgba(200,30,58,.7);border-color:#E5566B}}@keyframes fbCampBar{0%{border-left-color:#7d1224}100%{border-left-color:#E5566B}}"+
+".fb140{position:fixed;left:0;right:0;pointer-events:none;z-index:1;display:none;animation:fbCampEdge 3.4s ease-in-out infinite alternate}body.fb-camp-on .fb140{display:block}"+
+"#fb140t{top:0;height:32vh;background:radial-gradient(120% 100% at 50% 0%,rgba(200,30,58,.34),transparent 70%)}"+
+"#fb140b{bottom:0;height:26vh;background:radial-gradient(120% 100% at 50% 100%,rgba(200,30,58,.30),transparent 70%);animation-delay:-1.7s}"+
+"body.fb-camp-hot .fb140{animation-duration:1.9s}"+
+"body.fb-camp-on .cd115{animation:fbCampCard 3.4s ease-in-out infinite alternate}body.fb-camp-hot .cd115{animation-duration:1.9s}"+
+"body.fb-camp-on #fb139,body.fb-camp-on #fb112{animation:fbCampBar 3.4s ease-in-out infinite alternate}body.fb-camp-hot #fb139,body.fb-camp-hot #fb112{animation-duration:1.9s}"+
+"body.fb-camp-on #tab-today #fb115{order:0}body.fb-camp-on #tab-today #fb139{order:1}"+
+".h139-cg select{margin-left:6px;font-size:13px;padding:5px 8px;border-radius:8px}"+
+"@media (prefers-reduced-motion:reduce){body.fb-camp-on .fb140,body.fb-camp-on .cd115,body.fb-camp-on #fb139,body.fb-camp-on #fb112{animation:none!important;opacity:.7}body.fb-camp-on .cd115{box-shadow:0 0 0 1px rgba(229,86,107,.6),0 0 26px 0 rgba(200,30,58,.5)}}";
+document.head.appendChild(css);
+setInterval(function(){try{apply()}catch(x){}},3000);setTimeout(apply,500);
+var st=showTab;showTab=function(t){var r=st.apply(this,arguments);try{apply()}catch(x){}return r};
+return {on:on,level:level,apply:apply,control:control}})();
 
 /* FighterBase v44: always a way back, always a next step. */
 var N31=N31||false;
