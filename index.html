@@ -13663,7 +13663,7 @@ function apply(name,save){if(!TH[name]||name===CUR&&!save){drawDots();return}
 var css=document.createElement("style");css.id="fbThemeCss";
 css.textContent="#fbThemeDots{display:inline-flex;align-items:center;gap:8px;padding:6px 10px;border-radius:999px;border:1px solid var(--line,rgba(255,255,255,.12));background:rgba(0,0,0,.25)}#fbThemeDots button{width:22px;height:22px;border-radius:50%;border:2px solid transparent;padding:0;cursor:pointer;box-shadow:0 0 0 1px rgba(255,255,255,.25) inset;min-height:0}#fbThemeDots button[aria-pressed=true]{border-color:#fff;transform:scale(1.12)}#fbThemeDots .thl{font:700 10px var(--body,inherit);letter-spacing:.1em;text-transform:uppercase;color:var(--muted,#9AA0AA);margin-right:2px}";
 css.textContent+="#fbModeBtn{margin-left:auto;width:34px;height:34px;border-radius:50%;border:1px solid var(--line,rgba(255,255,255,.18));background:rgba(0,0,0,.25);color:var(--fg,#fff);display:inline-flex;align-items:center;justify-content:center;padding:0;cursor:pointer;min-height:0;flex:none}#fbModeBtn:hover{border-color:var(--red,#C81E3A)}"+
-"html[data-mode=light]{filter:invert(1) hue-rotate(180deg);background:#fff;--red:#FF95B1;--red-soft:rgba(255,149,177,.14);--accent:#FF95B1;--bad:#8CC8FF}html[data-mode=light] img,html[data-mode=light] video,html[data-mode=light] canvas,html[data-mode=light] picture,html[data-mode=light] .fb-mark,html[data-mode=light] .fb-mini,html[data-mode=light] #fbSplash,html[data-mode=light] [style*=background-image],html[data-mode=light] .cb154{filter:invert(1) hue-rotate(180deg)}";
+"html[data-mode=light]{filter:invert(1) hue-rotate(180deg) brightness(.84) contrast(1.04);background:#d9d9dc;--red:#FF95B1;--red-soft:rgba(255,149,177,.14);--accent:#FF95B1;--bad:#8CC8FF}html[data-mode=light] img,html[data-mode=light] video,html[data-mode=light] canvas,html[data-mode=light] picture,html[data-mode=light] .fb-mark,html[data-mode=light] .fb-mini,html[data-mode=light] #fbSplash,html[data-mode=light] [style*=background-image],html[data-mode=light] .cb154{filter:invert(1) hue-rotate(180deg)}";
 document.head.appendChild(css);
 function host(){return document.querySelector(".modebar")||document.querySelector("header.top")}
 function modeNow(){var m="dark";try{m=(S.profile&&S.profile.mode)||localStorage.getItem("fbMode")||"dark"}catch(e){}return m==="light"?"light":"dark"}
@@ -17346,6 +17346,34 @@ if(canHover){
 document.addEventListener("focusin",function(ev){var t=ev.target;if(!t||!t.closest)return;var b=t.closest(SELB);if(!b||b.closest("#fb148,#fb153"))return;try{if(!t.matches(":focus-visible"))return}catch(x){return}showFor(b,200)},true);
 document.addEventListener("focusout",hide,true);document.addEventListener("click",hide,true);document.addEventListener("scroll",hide,true);document.addEventListener("keydown",function(e){if(e.key==="Escape")hide()},true);
 window.FH153={lookup:lookup,EXTRA:EXTRA,canHover:canHover};
+})();
+
+/* FighterBase v189b: one Fight camp area on Home. The countdown, camp check, corner, camp report/sharing and camp wrap-up cards sit together under one "Fight camp" heading
+   instead of being scattered down the page. Also: the small "Fighter / My training" label under the header is hidden (it was only a label), and the bell gets its own hover hint. */
+var K154=K154||false;
+(function(){
+if(K154)return;K154=true;
+var IDS=["fb115","fb117","fb119","fb120","fb144w"];
+var css=document.createElement("style");
+css.textContent="#tab-today #fb154{order:1;display:flex;flex-direction:column;gap:12px;grid-column:1/-1}#tab-today #fb154>.k154{display:flex;align-items:center;gap:8px;font:800 12px var(--body,inherit);letter-spacing:.16em;text-transform:uppercase;color:var(--red,#C81E3A);padding:2px 4px 0}#tab-today #fb154>.k154:after{content:\"\";flex:1;height:1px;background:linear-gradient(90deg,var(--red,#C81E3A),transparent);opacity:.5}"+
+"@media (min-width:620px){#tab-today #fb154>.g154{display:grid;grid-template-columns:1fr 1fr;gap:12px;align-items:start}#tab-today #fb154>.g154>#fb115{grid-column:1/-1}}"+
+"#fbSide115.sd-me{display:none!important}";
+document.head.appendChild(css);
+function run(){
+ try{var bell=document.getElementById("fbBell");if(bell&&!bell.getAttribute("data-tip"))bell.setAttribute("data-tip","Your notifications.")}catch(e){}
+ var home=document.getElementById("tab-today");if(!home)return;
+ var w=document.getElementById("fb154"),have=IDS.map(function(i){return document.getElementById(i)}).filter(function(x){return x&&(x.parentNode===home||(w&&x.parentNode===w.lastChild)||x.closest("#tab-today"))});
+ if(!have.length){if(w)w.hidden=true;return}
+ if(!w){w=document.createElement("section");w.id="fb154";w.innerHTML='<div class="k154">Fight camp</div><div class="g154"></div>';
+  var first=have[0];first.parentNode.insertBefore(w,first)}
+ var g=w.lastChild;
+ var cur=[].slice.call(g.children).map(function(x){return x.id}).join(),want=have.map(function(x){return x.id}).join();
+ if(cur!==want||have.some(function(x){return x.parentNode!==g}))have.forEach(function(x){g.appendChild(x)});
+ var vis=have.some(function(x){return !x.hidden});w.hidden=!vis}
+setInterval(run,700);
+var _s=window.showTab;if(typeof _s==="function"){window.showTab=function(t){var r=_s.apply(this,arguments);setTimeout(run,60);return r}}
+setTimeout(run,300);
+window.FH154={run:run};
 })();
 
 /* FighterBase v44: always a way back, always a next step. */
