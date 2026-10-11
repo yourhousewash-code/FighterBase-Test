@@ -17045,7 +17045,7 @@ function kids(c){var out=[],i=0;(function walk(p){[].slice.call(p.children).forE
  out.sort(function(a,b){return a.ord-b.ord||a.i-b.i});return out.map(function(o){return o.el})}
 function run(cfg){var c=document.querySelector(cfg.sel);if(!c)return;var sec=document.getElementById("tab-"+cfg.tab);if(!sec||sec.hidden)return;
  var isOpen=cfg.home?(S.profile&&S.profile.homeMore===true):!!open[cfg.key||cfg.tab];
- var list=kids(c),vh=window.innerHeight||800,lim=cfg.limit*vh,y=0,shown=0,hidden=0,top=null;
+ var list=kids(c),vh=window.innerHeight||800,ccs=getComputedStyle(c),ncol=ccs.display==="grid"?Math.max(1,ccs.gridTemplateColumns.split(" ").length):1,lim=cfg.limit*vh*ncol,y=0,shown=0,hidden=0,top=null;
  /* measure natural heights: hidden ones keep their last known height */
  list.forEach(function(k){var h=0;if(k.classList.contains("f149m")){h=+k.dataset.f149h||0}else{if(!vis(k)){k.dataset.f149h=0;return}h=k.getBoundingClientRect().height;k.dataset.f149h=Math.round(h)}
   if(!h)return;
@@ -17161,6 +17161,81 @@ c.textContent=[
 " body:not(.fb-desk) #hubCard .sgrid{grid-template-columns:repeat(3,minmax(0,1fr))}",
 "}"
 ].join("\n");document.head.appendChild(c);
+/* v187: no gaps. Cards in the two-column layout pack up under each other (masonry): each card gets a row span from its own height, so a short card never leaves a hole beside a tall one. */
+var s=document.createElement("style");s.textContent=".m152{grid-auto-rows:1px!important;row-gap:0!important;grid-auto-flow:row dense!important}";document.head.appendChild(s);
+var SEL="section.stack:not([hidden]),section.stack>.stack[id$=Body]",GAP=18,seen=typeof WeakSet!=="undefined"?new WeakSet():null,raf=0,ro=typeof ResizeObserver!=="undefined"?new ResizeObserver(function(){sched()}):null;
+function kids(c,out){[].slice.call(c.children).forEach(function(k){if(k.tagName==="STYLE"||k.tagName==="SCRIPT")return;var d=getComputedStyle(k).display;if(d==="contents"){kids(k,out);return}out.push(k)});return out}
+function sched(){if(raf)return;raf=requestAnimationFrame(function(){raf=0;try{run()}catch(e){}})}
+function run(){[].slice.call(document.querySelectorAll(SEL)).forEach(function(c){var cs=getComputedStyle(c),cols=cs.display==="grid"?cs.gridTemplateColumns.split(" ").length:1,its=kids(c,[]);
+ if(cols<2){if(c.classList.contains("m152")){c.classList.remove("m152");its.forEach(function(k){k.style.gridRowEnd=""})}return}
+ if(!c.classList.contains("m152"))c.classList.add("m152");
+ its.forEach(function(k){if(ro&&seen&&!seen.has(k)){seen.add(k);ro.observe(k)}
+  var h=k.getBoundingClientRect().height,n=h>0.5?Math.ceil(h)+GAP:1,v="span "+n;if(k.style.gridRowEnd!==v)k.style.gridRowEnd=v})})}
+setInterval(sched,1200);window.addEventListener("resize",sched);
+var st0=typeof showTab==="function"?showTab:null;if(st0){showTab=function(){var r=st0.apply(this,arguments);setTimeout(sched,200);setTimeout(sched,900);return r}}
+window.FH152={run:run};
+})();
+
+/* FighterBase v187: hover hints. Pointing at (or tabbing to) a button shows a short plain-language line about what it is for.
+   Order of sources: the button's own title or data-tip, then the screen and menu descriptions already written for first-use tips (FH148), then the button-specific tips (FH148.R), then the list of common buttons below. Nothing shows on touch screens (no hover there; the first-use tips cover phones) or when tips are switched off in Settings. Wording on food, weight cut and supplement buttons is the same as the first-use tips and shares their dietitian sign-off item. */
+var H153=H153||false;
+(function(){
+if(H153)return;H153=true;
+var canHover=false;try{canHover=window.matchMedia("(hover:hover) and (pointer:fine)").matches}catch(x){}
+var tip=document.createElement("div");tip.id="fb153";tip.setAttribute("role","tooltip");tip.style.display="none";document.body.appendChild(tip);
+var css=document.createElement("style");css.textContent="#fb153{position:fixed;z-index:10002;max-width:min(300px,86vw);padding:8px 11px;border-radius:10px;background:#F4EFE3;color:#15161B;font:500 13px/1.35 var(--body,system-ui,sans-serif);box-shadow:0 10px 30px -8px rgba(0,0,0,.6);pointer-events:none;border:1px solid rgba(0,0,0,.15)}#fb153 b{display:block;font-weight:800;font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:#B3261E;margin-bottom:2px}";document.head.appendChild(css);
+var GROUP={today:["Home","Your day on one page: what is planned, what is next and how you are doing."],train:["Log","Record training, check-ins and body numbers."],log:["Log","Record training, check-ins and body numbers."],fuel:["Fuel","Meals, food ideas and nutrition."],nutrition:["Fuel","Meals, food ideas and nutrition."],club:["Club","Your gym: timetable, news, partners and the club page."],profile:["Me","Your profile, goals, devices and settings."],me:["Me","Your profile, goals, devices and settings."]};
+var EXTRA=[
+[/^show all sections$/i,"Opens every part of the app. Use it when the short menu does not show what you need."],
+[/^corner$|corner (colour|color)/i,"Pick the colour for your corner. It tints your screens and is shown to your club."],
+[/^(7|14|30)$/,"Show the last 7, 14 or 30 days on this chart."],
+[/^details?$/i,"See the full details of this item."],
+[/^open camp$/i,"Open your fight camp: plan, weight and checks in one place."],
+[/^(struggling|tired|ok|good|great)$/i,"How the week felt. Your coach sees it only if you share the report."],
+[/^sounds good$/i,"Yes: short daily check-ins and one lesson a day for your first 14 days."],
+[/^weekly only, no lessons$/i,"No daily prompts: just a weekly check-in. You can change this any time."],
+[/^show (more|less)/i,"Show or hide the rest of this screen."],
+[/^(save|save changes)$/i,"Keep what you have entered."],
+[/^cancel$/i,"Close without saving."],
+[/^(done|close|got it)$/i,"Close this."],
+[/^(share|send)$/i,"Send this to the person or group you pick. Nothing is sent until you confirm."],
+[/^(back|‹ back|< back)$/i,"Go back one step."],
+[/^(add|\+ add.*)$/i,"Add a new item."],
+[/^(edit|change)$/i,"Change what is already here."],
+[/^(delete|remove)$/i,"Remove this. You will be asked to confirm."],
+[/^(turn off|turn on)$/i,"Switch this on or off. You can change it back any time."],
+[/^visit/i,"Open the club page."],
+[/^(join|join club)$/i,"Join this club with its code. The club sees only what you choose to share."],
+[/^coach view|^club hub$/i,"Switch to the club side: members, classes, money and growth."],
+[/^member view$/i,"Switch back to what a member sees."],
+[/^exit demo$/i,"Leave the demo. Nothing you tried was saved."]
+];
+var timer=0,cur=null;
+function P(){return (typeof S!=="undefined"&&S.profile)||{}}
+function hide(){clearTimeout(timer);cur=null;tip.style.display="none"}
+function lab(b){return ((b.innerText||b.textContent||b.getAttribute("aria-label")||b.value||"")+"").replace(/\s+/g," ").trim()}
+function visTab(){var s=document.querySelector("section[id^=tab-]:not([hidden])");return s?s.id.slice(4):""}
+function lookup(b){
+ var own=b.getAttribute("data-tip");if(own)return ["",own];
+ if(b.hasAttribute("title")&&b.getAttribute("title")){var t=b.getAttribute("title");b.setAttribute("data-tip153",t);b.removeAttribute("title");return ["",t]}
+ var t0=b.getAttribute("data-tip153");if(t0)return ["",t0];
+ var F=window.FH148,g=b.getAttribute("data-group");if(g&&GROUP[g])return GROUP[g];
+ var tab=b.getAttribute("data-sdtab")||b.getAttribute("data-goto")||b.getAttribute("data-hub")||b.getAttribute("data-sdhub");
+ if(tab&&F&&F.SCR&&F.SCR[tab])return [F.SCR[tab][0],F.SCR[tab][1]];
+ var l=lab(b);if(!l&&!b.hasAttribute("data-wlopen"))return null;
+ if(F&&F.R){var cur=visTab();for(var i=0;i<F.R.length;i++){var r=F.R[i];if(r[1]&&r[1]!=="*"&&r[1].split("|").indexOf(cur)<0)continue;var ok=r[2]===""?b.hasAttribute("data-wlopen"):r[2].test(l);if(ok)return ["",r[3]]}}
+ for(var j=0;j<EXTRA.length;j++)if(EXTRA[j][0].test(l))return ["",EXTRA[j][1]];
+ return null}
+function place(b){var r=b.getBoundingClientRect(),w=tip.offsetWidth,h=tip.offsetHeight,x=Math.max(8,Math.min(window.innerWidth-w-8,r.left+r.width/2-w/2)),y=r.top-h-8;if(y<8)y=r.bottom+8;tip.style.left=x+"px";tip.style.top=y+"px"}
+function showFor(b,delay){hide();if(P().tipsMode==="off")return;var t=lookup(b);if(!t)return;cur=b;timer=setTimeout(function(){if(cur!==b||!document.body.contains(b))return;tip.innerHTML=(t[0]?"<b>"+esc(t[0])+"</b>":"")+esc(t[1]);tip.style.display="block";place(b)},delay)}
+var SELB="button,a[href],[role=button],summary,.chip,select,[data-group],[data-sdtab],[data-sdhub],[data-goto]";
+if(canHover){
+ document.addEventListener("mouseover",function(ev){var t=ev.target;if(!t||!t.closest)return;var b=t.closest(SELB);if(!b||b.closest("#fb148,#fb153"))return;if(b===cur)return;showFor(b,450)},true);
+ document.addEventListener("mouseout",function(ev){var t=ev.target;if(!t||!t.closest)return;var b=t.closest(SELB);if(b&&b===cur&&!(ev.relatedTarget&&b.contains(ev.relatedTarget)))hide()},true);
+}
+document.addEventListener("focusin",function(ev){var t=ev.target;if(!t||!t.closest)return;var b=t.closest(SELB);if(!b||b.closest("#fb148,#fb153"))return;try{if(!t.matches(":focus-visible"))return}catch(x){return}showFor(b,200)},true);
+document.addEventListener("focusout",hide,true);document.addEventListener("click",hide,true);document.addEventListener("scroll",hide,true);document.addEventListener("keydown",function(e){if(e.key==="Escape")hide()},true);
+window.FH153={lookup:lookup,EXTRA:EXTRA,canHover:canHover};
 })();
 
 /* FighterBase v44: always a way back, always a next step. */
