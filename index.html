@@ -15487,8 +15487,9 @@ function train(k){var out=[],c=club(),pr=P(),rs=pr.rsvp||{},att=pr.att||{},past=
  (pr.psched||[]).filter(function(x){return x.date===k}).forEach(function(x){var st=x.st==="done"?"ok":x.st==="skip"?"none":x.st==="unk"?"none":"plan";if(x.st==="done")doneAny=true;out.push({t:x.time||"",title:x.title||"Training",k:"My session",st:st,s:x.st==="done"?"Done":x.st==="skip"?"Skipped":x.st==="unk"?"Not sure":"Planned"})});
  if(!doneAny){var l=logs()[k],ss=[];try{ss=FBE.sessOf(l)||[]}catch(x){}ss.forEach(function(s){out.push({t:"",title:(s.notes&&!/^Club session/.test(s.notes)?s.notes:(s.type||"Session")),k:"Logged",st:"ok",s:"Done"+(s.mins?" · "+s.mins+" min":"")})})}
  try{if(window.FH135)FH135.items(k).forEach(function(i){out.push(i)})}catch(x){}
+ try{if(window.FH137)FH137.items(k).forEach(function(i){out.push(i)})}catch(x){}
  out.sort(function(a,b){var x=hmNum(a.t),y=hmNum(b.t);return (x==null?9999:x)-(y==null?9999:y)});return out}
-function events(k){var o=[],p=P();if(p.fightDate===k)o.push("Fight day");return o}
+function events(k){var o=[],p=P();if(p.fightDate===k)o.push("Fight day");try{if(window.FH137)FH137.events(k).forEach(function(x){o.push(x)})}catch(x){}return o}
 function summaryDays(keys){var plan=0,done=0,mealDays=0,acts=0;keys.forEach(function(k){train(k).forEach(function(i){if(i.st==="ok")done++;else if(i.st==="act")acts++;else if(i.st==="plan")plan++});if(meals(k))mealDays++});return {plan:plan,done:done,mealDays:mealDays,acts:acts}}
 /* ---- bits ---- */
 function chips(items){return items.map(function(i){return '<span class="a132-c s-'+i.st+'" title="'+e(i.k)+'">'+(i.t?e(i.t)+' ':'')+e(i.title)+' <em>'+e(i.s)+'</em></span>'}).join("")}
@@ -15496,17 +15497,20 @@ function mealLine(k,full){var m=meals(k);if(!m)return '';if(full)return '<div cl
  var pick=m.list.filter(function(x){return /^(Breakfast|Lunch|Dinner)$/.test(x[0])}).map(function(x){return e(x[1])});return pick.length?'<div class="a132-ml muted small">Meals: '+pick.join(" · ")+'</div>':''}
 function dayBlock(k,full){var t=train(k),ev=events(k),m=mealLine(k,full),rest=isRest(k)&&!t.length;
  return '<div class="a132-day'+(k===TODAY?' today':'')+'"><div class="a132-dh"><b>'+e(k===TODAY?"Today":lab(k))+'</b>'+(k===TODAY?'<span class="muted small">'+e(lab(k))+'</span>':'')+ev.map(function(x){return '<span class="a132-ev">'+e(x)+'</span>'}).join("")+(rest?'<span class="muted small">Rest day</span>':'')+'</div>'+
-  (t.length?'<div class="a132-t">'+chips(t)+'</div>':(rest?'':'<div class="muted small">Nothing planned</div>'))+stepsLine(k)+m+'</div>'}
+  (t.length?'<div class="a132-t">'+chips(t)+'</div>':(rest?'':'<div class="muted small">Nothing planned</div>'))+stepsLine(k)+x137(k)+m+'</div>'}
+function x137(k){try{return window.FH137?FH137.loggedW(k)+FH137.block(k):''}catch(x){return ''}}
 function stepsLine(k){try{var n=window.FH135&&FH135.steps(k);return n?'<div class="a132-ml muted small">Steps: '+FH135.n(n)+'</div>':''}catch(x){return ''}}
 /* ---- parts used by fh112 ---- */
 function bar(){return '<div class="a132-bar">'+[["today","Today"],["week","This week"],["month","This month"]].map(function(x){return '<button type="button" class="a132-b'+(V===x[0]?' on':'')+'" data-f132v="'+x[0]+'">'+x[1]+'</button>'}).join("")+'<button type="button" class="a132-b" data-f135add="1" aria-label="Add an activity">+ Activity</button></div>'}
-function todayMeals(){var m=meals(TODAY);
+function todayMeals(){return todayExtras()+todayMeals0()}
+function todayExtras(){try{if(!window.FH137)return '';var it=train(TODAY).filter(function(i){return i.st==='wt'||i.st==='goal'||(i.k==='Goal')}),ev=events(TODAY).filter(function(x){return /^Weigh-in/.test(x)}),sp=FH137.block(TODAY);if(!it.length&&!ev.length&&!sp)return '';return '<div class="d112-sec"><h3>Reminders</h3>'+(it.length?'<div class="a132-t">'+chips(it)+'</div>':'')+ev.map(function(x){return '<p class="d112-p muted small" style="margin:6px 0 0">'+e(x)+' on fight day.</p>'}).join('')+sp+'</div>'}catch(x){return ''}}
+function todayMeals0(){var m=meals(TODAY);
  if(!m)return '<div class="d112-sec"><h3>Today\'s meals</h3><p class="d112-p muted">No meal plan yet. Make one in a minute and your meals, extras and shopping list show up here every day.</p><div class="row"><button class="btn ghost sm" type="button" data-f132plan="1">Make my meal plan</button></div></div>';
  return '<div class="d112-sec"><h3>Today\'s meals</h3>'+m.list.map(function(x){return '<div class="d112-r"><div class="d112-w"><span class="d112-k">'+e(x[0])+'</span><b>'+e(x[1])+'</b></div></div>'}).join("")+(m.x.length?'<p class="d112-p muted small" style="margin:6px 0 0">Extras for vitamins and minerals: '+m.x.map(e).join(", ")+'.</p>':'')+'<div class="row" style="margin-top:6px"><button class="linkbtn" type="button" data-f132plan="1">Open my meal plan and shopping list</button></div></div>'}
 function weekView(){var mon=addDays(mondayOf(TODAY),WK*7),keys=[];for(var i=0;i<7;i++)keys.push(addDays(mon,i));var s=summaryDays(keys),tg=null;try{if(WK===0)tg=FBW.tgt(7)}catch(x){}
  var h='<div class="a132-nav"><button type="button" class="linkbtn" data-f132w="-1">&lsaquo; Earlier</button><b>'+(WK===0?'This week':WK===1?'Next week':WK===-1?'Last week':lab(keys[0],{day:"numeric",month:"short"})+' to '+lab(keys[6],{day:"numeric",month:"short"}))+'</b><button type="button" class="linkbtn" data-f132w="1">Later &rsaquo;</button></div>';
  var wk=window.FH135?FH135.week(keys):{active:0,avg:null};h+='<div class="a132-tiles"><div><b>'+s.done+'</b><span>trained</span></div><div><b>'+s.plan+'</b><span>still planned</span></div><div><b>'+(tg?tg:'-')+'</b><span>weekly target</span></div><div><b>'+wk.active+'/7</b><span>active days</span></div><div><b>'+(wk.avg?FH135.n(wk.avg):'-')+'</b><span>avg steps a day</span></div><div><b>'+s.mealDays+'/7</b><span>days with meals</span></div></div>';
- h+=keys.map(function(k){return dayBlock(k,false)}).join("");
+ h+=keys.map(function(k){return dayBlock(k,false)}).join("");try{if(window.FH137)h+=FH137.control()}catch(x){}
  if(!s.mealDays)h+='<p class="muted small" style="margin:8px 0 0">No meals planned this week. <button class="linkbtn" type="button" data-f132plan="1">Make a meal plan</button></p>';
  return h}
 function monthView(){var base=new Date(TODAY+"T12:00");base.setDate(1);base.setMonth(base.getMonth()+MO);var y=base.getFullYear(),m=base.getMonth(),first=dayKey(base),last=dayKey(new Date(y,m+1,0,12)),lead=dowK(first),days=new Date(y,m+1,0).getDate(),keys=[];
@@ -15514,9 +15518,9 @@ function monthView(){var base=new Date(TODAY+"T12:00");base.setDate(1);base.setM
  var h='<div class="a132-nav"><button type="button" class="linkbtn" data-f132m="-1">&lsaquo; Earlier</button><b>'+e(base.toLocaleDateString("en-GB",{month:"long",year:"numeric"}))+'</b><button type="button" class="linkbtn" data-f132m="1">Later &rsaquo;</button></div>';
  h+='<div class="a132-cal">'+["M","T","W","T","F","S","S"].map(function(x){return '<span class="a132-dw">'+x+'</span>'}).join("");
  for(var j=0;j<lead;j++)h+='<span></span>';
- keys.forEach(function(k){var t=train(k),d=t.some(function(i){return i.st==="ok"||i.st==="act"}),p=t.some(function(i){return i.st==="plan"}),ml=!!meals(k),ev=events(k).length;
-  h+='<button type="button" class="a132-cell'+(k===TODAY?' today':'')+(k===SEL?' sel':'')+'" data-f132d="'+k+'"><span>'+(+k.slice(8))+'</span><i>'+(d?'<u class="d"></u>':'')+(p?'<u class="p"></u>':'')+(ml?'<u class="m"></u>':'')+(ev?'<u class="f"></u>':'')+'</i></button>'});
- h+='</div><div class="a132-key muted small"><span><u class="d"></u> done</span><span><u class="p"></u> planned</span><span><u class="m"></u> meals planned</span><span><u class="f"></u> fight</span></div>';
+ keys.forEach(function(k){var t=train(k),d=t.some(function(i){return i.st==="ok"||i.st==="act"}),p=t.some(function(i){return i.st==="plan"}),ml=!!meals(k),ev=events(k).length,wg=false;try{wg=window.FH137&&FH137.dot(k)}catch(x){}
+  h+='<button type="button" class="a132-cell'+(k===TODAY?' today':'')+(k===SEL?' sel':'')+'" data-f132d="'+k+'"><span>'+(+k.slice(8))+'</span><i>'+(d?'<u class="d"></u>':'')+(p?'<u class="p"></u>':'')+(ml?'<u class="m"></u>':'')+(ev?'<u class="f"></u>':'')+(wg?'<u class="w"></u>':'')+'</i></button>'});
+ h+='</div><div class="a132-key muted small"><span><u class="d"></u> done</span><span><u class="p"></u> planned</span><span><u class="m"></u> meals planned</span><span><u class="f"></u> fight</span><span><u class="w"></u> weigh-in / goal</span></div>';
  if(SEL&&SEL.slice(0,7)===first.slice(0,7))h+=dayBlock(SEL,true);
  h+='<div class="a132-sum"><div class="a132-r"><span>Sessions this month</span><b>'+s.done+' done'+(s.plan?' · '+s.plan+' planned':'')+(s.acts?' · '+s.acts+' other activit'+(s.acts===1?'y':'ies'):'')+'</b></div>'+
   '<div class="a132-r"><span>Meal plan</span><b>'+(planEnd?'covers '+s.mealDays+' days here, runs to '+e(lab(planEnd,{day:"numeric",month:"short"})):'none yet')+'</b></div>'+
@@ -15875,6 +15879,44 @@ var _rp=(typeof renderProgress==="function")?renderProgress:null;
 if(_rp){renderProgress=function(){_rp.apply(this,arguments);try{draw()}catch(x){}}}
 return {compute:compute,draw:draw,pair:pair,feats:feats};
 })();
+
+/* FighterBase v164: extras on the Home calendar (Today / This week / This month): weigh-in day, goal due dates, supplement reminders,
+   and the weigh-in target on fight day. Reads existing data; the only new saved thing is profile.weighDay (0 = Monday ... 6 = Sunday). */
+var FH137=(function(){
+function P(){return (typeof S!=="undefined"&&S.profile)||{}}
+function e(s){return esc(String(s==null?"":s))}
+function dow(k){return (new Date(k+"T12:00").getDay()+6)%7}
+function logOf(k){try{return (logMap()||{})[k]||null}catch(x){return null}}
+function kg(v){return (Math.round(v*10)/10)+" kg"}
+function wDay(){var d=P().weighDay;return (d===0||d>0)&&d<7&&d!==""?+d:null}
+function goals(){try{return ((P().g90||{}).goals)||[]}catch(x){return []}}
+function supps(){try{return suppList(P())||[]}catch(x){return []}}
+function taken(k){var l=logOf(k),m=(l&&l.supps)||{};var list=supps();return {n:list.filter(function(s){return m[s.id]}).length,of:list.length}}
+function items(k){var o=[],l=logOf(k),w=l&&+l.weight>0?+l.weight:0,wd=wDay(),past=k<TODAY;
+ if(wd!==null&&dow(k)===wd){if(w)o.push({t:"",title:"Weigh-in",k:"Weigh-in",st:"wt",s:"Done · "+kg(w)});else if(!past)o.push({t:"",title:"Weigh-in",k:"Weigh-in",st:"wt",s:k===TODAY?"Today, step on the scales":"Planned"})}
+ goals().forEach(function(g){if(g&&g.by===k&&!(g.done&&g.doneAt&&g.doneAt<k)){o.push({t:"",title:"Goal: "+(g.title||"Goal"),k:"Goal",st:g.done?"ok":(past?"no":"goal"),s:g.done?"Done":(past?"Date passed":"Due")})}});
+ return o}
+function events(k){var o=[],p=P();if(p.fightDate===k&&+p.weighIn>0)o.push("Weigh-in target "+kg(+p.weighIn));return o}
+function loggedW(k){var l=logOf(k),w=l&&+l.weight>0?+l.weight:0,wd=wDay();if(!w||(wd!==null&&dow(k)===wd))return '';return '<div class="a132-ml muted small">Weight: '+kg(w)+'</div>'}
+function block(k){var list=supps();if(!list.length)return '';var m=(logOf(k)||{}).supps||{},t=taken(k);
+ if(k>TODAY)return '';
+ if(k<TODAY)return t.n?'<div class="a132-ml muted small">Supplements: '+t.n+' of '+t.of+' taken</div>':'';
+ var sd=P().suppDoses||{},st=P().suppTimes||{};
+ return '<div class="a137-s"><div class="muted small">Supplements today · '+t.n+' of '+t.of+' taken</div>'+list.map(function(s){var on=!!m[s.id],d=sd[s.id]||s.typ||"",tm=st[s.id]||"";
+  return '<button type="button" class="a137-b'+(on?' on':'')+'" data-f137s="'+e(s.id)+'" aria-pressed="'+on+'"><span class="a137-t">'+(on?'&#10003;':'')+'</span><span><b>'+e(s.name)+'</b>'+((d||tm)?' <em>'+e([d,tm].filter(Boolean).join(" · "))+'</em>':'')+'</span></button>'}).join("")+'</div>'}
+function dot(k){return items(k).length>0}
+function control(){var wd=wDay(),names=["Monday","Tuesday","Wednesday","Thursday","Friday","Saturday","Sunday"];
+ return '<div class="a137-w"><label class="muted small" for="a137wd">Weigh-in day</label><select id="a137wd" data-f137wd="1"><option value="">None</option>'+names.map(function(n,i){return '<option value="'+i+'"'+(wd===i?' selected':'')+'>'+n+'</option>'}).join("")+'</select></div>'}
+function redraw(){try{FH112.draw()}catch(x){console.warn("f137",x)}}
+document.addEventListener("click",function(ev){var b=ev.target.closest&&ev.target.closest("[data-f137s]");if(!b)return;var id=b.dataset.f137s,on=b.getAttribute("aria-pressed")!=="true";
+ try{editDay(TODAY,function(d){d.supps=Object.assign({},d.supps||{});d.supps[id]=on})}catch(x){}redraw()});
+document.addEventListener("change",function(ev){var t=ev.target;if(!t.matches||!t.matches("[data-f137wd]"))return;S.profile.weighDay=t.value===""?null:+t.value;try{profChanged()}catch(x){}redraw()});
+var css=document.createElement("style");css.textContent=
+ ".a132-c.s-wt{background:rgba(85,199,217,.14);border-color:rgba(85,199,217,.5)}.a132-c.s-goal{background:rgba(180,130,255,.14);border-color:rgba(180,130,255,.5)}"+
+ ".a132-cell u.w,.a132-key u.w{background:#B482FF}.a137-s{display:flex;flex-direction:column;gap:6px;margin-top:4px}.a137-b{all:unset;cursor:pointer;box-sizing:border-box;display:flex;gap:10px;align-items:center;padding:8px 10px;border-radius:12px;border:1px solid var(--line);font-size:14px}.a137-b.on{background:rgba(63,197,126,.12);border-color:rgba(63,197,126,.5)}.a137-b em{font-style:normal;opacity:.7;font-size:12px}.a137-t{width:20px;height:20px;border-radius:6px;border:1.5px solid var(--line);display:inline-flex;align-items:center;justify-content:center;font-size:13px;flex:none}.a137-b.on .a137-t{background:#3FC57E;border-color:#3FC57E;color:#06220f}"+
+ ".a137-w{display:flex;align-items:center;gap:10px;margin-top:10px}.a137-w select{font-size:14px;padding:6px 8px;border-radius:8px}";
+document.head.appendChild(css);
+return {items:items,events:events,block:block,loggedW:loggedW,dot:dot,control:control}})();
 
 /* FighterBase v44: always a way back, always a next step. */
 var N31=N31||false;
