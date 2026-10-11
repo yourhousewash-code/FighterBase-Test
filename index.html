@@ -17112,6 +17112,41 @@ function groups(){try{if(typeof GROUPS==="undefined")return;
 setInterval(function(){groups();strips()},1500);setTimeout(groups,200);
 })();
 
+/* FighterBase v184: PT slots fill themselves. Hands-off for the club.
+   Each day the manager's app (whoever is signed in as club owner or manager) tops up the next 4 weeks of one-hour PT slots for the PT coach, on every whole hour that is inside opening hours and outside class times. Booked or requested slots are never touched. Open slots that now clash with a class are removed. Switch off with the card at the top of Classes (club.ptAuto.on=false). */
+var F151=F151||false;
+(function(){
+if(F151)return;F151=true;
+var club=function(){return (typeof clubState!=="undefined"&&clubState.club)||null};
+function iso(d){return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0")}
+function tmin(t){var a=String(t||"0:0").split(":");return (+a[0])*60+(+a[1]||0)}
+function isMgr(){try{return !!(window.FHC&&FHC.isOwner())}catch(e){return false}}
+function provider(c){var T=c.teachers||[],id=(c.ptAuto||{}).tid,t=T.filter(function(x){return x.id===id&&x.pt&&x.pt.on})[0]||T.filter(function(x){return x.pt&&x.pt.on})[0];return t||null}
+function freeHours(c,dw){var H=(c.hours76||{}).days,x=H&&H[dw];if(!x)return [];var lo=Math.ceil(tmin(x.o)/60),hi=Math.floor(tmin(x.c)/60),busy=(c.timetable||[]).filter(function(k){return k.dow===dw}).map(function(k){return [tmin(k.time),tmin(k.time)+(+k.mins||60)]}),out=[];
+ for(var h=lo;h<hi;h++)if(busy.every(function(b){return !(h*60<b[1]&&b[0]<(h+1)*60)}))out.push(h);return out}
+function plan(c,today){var t=provider(c);if(!t)return null;var weeks=Math.max(1,Math.min(8,+(c.ptAuto||{}).weeks||4)),slots=c.ptSlots||[],have={},add=[],rm={},base=new Date(today+"T12:00");
+ slots.forEach(function(s){have[s.tid+"|"+s.d+"|"+s.time]=1});
+ for(var i=0;i<weeks*7;i++){var d=new Date(base);d.setDate(d.getDate()+i);var k=iso(d),dw=(d.getDay()+6)%7;
+  freeHours(c,dw).forEach(function(h){var tm=String(h).padStart(2,"0")+":00",key=t.id+"|"+k+"|"+tm;if(have[key])return;have[key]=1;
+   add.push({id:"a"+k.replace(/-/g,"")+tm.replace(":",""),tid:t.id,d:k,time:tm,mins:60,price:(t.pt||{}).price||0,status:"open",uid:null,name:null,pm:"online",ps:(t.pt||{}).price?"unpaid":"na",auto:1})})}
+ slots.forEach(function(s){if(s.tid!==t.id||s.status!=="open"||s.d<today||!s.auto)return;var d=new Date(s.d+"T12:00"),dw=(d.getDay()+6)%7;if(freeHours(c,dw).indexOf(+s.time.slice(0,2))<0)rm[s.id]=1});
+ var old=iso(new Date(new Date(today+"T12:00").getTime()-30*864e5));
+ slots.forEach(function(s){if(s.status==="open"&&s.d<old&&!rm[s.id])rm[s.id]=1});
+ return {add:add,rm:rm,t:t}}
+var last="";
+function run(){var c=club();if(!c||!c.id||c.demo||!isMgr()||!(typeof db!=="undefined"&&db))return;if(c.ptAuto&&c.ptAuto.on===false)return;
+ var today=iso(new Date()),sig=today+"|"+JSON.stringify([c.hours76,(c.timetable||[]).map(function(k){return k.dow+k.time+k.mins}),(c.teachers||[]).map(function(t){return t.id+(t.pt&&t.pt.on)}),(c.ptAuto||{})])+"|"+(c.ptSlots||[]).length;
+ if(sig===last)return;var p=plan(c,today);if(!p){last=sig;return}
+ var nrm=Object.keys(p.rm).length;if(!p.add.length&&!nrm){last=sig;return}
+ var ns=(c.ptSlots||[]).filter(function(s){return !p.rm[s.id]}).concat(p.add);last=sig+"x";c.ptSlots=ns;
+ db.doc("clubs/"+c.id).update({ptSlots:ns}).then(function(){last="";try{if(window.FH69)FH69.classesPage&&0}catch(e){}}).catch(function(){last=""})}
+function card(){var c=club(),host=document.getElementById("hubclassesBody");if(!c||!host||!isMgr()||c.demo)return;var on=!(c.ptAuto&&c.ptAuto.on===false),p=provider(c),w=document.getElementById("fb151"),h='<b>Automatic PT slots: '+(on?"on":"off")+'</b><span class="muted small" style="display:block;margin:4px 0">'+(p?(on?"The next 4 weeks of one-hour PT slots for "+p.name+" fill themselves every day, on every whole hour inside opening hours and outside class times. Booked slots are never touched.":"Slots will not be added or removed for you."):"Switch PT on for a teacher first. Slots are created for them.")+'</span><button class="btn ghost sm" type="button" data-f151>'+(on?"Turn off":"Turn on")+'</button>';
+ if(!w){w=document.createElement("div");w.id="fb151";w.className="cc-box";w.style.margin="10px 0";host.insertBefore(w,host.firstChild)}if(w.dataset.sig!==h){w.innerHTML=h;w.dataset.sig=h}}
+document.addEventListener("click",function(ev){var b=ev.target.closest&&ev.target.closest("[data-f151]");if(!b)return;var c=club();if(!c)return;var on=!(c.ptAuto&&c.ptAuto.on===false),pa=Object.assign({},c.ptAuto||{},{on:!on});c.ptAuto=pa;db.doc("clubs/"+c.id).update({ptAuto:pa}).catch(function(){});last="";card();setTimeout(run,100)},true);
+setInterval(function(){try{run();card()}catch(e){}},4000);
+window.FH151={plan:plan,run:run,free:freeHours};
+})();
+
 /* FighterBase v44: always a way back, always a next step. */
 var N31=N31||false;
 (function(){
