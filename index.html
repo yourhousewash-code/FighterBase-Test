@@ -14081,6 +14081,22 @@ function snap(sh){var w=FBE.week(ws()),prev=FBE.week(addDays(ws(),-7)),o={},it=s
  if(it.weight){var wt=FBE.weight();o.wt={now:wt.now,rate:wt.rate}}
  if(it.food)o.food=w.foodDays;return o}
 function avg(a,k){var v=a.map(function(x){return x[k]}).filter(Boolean);return v.length?Math.round(v.reduce(function(s,x){return s+x},0)/v.length*10)/10:null}
+
+/* v195: the member always sees their own week so far as plain numbers with a simple status; only the ticked items are sent to the coach */
+function tiles(sh){var w=FBE.week(ws()),el=((new Date().getDay()+6)%7)+1,it=sh.items||{},T=[];
+ var tg=+w.target||0,se=+w.sessions||0,exp=Math.floor(tg*el/7);
+ var ts=!tg?["","Set a weekly plan"]:se>=tg?["ok","Done"]:se>=exp?["ok","On track"]:["warn","Behind"];
+ T.push(["Training",se+" of "+tg,(w.mins?w.mins+" min":"sessions")+(w.hard?", "+w.hard+" hard rounds":""),ts]);
+ var fd=+w.foodDays||0,fs=!fd&&el<=1?["","Nothing yet"]:fd>=Math.ceil(el*0.7)?["ok","Good"]:fd>0?["warn","Patchy"]:["warn","Not logged"];
+ T.push(["Food",fd+" of "+el,"days logged this week",fs]);
+ var r=(w.rec||[]).filter(function(x){return x}),sl=avg(r,"sl"),en=avg(r,"e");
+ if(r.length)T.push(["Recovery",sl?sl+" h":(en?en+"/5":"-"),(sl?"sleep":"")+(sl&&en?", ":"")+(en?"energy "+en+"/5":""),["",""]]);
+ try{var wt=FBE.weight();if(wt&&wt.now!=null)T.push(["Weight",wt.now+" kg",(wt.rate!=null?(wt.rate>0?"+":"")+wt.rate+" kg/week":"7-day average"),["",""]])}catch(x){}
+ var sent=ITEMS.filter(function(i){return it[i[0]]}).map(function(i){return i[1].toLowerCase().replace(/\bi\b/g,"I")});
+ return '<div class="t120">'+T.map(function(x){return '<div class="u120"><span class="k">'+x[0]+'</span><b>'+e(x[1])+'</b><span class="s">'+e(x[2])+'</span>'+(x[3][1]?'<em class="'+x[3][0]+'">'+x[3][1]+'</em>':'')+'</div>'}).join("")+'</div>'+
+  '<p class="muted small" style="margin:2px 0 6px">'+(s120(sh)?'':'')+'Sent to your coach: '+(sent.length?e(sent.join(", ")):"nothing")+'. You choose this.</p>'}
+function s120(){return 0}
+var c120=document.createElement("style");c120.textContent=".t120{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:8px;margin:6px 0}.u120{display:flex;flex-direction:column;gap:2px;padding:10px 12px;border-radius:12px;background:rgba(255,255,255,.04);border:1px solid var(--line,rgba(255,255,255,.1))}.u120 .k{font:800 10px var(--body,inherit);letter-spacing:.14em;text-transform:uppercase;color:var(--muted,#9AA0AA)}.u120 b{font:800 28px/1.05 var(--display,inherit)}.u120 .s{font-size:11px;color:var(--muted,#9AA0AA)}.u120 em{font-style:normal;font:700 11px var(--body,inherit);align-self:flex-start;padding:2px 8px;border-radius:999px;margin-top:2px}.u120 em.ok{background:rgba(63,197,126,.16);color:#3FC57E}.u120 em.warn{background:rgba(242,163,58,.16);color:#F2A33A}";document.head.appendChild(c120);
 function snapHTML(s,sh){var h="";
  if(s.sess!=null)h+='<li>Sessions: <b>'+s.sess+'</b> of '+s.target+' planned'+(s.hard?', '+s.hard+' hard rounds':'')+(s.mins?', '+s.mins+' min':'')+(s.prev!=null?' <span class="muted">(last week '+s.prev+')</span>':'')+'</li>';
  if(s.skills&&s.skills.length)h+='<li>Working on: '+e(s.skills.join(", "))+'</li>';
@@ -14099,7 +14115,7 @@ function card(){var home=document.getElementById("tab-today"),el=document.getEle
  }else if(!sh.on){h='<span class="fb-kick">Camp sharing</span><p class="muted small" style="margin:2px 0 6px">Weekly camp reports are off.</p><button class="linkbtn" type="button" data-f120reset>Turn on</button>'}
  else{var rep=(p.campReports||{})[ws()],due=new Date().getDay()===(sh.day||0)||new Date().getDay()===0,s=snap(sh);
   var rp=(c.campReplies||{})[S.uid+"_"+ws()]||(c.campReplies||{})[S.uid+"_"+addDays(ws(),-7)],acc=p.campAcc||{};
-  h='<span class="fb-kick">Camp week report · '+e(dm(ws()))+'</span>'+(rep?'<p style="margin:4px 0"><b>✓ Sent '+e(new Date(rep.sent).toLocaleDateString("en-GB",{weekday:"short"}))+'</b>'+(rp&&rp.st?' · <span class="d112-s s-ok">'+(rp.msg||(rp.sugs||[]).length?"Coach replied":"Reviewed")+'</span>':' <span class="muted small">Waiting for your coach</span>')+'</p>':'<p class="muted small" style="margin:2px 0 4px">'+(due?'Your report is ready to send. Check it and add a note.':'This week so far. Send it when you are ready (usually Sunday).')+'</p>')+snapHTML(rep?rep.snap:s,sh);
+  h='<span class="fb-kick">Camp week report · '+e(dm(ws()))+'</span>'+(rep?'<p style="margin:4px 0"><b>✓ Sent '+e(new Date(rep.sent).toLocaleDateString("en-GB",{weekday:"short"}))+'</b>'+(rp&&rp.st?' · <span class="d112-s s-ok">'+(rp.msg||(rp.sugs||[]).length?"Coach replied":"Reviewed")+'</span>':' <span class="muted small">Waiting for your coach</span>')+'</p>':'<p class="muted small" style="margin:2px 0 4px">'+(due?'Your report is ready to send. Check it and add a note.':'This week so far. Send it when you are ready (usually Sunday).')+'</p>')+(rep?snapHTML(rep.snap,sh):tiles(sh));
   var ex=(p.extras||[]).filter(function(x){return x.k===f.date});if(ex.length)h+='<div class="d112-n" style="flex-direction:column;align-items:stretch"><b>Added by your coach</b>'+ex.map(function(x){return '<div class="row" style="justify-content:space-between"><span class="small">'+e(x.t)+'<br><span class="muted">'+e(kl(x.kind))+' · '+e(fl(x.freq))+(x.applied?' · in your weekly target':'')+'</span></span><button class="linkbtn" type="button" data-f120xrm="'+e(x.id)+'">Remove</button></div>'}).join("")+'</div>';
   if(sh.items.mood!==false&&!rep)h+='<div class="chips" style="margin:4px 0">'+MOODS.map(function(m,i){return '<button type="button" class="chip" data-f120mood="'+(i+1)+'" aria-pressed="'+(D.mood===i+1)+'">'+m+'</button>'}).join("")+'</div>';
   if(!rep)h+='<div class="field"><label class="label" for="f120n">Note for your coach (optional)</label><input type="text" id="f120n" maxlength="160" value="'+e(D.note)+'" placeholder="How did the week feel?"></div><div class="row"><button class="btn gold sm" type="button" data-f120send>Send to my coach</button><button class="linkbtn" type="button" data-f120off>Turn reports off</button></div>';
