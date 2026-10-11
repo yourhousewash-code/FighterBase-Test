@@ -13688,7 +13688,7 @@ function fightCard(){var el=document.getElementById("fb115"),home=document.getEl
   '<h2 class="cd-t">'+e(c.title)+'</h2><p class="cd-d">'+e(dt)+(c.place?" · "+e(c.place):"")+'</p>'+cdHTML(c)+
   (chips.length||c.rules?'<p class="cd-r">'+e(chips.concat(c.rules?[c.rules]:[]).join(" · "))+'</p>':'')+
   '<div class="row"><button class="btn gold sm" type="button" '+(c.kind==="fight"&&(function(){try{var cc=club();return !!(cc&&cc.camps&&cc.camps[S.uid]&&cc.camps[S.uid].status!=="ended")}catch(x){return false}})()?'data-bview="camp">Open camp':'data-goto="'+c.go+'">Details')+'</button>'+(c.kind==="fight"&&c.status[0]==="none"&&P().clubId?'<span class="muted small">Ask your club to confirm it to switch on camp tools.</span>':'')+'</div>';
- if(el.dataset.sig!==h){el.innerHTML=h;el.dataset.sig=h;el._c=c}}
+ if(el.dataset.sig!==h){el.innerHTML=h;el.dataset.sig=h;el._c=c}try{if(window.FH141)FH141.mount()}catch(x){}}
 function tick(){var el=document.getElementById("fb115");if(!el||el.hidden||!el._c)return;var p=parts(target(el._c)-Date.now());["d","h","m","s"].forEach(function(k){var n=el.querySelector('[data-cd="'+k+'"]');if(n){var v=two(p[k]);if(n.textContent!==v)n.textContent=v}})}
 setInterval(tick,1000);
 
@@ -16120,6 +16120,50 @@ var PT=null;function pulse(){if(!on())return;var b=document.body;b.classList.add
 setInterval(function(){try{apply()}catch(x){}},3000);setTimeout(function(){apply();pulse()},500);
 var st=showTab;showTab=function(t){var r=st.apply(this,arguments);try{apply();if(t==="today"||t==="stats"||t==="progress")pulse()}catch(x){}return r};
 return {pulse:pulse,on:on,level:level,apply:apply,control:control}})();
+
+/* FighterBase v169: "Fight camp is on" panel inside the fight countdown card on Home. Shows only while the camp glow is on (a fight is booked and
+   camp tools are not switched off). Camp clock (week of 8 or days until camp proper), the week's sessions against the member's own target,
+   weight still to go to the weigh-in target, goals due before fight day, and one plain line on what to do next. While camp is on the Home stat tiles
+   are also highlighted so the numbers look as important as they are. Everything is read from what the member logs; nothing new is stored. */
+var FH141=(function(){
+function P(){return (typeof S!=="undefined"&&S.profile)||{}}
+function e(s){return esc(String(s==null?"":s))}
+function r1(x){return Math.round(x*10)/10}
+function goalsDue(fd){var g=[];try{g=((P().g90||{}).goals)||[]}catch(x){}return g.filter(function(x){return x&&x.by&&x.by<=fd&&x.by>=addDays(TODAY,-14)})}
+function data(fd0){var p=P(),fd=fd0||p.fightDate;if(!fd||fd<TODAY)return null;var left=diffDays(TODAY,fd),o={left:left,fd:fd};
+ o.mode=left===0?"fightday":left<=7?"fightweek":left<=56?"camp":"pre";
+ if(left>7&&left<=56){var wo=Math.ceil(left/7);o.week=9-wo;try{var ph=CAMP_PHASES.find(function(q){return wo<=q[0]&&wo>=q[1]});o.phase=ph?ph[2]:""}catch(x){o.phase=""}}
+ o.campIn=left>56?left-56:0;
+ var wk=0,tg=null;try{var D=FH139.series(7,0);D.forEach(function(d){wk+=d.sess});}catch(x){}try{tg=FBW.tgt(7)}catch(x){}o.sess=wk;o.tgt=tg;
+ var w=null;try{w=latestWeight()}catch(x){}var to=+p.weighIn>0?+p.weighIn:null;o.w=w;o.to=to;o.togo=(w&&to)?r1(w-to):null;
+ var gs=goalsDue(fd);o.goals=gs.length;o.gdone=gs.filter(function(x){return x.done}).length;o.gnext=gs.filter(function(x){return !x.done}).sort(function(a,b){return a.by<b.by?-1:1})[0]||null;
+ return o}
+function nudge(o){
+ if(o.tgt&&o.sess<o.tgt)return {t:(o.tgt-o.sess)+" session"+(o.tgt-o.sess===1?"":"s")+" still to hit this week's target.",go:"log"};
+ if(o.gnext)return {t:"Next goal: "+o.gnext.title+" (due "+new Date(o.gnext.by+"T12:00").toLocaleDateString("en-GB",{day:"numeric",month:"short"})+").",go:"goals2"};
+ if(o.togo>0.3)return {t:o.togo+" kg to go to your weigh-in target. Stay steady and keep logging.",go:"goals2"};
+ return {t:"You are on track. Keep logging and keep showing up.",go:""}}
+function html(o){var bar=o.week?Math.min(100,Math.round(((o.week-1)*7+(8-Math.min(7,Math.max(0,o.left%7===0?7:o.left%7))+0))/56*100)):0;
+ if(o.week){var el=56-o.left;bar=Math.max(0,Math.min(100,Math.round(el/56*100)))}
+ var clock=o.week?'Camp week <b>'+o.week+'</b> of 8'+(o.phase?' · '+e(o.phase)+' phase':''):(o.campIn?'Camp proper starts in <b>'+o.campIn+'</b> days':(o.mode==="fightweek"||o.mode==="weighin"?'<b>Fight week</b>':'<b>Fight day</b>'));
+ var n=nudge(o),tiles=[];
+ tiles.push('<div><b>'+o.sess+(o.tgt?'/'+o.tgt:'')+'</b><span>sessions this week</span></div>');
+ tiles.push('<div><b>'+(o.togo!=null?(o.togo>0?r1(o.togo)+' kg':'On target'):'-')+'</b><span>'+(o.to?'to weigh-in ('+o.to+' kg)':'set a target in Goals')+'</span></div>');
+ tiles.push('<div><b>'+(o.goals?o.gdone+'/'+o.goals:'-')+'</b><span>goals due before the fight</span></div>');
+ return '<div class="cb141-h"><span class="cb141-pill">Fight camp is on</span><span class="cb141-c">'+clock+'</span></div>'+
+  (o.week?'<div class="cb141-bar" role="img" aria-label="Camp progress"><i style="width:'+bar+'%"></i></div>':'')+
+  '<div class="cb141-t">'+tiles.join("")+'</div>'+
+  '<p class="cb141-n"><b>Stay on track.</b> '+e(n.t)+'</p>'+
+  (n.go?'<div class="row"><button class="btn ghost sm" type="button" data-goto="'+n.go+'">'+(n.go==="log"?'Log a session':'Open my goals')+'</button></div>':'')}
+function mount(){var el=document.getElementById("fb115");if(!el||el.hidden)return;var box=el.querySelector(".cb141");var on=false;try{on=FH140.on()}catch(x){}var o=on?data(el._c&&el._c.kind==="fight"?el._c.date:null):null;
+ if(!o){if(box)box.remove();return}
+ var h=html(o);if(!box){box=document.createElement("div");box.className="cb141";el.insertBefore(box,el.querySelector(".row")||null)}
+ if(box.dataset.sig!==h){box.innerHTML=h;box.dataset.sig=h}}
+setInterval(function(){try{mount()}catch(x){console.warn("c141",x)}},2000);setTimeout(mount,800);
+var css=document.createElement("style");css.textContent=".cb141{margin:10px 0 6px;padding:12px;border-radius:14px;border:1px solid rgba(229,86,107,.6);background:linear-gradient(180deg,rgba(200,30,58,.22),rgba(0,0,0,.25))}.cb141-h{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:6px 10px}.cb141-pill{font-size:11px;font-weight:900;letter-spacing:.12em;text-transform:uppercase;padding:4px 10px;border-radius:999px;background:#C81E3A;color:#fff}.cb141-c{font-size:13px}.cb141-bar{height:6px;border-radius:99px;background:rgba(255,255,255,.12);margin:10px 0;overflow:hidden}.cb141-bar i{display:block;height:100%;background:linear-gradient(90deg,#A9172F,#E5566B)}.cb141-t{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:10px 0}.cb141-t div{display:flex;flex-direction:column;align-items:center;text-align:center;padding:8px 4px;border-radius:12px;background:rgba(0,0,0,.35);border:1px solid rgba(255,255,255,.12)}.cb141-t b{font:900 22px var(--display,'Big Shoulders Display'),sans-serif}.cb141-t span{font-size:11px;opacity:.75}.cb141-n{margin:6px 0;font-size:14px}"+
+"body.fb-camp-on .d112-t,body.fb-camp-on .a132-tiles div,body.fb-camp-on .h139-ro{border-color:rgba(200,30,58,.55);background:rgba(200,30,58,.09)}body.fb-camp-on .d112-t b,body.fb-camp-on .a132-tiles b{text-shadow:0 0 14px rgba(200,30,58,.55)}body.fb-camp-on .d112-t span{color:#E8DFC8}";
+document.head.appendChild(css);
+return {mount:mount,data:data}})();
 
 /* FighterBase v44: always a way back, always a next step. */
 var N31=N31||false;
