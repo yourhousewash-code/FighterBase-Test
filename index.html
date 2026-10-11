@@ -16233,13 +16233,14 @@ function acct(r){try{return window.FH57&&FH57.acct?FH57.acct(r):null}catch(e){re
 function people(){var c=club()||{},out=[],seen={};
  (c.roster||[]).forEach(function(r){if(r.status&&r.status!=="active")return;var a=acct(r),k=r.uid||("r:"+r.id);seen[k]=1;if(r.uid)seen[r.uid]=1;
   var m=r.uid?members().filter(function(x){return x.uid===r.uid})[0]:null;
-  out.push({k:k,uid:r.uid||"",name:r.name||(m&&m.name)||"Member",phone:r.phone||"",bal:a?a.bal:0,od:a?a.status==="overdue":false,news:!!(m&&m.mp&&m.mp.news),app:!!m})});
- members().forEach(function(m){if(seen[m.uid]||m.uid===S.uid&&false)return;out.push({k:m.uid,uid:m.uid,name:m.name||"Member",phone:"",bal:0,od:false,news:!!(m.mp&&m.mp.news),app:true})});
+  out.push({k:k,uid:r.uid||"",name:r.name||(m&&m.name)||"Member",phone:r.phone||"",email:r.email||"",bal:a?a.bal:0,od:a?a.status==="overdue":false,news:!!(m&&m.mp&&m.mp.news),app:!!m})});
+ members().forEach(function(m){if(seen[m.uid]||m.uid===S.uid&&false)return;out.push({k:m.uid,uid:m.uid,name:m.name||"Member",phone:"",email:"",bal:0,od:false,news:!!(m.mp&&m.mp.news),app:true})});
  return out}
 /* ---------- templates ---------- */
 var TPL=[
  {id:"pay",n:"Payment reminder",kind:"service",nogroup:true,t:"Hi {first}, a friendly reminder from {club}: your fee of {amt} is now overdue. If there is a problem, just let me know. Thanks."},
  {id:"cls",n:"Today's class: are you coming?",kind:"service",t:"{club}: {class} today at {time}. Tap to say if you're coming: {link}"},
+ {id:"aft",n:"After class: were you there?",kind:"service",t:"{club}: thanks for coming to {class}. Tap to confirm you were there: {link}"},
  {id:"chg",n:"Class change",kind:"service",t:"{club}: change of plan. "},
  {id:"news",n:"News or offer",kind:"marketing",t:"{club} news: "},
  {id:"blank",n:"Write my own",kind:"service",t:""}];
@@ -16251,7 +16252,7 @@ function audience(){var all=people(),t=tpl(M.tpl),a=M.aud,skip=0,L;
  if(t.kind==="marketing"){var n0=L.length;L=L.filter(function(p){return p.news});skip=n0-L.length}
  return {L:L,skip:skip}}
 function render1(t,p){var c=club(),cl=todayClasses().filter(function(x){return x.id===M.cls})[0]||todayClasses()[0]||{};
- var link=(M.tpl==="cls"&&cl.id)?linkFor(TODAY,cl.id,p&&p.uid,"c"):"";
+ var link=((M.tpl==="cls"||M.tpl==="aft")&&cl.id)?linkFor(TODAY,cl.id,p&&p.uid,M.tpl==="aft"?"w":"c"):"";
  return String(t).replace(/\{first\}/g,first(p&&p.name)).replace(/\{club\}/g,c.name||"the club").replace(/\{amt\}/g,gbp(p&&p.bal)).replace(/\{class\}/g,cl.title||cl.name||"class").replace(/\{time\}/g,cl.time||"").replace(/\{link\}/g,link)}
 function health(t){return /\b(weigh|weight|kg|lbs|injur|diet|calor|macro|medical|ill\b|pregnan|mental)/i.test(t)}
 /* ---------- composer sheet ---------- */
@@ -16263,7 +16264,7 @@ function sheetHTML(){var c=club(),t=tpl(M.tpl),A=audience(),cls=todayClasses(),a
  '<div class="field"><label class="label" for="m142t">What kind of message</label><select id="m142t">'+TPL.map(function(x){return '<option value="'+x.id+'"'+(x.id===M.tpl?" selected":"")+'>'+e2(x.n)+'</option>'}).join("")+'</select></div>'+
  '<div class="field"><label class="label" for="m142a">Who to</label><select id="m142a">'+audOpts.map(function(x){return '<option value="'+x[0]+'"'+(x[0]===M.aud?" selected":"")+'>'+e2(x[1])+'</option>'}).join("")+'</select></div>'+
  (M.aud==="one"?'<div class="field"><label class="label" for="m142o">Member</label><select id="m142o"><option value="">Choose…</option>'+all.map(function(p){return '<option value="'+e2(p.k)+'"'+(p.k===M.one?" selected":"")+'>'+e2(p.name)+'</option>'}).join("")+'</select></div>':'')+
- (M.tpl==="cls"?'<div class="field"><label class="label" for="m142c">Class</label>'+(cls.length?'<select id="m142c">'+cls.map(function(x){return '<option value="'+e2(x.id)+'"'+((M.cls||cls[0].id)===x.id?" selected":"")+'>'+e2(x.time+" "+(x.title||x.name||"Class"))+'</option>'}).join("")+'</select>':'<p class="muted small" style="margin:0">No classes on the timetable today.</p>')+'</div>':'')+
+ ((M.tpl==="cls"||M.tpl==="aft")?'<div class="field"><label class="label" for="m142c">Class</label>'+(cls.length?'<select id="m142c">'+cls.map(function(x){return '<option value="'+e2(x.id)+'"'+((M.cls||cls[0].id)===x.id?" selected":"")+'>'+e2(x.time+" "+(x.title||x.name||"Class"))+'</option>'}).join("")+'</select>':'<p class="muted small" style="margin:0">No classes on the timetable today.</p>')+'</div>':'')+
  '<div class="field"><label class="label" for="m142m">Message (use {first} for their first name)</label><textarea id="m142m" data-keep rows="4" maxlength="500">'+e2(M.text)+'</textarea></div>'+
  (health(M.text)?'<p class="small" style="margin:0;color:#e0a44a">This looks like it mentions health, weight, injury or food. Please remove that: messages should never include it.</p>':'')+
  (t.kind==="marketing"?'<p class="muted small" style="margin:0">News and offers only go to members who said yes to them. '+(A.skip?A.skip+' left out because they have not opted in.':'')+'</p>':'')+
@@ -16271,15 +16272,15 @@ function sheetHTML(){var c=club(),t=tpl(M.tpl),A=audience(),cls=todayClasses(),a
  if(!A.L.length)h+='<p class="muted small" style="margin:0">'+(M.aud==="overdue"?"Nobody is overdue right now.":"Nobody to message with these choices.")+'</p>';
  else h+='<div class="list">'+A.L.slice(0,60).map(function(p){var txt=render1(M.text,p),done=M.sent[p.k];
   return '<div class="row" style="align-items:center;justify-content:space-between;gap:8px"><span><b>'+e2(p.name)+'</b>'+(M.tpl==="pay"&&p.bal>0?' <span class="muted small">owes '+gbp(p.bal)+'</span>':'')+(p.phone?'':' <span class="muted small">no number</span>')+'</span>'+
-  '<span class="row" style="gap:6px;margin:0">'+(done?'<span class="badge ok-chip">Sent</span>':'')+'<button class="btn sm" type="button" style="background:#25D366;color:#06210f" data-m142wa="'+e2(p.k)+'"'+(txt.trim()?'':' disabled')+'>'+(done?'Again':'WhatsApp')+'</button></span></div>'}).join("")+(A.L.length>60?'<p class="muted small">Showing the first 60.</p>':'')+'</div>';
+  '<span class="row" style="gap:6px;margin:0">'+(done?'<span class="badge ok-chip">Sent</span>':'')+'<button class="btn sm" type="button" style="background:#25D366;color:#06210f" data-m142wa="'+e2(p.k)+'"'+(txt.trim()?'':' disabled')+'>'+(done?'Again':'WhatsApp')+'</button>'+(p.email?'<button class="btn ghost sm" type="button" data-m142em="'+e2(p.k)+'"'+(txt.trim()?'':' disabled')+'>Email</button>':'')+'</span></div>'}).join("")+(A.L.length>60?'<p class="muted small">Showing the first 60.</p>':'')+'</div>';
  h+='<div class="row" style="margin-top:6px;flex-wrap:wrap">'+
   (t.nogroup?'<span class="muted small">Payment reminders go to the person only, never a group.</span>':'<button class="btn ghost sm" type="button" data-m142grp>Copy for a group chat</button>')+
   '<button class="btn ghost sm" type="button" data-m142app'+(A.L.some(function(p){return p.uid})?'':' disabled')+'>Send an in-app notice</button>'+
-  '<button class="btn ghost sm" type="button" disabled title="Coming next: send from your linked email">Email (coming next)</button></div>';
+  '<span class="muted small">Email opens in your own email app (Gmail, Outlook, Yahoo, anything). Sending from a linked mailbox comes later.</span></div>';
  var lg=(c.msglog||[]).slice(-6).reverse();
  if(lg.length)h+='<span class="label" style="margin-top:8px">Recently sent</span>'+lg.map(function(x){return '<div class="small"><span class="muted">'+e2(new Date(x.at).toLocaleString("en-GB",{day:"numeric",month:"short",hour:"2-digit",minute:"2-digit"}))+'</span> · '+e2(x.tpl)+' · '+e2(x.ch)+' · '+e2(x.to)+'</div>'}).join("");
  return h+'</div>'}
-function openSheet(o){o=o||{};if(o.tpl){M.tpl=o.tpl;M.text=tpl(o.tpl).t}if(o.aud)M.aud=o.aud;if(o.cls)M.cls=o.cls;M.sent={};M.open=true;sh.innerHTML=sheetHTML();sh.hidden=false}
+function openSheet(o){o=o||{};if(o.tpl){M.tpl=o.tpl;M.text=tpl(o.tpl).t}if(o.text!=null)M.text=o.text;if(o.aud)M.aud=o.aud;if(o.cls)M.cls=o.cls;M.sent={};M.open=true;sh.innerHTML=sheetHTML();sh.hidden=false}
 function redraw(){if(!M.open)return;var st=sh.firstChild?sh.firstChild.scrollTop:0;sh.innerHTML=sheetHTML();if(sh.firstChild)sh.firstChild.scrollTop=st}
 function logSend(tp,ch,to){var c=club();if(!c)return;var arr=(c.msglog||[]).concat([{id:uid5(),at:new Date().toISOString(),by:S.uid,tpl:tpl(tp).n,ch:ch,to:to}]).slice(-100);upd({msglog:arr})}
 sh.addEventListener("input",function(e){if(e.target.id==="m142m"){M.text=e.target.value;var bs=sh.querySelectorAll("[data-m142wa]");/* keep focus: only refresh the buttons' disabled state */bs.forEach(function(b){b.disabled=!M.text.trim()})}});
@@ -16288,13 +16289,14 @@ sh.addEventListener("change",function(e){var t=e.target;if(t.id==="m142t"){M.tpl
 sh.addEventListener("click",function(e){var t=e.target,b;if(t===sh||t.closest("[data-m142x]")){M.open=false;sh.hidden=true;return}
  if(b=t.closest("[data-m142wa]")){var p=audience().L.filter(function(x){return x.k===b.dataset.m142wa})[0];if(!p)return;var txt=render1(M.text,p);
   var a=document.createElement("a");a.href=waLink(p.phone,txt);a.target="_blank";a.rel="noopener";document.body.appendChild(a);a.click();a.remove();M.sent[p.k]=1;logSend(M.tpl,"WhatsApp",p.name);redraw();return}
+ if(b=t.closest("[data-m142em]")){var pe=audience().L.filter(function(x){return x.k===b.dataset.m142em})[0];if(!pe||!pe.email)return;var cfg=(club().emailcfg||{}),subj=tpl(M.tpl).n+" - "+(club().name||"");var ml="mailto:"+encodeURIComponent(pe.email)+"?subject="+encodeURIComponent(subj)+"&body="+encodeURIComponent(render1(M.text,pe)+(cfg.sign?"\n\n"+cfg.sign:""));var a2=document.createElement("a");a2.href=ml;document.body.appendChild(a2);a2.click();a2.remove();M.sent[pe.k]=1;logSend(M.tpl,"Email (own app)",pe.name);redraw();return}
  if(t.closest("[data-m142grp]")){var v=render1(M.text,{name:"everyone",bal:0,uid:""});try{navigator.clipboard.writeText(v).then(function(){toast("Copied","Paste it into your group chat");logSend(M.tpl,"Group copy","group")},function(){toast("Couldn't copy")})}catch(er){toast("Couldn't copy")}return}
  if(t.closest("[data-m142app]")){var L=audience().L.filter(function(x){return x.uid}),uids=L.map(function(x){return x.uid});if(!uids.length)return;var body=render1(M.text,{name:"",bal:0,uid:""}).replace(/\s+/g," ").trim().slice(0,300);
   var arr=(club().push||[]).concat([{id:"mm"+uid5(),at:new Date().toISOString(),t:tpl(M.tpl).n.slice(0,60),b:body,aud:"list",uids:uids,by:S.uid,tag:"Club"}]).slice(-50);
   upd({push:arr}).then(function(){toast("Sent",uids.length+" member"+(uids.length===1?"":"s")+" with the app");logSend(M.tpl,"In-app",uids.length+" members")});return}});
 /* ---------- coach panel on the club overview ---------- */
 var DOW_HINT="";
-function det(){var out=[],cut=addDays(TODAY,-6);members().forEach(function(m){(m.det||[]).forEach(function(d){if(d.d>=cut)out.push({name:m.name||"Member",d:d})})});return out.sort(function(a,b){return (b.d.arr||0)-(a.d.arr||0)})}
+function det(){var out=[],cut=addDays(TODAY,-6);members().forEach(function(m){(m.det||[]).forEach(function(d){if(d.d>=cut)out.push({uid:m.uid,name:m.name||"Member",d:d})})});var dx=(club()||{}).detx||{};return out.filter(function(x){return !dx[x.d.id]}).sort(function(a,b){return (b.d.arr||0)-(a.d.arr||0)})}
 function panelHTML(){var c=club(),od=people().filter(function(p){return p.od}).length,ds=det(),un=ds.filter(function(x){return x.d.st==="unconfirmed"}).length,cls=todayClasses();
  var h='<div class="sec-h"><h2>Message members</h2></div><p class="muted small" style="margin:0">Payment reminders, class links and news, sent from your own WhatsApp with the words ready. You approve every send.</p>'+
   '<div class="row" style="flex-wrap:wrap"><button class="btn gold" type="button" data-m142open>Write a message</button>'+
@@ -16304,11 +16306,13 @@ function panelHTML(){var c=club(),od=people().filter(function(p){return p.od}).l
  if(cn)h+='<span class="label" style="margin-top:6px">Today\'s replies</span>'+cn;
  h+='<span class="label" style="margin-top:8px">Detected without a booking'+(un?' · '+un+' to confirm':'')+'</span>';
  if(!ds.length)h+='<p class="muted small" style="margin:0">Nobody detected without a booking this week. When a member\'s phone puts them at the club with no booking, you\'ll see their name and times here.</p>';
- else h+=ds.slice(0,8).map(function(x){var d=x.d;return '<div class="small" style="margin:3px 0"><b>'+e2(x.name)+'</b> · '+e2(new Date(d.d+"T12:00").toLocaleDateString("en-GB",{weekday:"short",day:"numeric",month:"short"}))+' · arrived '+e2(hhmm(d.arr))+(d.dep?', left about '+e2(hhmm(d.dep)):', not left yet or not recorded')+' <span class="badge'+(d.st==="confirmed"?" ok-chip":"")+'">'+(d.st==="confirmed"?"Confirmed by member":d.st==="dismissed"?"Member says no":"Awaiting confirmation")+'</span></div>'}).join("")+'<p class="muted small" style="margin:4px 0 0">Booked classes show in your attendance totals only, with no times.</p>';
+ else h+=ds.slice(0,8).map(function(x){var d=x.d;return '<div class="small" style="margin:3px 0"><b>'+e2(x.name)+'</b> · '+e2(new Date(d.d+"T12:00").toLocaleDateString("en-GB",{weekday:"short",day:"numeric",month:"short"}))+' · arrived '+e2(hhmm(d.arr))+(d.dep?', left about '+e2(hhmm(d.dep)):', not left yet or not recorded')+' <span class="badge'+(d.st==="confirmed"?" ok-chip":"")+'">'+(d.st==="confirmed"?"Confirmed by member":d.st==="dismissed"?"Member says no":d.d<TODAY?"Not confirmed":"Awaiting confirmation")+'</span> '+(d.st==="unconfirmed"&&d.d===TODAY?'<button class="linkbtn" type="button" data-m142ask="'+e2(x.uid)+'|'+e2(d.id)+'">Ask again</button> ':'')+'<button class="linkbtn" type="button" data-m142hide="'+e2(d.id)+'">Hide</button></div>'}).join("")+'<p class="muted small" style="margin:4px 0 0">Booked classes show in your attendance totals only, with no times.</p>';
  return h}
 function panel(){var o=$("#tab-hubover"),host=$("#huboverBody");if(!o||o.hidden||!host||!isCoach())return;var w=$("#m142p");if(!w){w=document.createElement("div");w.id="m142p";w.className="panel";var a=$("#td76");if(a&&a.parentNode===host)host.insertBefore(w,a.nextSibling);else host.insertBefore(w,host.children[1]||null)}
  var h=panelHTML();if(w.dataset.sig!==h){if(document.activeElement&&w.contains(document.activeElement)&&document.activeElement.tagName==="BUTTON"&&false)return;w.innerHTML=h;w.dataset.sig=h}}
-document.addEventListener("click",function(e){var t=e.target;if(t.closest("[data-m142open]")){openSheet({tpl:"blank",aud:"all"});return}
+document.addEventListener("click",function(e){var t=e.target,k0;if(k0=t.closest("[data-m142hide]")){var dx=Object.assign({},club().detx||{});dx[k0.dataset.m142hide]=1;upd({detx:dx});return}
+ if(k0=t.closest("[data-m142ask]")){var u0=k0.dataset.m142ask.split("|")[0];var arr0=(club().push||[]).concat([{id:"mq"+uid5(),at:new Date().toISOString(),t:"Were you at training today?",b:"Your club noticed you at the gym with no booking. Open FighterBase and confirm, so it counts.",aud:"list",uids:[u0],by:S.uid,tag:"Club"}]).slice(-50);upd({push:arr0}).then(function(){toast("Asked again","They'll see it in their notices and the next time they open the app.")});return}
+ if(t.closest("[data-m142open]")){openSheet({tpl:"blank",aud:"all"});return}
  if(t.closest("[data-m142pay]")){openSheet({tpl:"pay",aud:"overdue"});return}
  if(t.closest("[data-m142cls]")){var c0=todayClasses()[0];openSheet({tpl:"cls",aud:"all",cls:c0&&c0.id});return}
  var b=t.closest("[data-m142class]");if(b){openSheet({tpl:"cls",aud:"all",cls:b.dataset.m142class});return}});
@@ -16339,16 +16343,19 @@ function hold(cid,label,cl,cb){if(pass)return false;if(booked(cid))return false;
  var d=(P().det142=P().det142||[]),ex=d.filter(function(x){return x.d===TODAY&&(x.cid||"")===(cid||"")&&x.st==="confirmed"})[0];if(ex)return false;
  var open=d.filter(function(x){return x.d===TODAY&&(x.cid||"")===(cid||"")&&x.st==="unconfirmed"})[0];
  if(!open){open={id:uid5(),d:TODAY,arr:Date.now(),dep:null,st:"unconfirmed",cid:cid||"",lab:label||"Club visit"};d.push(open);P().det142=d.slice(-20);profChanged();try{scheduleLeague()}catch(e){}}
- var c=club();AS.innerHTML='<div class="cs-in"><h2 style="margin:0">Were you at training today?</h2><p class="muted small" style="margin:6px 0 0">Your phone puts you at '+e2(c?c.name:"your club")+' and you did not book a class. Your club is told your name and your arrival and leave times when this happens. Confirm so it counts as attendance.</p><div class="row"><button class="btn gold" type="button" data-d142yes>Yes, I trained</button><button class="btn ghost" type="button" data-d142no>No</button></div></div>';
+ var c=club();AS.innerHTML='<div class="cs-in"><h2 style="margin:0">Were you at training today?</h2><p class="muted small" style="margin:6px 0 0">Your phone puts you at '+e2(c?c.name:"your club")+' and you did not book a class. Your club is told your name and your arrival and leave times when this happens. Confirm so it counts as attendance.</p><div class="row"><button class="btn gold" type="button" data-d142yes>Yes, I trained</button><button class="btn ghost" type="button" data-d142no>No</button><button class="linkbtn" type="button" data-d142later>Ask me later</button></div></div>';
  AS.dataset.det=open.id;AS._cb=cb;AS.hidden=false;return true}
 AS.addEventListener("click",function(e){var t=e.target,id=AS.dataset.det,d=(P().det142||[]).filter(function(x){return x.id===id})[0];
  if(t.closest("[data-d142yes]")){if(d)d.st="confirmed";profChanged();try{scheduleLeague()}catch(er){}AS.hidden=true;var cb=AS._cb;AS._cb=null;if(cb){pass=true;try{cb()}finally{pass=false}}return}
+ if(t.closest("[data-d142later]")){AS.hidden=true;AS._cb=null;later=Date.now()+30*60000;return}
  if(t.closest("[data-d142no]")){if(d){d.st="dismissed";d.dep=d.dep||Date.now()}profChanged();try{scheduleLeague()}catch(er){}AS.hidden=true;AS._cb=null;toast("Thanks, noted");return}});
 /* departure: when the member is next seen outside the radius after arriving today */
 function outside(){var c=club();if(!c||!c.geo||typeof c.geo.lat!=="number"||!P().autoAtt||!navigator.geolocation)return;var op=(P().det142||[]).filter(function(x){return x.d===TODAY&&x.arr&&!x.dep&&x.st!=="dismissed"})[0];if(!op)return;
  navigator.geolocation.getCurrentPosition(function(p){var R=6371000,q=Math.PI/180,x=(c.geo.lat-p.coords.latitude)*q,y=(c.geo.lng-p.coords.longitude)*q,h=Math.sin(x/2)*Math.sin(x/2)+Math.cos(p.coords.latitude*q)*Math.cos(c.geo.lat*q)*Math.sin(y/2)*Math.sin(y/2),dist=2*R*Math.asin(Math.min(1,Math.sqrt(h)));
   if(Math.max(0,dist-Math.min(p.coords.accuracy||0,100))>(c.geo.r||100)){op.dep=Date.now();profChanged();try{scheduleLeague()}catch(e){}}},function(){},{enableHighAccuracy:false,timeout:10000,maximumAge:60000})}
 setInterval(outside,180000);
+var later=0;function reask(){try{if(!AS.hidden||Date.now()<later||!P().autoAtt||isCoach())return;var o=(P().det142||[]).filter(function(x){return x.d===TODAY&&x.st==="unconfirmed"})[0];if(!o)return;hold(o.cid,o.lab,null,function(){try{FH39.confirmClass(o.cid||null,o.lab)}catch(e){}})}catch(e){}}
+setInterval(reask,4000);document.addEventListener("visibilitychange",function(){if(!document.hidden)later=0});
 /* coach hears about a new detection while the app is open */
 var seenDet={};function watchDet(){if(!isCoach())return;det().forEach(function(x){if(seenDet[x.d.id]===undefined){seenDet[x.d.id]=1;if(seenDet._init&&x.d.st==="unconfirmed")toast(x.name+" detected at the club","No booking. Awaiting their confirmation.")}});seenDet._init=true}
 /* ---------- member settings card: automatic attendance + messages from my club ---------- */
@@ -16366,7 +16373,108 @@ function drawMember(){var host=$("#clubBody"),c=club();if(!host||!c||!P().clubId
 document.addEventListener("click",function(e){var b=e.target.closest&&e.target.closest("[data-a142auto]");if(!b)return;P().autoAtt=b.dataset.a142auto==="on";if(P().autoAtt)P().autoAttAt=new Date().toISOString();profChanged();try{scheduleLeague()}catch(er){}drawMember();toast(P().autoAtt?"Automatic attendance is on":"Automatic attendance is off")});
 document.addEventListener("change",function(e){if(e.target&&e.target.matches&&e.target.matches("[data-m142news]")){P().msgPref=Object.assign({},P().msgPref||{},{news:e.target.checked});profChanged();try{scheduleLeague()}catch(er){}toast(e.target.checked?"You'll get news and offers":"No news or offers")}});
 setInterval(function(){try{panel();schedBtns();drawMember();watchDet()}catch(e){}},2000);
-window.FH142={open:openSheet,hold:hold,link:linkFor,disclosure:DISC,det:det,outside:outside,autoOn:function(){return P().autoAtt===true}};
+window.FH142={log:logSend,open:openSheet,hold:hold,link:linkFor,disclosure:DISC,det:det,outside:outside,autoOn:function(){return P().autoAtt===true}};
+})();
+
+/* FighterBase v176: message rules, approval queue, email sender settings.
+   The club chooses which reminders to switch on. Matching reminders are PREPARED and wait in a "To approve" list; the coach taps send
+   (WhatsApp or the coach's own email app) or skips. Nothing is sent automatically. Fully automatic sending needs the official WhatsApp route (a later step).
+   Club doc: msgrules{paused,pay{on,days[1,7,14],t1,t7,t14},cls{on,hrs},aft{on},gap{on,weeks},grad{on},quiet{from,to},cap},
+   emailcfg{from,reply,provider,sign}, mq[{id,type,key,name,uid,phone,email,txt,sub,st,at,info}] (st pending|sent|skipped). */
+var K143=K143||false;
+(function(){
+if(K143)return;K143=true;
+var $=function(s){return document.querySelector(s)};
+function club(){return (typeof clubState!=="undefined"&&clubState.club)||null}
+function isCoach(){try{return !!(window.FHC&&FHC.isOwner()&&club())}catch(e){return false}}
+function e2(s){return esc(String(s==null?"":s))}
+function first(n){return String(n||"").trim().split(/\s+/)[0]||"there"}
+function gbp(v){v=Math.round((+v||0)*100)/100;return "£"+Math.abs(v).toFixed(2).replace(/\.00$/,"")}
+function upd(o){var c=club();if(!c||!db)return Promise.resolve();Object.assign(c,o);return db.doc("clubs/"+c.id).update(o).catch(function(){toast("Couldn't save","Check your connection and try again")})}
+function waLink(num,text){var n=String(num||"").replace(/[^\d+]/g,"");if(/^0\d{9,10}$/.test(n))n="44"+n.slice(1);n=n.replace(/^\+/,"");return "https://wa.me/"+(n||"")+"?text="+encodeURIComponent(text||"")}
+function openLink(h){var a=document.createElement("a");a.href=h;a.target="_blank";a.rel="noopener";document.body.appendChild(a);a.click();a.remove()}
+var DEF={paused:false,pay:{on:false,days:[1,7,14],
+  t1:"Hi {first}, a friendly reminder from {club}: your fee of {amt} is overdue. If there is a problem, just let me know. Thanks.",
+  t7:"Hi {first}, {club} here. Your fee of {amt} is still outstanding. Could you pay it this week, or let me know if something has got in the way? Thanks.",
+  t14:"Hi {first}, {club} here. Your payment of {amt} is now two weeks overdue. Please get in touch so we can sort it out together. Thanks."},
+ cls:{on:false,hrs:3},aft:{on:false},gap:{on:false,weeks:3},grad:{on:false},quiet:{from:"21:00",to:"08:00"},cap:1};
+function R(){var r=(club()||{}).msgrules||{},o=JSON.parse(JSON.stringify(DEF));["pay","cls","aft","gap","grad","quiet"].forEach(function(k){Object.assign(o[k],r[k]||{})});o.paused=!!r.paused;o.cap=+r.cap||1;return o}
+/* ---------- quiet hours and daily cap ---------- */
+function mins(t){var a=String(t||"0:0").split(":");return (+a[0])*60+(+a[1]||0)}
+var override=false;
+function quiet(){var q=R().quiet,d=new Date(),n=d.getHours()*60+d.getMinutes(),a=mins(q.from),b=mins(q.to);return a>b?(n>=a||n<b):(n>=a&&n<b)}
+function sentToday(name){var n=0;((club()||{}).msglog||[]).forEach(function(x){if(x.to===name&&String(x.at).slice(0,10)===TODAY&&x.ch!=="Group copy")n++});return n}
+/* ---------- build the "to approve" list ---------- */
+function acct(r){try{return window.FH57&&FH57.acct?FH57.acct(r):null}catch(e){return null}}
+function render(t,o){var c=club();return String(t).replace(/\{first\}/g,first(o.name)).replace(/\{club\}/g,c.name||"the club").replace(/\{amt\}/g,gbp(o.amt)).replace(/\{class\}/g,o.cls||"class").replace(/\{time\}/g,o.time||"").replace(/\{link\}/g,o.link||"")}
+function wanted(){var c=club(),r=R(),out=[];if(!c||r.paused)return out;
+ if(r.pay.on){var ds=(r.pay.days||[1,7,14]).map(Number).sort(function(a,b){return a-b});
+  (c.roster||[]).forEach(function(p){if(p.status&&p.status!=="active")return;var a=acct(p);if(!a||!(a.bal>0.004)||!(a.od>=1))return;var st=0;ds.forEach(function(d){if(a.od>=d)st=d});if(!st)return;
+   var tk=st>=14?"t14":st>=7?"t7":"t1",o={name:p.name,amt:a.bal};
+   out.push({id:"pay:"+(p.uid||p.id)+":"+st,type:"pay",key:p.uid||p.id,name:p.name||"Member",uid:p.uid||"",phone:p.phone||"",email:p.email||"",txt:render(r.pay[tk]||DEF.pay[tk],o),sub:"Payment reminder - "+c.name,info:"owes "+gbp(a.bal)+" · "+a.od+" day"+(a.od===1?"":"s")+" overdue · reminder "+(ds.indexOf(st)+1)+" of "+ds.length})})}
+ var cl=[];try{cl=classesOn(c,TODAY)}catch(e){}var d=new Date(),now=d.getHours()*60+d.getMinutes();
+ if(r.cls.on)cl.forEach(function(x){var s=mins(x.time);if(s-now<=r.cls.hrs*60&&s-now>0)out.push({id:"cls:"+x.id+":"+TODAY,type:"cls",key:x.id,name:"Everyone",group:true,cid:x.id,txt:"",info:(x.title||x.name||"Class")+" at "+x.time+" starts in under "+r.cls.hrs+" hours: send the "+"\"are you coming?\" link"})});
+ if(r.aft.on)cl.forEach(function(x){var e=mins(x.time)+(+x.mins||60);if(now>=e&&now<=e+180)out.push({id:"aft:"+x.id+":"+TODAY,type:"aft",key:x.id,name:"Everyone",group:true,cid:x.id,txt:"",info:(x.title||x.name||"Class")+" finished: send the \"were you there?\" link"})});
+ return out}
+var sync=function(){if(!isCoach())return;var c=club(),w=wanted(),cur=c.mq||[],keep=cur.filter(function(x){return x.st!=="pending"||w.some(function(y){return y.id===x.id})});
+ var have={};keep.forEach(function(x){have[x.id]=1});var add=w.filter(function(y){return !have[y.id]}).map(function(y){return Object.assign({st:"pending",at:new Date().toISOString()},y)});
+ var next=keep.concat(add).slice(-200);if(JSON.stringify(next.map(function(x){return x.id+x.st}))!==JSON.stringify(cur.map(function(x){return x.id+x.st})))upd({mq:next})};
+/* ---------- panel ---------- */
+function pend(){return ((club()||{}).mq||[]).filter(function(x){return x.st==="pending"})}
+function panelHTML(){var r=R(),P=pend(),q=quiet()&&!override,c=club();
+ var h='<div class="sec-h"><h2>To approve</h2><button class="linkbtn" type="button" data-m143rules>Message rules</button></div>';
+ if(r.paused)return h+'<p class="muted small" style="margin:0"><b>All reminders are paused.</b> Switch them back on in Message rules.</p>';
+ var on=[r.pay.on&&"payment reminders",r.cls.on&&"class links",r.aft.on&&"after-class checks"].filter(Boolean);
+ if(!on.length)return h+'<p class="muted small" style="margin:0">No reminders switched on. Turn on payment reminders (day 1, 7, 14) or class links in Message rules, and they will wait here for your approval. Nothing is ever sent without your tap.</p>';
+ h+='<p class="muted small" style="margin:0">On: '+e2(on.join(", "))+'. Each one waits for you. '+(q?'<b>Quiet hours until '+e2(r.quiet.to)+':</b> sending is held. <button class="linkbtn" type="button" data-m143ov>Send anyway</button>':'')+'</p>';
+ if(!P.length)return h+'<p class="muted small" style="margin:6px 0 0">Nothing waiting. Reminders appear here when someone goes overdue or a class is coming up.</p>';
+ return h+P.slice(0,12).map(function(x){var today=x.group?0:sentToday(x.name),blocked=q||today>=r.cap;
+  return '<div class="row" style="align-items:center;justify-content:space-between;gap:8px;margin:6px 0"><span><b>'+e2(x.name)+'</b><br><span class="muted small">'+e2(x.info)+'</span>'+(x.txt?'<br><span class="small">'+e2(x.txt)+'</span>':'')+(today>=r.cap?'<br><span class="small" style="color:#e0a44a">Already messaged today. Waits until tomorrow.</span>':'')+'</span>'+
+  '<span class="row" style="gap:6px;margin:0;flex-wrap:wrap">'+(x.group?'<button class="btn sm gold" type="button" data-m143grp="'+e2(x.id)+'"'+(q?' disabled':'')+'>Open</button>':
+   '<button class="btn sm" type="button" style="background:#25D366;color:#06210f" data-m143wa="'+e2(x.id)+'"'+(blocked||!x.phone?' disabled':'')+'>'+(x.phone?'WhatsApp':'No number')+'</button>'+(x.email?'<button class="btn ghost sm" type="button" data-m143em="'+e2(x.id)+'"'+(blocked?' disabled':'')+'>Email</button>':''))+
+  '<button class="linkbtn" type="button" data-m143skip="'+e2(x.id)+'">Skip</button></span></div>'}).join("")+(P.length>12?'<p class="muted small">'+(P.length-12)+' more after these.</p>':'')}
+function panel(){var o=$("#tab-hubover"),host=$("#huboverBody");if(!o||o.hidden||!host||!isCoach())return;var w=$("#m143p");if(!w){w=document.createElement("div");w.id="m143p";w.className="panel";var a=$("#m142p");if(a&&a.parentNode===host)host.insertBefore(w,a);else host.insertBefore(w,host.children[1]||null)}
+ var h=panelHTML();if(w.dataset.sig!==h){w.innerHTML=h;w.dataset.sig=h}}
+function mark(id,st){var arr=((club()||{}).mq||[]).map(function(x){return x.id===id?Object.assign({},x,{st:st,at:new Date().toISOString()}):x});upd({mq:arr})}
+document.addEventListener("click",function(e){var t=e.target,b;
+ if(t.closest("[data-m143ov]")){override=true;panel();return}
+ if(t.closest("[data-m143rules]")){openRules();return}
+ if(b=t.closest("[data-m143skip]")){mark(b.dataset.m143skip,"skipped");return}
+ if(b=t.closest("[data-m143wa]")){var x=pend().filter(function(y){return y.id===b.dataset.m143wa})[0];if(!x)return;openLink(waLink(x.phone,x.txt));try{FH142.log("pay","WhatsApp",x.name)}catch(er){}mark(x.id,"sent");return}
+ if(b=t.closest("[data-m143em]")){var y=pend().filter(function(z){return z.id===b.dataset.m143em})[0];if(!y)return;var cfg=(club().emailcfg||{});openLink("mailto:"+encodeURIComponent(y.email)+"?subject="+encodeURIComponent(y.sub||"Message")+"&body="+encodeURIComponent(y.txt+(cfg.sign?"\n\n"+cfg.sign:"")));try{FH142.log("pay","Email (own app)",y.name)}catch(er){}mark(y.id,"sent");return}
+ if(b=t.closest("[data-m143grp]")){var g=pend().filter(function(z){return z.id===b.dataset.m143grp})[0];if(!g)return;try{FH142.open({tpl:g.type==="aft"?"aft":"cls",aud:"all",cls:g.cid})}catch(er){}
+  mark(g.id,"sent");return}});
+/* ---------- rules screen ---------- */
+var sh=document.createElement("div");sh.id="m143r";sh.className="cs";sh.hidden=true;sh.style.zIndex=98;sh.setAttribute("role","dialog");sh.setAttribute("aria-modal","true");document.body.appendChild(sh);
+function chk(id,on,label,sub){return '<label class="row" style="align-items:flex-start;gap:8px;margin:6px 0"><input type="checkbox" id="'+id+'"'+(on?" checked":"")+'><span class="small"><b>'+label+'</b>'+(sub?'<br><span class="muted">'+sub+'</span>':'')+'</span></label>'}
+function rulesHTML(){var r=R(),c=club(),em=c.emailcfg||{};
+ return '<div class="cs-in" style="max-height:92vh;overflow:auto"><div class="sec-h"><h2 style="margin:0">Message rules</h2><button class="linkbtn" type="button" data-m143x>Close</button></div>'+
+ '<p class="muted small" style="margin:0"><b>Every message waits for your approval.</b> These rules only decide what gets prepared. You tap send, or skip. Fully automatic sending is a later step that needs the official WhatsApp route.</p>'+
+ chk("r143paused",r.paused,"Pause everything","Nothing new is prepared while this is on.")+
+ chk("r143pay",r.pay.on,"Payment reminders","Prepared for each overdue member at the days below, one person at a time, never to a group. Stops as soon as they pay.")+
+ '<div class="row" style="gap:8px"><div class="field"><label class="label" for="r143d1">1st reminder (days late)</label><input type="number" id="r143d1" min="1" max="60" value="'+r.pay.days[0]+'" style="max-width:90px"></div><div class="field"><label class="label" for="r143d2">2nd</label><input type="number" id="r143d2" min="1" max="90" value="'+r.pay.days[1]+'" style="max-width:90px"></div><div class="field"><label class="label" for="r143d3">3rd</label><input type="number" id="r143d3" min="1" max="120" value="'+r.pay.days[2]+'" style="max-width:90px"></div></div>'+
+ ['t1','t7','t14'].map(function(k,i){return '<div class="field"><label class="label" for="r143'+k+'">Wording for reminder '+(i+1)+' (use {first}, {amt}, {club})</label><textarea id="r143'+k+'" data-keep rows="2" maxlength="300">'+e2(r.pay[k])+'</textarea></div>'}).join("")+
+ chk("r143cls",r.cls.on,"Class link prompt","Prepares the \"are you coming?\" link for a class a few hours before it starts.")+
+ '<div class="field"><label class="label" for="r143hrs">Hours before class</label><input type="number" id="r143hrs" min="1" max="12" value="'+r.cls.hrs+'" style="max-width:90px"></div>'+
+ chk("r143aft",r.aft.on,"After-class check","Prepares the \"were you there?\" link once a class has finished.")+
+ chk("r143gap",false,"Not seen for a while (coming soon)","Ties into win-back tracking. Not built yet.")+
+ chk("r143grad",false,"Grading and milestone congratulations (coming soon)","Needs member consent wording first. Not built yet.")+
+ '<div class="row" style="gap:8px"><div class="field"><label class="label" for="r143qf">Quiet hours from</label><input type="time" id="r143qf" value="'+e2(r.quiet.from)+'"></div><div class="field"><label class="label" for="r143qt">until</label><input type="time" id="r143qt" value="'+e2(r.quiet.to)+'"></div><div class="field"><label class="label" for="r143cap">Most messages per person a day</label><input type="number" id="r143cap" min="1" max="5" value="'+r.cap+'" style="max-width:90px"></div></div>'+
+ '<div class="sec-h" style="margin-top:8px"><h3>Email</h3></div><p class="muted small" style="margin:0">Email opens in your own email app, so it works with Gmail, Outlook, Yahoo or any address. Sending straight from a linked mailbox comes later (Gmail first).</p>'+
+ '<div class="row" style="gap:8px"><div class="field" style="flex:1;min-width:150px"><label class="label" for="r143ef">Name members see</label><input type="text" id="r143ef" maxlength="60" value="'+e2(em.from||c.name||"")+'"></div><div class="field" style="flex:1;min-width:170px"><label class="label" for="r143er">Reply-to email</label><input type="email" id="r143er" maxlength="100" value="'+e2(em.reply||"")+'" placeholder="you@yourclub.com"></div></div>'+
+ '<div class="field"><label class="label" for="r143ep">Email provider (for the later link-up)</label><select id="r143ep">'+[["google","Google (Gmail)"],["outlook","Outlook or Microsoft 365"],["yahoo","Yahoo"],["other","Something else or own domain"],["unsure","Not sure"]].map(function(o){return '<option value="'+o[0]+'"'+((em.provider||"google")===o[0]?" selected":"")+'>'+o[1]+'</option>'}).join("")+'</select></div>'+
+ '<div class="field"><label class="label" for="r143es">Sign-off added to each email</label><textarea id="r143es" data-keep rows="2" maxlength="200" placeholder="e.g. Thanks, Jay. Warrior Spirit Muay Thai">'+e2(em.sign||"")+'</textarea></div>'+
+ '<div class="row"><button class="btn" type="button" data-m143save>Save</button><button class="btn ghost" type="button" data-m143test>Open a test email to myself</button><button class="linkbtn" type="button" data-m143x>Cancel</button></div></div>'}
+function openRules(){sh.innerHTML=rulesHTML();sh.hidden=false}
+sh.addEventListener("click",function(e){var t=e.target;if(t===sh||t.closest("[data-m143x]")){sh.hidden=true;return}
+ var v=function(id){var n=document.getElementById(id);return n?n.value:""},ck=function(id){var n=document.getElementById(id);return !!(n&&n.checked)};
+ if(t.closest("[data-m143test]")){var rp=v("r143er");if(!rp){toast("Add your reply-to email first");return}openLink("mailto:"+encodeURIComponent(rp)+"?subject="+encodeURIComponent("Test from "+(v("r143ef")||"your club"))+"&body="+encodeURIComponent("This is how a message from your club will look.\n\n"+v("r143es")));return}
+ if(t.closest("[data-m143save]")){var d1=Math.max(1,+v("r143d1")||1),d2=Math.max(d1+1,+v("r143d2")||7),d3=Math.max(d2+1,+v("r143d3")||14);
+  var rules={paused:ck("r143paused"),pay:{on:ck("r143pay"),days:[d1,d2,d3],t1:v("r143t1"),t7:v("r143t7"),t14:v("r143t14")},cls:{on:ck("r143cls"),hrs:Math.min(12,Math.max(1,+v("r143hrs")||3))},aft:{on:ck("r143aft")},gap:{on:false},grad:{on:false},quiet:{from:v("r143qf")||"21:00",to:v("r143qt")||"08:00"},cap:Math.min(5,Math.max(1,+v("r143cap")||1))};
+  var rem=/\b(weigh|weight|kg|injur|diet|calor|medical)/i;if(rem.test(rules.pay.t1+rules.pay.t7+rules.pay.t14)){toast("Please remove health or weight wording","Messages must never mention it");return}
+  upd({msgrules:rules,emailcfg:{from:v("r143ef").trim(),reply:v("r143er").trim(),provider:v("r143ep"),sign:v("r143es").trim()}}).then(function(){sh.hidden=true;toast("Message rules saved");sync()});return}});
+setInterval(function(){try{if(isCoach()){sync();panel()}}catch(e){}},3000);
+window.FH143={rules:R,quiet:quiet,wanted:wanted,sync:sync};
 })();
 
 /* FighterBase v44: always a way back, always a next step. */
