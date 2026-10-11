@@ -17210,6 +17210,109 @@ var EXTRA=[
 [/^member view$/i,"Switch back to what a member sees."],
 [/^exit demo$/i,"Leave the demo. Nothing you tried was saved."]
 ];
+
+var MORE=[
+[/^unlink$/i,"Ends this member's link to your club. They keep their own app and records; you stop seeing what they shared. You will be asked to confirm."],
+[/^congratulate$/i,"Send a quick congratulations to the member for this milestone."],
+[/^add comment$/i,"Leave a note on this item."],
+[/^suggest another time$/i,"Offer a different time instead of the one proposed."],
+[/^rebook$/i,"Book the same session again."],
+[/^send questionnaire$/i,"Send the short check-in questions to the member."],
+[/^it happened$/i,"Confirm this session or event took place."],
+[/^confirm and share$/i,"Confirm the details and share them with the people involved."],
+[/^read answers$/i,"See what the member answered."],
+[/^see them$/i,"Open the list of people this applies to."],
+[/^review and send$/i,"Check the message or report before it goes out. Nothing is sent until you confirm."],
+[/^✓ /,"This setup step is done. Tap to review or change it."],
+[/^hide( this)?$/i,"Hide this for now. You can bring it back later."],
+[/^start the guided setup$/i,"Step-by-step setup of your club: look, timetable, prices, members and invites."],
+[/^carry on$/i,"Carry on from where you stopped."],
+[/^book a free setup call$/i,"Ask for a setup call. You choose a time."],
+[/^(start review|review|complete review)$/i,"Look back at how a session or week went and note what to work on."],
+[/^[A-Z0-9]{5,10}$/,"Your club code. Share it so members can join."],
+[/^join \(test\)$/i,"Join the club with this code. Test mode: nothing real is shared."],
+[/^(see the list|open members|see all members)$/i,"Open the full list of members."],
+[/^timetable$/i,"Open the weekly timetable."],
+[/^assign next workout$/i,"Pick the next workout for this member to do."],
+[/^make owner$/i,"Hand ownership of the club to this person. Only do this if you are sure; you will be asked to confirm."],
+[/^approve pt$|^pt approved$/i,"Allow or stop this coach offering personal training."],
+[/^approve$/i,"Approve this request."],
+[/^copy coach link$/i,"Copy the link coaches use to join your team."],
+[/^new code$/i,"Create a fresh club code. The old one stops working."],
+[/^can.t confirm$/i,"Say you could not confirm this. It is recorded as not confirmed."],
+[/^log result$/i,"Record the result of a fight or match."],
+[/^write a message$/i,"Write a message to members. You choose who gets it and confirm before sending."],
+[/^chase \d+ overdue/i,"Prepare reminders for overdue payments. You review them before anything is sent."],
+[/^send today.s class link$/i,"Send members the link to check in to today's class."],
+[/^send to \d+/i,"Sends this message now to the people listed. Check the list first."],
+[/^also send to whatsapp$/i,"Also prepare this for WhatsApp. You tap send in WhatsApp yourself."],
+[/^view$/i,"See the details."],
+[/^milestone settings$/i,"Choose which milestones members can earn."],
+[/^edit club page$/i,"Change what the public sees on your club page."],
+[/^change banner$|^manage images$/i,"Change the pictures on your club page."],
+[/^profile$/i,"Open your profile."],
+[/^see it as a member$/i,"Preview exactly what members see."],
+[/^(watch|watch clip|youtube)$/i,"Watch the video."],
+[/^use my current location$/i,"Fill this in from your phone's location, once. It is not tracked."],
+[/^clear$/i,"Clear what you entered."],
+[/^open my training$/i,"Open your own training screens."],
+[/^set a team goal$/i,"Set a shared goal for the whole club."],
+[/^post$/i,"Post this to the club feed."],
+[/^enter$/i,"Enter this event."],
+[/^run sheet/i,"Fight-day sheet: weigh-ins, bouts and results."],
+[/^add as coach$/i,"Add this member to your coaching team."],
+[/^get help$/i,"Open help and support."],
+[/^👊$/,"Send a fist bump."],
+[/^[★☆]$/,"Mark or unmark as a favourite."],
+[/^log again$/i,"Log this same session again in one tap."],
+[/^(how to do it|how it counts|how this works|how is .* worked out\?|about)$/i,"Read a short explanation."],
+[/^all in my training$/i,"See everything in My training."],
+[/^open( .*)?$/i,"Open this."],
+[/^(dismiss|not now|×|✕|x)$/i,"Close this. Nothing is deleted."],
+[/✕$/,"Remove this item."],
+[/^yes, that is all in order$/i,"Confirm your details are right."],
+[/^log a session$/i,"Record a training session in about 20 seconds."],
+[/log food$/i,"Log what you ate, with a photo or by searching."],
+[/^(view progress|see my progress|see my milestones|see pro)/i,"See your trends and what you have unlocked."],
+[/^(today|this week|this month|all)$/i,"Switch the time range."],
+[/^\+ activity$/i,"Add an activity such as a run or a walk."],
+[/^not coming$/i,"Tell the coach you cannot make this class."],
+[/^make my meal plan$/i,"Build a simple meal plan from your food choices."],
+[/^tracking a few things/i,"Choose what you track."],
+[/^\+\d+ ?ml$/i,"Add that much water to today."],
+[/^read it$/i,"Open the full text."],
+[/check \/ amend goals/i,"Check your fight camp goals are still right."],
+[/^yes, i attended$/i,"Confirm you attended. Only you or a location check-in can confirm."],
+[/· (head coach|second|cornerman|coach)/i,"Your corner team. Tap to see or change."],
+[/^suggest$/i,"Suggest someone for your corner."],
+[/^turn on weekly reports$/i,"Get a weekly summary of your training."],
+[/^(today|mon|tue|wed|thu|fri|sat|sun)\b.*\bclass/i,"See the classes on this day."],
+[/^ask to offer pt/i,"Ask the club to let you offer personal training."],
+[/^(start|carry on)$/i,"Start."],
+[/^\d{1,2}$/,"Pick a number on the scale."],
+[/^(share all|share none)$/i,"Choose everything or nothing to share with your club."],
+[/^(untick all|copy list)$/i,"Tick or copy the whole list in one go."],
+[/^(save meal)$/i,"Save this meal to your list."],
+[/^do it again$/i,"Repeat this with the same details."],
+[/^(link|connect \(coming soon\)|register interest|tell me when it opens|✓ we.ll tell you when it opens)/i,"Connect or register interest. Nothing is shared until you confirm."],
+[/^(membership|website ↗|instagram|facebook|example\.com ↗)/i,"Open this link."],
+[/^(table view|show all \d+)$/i,"Switch how this list is shown."],
+[/^add to calendar$/i,"Add this to your phone calendar."],
+[/^(confirm)$/i,"Confirm."],
+[/^(parent|junior|coach register|safeguarding)$/i,"Open this section."],
+[/^end this check-in$/i,"Finish this check-in."],
+[/^(coach|admin manager|manager|teacher|trainer|mentor)\b/i,"Choose this person's role."]
+];
+function generic(b,l){
+ if(b.tagName==="SELECT")return "Choose an option from the list.";
+ if(/↗$/.test(l))return "Opens a link.";
+ if(/^(open|view|see|show|go to|read)\b/i.test(l))return "Opens this.";
+ if(/^(add|new|create|\+)/i.test(l))return "Adds a new item.";
+ if(/^(send|share|post|message)/i.test(l))return "Prepares this. You confirm before anything is sent.";
+ if(b.closest("li,tr,.panel,.fb-card,.card,.row,.d112-n,.pt-r,.tc-r")&&l.length>14)return "Open this to see the details or make changes.";
+ if(b.classList&&b.classList.contains("chip"))return "Tap to choose this option.";
+ if(l.length>0)return "Tap to open or change this.";
+ return null}
 var timer=0,cur=null;
 function P(){return (typeof S!=="undefined"&&S.profile)||{}}
 function hide(){clearTimeout(timer);cur=null;tip.style.display="none"}
@@ -17225,7 +17328,8 @@ function lookup(b){
  var l=lab(b);if(!l&&!b.hasAttribute("data-wlopen"))return null;
  if(F&&F.R){var cur=visTab();for(var i=0;i<F.R.length;i++){var r=F.R[i];if(r[1]&&r[1]!=="*"&&r[1].split("|").indexOf(cur)<0)continue;var ok=r[2]===""?b.hasAttribute("data-wlopen"):r[2].test(l);if(ok)return ["",r[3]]}}
  for(var j=0;j<EXTRA.length;j++)if(EXTRA[j][0].test(l))return ["",EXTRA[j][1]];
- return null}
+ for(var k=0;k<MORE.length;k++)if(MORE[k][0].test(l))return ["",MORE[k][1]];
+ var g2=generic(b,l);return g2?["",g2]:null}
 function place(b){var r=b.getBoundingClientRect(),w=tip.offsetWidth,h=tip.offsetHeight,x=Math.max(8,Math.min(window.innerWidth-w-8,r.left+r.width/2-w/2)),y=r.top-h-8;if(y<8)y=r.bottom+8;tip.style.left=x+"px";tip.style.top=y+"px"}
 function showFor(b,delay){hide();if(P().tipsMode==="off")return;var t=lookup(b);if(!t)return;cur=b;timer=setTimeout(function(){if(cur!==b||!document.body.contains(b))return;tip.innerHTML=(t[0]?"<b>"+esc(t[0])+"</b>":"")+esc(t[1]);tip.style.display="block";place(b)},delay)}
 var SELB="button,a[href],[role=button],summary,.chip,select,[data-group],[data-sdtab],[data-sdhub],[data-goto]";
