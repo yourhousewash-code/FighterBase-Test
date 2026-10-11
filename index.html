@@ -15538,6 +15538,157 @@ var css=document.createElement("style");css.textContent=
 document.head.appendChild(css);
 return {bar:bar,body:body,todayMeals:todayMeals,v:function(){return V},day:train,meals:meals}})();
 
+/* FighterBase v157: Health import. Reads an Apple Health export (export.zip or export.xml) and GPX/TCX activity files ON THE DEVICE
+   (nothing is uploaded), turns them into daily numbers (steps, sleep, resting heart rate, HRV, active calories, weight) plus workouts,
+   shows a preview, and only then saves the daily numbers into the member's existing device data (wear) used by the charts.
+   Android: no single export file exists, so CSV exports use the existing CSV importer; automatic Health Connect sync arrives with the phone app. */
+var FH133=(function(){
+var DAYS=120,st=null;
+var TYPES={"HKQuantityTypeIdentifierStepCount":"steps","HKQuantityTypeIdentifierActiveEnergyBurned":"kcal","HKQuantityTypeIdentifierRestingHeartRate":"rhr","HKQuantityTypeIdentifierHeartRateVariabilitySDNN":"hrv","HKQuantityTypeIdentifierBodyMass":"weight","HKCategoryTypeIdentifierSleepAnalysis":"sleep"};
+function e(s){return esc(String(s==null?"":s))}
+function newAgg(){return {steps:{},kcal:{},rhr:{},hrv:{},weight:{},sleep:{},acts:[],records:0}}
+function attr(tag,n){var m=tag.match(new RegExp(" "+n+'="([^"]*)"'));return m?m[1]:null}
+function ms(s){var m=s.match(/(\d{4})-(\d\d)-(\d\d) (\d\d):(\d\d):(\d\d)/);return m?Date.UTC(+m[1],+m[2]-1,+m[3],+m[4],+m[5],+m[6]):NaN}
+function addTo(o,day,src,v){var d=o[day]||(o[day]={});d[src]=(d[src]||0)+v}
+function pretty(t){return String(t||"").replace(/^HKWorkoutActivityType/,"").replace(/([a-z])([A-Z])/g,"$1 $2")||"Workout"}
+function handle(kind,tag,A,cut){
+  if(kind==="Workout"){
+    var sd=attr(tag,"startDate");if(!sd)return;var day=sd.slice(0,10);if(day<cut)return;
+    var dur=+attr(tag,"duration")||0,du=attr(tag,"durationUnit")||"min";if(du==="sec")dur/=60;else if(du==="hr")dur*=60;
+    var dist=+attr(tag,"totalDistance")||0,dun=attr(tag,"totalDistanceUnit")||"km";var km=dun==="mi"?dist*1.609344:dun==="m"?dist/1000:dist;
+    A.acts.push({day:day,s:sd.slice(11,16),type:pretty(attr(tag,"workoutActivityType")),mins:Math.round(dur),km:km?Math.round(km*100)/100:null});return}
+  var tm=tag.match(/ type="([^"]+)"/);if(!tm)return;var k=TYPES[tm[1]];if(!k)return;
+  var sd2=attr(tag,"startDate"),ed=attr(tag,"endDate")||sd2;if(!sd2)return;var eday=ed.slice(0,10);if(eday<cut)return;
+  var src=attr(tag,"sourceName")||"?",val=attr(tag,"value");A.records++;
+  if(k==="sleep"){if(!val||val.indexOf("Asleep")<0)return;var a=ms(sd2),b=ms(ed);if(!(b>a))return;var s=A.sleep[eday]||(A.sleep[eday]={});(s[src]||(s[src]=[])).push([a,b]);return}
+  var n=parseFloat(val);if(isNaN(n))return;var u=attr(tag,"unit")||"";
+  if(k==="steps")addTo(A.steps,eday,src,n);
+  else if(k==="kcal"){if(/kJ/i.test(u))n=n/4.184;addTo(A.kcal,eday,src,n)}
+  else if(k==="rhr"||k==="hrv"){var o=A[k][eday]||(A[k][eday]={s:0,n:0});o.s+=n;o.n++}
+  else if(k==="weight"){if(/lb/i.test(u))n=n*0.453592;else if(/^g$/i.test(u))n=n/1000;var w=A.weight[eday];if(!w||sd2>=w.t)A.weight[eday]={t:sd2,v:n}}
+}
+function scan(text,A,cut){var re=/<(Record|Workout) [^>]*>/g,m,last=0;while((m=re.exec(text))){handle(m[1],m[0],A,cut);last=re.lastIndex}return last}
+async function scanStream(stream,A,cut,onBytes){
+  var rd=stream.getReader(),dec=new TextDecoder(),buf="",total=0;
+  for(;;){var r=await rd.read();if(r.done)break;total+=r.value.length;buf+=dec.decode(r.value,{stream:true});
+    var last=scan(buf,A,cut);var lt=buf.lastIndexOf("<");buf=buf.slice(Math.max(last,lt<last?last:lt));if(onBytes)onBytes(total)}
+  buf+=dec.decode();scan(buf,A,cut)}
+function u16(v,o){return v.getUint16(o,true)}function u32(v,o){return v.getUint32(o,true)}
+async function zipEntry(file){
+  var size=file.size,tail=Math.min(size,70000),buf=await file.slice(size-tail,size).arrayBuffer(),v=new DataView(buf),i=-1;
+  for(var p=buf.byteLength-22;p>=0;p--){if(u32(v,p)===0x06054b50){i=p;break}}
+  if(i<0)throw new Error("zip");
+  var cdSize=u32(v,i+12),cdOff=u32(v,i+16);
+  if(cdOff===0xFFFFFFFF||cdSize===0xFFFFFFFF){
+    var l=-1;for(var q=i-20;q>=0;q--){if(u32(v,q)===0x07064b50){l=q;break}}if(l<0)throw new Error("zip64");
+    var z=Number(v.getBigUint64(l+8,true)),zb=await file.slice(z,z+56).arrayBuffer(),zv=new DataView(zb);
+    cdSize=Number(zv.getBigUint64(40,true));cdOff=Number(zv.getBigUint64(48,true))}
+  var cd=await file.slice(cdOff,cdOff+cdSize).arrayBuffer(),c=new DataView(cd),pos=0,best=null,td=new TextDecoder();
+  while(pos+46<=cd.byteLength&&u32(c,pos)===0x02014b50){
+    var method=u16(c,pos+10),comp=u32(c,pos+20),unc=u32(c,pos+24),nl=u16(c,pos+28),el=u16(c,pos+30),cl=u16(c,pos+32),lo=u32(c,pos+42);
+    var name=td.decode(new Uint8Array(cd,pos+46,nl)),ex=pos+46+nl,ee=ex+el;
+    while(ex+4<=ee){var id=u16(c,ex),sz=u16(c,ex+2),dp=ex+4;
+      if(id===1){if(unc===0xFFFFFFFF){unc=Number(c.getBigUint64(dp,true));dp+=8}if(comp===0xFFFFFFFF){comp=Number(c.getBigUint64(dp,true));dp+=8}if(lo===0xFFFFFFFF){lo=Number(c.getBigUint64(dp,true));dp+=8}}
+      ex+=4+sz}
+    if(/(^|\/)export\.xml$/i.test(name))best={method:method,comp:comp,unc:unc,lo:lo,name:name};
+    pos+=46+nl+el+cl}
+  if(!best)return null;
+  var lh=new DataView(await file.slice(best.lo,best.lo+30).arrayBuffer()),start=best.lo+30+u16(lh,26)+u16(lh,28);
+  best.start=start;best.end=start+best.comp;return best}
+async function readApple(file,A,cut,prog){
+  var name=file.name.toLowerCase();
+  if(/\.zip$/.test(name)){
+    var ent=await zipEntry(file);if(!ent)throw new Error("noxml");
+    var raw=file.slice(ent.start,ent.end).stream();
+    if(ent.method===0)await scanStream(raw,A,cut,function(b){prog(b/Math.max(1,ent.unc))});
+    else if(ent.method===8){if(typeof DecompressionStream==="undefined")throw new Error("nodecomp");
+      await scanStream(raw.pipeThrough(new DecompressionStream("deflate-raw")),A,cut,function(b){prog(b/Math.max(1,ent.unc))})}
+    else throw new Error("method");
+  }else await scanStream(file.stream(),A,cut,function(b){prog(b/Math.max(1,file.size))});
+}
+function union(iv){iv.sort(function(a,b){return a[0]-b[0]});var t=0,cs=null,ce=null;iv.forEach(function(x){if(cs==null){cs=x[0];ce=x[1]}else if(x[0]<=ce){if(x[1]>ce)ce=x[1]}else{t+=ce-cs;cs=x[0];ce=x[1]}});if(cs!=null)t+=ce-cs;return t}
+function maxSrc(o){var m=0;for(var k in o)if(o[k]>m)m=o[k];return m}
+function finish(A){
+  var by={};function put(d,k,v){(by[d]||(by[d]={}))[k]=v}
+  for(var d in A.steps){var s=maxSrc(A.steps[d]);if(s>0)put(d,"steps",Math.round(s))}
+  for(var d1 in A.kcal){var kk=maxSrc(A.kcal[d1]);if(kk>0)put(d1,"activeKcal",Math.round(kk))}
+  for(var d2 in A.rhr){var o=A.rhr[d2];put(d2,"rhr",Math.round(o.s/o.n))}
+  for(var d3 in A.hrv){var h=A.hrv[d3];put(d3,"hrv",Math.round(h.s/h.n*10)/10)}
+  for(var d4 in A.weight)put(d4,"weight",Math.round(A.weight[d4].v*10)/10);
+  for(var d5 in A.sleep){var best=0;for(var sr in A.sleep[d5]){var t=union(A.sleep[d5][sr]);if(t>best)best=t}var hrs=best/3600000;if(hrs>=1)put(d5,"sleepH",Math.round(hrs*10)/10)}
+  var acts={};A.acts.forEach(function(a){(acts[a.day]||(acts[a.day]=[])).push({s:a.s,type:a.type,mins:a.mins,km:a.km})});
+  return {days:by,acts:acts}}
+function dayKeyOf(d){return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0")}
+function hav(a,b){var R=6371,r=Math.PI/180,dl=(b[0]-a[0])*r,dn=(b[1]-a[1])*r,x=Math.sin(dl/2)*Math.sin(dl/2)+Math.cos(a[0]*r)*Math.cos(b[0]*r)*Math.sin(dn/2)*Math.sin(dn/2);return 2*R*Math.asin(Math.sqrt(x))}
+function readGpx(text){
+  var pts=[],re=/<trkpt\s[^>]*lat="([-\d.]+)"[^>]*lon="([-\d.]+)"[^>]*>([\s\S]*?)<\/trkpt>/g,m;
+  while((m=re.exec(text))){var t=(m[3].match(/<time>([^<]+)<\/time>/)||[])[1];pts.push([+m[1],+m[2],t?Date.parse(t):NaN])}
+  if(pts.length<2)return null;var km=0;for(var i=1;i<pts.length;i++)km+=hav(pts[i-1],pts[i]);
+  var t0=pts.find(function(p){return !isNaN(p[2])}),t1=pts.slice().reverse().find(function(p){return !isNaN(p[2])});
+  var type=(text.match(/<type>([^<]+)<\/type>/)||[])[1]||"Activity";
+  if(!t0)return {day:null,type:type,mins:0,km:Math.round(km*100)/100,s:""};
+  var d=new Date(t0[2]);return {day:dayKeyOf(d),s:String(d.getHours()).padStart(2,"0")+":"+String(d.getMinutes()).padStart(2,"0"),type:type.charAt(0).toUpperCase()+type.slice(1),mins:Math.round((t1[2]-t0[2])/60000),km:Math.round(km*100)/100}}
+function readTcx(text){
+  var sport=(text.match(/<Activity\s+Sport="([^"]+)"/)||[])[1]||"Activity",id=(text.match(/<Id>([^<]+)<\/Id>/)||[])[1],secs=0,met=0,m,re=/<Lap\b[\s\S]*?<\/Lap>/g;
+  while((m=re.exec(text))){secs+=+((m[0].match(/<TotalTimeSeconds>([\d.]+)</)||[])[1]||0);met+=+((m[0].match(/<DistanceMeters>([\d.]+)</)||[])[1]||0)}
+  if(!id||!secs)return null;var d=new Date(id);if(isNaN(d))return null;
+  return {day:dayKeyOf(d),s:String(d.getHours()).padStart(2,"0")+":"+String(d.getMinutes()).padStart(2,"0"),type:sport,mins:Math.round(secs/60),km:met?Math.round(met/10)/100:null}}
+function mount(){
+  var host=document.getElementById("devicesBody");if(!host||document.getElementById("fhHealth"))return;
+  var div=document.createElement("div");div.id="fhHealth";div.className="panel";
+  div.innerHTML='<div class="sec-h"><h2>Import from Apple Health or an activity file</h2><span class="muted small">Read on your phone, not uploaded</span></div>'
+   +'<p class="small" style="margin:0 0 8px"><b>iPhone:</b> open Health, tap your picture, then Export All Health Data. Pick the file called export.zip here. FighterBase reads steps, sleep, resting heart rate, HRV, active calories, weight and workouts for the last '+DAYS+' days, shows you what it found, and saves only the daily numbers after you say yes. The file itself never leaves your phone.</p>'
+   +'<p class="small muted" style="margin:0 0 8px"><b>Android and others:</b> there is no single export like Apple\'s. Use the CSV import below for Samsung Health, Garmin, Fitbit, Withings and similar exports, or drop GPX or TCX workout files here. Automatic sync with Android Health Connect arrives with the phone app.</p>'
+   +'<div class="row"><label class="btn ghost" style="cursor:pointer">Choose Apple Health file<input type="file" id="hlIn" accept=".zip,.xml,.gpx,.tcx" multiple hidden></label><span class="small muted" id="hlName"></span></div><div id="hlOut"></div>';
+  host.insertBefore(div,host.children[1]||null);
+  document.getElementById("hlIn").onchange=function(ev){run([].slice.call(ev.target.files))}}
+function out(h){var o=document.getElementById("hlOut");if(o)o.innerHTML=h}
+function warn(t){out('<p class="small" style="color:var(--warn)">'+t+'</p>')}
+async function run(files){
+  if(!files.length)return;var nm=document.getElementById("hlName");if(nm)nm.textContent=files.map(function(f){return f.name}).join(", ");
+  var cut=addDays(TODAY,-DAYS),A=newAgg(),extra=[],isApple=false;
+  try{
+    for(var f of files){var n=f.name.toLowerCase();
+      if(/\.(gpx|tcx)$/.test(n)){var t=await f.text(),a=/\.gpx$/.test(n)?readGpx(t):readTcx(t);if(a&&a.day)extra.push(a);continue}
+      if(/\.(zip|xml)$/.test(n)){isApple=true;out('<p class="thinking" id="hlProg">Reading '+e(f.name)+'… 0%</p>');
+        await readApple(f,A,cut,function(p){var el=document.getElementById("hlProg");if(el)el.textContent="Reading "+f.name+"… "+Math.min(99,Math.round(p*100))+"%"})}}
+  }catch(er){var m=String(er&&er.message||er);
+    warn(m==="noxml"?"That zip has no export.xml in it. In Apple Health choose Export All Health Data and pick the export.zip it makes.":m==="nodecomp"?"This browser can't open zip files directly. Unzip export.zip first, then pick the export.xml inside.":"Couldn't read that file. If it is very large, unzip it first and pick export.xml.");return}
+  var res=finish(A);extra.forEach(function(a){(res.acts[a.day]||(res.acts[a.day]=[])).push({s:a.s,type:a.type,mins:a.mins,km:a.km})});
+  st=res;var days=Object.keys(res.days).sort(),aDays=Object.keys(res.acts).filter(function(d){return d>=cut&&d<=TODAY}).sort();
+  if(!days.length&&!aDays.length){warn(isApple?"No steps, sleep or heart data found in the last "+DAYS+" days in that file.":"No usable activity found in that file.");return}
+  var nw=0;aDays.forEach(function(d){nw+=res.acts[d].length});
+  var F=[["steps","Steps"],["sleepH","Sleep h"],["rhr","Resting HR"],["hrv","HRV"],["activeKcal","Active kcal"],["weight","Weight kg"]];
+  var rows=days.slice(-7).reverse().map(function(d){return "<tr><td>"+d+"</td>"+F.map(function(x){var v=res.days[d][x[0]];return '<td class="num">'+(v==null?"–":v)+"</td>"}).join("")+"</tr>"}).join("");
+  out('<p class="small" style="margin:0"><b>Found:</b> '+(days.length?days.length+' days of daily numbers':'')+(nw?(days.length?' and ':'')+nw+' workout'+(nw===1?"":"s"):'')+'. Latest days shown below. Nothing is saved until you press Import. Anything you typed in by hand for the same day is replaced only for the fields this file has.</p>'
+    +(rows?'<div class="hist"><table><thead><tr><th>Date</th>'+F.map(function(x){return '<th class="num">'+x[1]+'</th>'}).join("")+'</tr></thead><tbody>'+rows+'</tbody></table></div>':'')
+    +'<div class="row"><button class="btn" type="button" id="hlGo">Import</button><button class="btn ghost" type="button" id="hlUndo">Remove imported data</button><span class="saved" id="hlMsg"></span></div>'
+    +'<p class="small muted" style="margin:6px 0 0">Your health data is private to you. You can remove what was imported at any time. FighterBase shares nothing with your club or coach unless you switch that on.</p>');
+  document.getElementById("hlGo").onclick=save;document.getElementById("hlUndo").onclick=undo}
+async function save(){
+  if(!st)return;if(!db||!S.uid){document.getElementById("hlMsg").textContent="Sign in to import.";return}
+  var btn=document.getElementById("hlGo");btn.disabled=true;var cut=addDays(TODAY,-DAYS),all={};
+  Object.keys(st.days).forEach(function(d){if(d>=cut&&d<=TODAY)(all[d]=all[d]||{}).v=st.days[d]});
+  Object.keys(st.acts).forEach(function(d){if(d>=cut&&d<=TODAY)(all[d]=all[d]||{}).a=st.acts[d]});
+  var ds=Object.keys(all).sort(),n=0;
+  for(var d of ds){document.getElementById("hlMsg").textContent="Importing "+(++n)+"/"+ds.length+"…";var x=all[d];
+    await editDay(d,function(day){var w=Object.assign({},day.wear||{});
+      if(x.v){Object.assign(w,x.v);w.source=w.source&&w.source!=="apple-health"?w.source:"apple-health";if(x.v.weight&&!day.weight)day.weight=x.v.weight;if(x.v.sleepH&&!day.sleep)day.sleep=x.v.sleepH}
+      if(x.a){var have=(w.acts||[]).slice();x.a.forEach(function(a){if(!have.some(function(h){return h.s===a.s&&h.type===a.type}))have.push(a)});w.acts=have}
+      day.wear=w})}
+  document.getElementById("hlMsg").textContent="Imported "+ds.length+" days.";btn.disabled=false;toast("Health data imported",ds.length+" days");
+  if(typeof renderWearCharts==="function")renderWearCharts();if(typeof renderReadiness==="function")renderReadiness()}
+async function undo(){
+  if(!db||!S.uid){document.getElementById("hlMsg").textContent="Sign in first.";return}
+  var map=logMap(),n=0;
+  for(var d of Object.keys(map)){var w=map[d]&&map[d].wear;if(w&&w.source==="apple-health"){await editDay(d,function(day){delete day.wear;if(day.weight&&map[d].weight===day.weight&&w.weight===day.weight)delete day.weight;if(day.sleep&&w.sleepH===day.sleep)delete day.sleep});n++}}
+  document.getElementById("hlMsg").textContent=n?"Removed "+n+" days.":"Nothing imported to remove.";
+  if(typeof renderWearCharts==="function")renderWearCharts();if(typeof renderReadiness==="function")renderReadiness()}
+var _rd=window.renderDevices||(typeof renderDevices==="function"?renderDevices:null);
+if(_rd){renderDevices=function(){_rd();try{mount()}catch(x){}}}
+return {mount:mount,finish:finish,newAgg:newAgg,scan:scan,readGpx:readGpx,readTcx:readTcx};
+})();
+
 /* FighterBase v44: always a way back, always a next step. */
 var N31=N31||false;
 (function(){
