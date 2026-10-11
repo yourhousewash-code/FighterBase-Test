@@ -5799,12 +5799,13 @@ function curTab(){var s=document.querySelector("section[id^=tab-]:not([hidden])"
 function name(t){return (typeof TABNAME!=="undefined"&&TABNAME[t])||t}
 function brandHTML(){return '<div class="sd-brand" data-sdhome>'+(window.FB_MARK?FB_MARK():"")+'<div><b class="sd-word">Fighter<span>Base</span></b><small>Train. Grow. Win.</small></div></div>'}
 var IC={home:'<path d="M3 11l9-8 9 8v9a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/>',log:'<rect x="4" y="3" width="16" height="18" rx="3"/><path d="M8 8h8M8 12h8M8 16h5"/>',prog:'<path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/>',club:'<circle cx="9" cy="8" r="3.2"/><path d="M3 20c0-3.3 2.7-6 6-6s6 2.7 6 6M16 5.5a3 3 0 0 1 0 5.8M18 14.5c2 .6 3.5 2.6 3.5 5.5"/>',fuel:'<path d="M7 3v8a3 3 0 0 0 6 0V3M10 3v18M17 3c-1.7 1.5-2 4-2 6s1 3 2 3v9"/>',me:'<circle cx="12" cy="8" r="4"/><path d="M4 21c0-4.4 3.6-8 8-8s8 3.6 8 8"/>'};
-var SECT=[["Home","home",["today","goals2","skills"]],["Log","log",["log","train","diary","workouts","cut"]],["Progress","prog",["engine","mylib","film","growth"]],["Club","club",["clubpage","schedule","club","challenges","partners"]],["Fuel","fuel",["nutrition","meals","shop","foods","supps"]],["Me","me",["profile","clubsee","specialists","devices","invite","learn","coach"]]];
+var SECT=[["Home","home",["today","goals2","skills"]],["Log","log",["log","train","diary","workouts"]],["Progress","prog",["engine","mylib","film","growth"]],["Club","club",["clubpage","schedule","club","challenges","partners","invite"]],["Fuel","fuel",["nutrition","meals","shop","foods","supps","cut"]],["Me","me",["profile","clubsee","specialists","devices","learn","coach"]]];
 var ALWAYS={today:1,engine:1,goals2:1,skills:1,log:1,train:1,diary:1,stats:1,journey:1,trophies:1,film:1,profile:1,specialists:1};
 var LBL={today:"Home",log:"Log today",train:"Sessions",club:"Club",profile:"Settings",progress:"Charts",stats:"My stats"};
 function allowed(x){if(!document.getElementById("tab-"+x))return false;if(x==="coach"&&!S.canEdit)return false;if(ALWAYS[x])return true;var g=typeof GROUPS!=="undefined"?GROUPS:{};return Object.keys(g).some(function(k){return (g[k]||[]).indexOf(x)>=0})}
 function ico(k){return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">'+IC[k]+'</svg>'}
 function structure(hub){if(hub){var items=[];document.querySelectorAll("nav.hubnav [data-hub]").forEach(function(b){items.push([b.dataset.hub,(b.querySelector("span")||b).textContent.trim(),b.querySelector("svg")?b.querySelector("svg").outerHTML:""])});
+  if(window.FH150&&FH150.sections)return FH150.sections(items,esc);
   return '<nav class="sd-nav"><div class="sd-sec"><span class="sd-h">Club hub</span>'+items.map(function(x){return '<button type="button" class="sd-i" data-sdhub="'+x[0]+'">'+x[2]+'<span>'+esc(x[1])+'</span></button>'}).join("")+'</div></nav>'}
  var h='<nav class="sd-nav">';SECT.forEach(function(sc){var it=sc[2].filter(allowed);if(!it.length)return;h+='<div class="sd-sec"><span class="sd-h">'+ico(sc[1])+sc[0]+'</span>'+it.map(function(x){return '<button type="button" class="sd-i" data-sdtab="'+x+'"><span>'+esc(LBL[x]||name(x))+'</span></button>'}).join("")+'</div>'});return h+'</nav>'}
 function draw(){if(!mq.matches){document.body.classList.remove("fb-desk");return}
@@ -5812,7 +5813,7 @@ function draw(){if(!mq.matches){document.body.classList.remove("fb-desk");return
  var own=false;try{own=window.FHC&&FHC.isOwner()}catch(e){}
  var h=brandHTML()+structure(hub)+'<div class="sd-foot">'+(S.profile&&S.profile.name?'<span class="sd-me">'+esc(S.profile.name)+'</span>':'<span></span>')+(own?'<button type="button" class="sd-sw" data-sdview="'+(hub?"member":"club")+'">'+(hub?"Member view":"Club hub")+'</button>':'')+'</div>';
  if(side.dataset.sig!==h){side.innerHTML=h;side.dataset.sig=h}
- side.querySelectorAll("[data-sdtab],[data-sdhub]").forEach(function(b){var k=b.dataset.sdtab||b.dataset.sdhub,on=k===t;if(b.classList.contains("on")!==on)b.classList.toggle("on",on);if(on)b.setAttribute("aria-current","page");else b.removeAttribute("aria-current")});
+ side.querySelectorAll("[data-sdtab],[data-sdhub]").forEach(function(b){var k=b.dataset.sdtab||b.dataset.sdhub,on=k===((b.dataset.sdhub&&window.FH150&&FH150.rep)?FH150.rep(t):t);if(b.classList.contains("on")!==on)b.classList.toggle("on",on);if(on)b.setAttribute("aria-current","page");else b.removeAttribute("aria-current")});
  var ti=document.getElementById("fbTitle"),hd=document.querySelector("header.top");if(hd){if(!ti){ti=document.createElement("div");ti.id="fbTitle";hd.insertBefore(ti,hd.firstChild)}var sec="";SECT.forEach(function(sc){if(sc[2].indexOf(t)>=0&&!sec)sec=sc[0]});var html='<span class="label">'+esc(hub?"Club hub":(t==="today"?"FighterBase":sec))+'</span><h2>'+esc(t==="today"?"Home":(LBL[t]&&t!=="today"?LBL[t]:name(t)))+'</h2>';if(ti.innerHTML!==html)ti.innerHTML=html}}
 side.addEventListener("click",function(e){var b=e.target.closest("button,[data-sdhome]");if(!b)return;
  if(b.dataset.sdtab){showTab(b.dataset.sdtab);scrollTo(0,0);return}
@@ -16931,6 +16932,8 @@ var R=[
 ["x-post","hubmkt",/^(this week.s timetable|class spotlight|new\? start here|workout of the week|membership and prices|open day or event|meet the coach|grading congratulations|fight or competition result|welcome a new member)/i,"Post idea: tap to preview, then Make this post."],
 ["x-comm","hubcomm",/^(workouts|coaches. tips|clubs and interclubs|events|6-month review)$/i,"Sections: workouts, tips and events shared by other clubs."],
 ["x-sport","hubcomm",/^(all|boxing|fitness|kickboxing|muay thai)$/i,"Sport filter: narrows what is shown."],
+["x-more","*",/^show (more|less)( on home)?( \(\d+ more [a-z]+\))?$/i,"Show more: reveals the rest of this screen. Nothing has been removed, and Show less folds it again."],
+["x-hgs","*",/^(classes|workouts|milestones|accounts|memberships|insights|analysis|growth)$/i,"Related screens: these tabs group screens that belong together."],
 ["x-acct","hubplans",/^add .\d+ to account/i,"Add to account: adds that amount to what the member owes."]
 
 ];
@@ -16993,6 +16996,106 @@ document.addEventListener("click",function(ev){var b=ev.target.closest&&ev.targe
  if(b.dataset.t148m){P().tipsMode=b.dataset.t148m;save()}else{P().tipsSeen={};save();last=""}card()},true);
 setInterval(function(){try{card()}catch(x){}},1500);
 window.FH148={SCR:SCR,R:R,reset:function(){P().tipsSeen={};P().tipsMode="all";hide();last="";save()},seen:seen,mode:mode,hide:hide,screenTip:screenTip,visible:function(){return box.style.display!=="none"?box.innerText:""}};
+})();
+
+/* FighterBase v182: keep long screens to about three screens before a "Show more" button.
+   Steve's rule: roughly 3 phone-screens before the fold on the main screens. Nothing is removed. Cards past the limit are hidden with a class
+   (never the hidden attribute, so each module still controls its own cards) and one button reveals them. Applies to Home, Sessions, My progress,
+   Club (member) and Club Overview, Growth, Insights (coach). Home reuses the existing "Show more on Home" button. State is per visit. */
+var F149=F149||false;
+(function(){
+if(F149)return;F149=true;
+var LIMIT=3;/* screens of content before the fold */
+var CFG=[
+ {tab:"today",sel:"#tab-today",noun:"cards",home:true,limit:3},
+ {tab:"train",sel:"#tab-train",noun:"sections",limit:3},
+ {tab:"engine",key:"engine1",sel:"#pbBoard > .panel",noun:"sections",limit:2},
+ {tab:"engine",key:"engine2",sel:"#engineBody",noun:"sections",limit:1.2},
+ {tab:"club",sel:"#clubBody",noun:"sections",limit:2.6},
+ {tab:"hubover",sel:"#huboverBody",noun:"panels",limit:3},
+ {tab:"hubgrow",sel:"#hubgrowBody",noun:"panels",limit:3},
+ {tab:"hubins",sel:"#hubinsBody",noun:"panels",limit:3},
+ {tab:"clubpage",sel:"#clubpageBody",noun:"sections",limit:3},
+ {tab:"hubclasses",sel:"#hubclassesBody",noun:"panels",limit:3}
+];
+var open={};
+var css=document.createElement("style");
+css.textContent=".f149m{display:none!important}.f149b{order:9999;align-self:stretch}.f149b button{width:100%}#tab-today.f149on #hmToggle{display:block}";
+document.head.appendChild(css);
+function vis(el){return !el.hidden&&el.getBoundingClientRect().height>0}
+/* children as the eye sees them: look through display:contents wrappers, then sort by CSS order */
+function kids(c){var out=[],i=0;(function walk(p){[].slice.call(p.children).forEach(function(k){
+ if(k.classList.contains("f149b")||k.id==="hmToggle"||k.tagName==="STYLE"||k.tagName==="SCRIPT")return;
+ var cs=getComputedStyle(k);if(cs.display==="contents"){walk(k);return}
+ out.push({el:k,ord:parseInt(cs.order,10)||0,i:i++})})})(c);
+ out.sort(function(a,b){return a.ord-b.ord||a.i-b.i});return out.map(function(o){return o.el})}
+function run(cfg){var c=document.querySelector(cfg.sel);if(!c)return;var sec=document.getElementById("tab-"+cfg.tab);if(!sec||sec.hidden)return;
+ var isOpen=cfg.home?(S.profile&&S.profile.homeMore===true):!!open[cfg.key||cfg.tab];
+ var list=kids(c),vh=window.innerHeight||800,lim=cfg.limit*vh,y=0,shown=0,hidden=0,top=null;
+ /* measure natural heights: hidden ones keep their last known height */
+ list.forEach(function(k){var h=0;if(k.classList.contains("f149m")){h=+k.dataset.f149h||0}else{if(!vis(k)){k.dataset.f149h=0;return}h=k.getBoundingClientRect().height;k.dataset.f149h=Math.round(h)}
+  if(!h)return;
+  if(!isOpen&&shown>0&&y>=lim){k.classList.add("f149m");hidden++}else{k.classList.remove("f149m");shown++}
+  y+=h});
+ if(cfg.home){sec.classList.toggle("f149on",true);return}
+ var b=c.querySelector(":scope > .f149b");
+ if(hidden===0&&!isOpen){if(b)b.remove();return}
+ var total=list.filter(function(k){return +k.dataset.f149h>0}).length-shown;
+ if(!b){b=document.createElement("div");b.className="f149b";b.innerHTML='<button type="button" class="btn ghost" data-f149="'+(cfg.key||cfg.tab)+'"></button>';c.appendChild(b)}
+ var btn=b.querySelector("button");var txt=isOpen?"Show less":"Show more ("+hidden+" more "+(hidden===1?cfg.noun.replace(/s$/,""):cfg.noun)+")";if(btn.textContent!==txt)btn.textContent=txt;btn.setAttribute("aria-expanded",isOpen?"true":"false")}
+document.addEventListener("click",function(ev){var b=ev.target.closest&&ev.target.closest("[data-f149]");if(!b)return;var t=b.dataset.f149;open[t]=!open[t];
+ CFG.forEach(function(c){if((c.key||c.tab)===t)run(c)});if(!open[t])b.scrollIntoView({block:"center"})},true);
+/* Home: the existing Show more on Home button drives this fold too */
+document.addEventListener("click",function(ev){if(ev.target.closest&&ev.target.closest("[data-hmtoggle]"))setTimeout(function(){CFG.forEach(function(c){if(c.home)run(c)})},40)},false);
+function visTab(){var s=document.querySelector("section[id^=tab-]:not([hidden])");return s?s.id.slice(4):""}
+function go(){var t=visTab();CFG.forEach(function(c){if(c.tab===t)try{run(c)}catch(x){}})}
+var st=showTab;showTab=function(t){var r=st.apply(this,arguments);try{setTimeout(go,300);setTimeout(go,1200)}catch(x){}return r};
+setInterval(go,1500);
+window.addEventListener("resize",function(){setTimeout(go,200)});
+window.FH149={run:go,open:open,cfg:CFG};
+})();
+
+/* FighterBase v182: tidier menus.
+   Coach hub: 20 menu items become six groups (Run the club, People, Money, Grow, Set up) and five screens fold under a sibling screen with a small tab strip
+   (Classes + Workouts + Milestones, Accounts + Memberships, Insights + Analysis + Growth). Every screen still exists and every link to it still works.
+   Member: Weight cut moves from Log to Fuel; Charts and Challenges are no longer listed twice; Invite sits beside Crews. */
+var H150=H150||false;
+(function(){
+if(H150)return;H150=true;
+var REP={hubwk:"hubclasses",hubms:"hubclasses",hubplans:"hubacc",hubana:"hubins",hubgrow:"hubins"};
+var LABEL={hubclasses:"Classes and workouts",hubacc:"Money",hubins:"Insights and growth",hubcomp:"Competition",club:"Tools",profile:"Me",member:"Member view"};
+var SECT=[["Run the club",["hubover","hubclasses","hubcomp","hubevt"]],["People",["hubmem","hubleads","hubcomm","hubkids"]],["Money",["hubacc"]],["Grow",["hubmkt","hubins"]],["Set up",["hubsetup","club","profile","member"]]];
+var STRIPS=[["hubclasses","hubwk","hubms"],["hubacc","hubplans"],["hubins","hubana","hubgrow"]];
+function rep(t){return REP[t]||t}
+function sections(items,esc){var by={};items.forEach(function(x){by[x[0]]=x});var used={},h='<nav class="sd-nav">';
+ SECT.forEach(function(sc){var it=sc[1].filter(function(id){return by[id]});if(!it.length)return;
+  h+='<div class="sd-sec"><span class="sd-h">'+esc(sc[0])+'</span>'+it.map(function(id){used[id]=1;var x=by[id];return '<button type="button" class="sd-i" data-sdhub="'+id+'">'+x[2]+'<span>'+esc(LABEL[id]||x[1])+'</span></button>'}).join("")+'</div>'});
+ var rest=items.filter(function(x){return !used[x[0]]&&!REP[x[0]]});
+ if(rest.length)h+='<div class="sd-sec"><span class="sd-h">More</span>'+rest.map(function(x){return '<button type="button" class="sd-i" data-sdhub="'+x[0]+'">'+x[2]+'<span>'+esc(x[1])+'</span></button>'}).join("")+'</div>';
+ return h+'</nav>'}
+window.FH150={rep:rep,sections:sections,SECT:SECT,STRIPS:STRIPS,REP:REP};
+/* phone bar: hide the folded items (they stay in the page, so every link still works) */
+var css=document.createElement("style");
+css.textContent=Object.keys(REP).map(function(k){return 'nav.hubnav [data-hub="'+k+'"]'}).join(",")+"{display:none!important}"+
+ ".hgs{display:flex;flex-wrap:wrap;gap:8px;margin:0 0 4px}.hgs button{min-height:38px}";
+document.head.appendChild(css);
+/* strips on the folded screens */
+function strips(){STRIPS.forEach(function(g){g.forEach(function(t){var s=document.getElementById("tab-"+t);if(!s||s.hidden)return;
+ var w=s.querySelector(":scope > .hgs"),n=(typeof TABNAME!=="undefined"?TABNAME:{});
+ var h=g.filter(function(x){return document.getElementById("tab-"+x)}).map(function(x){var lab=x==="hubclasses"?"Classes":x==="hubins"?"Insights":(n[x]||x);return '<button type="button" class="chip" data-hgs="'+x+'" aria-pressed="'+(x===t)+'">'+lab+'</button>'}).join("");
+ if(!w){w=document.createElement("div");w.className="hgs";w.setAttribute("role","tablist");s.insertBefore(w,s.firstChild)}
+ if(w.dataset.sig!==h+t){w.innerHTML=h;w.dataset.sig=h+t}})})}
+document.addEventListener("click",function(ev){var b=ev.target.closest&&ev.target.closest("[data-hgs]");if(!b)return;ev.preventDefault();showTab(b.dataset.hgs);try{scrollTo(0,0)}catch(x){}},true);
+/* phone bar highlight for the group's front screen */
+function mark(t){var nv=document.querySelector("nav.hubnav");if(!nv)return;var r=rep(t);if(r!==t){var b=nv.querySelector('[data-hub="'+r+'"]');if(b)b.setAttribute("aria-current","true")}}
+var st=showTab;showTab=function(t){var r=st.apply(this,arguments);try{setTimeout(function(){strips();mark(t)},120)}catch(x){}return r};
+/* member groups */
+function groups(){try{if(typeof GROUPS==="undefined")return;
+ if(GROUPS.train&&GROUPS.train.indexOf("cut")>=0)GROUPS.train=GROUPS.train.filter(function(x){return x!=="cut"});
+ if(GROUPS.fuel&&GROUPS.fuel.indexOf("cut")<0&&GROUPS.fuel.length>1)GROUPS.fuel.push("cut");
+ if(GROUPS.progress&&GROUPS.progress.length>1){GROUPS.progress=GROUPS.progress.filter(function(x){return x!=="progress"&&x!=="challenges"});if(GROUPS.progress.indexOf("invite")<0&&GROUPS.progress.indexOf("partners")>=0)GROUPS.progress.push("invite")}
+ if(GROUPS.more&&GROUPS.more.indexOf("invite")>=0)GROUPS.more=GROUPS.more.filter(function(x){return x!=="invite"})}catch(x){}}
+setInterval(function(){groups();strips()},1500);setTimeout(groups,200);
 })();
 
 /* FighterBase v44: always a way back, always a next step. */
