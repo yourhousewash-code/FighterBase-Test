@@ -17357,7 +17357,7 @@ var IDS=["fb115","fb117","fb119","fb120","fb144w"];
 var css=document.createElement("style");
 css.textContent="#tab-today #fb154{order:1;display:flex;flex-direction:column;gap:12px;grid-column:1/-1}#tab-today #fb154>.k154{display:flex;align-items:center;gap:8px;font:800 12px var(--body,inherit);letter-spacing:.16em;text-transform:uppercase;color:var(--red,#C81E3A);padding:2px 4px 0}#tab-today #fb154>.k154:after{content:\"\";flex:1;height:1px;background:linear-gradient(90deg,var(--red,#C81E3A),transparent);opacity:.5}"+
 "@media (min-width:620px){#tab-today #fb154>.g154{display:grid;grid-template-columns:1fr 1fr;gap:12px;align-items:start}#tab-today #fb154>.g154>#fb115{grid-column:1/-1}}"+
-"#fbSide115.sd-me{display:none!important}";
+"#tab-today #fb154>.g154>*{order:0!important}#fbSide115.sd-me{display:none!important}";
 document.head.appendChild(css);
 function run(){
  try{var bell=document.getElementById("fbBell");if(bell&&!bell.getAttribute("data-tip"))bell.setAttribute("data-tip","Your notifications.")}catch(e){}
@@ -17369,6 +17369,8 @@ function run(){
  var g=w.lastChild;
  var cur=[].slice.call(g.children).map(function(x){return x.id}).join(),want=have.map(function(x){return x.id}).join();
  if(cur!==want||have.some(function(x){return x.parentNode!==g}))have.forEach(function(x){g.appendChild(x)});
+ have.forEach(function(x){if(x.style.gridRowEnd)x.style.gridRowEnd=""});
+ have.forEach(function(x){if(x.style.gridRowEnd)x.style.gridRowEnd=""});
  var vis=have.some(function(x){return !x.hidden});w.hidden=!vis}
 setInterval(run,700);
 var _s=window.showTab;if(typeof _s==="function"){window.showTab=function(t){var r=_s.apply(this,arguments);setTimeout(run,60);return r}}
