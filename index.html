@@ -15798,6 +15798,84 @@ document.addEventListener("click",function(ev){var b=ev.target.closest&&ev.targe
 return {items:items,steps:steps,acts:acts,week:week,open:open,n:n,fmt:fmt};
 })();
 
+/* FighterBase v163: Insights, "what works for your body". Reads only what the member already logs or imports (sleep, energy, soreness, steps,
+   resting heart rate, sessions, rest days, eating on plan). Compares days in two groups and says in plain words what seems to go with what,
+   always with the two numbers and how many days they come from. Patterns only: never advice, targets or diagnosis. Private to the member.
+   Profile: insOff (switch off), insHide {id:1}. Shown on Progress, Report view. See docs/insights-plan-v161.md. */
+var FH136=(function(){
+var MINDAYS=14,MING=5;
+function P(){return (typeof S!=="undefined"&&S.profile)||{}}
+function e(s){return esc(String(s==null?"":s))}
+function num(x){x=+x;return isFinite(x)&&x!==0?x:null}
+function feats(){
+  var m={};try{m=logMap()||{}}catch(x){}var keys=Object.keys(m).sort(),F={},at=P().att||{};
+  keys.forEach(function(k){var l=m[k],w=l.wear||{},t=l.tr||{},ss=[];try{ss=FBE.sessOf(l)||[]}catch(x){}
+   var load=0;ss.forEach(function(s){load+=(+s.mins||0)*(+s.rpe||5)});
+   var cls=Object.keys(at).some(function(q){return q.indexOf(k+"_")===0});
+   F[k]={sleep:num(w.sleepH)||num(l.sleep),energy:num(l.energy),sore:num(l.soreness),steps:num(w.steps)||num(t.steps),rhr:num(w.rhr)||num(t.rhr),hrv:num(w.hrv),
+    load:load||null,trained:!!(ss.length||cls||l.trained),rest:!!l.restDay&&!(ss.length||cls),plan:l.carbsOnPlan===true?1:(l.carbsOnPlan===false&&(l.eaten||[]).length?0:null)}});
+  return {keys:keys,F:F}}
+function med(a){a=a.slice().sort(function(x,y){return x-y});var n=a.length;return n?(n%2?a[(n-1)/2]:(a[n/2-1]+a[n/2])/2):null}
+function mean(a){return a.reduce(function(s,x){return s+x},0)/a.length}
+function sd(a){var m=mean(a);return Math.sqrt(a.reduce(function(s,x){return s+(x-m)*(x-m)},0)/Math.max(1,a.length-1))}
+/* a pairing: groups days by predicate on day d, reads outcome on day d+lag */
+function pair(D,def){var A=[],B=[];D.keys.forEach(function(k){var x=D.F[k],yk=def.lag?addDays(k,def.lag):k,y=D.F[yk];if(!x||!y)return;var g=def.group(x,D);if(g==null)return;var v=y[def.y];if(v==null)return;(g?A:B).push(v)});
+  if(A.length<MING||B.length<MING)return null;var d=mean(A)-mean(B),va=sd(A)*sd(A),vb=sd(B)*sd(B),ps=Math.sqrt((va+vb)/2)||1,z=Math.abs(d)/ps,se=Math.sqrt(va/A.length+vb/B.length)||1,t=Math.abs(d)/se;
+  /* only show a gap that is big enough to be unlikely to be chance (Welch t of about 2 or more) */
+  return {id:def.id,def:def,a:mean(A),b:mean(B),na:A.length,nb:B.length,d:d,z:z,t:t,level:t<2?"none":z>=.5?"clear":"small"}}
+function DEFS(D){
+  var st=med(D.keys.map(function(k){return D.F[k].steps}).filter(function(x){return x!=null})),ld=med(D.keys.map(function(k){return D.F[k].load}).filter(function(x){return x!=null}));
+  return [
+  {id:"sleep-energy",y:"energy",unit:"/5",x:"Sleeping 7 hours or more",xa:"on nights of 7+ hours",xb:"on nights under 7 hours",yn:"energy",group:function(f){return f.sleep==null?null:f.sleep>=7?1:0}},
+  {id:"sleep-sore",y:"sore",unit:"/5",x:"Sleeping 7 hours or more",xa:"on nights of 7+ hours",xb:"on nights under 7 hours",yn:"soreness",group:function(f){return f.sleep==null?null:f.sleep>=7?1:0}},
+  {id:"steps-energy",y:"energy",lag:1,unit:"/5",x:"A higher-step day",xa:"on days after you did more than your usual steps (median "+(st?Math.round(st).toLocaleString("en-GB"):"–")+")",xb:"on days after you did the usual or fewer",yn:"next-day energy",group:function(f){return f.steps==null||st==null?null:f.steps>st?1:0}},
+  {id:"steps-rhr",y:"rhr",lag:1,unit:" bpm",x:"A higher-step day",xa:"on days after you did more than your usual steps",xb:"on days after you did the usual or fewer",yn:"next-day resting heart rate",group:function(f){return f.steps==null||st==null?null:f.steps>st?1:0}},
+  {id:"load-sore",y:"sore",lag:1,unit:"/5",x:"A harder training day",xa:"on days after a harder session than usual",xb:"on days after an easier one",yn:"next-day soreness",group:function(f){return f.load==null||ld==null?null:f.load>ld?1:0}},
+  {id:"rest-energy",y:"energy",lag:1,unit:"/5",x:"Training the day before",xa:"on the day after a training day",xb:"on the day after a rest day",yn:"energy",group:function(f){return f.trained?1:f.rest?0:null}},
+  {id:"plan-energy",y:"energy",unit:"/5",x:"Eating on plan",xa:"on days you ate on plan",xb:"on other days",yn:"energy",group:function(f){return f.plan}}]}
+function fmtv(def,v){return def.y==="rhr"?String(Math.round(v)):(Math.round(v*10)/10).toFixed(1)}
+function sentence(r){var d=r.def,hi=r.d>0;
+  var lead=d.x+" seems to go with "+(hi?"higher ":"lower ")+d.yn+" for you.";
+  return {lead:lead,detail:cap(d.yn)+" averaged "+fmtv(d,r.a)+d.unit+" "+d.xa+", against "+fmtv(d,r.b)+d.unit+" "+d.xb+" ("+r.na+" and "+r.nb+" days)."}}
+function cap(s){return s.charAt(0).toUpperCase()+s.slice(1)}
+function watch(D){var out=[],ks=D.keys,last=ks.filter(function(k){return k>addDays(TODAY,-7)&&k<=TODAY}),prev=ks.filter(function(k){return k<=addDays(TODAY,-7)&&k>addDays(TODAY,-36)});
+  function av(arr,f){var v=arr.map(function(k){return D.F[k][f]}).filter(function(x){return x!=null});return v.length>=3?{m:mean(v),n:v.length}:null}
+  var s1=av(last,"sleep"),s0=av(prev,"sleep");if(s1&&s0&&s0.m-s1.m>=1)out.push("Your sleep averaged "+s1.m.toFixed(1)+" hours over the last 7 days, down from "+s0.m.toFixed(1)+" in the weeks before.");
+  var r1=av(last,"rhr"),r0=av(prev,"rhr");if(r1&&r0&&r1.m-r0.m>=5)out.push("Your resting heart rate averaged "+Math.round(r1.m)+" bpm over the last 7 days, up from "+Math.round(r0.m)+" before.");
+  var so=last.map(function(k){return D.F[k].sore}).filter(function(x){return x!=null});if(so.length>=5&&so.filter(function(x){return x>=4}).length>=5)out.push("Soreness has been 4 or 5 out of 5 on "+so.filter(function(x){return x>=4}).length+" of the last "+so.length+" days you logged.");
+  var en=av(last,"energy");if(en&&en.m<=2&&en.n>=5)out.push("Your energy has averaged "+en.m.toFixed(1)+" out of 5 over the last 7 days.");
+  return out}
+function compute(){var D=feats(),logged=D.keys.filter(function(k){var f=D.F[k];return f.sleep!=null||f.energy!=null||f.sore!=null}).length;
+  if(logged<MINDAYS)return {enough:false,logged:logged,rows:[],none:0,watch:[]};
+  var rows=[],none=0;DEFS(D).forEach(function(d){var r=pair(D,d);if(!r)return;if(r.level==="none"){none++;return}rows.push(r)});
+  rows.sort(function(a,b){return b.z-a.z});return {enough:true,logged:logged,rows:rows,none:none,watch:watch(D)}}
+function bars(r){var mx=Math.max(r.a,r.b)||1,wa=Math.round(r.a/mx*100),wb=Math.round(r.b/mx*100),d=r.def;
+  return '<div class="i136-b"><div><span>'+e(d.xa)+'</span><i style="width:'+wa+'%"></i><b>'+fmtv(d,r.a)+'</b></div><div><span>'+e(d.xb)+'</span><i class="o" style="width:'+wb+'%"></i><b>'+fmtv(d,r.b)+'</b></div></div>'}
+function html(){var p=P();
+  if(p.insOff)return '<div class="panel i136"><div class="sec-h"><h2>Insights</h2><span class="muted small">Off</span></div><p class="small muted" style="margin:0">Insights are switched off. <button class="linkbtn" type="button" data-i136="on">Turn on</button></p></div>';
+  var c=compute(),hide=p.insHide||{},rows=c.rows.filter(function(r){return !hide[r.id]}).slice(0,5);
+  var h='<div class="panel i136"><div class="sec-h"><h2>What works for your body</h2><span class="muted small">Your own data</span></div>';
+  if(!c.enough)h+='<p class="small" style="margin:0">Keep logging sleep, energy and soreness on Today. After about two weeks (you have '+c.logged+' days so far) FighterBase starts showing what seems to go with what for you.</p>';
+  else{
+    if(c.watch.length)h+='<div class="i136-w"><b>Worth keeping an eye on</b>'+c.watch.map(function(t){return '<p class="small" style="margin:4px 0 0">'+e(t)+'</p>'}).join("")+'<p class="small muted" style="margin:6px 0 0">If this carries on, mention it to your coach, or to a doctor if you feel unwell.</p></div>';
+    if(!rows.length)h+='<p class="small" style="margin:0">No clear patterns yet in the '+c.logged+' days you have logged'+(c.none?' ('+c.none+' comparison'+(c.none===1?'':'s')+' showed no clear difference)':'')+'. Keep logging and check back.</p>';
+    rows.forEach(function(r){var s=sentence(r);h+='<div class="i136-i"><div class="row" style="justify-content:space-between;flex-wrap:nowrap;gap:8px"><b>'+e(s.lead)+'</b><span class="badge '+(r.level==="clear"?"ev-early":"")+'">'+(r.level==="clear"?"Clear":"Small")+'</span></div><p class="small" style="margin:4px 0">'+e(s.detail)+'</p>'+bars(r)+'<button class="linkbtn small" type="button" data-i136h="'+e(r.id)+'">Hide this</button></div>'});
+    if(rows.length&&c.none)h+='<p class="small muted" style="margin:6px 0 0">'+c.none+' other comparison'+(c.none===1?'':'s')+' showed no clear difference.</p>'}
+  h+='<p class="small muted" style="margin:10px 0 0">Patterns in your own logs, not advice or a diagnosis. Small samples can mislead, and other things also play a part. Not medical advice. <button class="linkbtn small" type="button" data-i136="off">Turn off</button>'+(Object.keys(hide).length?' · <button class="linkbtn small" type="button" data-i136="unhide">Show hidden ('+Object.keys(hide).length+')</button>':'')+'</p></div>';
+  return h}
+function draw(){var el=document.getElementById("fhInsights");if(!el){var anchor=document.getElementById("pvReport");if(!anchor)return;el=document.createElement("div");el.id="fhInsights";el.className="stack pv-report";anchor.parentNode.insertBefore(el,anchor.nextSibling)}
+  try{el.innerHTML=html()}catch(x){el.innerHTML="";console.warn("i136",x)}}
+function setP(f){try{f(P());profChanged()}catch(x){}draw()}
+document.addEventListener("click",function(ev){var t=ev.target;if(!t.closest)return;var b=t.closest("[data-i136]");
+  if(b){var v=b.dataset.i136;setP(function(p){if(v==="off")p.insOff=true;if(v==="on")p.insOff=false;if(v==="unhide")p.insHide={}});return}
+  b=t.closest("[data-i136h]");if(b){var id=b.dataset.i136h;setP(function(p){p.insHide=Object.assign({},p.insHide||{});p.insHide[id]=1})}});
+var css=document.createElement("style");css.textContent=".i136-i{padding:10px 0;border-top:1px solid var(--line,rgba(255,255,255,.12))}.i136-i:first-of-type{border-top:0}.i136-b{display:grid;gap:4px;margin:6px 0}.i136-b div{display:grid;grid-template-columns:minmax(0,1.3fr) minmax(0,1fr) 34px;align-items:center;gap:8px;font-size:12px}.i136-b span{opacity:.75}.i136-b i{display:block;height:8px;border-radius:4px;background:#C81E3A;min-width:3px}.i136-b i.o{background:#8A8F9E}.i136-b b{text-align:right}.i136-w{border:1px solid rgba(240,180,60,.5);background:rgba(240,180,60,.08);border-radius:12px;padding:10px;margin-bottom:8px}";
+document.head.appendChild(css);
+var _rp=(typeof renderProgress==="function")?renderProgress:null;
+if(_rp){renderProgress=function(){_rp.apply(this,arguments);try{draw()}catch(x){}}}
+return {compute:compute,draw:draw,pair:pair,feats:feats};
+})();
+
 /* FighterBase v44: always a way back, always a next step. */
 var N31=N31||false;
 (function(){
