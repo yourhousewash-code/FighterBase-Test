@@ -13780,6 +13780,7 @@ function club(){return (typeof clubState!=="undefined"&&clubState.club)||null}
 function fight(){try{return window.FBE&&FBE.upcomingFight()}catch(x){return null}}
 function key(f){return f?f.id+"_"+f.date:""}
 function chk(f){var p=P();p.campChk=p.campChk||{};return p.campChk[key(f)]=p.campChk[key(f)]||{}}
+var OPEN=false;
 function save(){try{profChanged()}catch(x){}}
 function dec(f){var c=club();return c&&c.campDec&&c.campDec[S.uid+"_"+f.id]}
 var ST=[["details","Re-check your fight details","Date, event, rules and weight limit still right?","goals2","Check details"],
@@ -13789,7 +13790,11 @@ var ST=[["details","Re-check your fight details","Date, event, rules and weight 
 function draw(){var home=document.getElementById("tab-today");if(!home)return;var el=document.getElementById("fb117"),f=fight(),p=P();
  if(!f||!p.onboarded||(chk(f).done)){if(el)el.hidden=true;return}
  var c=chk(f),n=ST.filter(function(s){return c[s[0]]}).length,cl=club(),d=dec(f),rq=p.campReq&&p.campReq.k===key(f)?p.campReq:null;
- var h='<span class="fb-kick">Camp check · '+n+' of '+(cl?5:4)+'</span><h2 style="margin:4px 0 2px">'+e(f.event||"Your fight")+' is on the calendar</h2><p class="muted small" style="margin:0 0 8px">A quick check so camp starts with the right plan. Tick each one when you are happy with it.</p>'+
+ var todo=ST.filter(function(q){return !c[q[0]]}).map(function(q){return {details:'fight details',food:'food',train:'training',goals:'goals'}[q[0]]});if(cl&&!(d&&d.st==='ok'||c.coach))todo.push('coach support');
+ var tot=(cl?5:4),nn=n+(cl&&(d&&d.st==="ok"||c.coach)?1:0);
+ var h='<button type="button" class="c117-h" data-f117tog="1" aria-expanded="'+OPEN+'"><span><span class="fb-kick">Camp check · '+nn+' of '+tot+'</span><b class="c117-t">Check / amend goals</b>'+(todo.length?'<span class="c117-need"><em>Needs doing</em> '+e(todo.join(", "))+'</span>':'<span class="c117-ok">&#10003; All set. Tap to amend.</span>')+'</span><i aria-hidden="true">'+(OPEN?'&#9650;':'&#9660;')+'</i></button>';
+ if(!OPEN){if(!el){el=document.createElement("section");el.id="fb117";el.className="fb-card";home.appendChild(el)}el.hidden=false;if(el.dataset.sig!==h){el.innerHTML=h;el.dataset.sig=h}return}
+ h+='<p class="muted small" style="margin:8px 0">One place to check your camp. Tick each one when you are happy with it. The detailed week by week check stays in your weekly check-in.</p>'+
  ST.map(function(s){var on=c[s[0]];return '<div class="d112-n" style="align-items:flex-start"><span><b>'+(on?"✓ ":"")+e(s[1])+'</b><br><span class="muted small">'+e(s[2])+'</span></span><div class="row" style="flex-wrap:nowrap"><button class="btn ghost sm" type="button" data-f117go="'+s[0]+'">'+e(s[4])+'</button><button class="btn sm" type="button" data-f117tick="'+s[0]+'" aria-pressed="'+!!on+'">'+(on?"Done":"Mark done")+'</button></div></div>'}).join("");
  if(cl){var st=d?d.st:rq?"asked":"";h+='<div class="d112-n" style="align-items:flex-start"><span><b>'+(st==="ok"?"✓ ":"")+'Coach support for camp</b><br><span class="muted small">'+(st==="ok"?e((d.by||"Your coach"))+' has confirmed. '+e(d.note||""):st==="no"?'Your coach can\'t take this on right now'+(d.note?': '+e(d.note):'')+'. You can still ask another coach.':st==="asked"?'Asked. Waiting for your coach to reply.':'Ask your coach to help with pads, a plan or corner support. They choose whether to take it on.')+'</span></span><div class="row"><button class="btn '+(st==="ok"||st==="asked"?"ghost ":"")+'sm" type="button" data-f117ask>'+(st==="asked"?"Asked":st==="ok"?"Confirmed":"Ask my coach")+'</button></div></div>'}
  h+='<div class="row" style="margin-top:8px"><button class="linkbtn" type="button" data-f117done>All sorted, hide this</button></div>';
@@ -13798,6 +13803,7 @@ function draw(){var home=document.getElementById("tab-today");if(!home)return;va
 function announce(){var f=fight(),p=P();if(!f||!p.onboarded)return;p.campSeen=p.campSeen||{};var k=key(f);if(p.campSeen.k===k)return;
  p.campSeen={k:k,at:TODAY};save();try{toast("Camp check ready",(f.event||"Your fight")+": re-check details, food, training and goals.")}catch(x){}}
 document.addEventListener("click",function(ev){var t=ev.target;if(!t.closest)return;var b,f=fight();if(!f)return;
+ if(b=t.closest("[data-f117tog]")){OPEN=!OPEN;draw();return}
  if(b=t.closest("[data-f117tick]")){var c=chk(f);c[b.dataset.f117tick]=!c[b.dataset.f117tick];save();draw();return}
  if(b=t.closest("[data-f117go]")){var id=b.dataset.f117go;
   if(id==="train"){var g=P().eg=P().eg||{};g.train=g.train||{mode:"count",n:3,days:[]};var n=+g.train.n||+P().sessions||3;if(n<7){g.train.n=n+1;P().sessions=n+1;chk(f).train=true;save();try{toast("Weekly target is now "+(n+1),"You can change it any time in Goals")}catch(x){}draw()}return}
@@ -13806,7 +13812,7 @@ document.addEventListener("click",function(ev){var t=ev.target;if(!t.closest)ret
  if(b=t.closest("[data-f117done]")){chk(f).done=true;save();draw()}},true);
 var tk=0;setInterval(function(){try{announce();draw()}catch(x){}},1500);
 window.FH117={draw:draw};
-var st=document.createElement("style");st.textContent="#tab-today #fb117{order:2}#tab-today #fb112{order:3}#fb117[hidden]{display:none}";document.head.appendChild(st);
+var st=document.createElement("style");st.textContent=".c117-h{all:unset;cursor:pointer;box-sizing:border-box;width:100%;display:flex;align-items:center;justify-content:space-between;gap:10px}.c117-h>span{display:flex;flex-direction:column;gap:2px}.c117-t{font:900 22px var(--display,'Big Shoulders Display'),sans-serif;text-transform:uppercase;letter-spacing:.02em}.c117-h i{font-style:normal;opacity:.7}.c117-need{font-size:13px}.c117-need em{font-style:normal;font-weight:800;font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:#fff;background:#C81E3A;border-radius:999px;padding:2px 8px;margin-right:6px}.c117-ok{font-size:13px;color:#3FC57E}#tab-today #fb117{order:2}#tab-today #fb112{order:3}#fb117[hidden]{display:none}";document.head.appendChild(st);
 })();
 
 /* FighterBase v136b: club authority levels, coach approval and PT agreements.
