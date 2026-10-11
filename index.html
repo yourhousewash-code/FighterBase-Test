@@ -16695,6 +16695,306 @@ setInterval(function(){try{var t=document.getElementById("tab-progress");if(t&&!
 return {draw:draw,weeks:weeks,rangeRows:rangeRows};
 })();
 
+/* FighterBase v181: first-use tips.
+   1. The first time a screen opens, a small card says what it is and why it matters.
+   2. The first time a button is tapped, a one-line tip appears. The tap still works normally.
+   3. Each tip shows once, then never again. Settings > What I see: tips on, screens only, or off, plus "Show tips again".
+   Stored on the profile (tipsSeen, tipsMode), so it follows the person. Wording is plain; tips on food, weight, supplements and time off are
+   marked in the sign-off register for dietitian or sport-scientist review. Nothing here blocks an action. */
+var T148=T148||false;
+(function(){
+if(T148)return;T148=true;
+function P(){return S.profile||{}}
+function e(s){return esc(String(s==null?"":s))}
+/* ---------- screen tips: [title, what it is and why it matters] ---------- */
+var SCR={
+today:["Home","Your day on one page: what is planned, what is next and how you are doing. Start with the top card. Everything else is below."],
+log:["Log","A quick daily check-in: weight, sleep, water, steps and food. Skip anything you do not want to track. Blanks are never counted against you."],
+train:["Sessions","Record what you trained and how hard it felt. It takes about 20 seconds and builds your weekly picture. Minutes and effort are optional."],
+workouts:["Workouts","Build your own, use a starter, or follow the workout your coach set. Save it, then run it step by step or log it."],
+cut:["Weight cut","A planning calculator for fight week. It is a simulation to explore, not medical advice. Talk to your coach or a registered dietitian before any cut."],
+progress:["Charts","Your numbers over time. Tap a chart to read the values. The more you log, the clearer the picture."],
+engine:["My progress","Your training record in one place: sessions, milestones and camps. Overview is the quick view. Details shows everything."],
+meals:["Meals","Plan meals that fit your targets. Ideas match your diet. Pick one or build your own, then add it to your day."],
+shop:["Shopping","A list built from your planned meals. Tick things off as you buy them."],
+foods:["Foods","Scan a label or add your own foods so your meals use real numbers."],
+nutrition:["Nutrition","Pick an eating style that suits you. Recipes and foods adjust to it. You can change it any time."],
+supps:["Supplements","What is commonly used, with how strong the evidence is. Food comes first. Check with a professional if you take medication or are under 18."],
+nutoff:["Nutrition is off","Food tracking is switched off. You can turn it on any time in Me, What I see."],
+club:["My club","Check in, see classes and club workouts, and your attendance. Your club only sees what you choose to share."],
+clubpage:["Club page","Your gym's timetable, booking, membership and contact details."],
+clubsee:["What my club sees","A plain list of what is shared and what is never shared. You control the items marked You choose."],
+mygym:["My gym","Shortcuts to your timetable, training, personal training and skills at your gym."],
+schedule:["Schedule","Pick a day, tap a class to say you are coming, or request a personal training slot."],
+mylib:["My training","What you have been taught and what your club set for you: stance, milestones and fitness tests."],
+skills:["Skills","Track each technique from Introduced to Applied in live work, so you can see what is sticking."],
+film:["Fight film","Save links to fights and sparring so you can review them later."],
+learn:["Learn","Short reads by topic. Tap a topic to filter the list."],
+partners:["Crews","Small groups to train with. Start one, or join with a code."],
+challenges:["Challenges","Short goals to take on with others. Your logged sessions count automatically."],
+invite:["Invite","Bring a friend or your club. Nothing is sent unless you tap Share."],
+growth:["Growth","Fitness checks and confidence. Repeat the checks every few weeks to see how you change."],
+goals2:["Goals","Pick what you are working towards and the app builds your weekly target around it. Change it any time."],
+devices:["Devices","Connect a watch, or add readings by hand. Completely optional."],
+profile:["Settings","Your details, targets, reminders, what you see and what you share. Changes save as you go."],
+diary:["Food diary","Everything you ate each day, with water. Use the arrows to move between days."],
+specialists:["Specialist Hub","Where qualified practitioners will join. Register interest and we will tell you when it opens."],
+hubover:["Club Overview","What needs you today. Work from the top. The rest is below."],
+hubsetup:["Set up","Pick what to set up first and the guide walks you through it. Skip anything for later."],
+hubclasses:["Classes","Build and edit your timetable. Classes appear on members' timetables straight away."],
+hubwk:["Workouts","Build workouts and set them for classes. Starters are ready to use."],
+hubms:["Milestones","Create moments members can earn, such as a first sparring session, and award them."],
+hubmem:["Members","Everyone in your club. Use the filter chips to find who needs a message or a check-in. You only see what each member shared."],
+hubleads:["Leads","People who asked about joining. Log them here so nobody is forgotten."],
+hubcomp:["Fights","Members' fights and interclubs, with who is coming and the results."],
+hubins:["Insights","Plain summaries of how the club is doing, and who to check on."],
+hubana:["Analysis","Deeper numbers on attendance by class and workout."],
+hubgrow:["Growth","Ideas and numbers to bring in and keep members. Messages are drafts for you to approve."],
+hubmkt:["Marketing","Ready-made posts using your club details. You copy and post them yourself. Nothing is posted for you."],
+hubcomm:["Community","Share and borrow workouts, tips and events with other clubs."],
+hubevt:["Events","Create seminars, shows and camps. Members can sign up and you can share them to other clubs."],
+hubkids:["Kids (sketch)","An early design for under-18 classes. Not live yet."],
+hubacc:["Accounts","Who has paid and who owes. Record cash payments and send reminders from here."],
+hubplans:["Memberships","Your plans and prices, who is on which, and any mismatches to check."]
+};
+/* ---------- control tips: [id, tabs ("" = anywhere), regex on label, tip ("Bold lead: text")] ---------- */
+var R=[
+/* Home */
+["h-went","today",/^(went|did not go)$/i,"Did you train? Honest answers keep your plan accurate. Not going is fine and is never marked against you."],
+["h-felt","today",/^(\W*)(tough|ok|good|great)$/i,"How it felt: helps spot hard weeks. Optional."],
+["h-off","today",/^(unwell|injured or recovering|away or busy|planned rest)$/i,"Time off: tell the app why so your plan and streak are not penalised. Your coach sees it only if you share it."],
+["h-weigh","today",/log weigh-in/i,"Weigh-in: add today's weight so your camp chart stays honest. Skip it if you do not track weight."],
+["h-agree","today",/^(agree|suggest another time)$/i,"Offered time: agree to lock it in, or suggest a time that suits you."],
+["h-look","today",/start my look back|remind me next week/i,"Look back: a few minutes to see your own progress. You choose whether to send it to your coach."],
+["h-share","today",/choose what to share/i,"Sharing: pick what your coach can see. You can change it any time in Settings."],
+["h-hide","today",/hide weight and calories/i,"Hide numbers: hides weight and calories on Home if you would rather not see them."],
+["h-plan","today",/^(plan it|schedule a session|start|mark done)$/i,"Planning a session: it goes in your week and the app asks afterwards if you did it. Not sure is fine."],
+["h-notes","today",/save my notes/i,"Notes: short notes from camp are kept in your camp report. Optional."],
+/* Log */
+["l-track","log",/add something to track/i,"Add a tracker: pick what matters, such as sleep, mood or steps. Each gets its own chart. Remove any time."],
+["l-food","log",/log any food by weight/i,"Log food by weight: search a food, enter the grams and it adds calories and protein."],
+["l-scan","*",/scan a nutrition label/i,"Scan a label: take a photo of a nutrition table. Check the numbers it reads before you save."],
+["l-hand","log",/log something by hand/i,"Log by hand: for anything not in the list. Rough numbers are fine."],
+["l-add","log",/^add to today$/i,"Add to today: saves it to today's totals. You can edit it later in the Food diary."],
+/* Train */
+["t-log","train",/^log session$/i,"Log session: saves it toward your week. Minutes, effort and notes are optional."],
+["t-routine","train",/save session above/i,"Save as a routine: reuse this session in one tap next time."],
+["t-felt","train",/^(better|same|harder)$/i,"Compared with usual: builds your training-load picture over time."],
+["t-blocks","train",/show all \d+ training blocks/i,"Training blocks: longer plans for a phase. Open one to see it week by week."],
+/* Workouts */
+["w-build","workouts",/build a workout/i,"Build a workout: name it, add moves with reps or time, then save it to My workouts."],
+["w-move","workouts",/^\+ /,"Add a move: each tap adds it to the workout. Own move lets you type your own."],
+["w-lvl","workouts",/^(easy|medium|hard)$/i,"Intensity: sets how the workout is described when you run it."],
+["w-save","workouts",/save to my workouts/i,"Save workout: keeps it in My workouts so you can run it or log it."],
+["w-lib","workouts",/^(class plan|my workouts|starters|community)$/i,"Library: Class plan is what your coach set, My workouts are yours, Starters are ready-made, Community is shared by other clubs."],
+/* Weight cut */
+["c-save","cut",/save as my plan/i,"Save plan: keeps this as your fight-week plan. It is a simulation, not medical advice. Check any big cut with a registered dietitian or your coach."],
+["c-sim","cut",/save as a simulation/i,"Simulation: try as many what-ifs as you like without changing your plan."],
+/* Progress */
+["p-view","engine",/^(overview|details)$/i,"Overview or Details: Overview is the quick view. Details shows every session and milestone."],
+["p-range","engine",/^(last (30|90) days|last 6 months|last 12 months|all time)$/i,"Time range: changes every chart on this screen."],
+["p-else","engine",/trained somewhere else today/i,"Trained elsewhere: counts a session done at another gym."],
+["p-ms","engine",/all milestones/i,"Milestones: moments like a first sparring session or a grading. Some come from your coach."],
+/* Food */
+["m-own","meals",/build my own meal/i,"Build your own meal: pick foods and amounts and it shows calories, protein and carbs."],
+["m-spec","*",/talk to a specialist/i,"Specialist: qualified practitioners will join here. Today it just registers your interest."],
+["f-read","foods",/^read label$/i,"Read label: reads a photo of a nutrition table. Check the numbers before you trust them."],
+["f-add","foods",/add a food by hand/i,"Add a food: save a food with its numbers so your meals can use it."],
+["d-ate","diary",/^ate it$/i,"Ate it: moves a planned meal into what you have eaten."],
+["d-water","diary",/^\+\s?\d+\s?ml$/i,"Water: adds to today's total."],
+["d-quick","diary",/quick add/i,"Quick add: type a food and its calories fast."],
+["s-take","supps",/mark as taking/i,"Taking this: marks it in your list so we can note how it fits your diet. It is not advice to start."],
+["s-grp","supps",/^(during training|after training|growth and strength|rest and sleep|brain and focus|minerals)$/i,"Groups: filter by what you need it for. Food first."],
+["s-ev","supps",/^(strong|moderate|early)$/i,"Evidence: Strong means well studied. Early means limited research."],
+["n-style","nutrition",/add or change/i,"Eating style: choose how you like to eat. Recipes and foods adjust."],
+["n-plan","nutrition",/meal plan and shopping/i,"Meal plan: builds a week of meals and a shopping list."],
+["n-foods","nutrition",/foods: eat, go easy/i,"Foods list: guidance for your style, not a ban."],
+/* Club */
+["k-loc","club",/check in with my location/i,"Location check-in: uses your phone's location once to confirm you are at the gym. Only the check-in is shared, not where you go."],
+["k-att","club",/add my attendance/i,"Add attendance: for a class you went to without checking in. Your coach may ask you to confirm."],
+["k-come","*",/^\W*i.m coming$/i,"I'm coming: tells the club you plan to attend. It is a plan, not a payment."],
+["k-see","*",/what my club can see/i,"Privacy: a clear list of what your club sees and what it never sees."],
+["k-pay","*",/^pay .*now/i,"Pay now (test): test mode only. No real payment is taken."],
+["k-cancel","*",/cancel membership/i,"Cancel membership: you are asked to confirm. Check your club's notice terms first."],
+["k-leave","*",/leave club/i,"Leave club: your own data stays yours and the club stops seeing it."],
+["k-book","clubpage",/book a class/i,"Book a class: pick a class on the timetable. Your plan shows if it is covered."],
+["k-wa","clubpage",/ask the club on whatsapp/i,"WhatsApp: opens WhatsApp with a message to the club. You tap send."],
+["k-rev","clubpage",/ask for a review/i,"Review: opens a review request for the club. You choose what to write."],
+["k-day","schedule",/^(today|mon|tue|wed|thu|fri|sat|sun) \d+$/i,"Day strip: pick a day to see its classes."],
+["k-plan","schedule",/^class plan$/i,"Class plan: what the coach has planned for that class."],
+["k-pt","schedule",/^(mon|tue|wed|thu|fri|sat|sun), .*\d\d:\d\d/i,"Personal training slot: tap to request it. Your coach confirms."],
+/* Goals and others */
+["g-type","goals2",/^(training plan|food goals|body goal|next grading|next fight|skill focus)$/i,"Goal type: pick what you are working towards and the app builds your week around it."],
+["g-talk","goals2",/save talking points|add my wins/i,"Talking points: notes for your next chat with your coach."],
+["pa-start","partners",/start a crew/i,"Start a crew: make a small group. You get a code to share."],
+["pa-join","partners",/join with a code/i,"Join with a code: ask the crew organiser for their code."],
+["pa-inv","partners|invite",/^(copy code|share|invite a friend|copy message)$/i,"Invite: nothing is sent unless you tap Share in your own app."],
+["ch-join","challenges",/^join$/i,"Join a challenge: your logged sessions count automatically. Leave any time."],
+["sk-add","skills",/add a skill/i,"Add a skill: track a technique from Introduced to Applied in live work."],
+["sk-lvl","skills",/^(introduced|practised|applied in live work)$/i,"Skill level: move it along as it gets more comfortable."],
+["fl-add","film",/add film/i,"Add film: save a YouTube or Instagram link to review later."],
+["le-top","learn",/^(all|nutrition|hydration|fight camp|recovery|training|health|supplements)$/i,"Topics: filter the reads."],
+["gr-view","growth",/^(just the essentials|a bit more|everything)$/i,"How much you see: change it any time. Nothing is lost."],
+["gr-log","growth",/^log$/i,"Log a result: repeat the check every few weeks to see change."],
+["dv-add","devices",/^(add|read it|save today)$/i,"Add readings: steps, sleep or heart rate by hand or from a device."],
+["pr-redo","profile",/redo my setup/i,"Redo setup: asks the questions again. Everything you logged stays."],
+["pr-tour","profile",/take the tour again|show the welcome again/i,"Tour: replays the intro. Nothing changes."],
+["pr-sec","profile",/^(about you|food and diet|fight camp and quitting|goals and targets|what i see|reminders|plan and add-ons|coach and sharing)/i,"Settings page: each section has its own page. Changes save as you go."],
+["pr-check","profile",/^(weekly \(30 sec\)|daily, quick|daily, detailed|only when i want)/i,"Check-in style: how often the app asks how you are. Change it any time."],
+["pr-clear","profile",/clear my data/i,"Clear data: you are asked to confirm before anything is deleted."],
+/* Coach: Overview and messaging */
+["o-conf","hubover",/^(confirm|decline)$/i,"Confirm or decline: replies to the member's request. They are told straight away."],
+["o-rev","hubover",/^review$/i,"Review: opens the member's review to start or finish."],
+["o-notif","hubover",/^(notifications|mark all as seen)$/i,"Notifications: marking as seen clears them. Nothing is deleted."],
+["o-setrev","hubover",/set reviews for everyone/i,"Set reviews: schedules a review for each member. Nobody is messaged until you approve."],
+["o-start","hubover",/^start with /i,"Start with: opens the first member who needs a check."],
+["o-rules","*",/message rules/i,"Message rules: choose when reminders go out and the quiet hours. Nothing sends without your approval."],
+["o-corner","hubover",/^(corner team|fight plan|camp support requests|agree plan|suggest changes|mark professional|propose a plan|i can help|can.t this time)$/i,"Corner team: the people helping a member in fight camp. Plans are agreed by both sides."],
+["o-brand","hubover",/brand your club/i,"Brand: add your logo and colours so members see your club."],
+["o-inv","hubover",/^(copy invite link|qr poster|share on whatsapp)$/i,"Invite members: share your club link, a QR poster or a WhatsApp message. Nothing is sent by us."],
+["o-link","*",/^send link/i,"Attendance link: opens WhatsApp with a link members tap to confirm they trained. You tap send."],
+/* Coach: set up and classes */
+["su-pick","hubsetup",/^(take payments|schedule classes|create workouts|organise fight camps|all of the above|more options)/i,"Priorities: choose what to set up first. The guide walks you through each step."],
+["su-do","hubsetup",/^(guide me through it|do it|skip)$/i,"Guided set-up: opens the step. Skip anything for later."],
+["su-learn","hubsetup",/^open (coach learning|the 7-step basics)/i,"Coach learning: short lessons on running the club in the app."],
+["cl-add","hubclasses",/^\+ add class$/i,"Add a class: name, day, time, teacher and sport. It appears on members' timetables."],
+["cl-pt","hubclasses",/^\+ add pt slots$/i,"PT slots: times members can request for personal training."],
+["cl-teach","hubclasses",/^\+ add teacher$/i,"Teacher: add a coach or guest so classes show who teaches."],
+["cl-wa","hubclasses",/^share (this week on whatsapp|next week)$/i,"Share timetable: opens WhatsApp with this week's classes. You tap send."],
+["cl-susp","hubclasses",/^suspend$/i,"Suspend: pauses the class without deleting it."],
+["cl-appr","hubclasses",/^(approve|decline)$/i,"Approve or decline: replies to a member request."],
+["cl-pay","hubclasses",/^(not paid|paid|no charge)$/i,"Charge: whether the class costs extra on top of membership."],
+/* Workouts and milestones */
+["wk-build","hubwk",/\+ build a workout/i,"Build a workout: name it, add moves, save it. You can set it for a class."],
+["wk-lib","hubwk",/^(library|session formats|fitness tests|coach learning)$/i,"Library: workouts to reuse, session formats, fitness tests and coach learning."],
+["wk-open","hubwk","","Workout: open to view or set it. You can assign it to a class."],
+["wk-hide","hubwk",/^hide( starter workouts)?$/i,"Hide starters: hides the ready-made workouts. Bring them back any time."],
+["ms-add","hubms",/add a club milestone/i,"Club milestone: create a moment, such as a first sparring session, that members can earn."],
+["ms-award","hubms",/^award$/i,"Award: gives the milestone to the member and tells them."],
+/* People */
+["mb-filter","hubmem",/^(all|no attendance|new \(|fight coming|asked for help|training modified)/i,"Filters: narrow to who needs attention, for example nobody in 14 days."],
+["mb-row","hubmem",/last in|^[A-Z] \w+.*(muay|bjj|mma|boxing)/i,"Member: opens their profile. You only see what they chose to share."],
+["ld-add","hubleads",/add a lead/i,"Add a lead: log someone who asked about joining so you can follow up."],
+["ld-open","hubleads",/^open$/i,"Open lead: see notes and update progress."],
+["cp-range","hubcomp",/^(last 3 months|last 12 months|all time)$/i,"Time range: changes the fight records shown."],
+["cp-conf","hubcomp",/confirm on overview/i,"Confirm result: check the fight result on Overview. It then counts in records."],
+["in-nudge","hubins",/send one gentle reminder/i,"Gentle reminder: drafts a friendly nudge for you to approve."],
+["in-fight","hubins",/^(confirm fight|can.t confirm)$/i,"Fight check: confirms with the member that the fight happened."],
+["gw-msg","hubgrow",/^(message|draft message|draft group message)$/i,"Draft message: opens the composer with a draft. You choose how to send it."],
+["gw-flt","hubgrow",/^(everything|classes|open gym|pt slots booked)$/i,"Filter: switches what the attendance numbers cover."],
+/* Marketing, community, events */
+["mk-make","hubmkt",/make this post/i,"Make a post: fills a ready-made post with your club details."],
+["mk-copy","hubmkt",/^(copy words|download picture)$/i,"Post tools: copy the words or download the picture, then post it yourself. Nothing is posted for you."],
+["cm-copy","hubcomm",/copy to my library/i,"Copy to library: copies another club's shared workout into yours."],
+["cm-pub","hubcomm",/^publish$/i,"Publish: shares it with other clubs. Check it first."],
+["cm-rep","hubcomm",/^report$/i,"Report: flags content to the FighterBase team."],
+["ev-new","hubevt",/\+ new event/i,"New event: seminar, show or camp. Members can sign up."],
+["ev-wa","hubevt",/tell members on whatsapp/i,"Tell members: opens WhatsApp with the event. You tap send."],
+["ev-board","hubevt",/^(share to board|remove from shared board)$/i,"Shared board: other clubs can see events you share. Remove any time."],
+["ev-cancel","hubevt",/cancel event/i,"Cancel event: you are asked to confirm, and members are told."],
+/* Money */
+["ac-add","hubacc",/^(add a member|download template|export)$/i,"Add or import: add one member, or fill in the template to bring in a list."],
+["ac-flt","hubacc",/^(owes money|paid up|everyone|not in the app|paused or left)/i,"Filters: who owes, who has paid, and who is not in the app yet."],
+["ac-pay","hubacc",/cash|record payment/i,"Record payment: adds a cash payment to the member's account. It shows in their history."],
+["pl-chg","hubplans",/^(change plan|change)$/i,"Change plan: moves the member to another plan from today."],
+["pl-payg","hubplans",/charge as payg/i,"Pay as you go: adds a single-class charge to the account."],
+["pl-wa","hubplans",/^whatsapp$/i,"WhatsApp: opens a message for you to review and send."],
+["pl-ok","hubplans",/^mark ok$/i,"Mark OK: accepts a mismatch so it stops showing."],
+["pl-add","hubplans",/^(add a plan|edit)$/i,"Plans: name, price and what is included. Members see the plan name."],
+["x-range","today|hubover|hubins|hubana|hubgrow",/^(7 days|30 days|3 months|6 months|12 months|4 wks|8 wks|12 wks)$/i,"Time range: changes the numbers on this screen."],
+["x-metric","today",/^(steps|sessions|active minutes|sleep|calories|weight)$/i,"Chart metric: switches what the chart shows."],
+["x-days","today",/^(7|14|30)$/,"Days shown: how far back the chart goes."],
+["x-role","profile",/^(as a member|as a club owner|as steve.*|as jay.*|member|club)$/i,"Demo view: switches between member and coach views for the demo only."],
+["x-signin","profile",/copy club sign-in link/i,"Sign-in link: members use it to join your club. You share it yourself."],
+["x-stance","mylib",/^(orthodox|southpaw|switch \/ both|not sure yet)$/i,"Stance: helps your coach tailor drills. Not sure yet is fine."],
+["x-mylib","mylib",/^(assigned to me|elsewhere|recent)$/i,"Filter: what your club assigned, what you did elsewhere, or recent work."],
+["x-report","progress",/^report$/i,"Report: a summary of your progress to keep or share with your coach."],
+["x-chtl","progress",/^(charts|view charts|view timeline)$/i,"Charts or timeline: two ways to see the same data."],
+["x-goal","progress",/^add a goal$/i,"Add a goal: pick what you are working towards. The app builds your week around it."],
+["x-off","progress",/^turn off$/i,"Turn off: hides this card. You can bring it back in Settings."],
+["x-mealp","progress",/make my meal plan/i,"Meal plan: builds meals around your targets."],
+["x-7d","progress",/show my last 7 days/i,"Last 7 days: shows how your week compares with your usual range."],
+["x-edit","goals2",/\bedit$/i,"Edit: change the goal. Your history stays."],
+["x-arrows","diary",/^[\u2039\u203a]$/,"Day arrows: move between days."],
+["x-minus","diary",/^[\u2212-]\s?\d+/,"Water: takes it off today's total."],
+["x-del","diary",/^\u00d7$/,"Remove: deletes that entry from the day."],
+["x-dedit","diary",/^edit$/i,"Edit: change the amount."],
+["x-sug","diary",/^\+ .{3,}/,"Suggested meal: adds it to today as planned. Tap Ate it when you have eaten it."],
+["x-art","learn",/min read|show all \d+ articles/i,"Article: a short read. Nothing to log."],
+["x-eset","engine",/^settings$/i,"Progress settings: choose what counts and what shows."],
+["x-estart","engine",/^start$/i,"Start: begins that training item."],
+["x-chk","clubpage",/^check in here$/i,"Check in: confirms you are at the gym now."],
+["x-req","clubpage",/send request/i,"Send request: goes to the club. Nothing is paid."],
+["x-cedit","hubclasses",/^edit$/i,"Edit: change the class details."],
+["x-open","hubover",/^open$/i,"Open: takes you to the full item."],
+["x-chan","hubmkt",/^(instagram|facebook|tiktok|google business)$/i,"Channels: where you plan to post. Connecting accounts is coming soon."],
+["x-post","hubmkt",/^(this week.s timetable|class spotlight|new\? start here|workout of the week|membership and prices|open day or event|meet the coach|grading congratulations|fight or competition result|welcome a new member)/i,"Post idea: tap to preview, then Make this post."],
+["x-comm","hubcomm",/^(workouts|coaches. tips|clubs and interclubs|events|6-month review)$/i,"Sections: workouts, tips and events shared by other clubs."],
+["x-sport","hubcomm",/^(all|boxing|fitness|kickboxing|muay thai)$/i,"Sport filter: narrows what is shown."],
+["x-acct","hubplans",/^add .\d+ to account/i,"Add to account: adds that amount to what the member owes."]
+
+];
+/* ---------- state ---------- */
+function mode(){var m=P().tipsMode;return m==="off"||m==="screens"?m:"all"}
+function seen(){var p=P();if(!p.tipsSeen)p.tipsSeen={};return p.tipsSeen}
+function save(){try{profChanged()}catch(x){}}
+function ready(){var p=P();return !!(S.uid&&p.onboarded)||!!p.onboarded}
+function blocked(){return !!document.querySelector(".gr-tour,.ob-wrap:not([hidden])")}
+function visTab(){var s=document.querySelector("section[id^=tab-]:not([hidden])");return s?s.id.slice(4):""}
+/* ---------- the card ---------- */
+var css=document.createElement("style");css.textContent=
+"#fb148{position:fixed;left:12px;right:12px;bottom:calc(92px + env(safe-area-inset-bottom,0px));z-index:10001;max-width:520px;margin:0 auto;padding:12px 14px;border:1px solid var(--line,#333);border-left:3px solid var(--gold,#D3C8AA);border-radius:14px;background:var(--panel,#15171c);color:var(--fg,#f2f1ec);box-shadow:0 18px 40px -12px rgba(0,0,0,.8);font-size:.9rem;line-height:1.4;display:none}"+
+"#fb148 .k{font:700 11px var(--cond,inherit);letter-spacing:.12em;text-transform:uppercase;color:var(--gold,#D3C8AA)}#fb148 b{display:block;margin:2px 0 2px}#fb148 p{margin:0 0 8px;opacity:.9}"+
+"#fb148 .r{display:flex;gap:8px;align-items:center;justify-content:space-between}#fb148 button{min-height:36px}#fb148 .off{background:none;border:0;color:var(--muted,#999);font-size:.8rem;text-decoration:underline;cursor:pointer;padding:6px 0}"+
+"@media(min-width:900px){#fb148{bottom:24px}}";
+document.head.appendChild(css);
+var box=document.createElement("div");box.id="fb148";box.setAttribute("role","status");box.setAttribute("aria-live","polite");document.body.appendChild(box);
+var hideT=0,cur=null;
+function hide(){box.style.display="none";cur=null;clearTimeout(hideT)}
+function show(key,kick,title,text,ms){
+ if(mode()==="off")return false;seen()[key]=1;save();cur=key;
+ var m=String(text),i=m.indexOf(": "),lead=title,body=m;if(!title&&i>0&&i<46){lead=m.slice(0,i);body=m.slice(i+2)}
+ box.innerHTML='<div class="k">'+e(kick)+'</div><b>'+e(lead)+'</b><p>'+e(body)+'</p><div class="r"><button type="button" class="btn gold sm" data-t148ok>Got it</button><button type="button" class="off" data-t148off>Turn tips off</button></div>';
+ box.style.display="block";clearTimeout(hideT);hideT=setTimeout(hide,ms||16000);try{window.FH148.last={key:key,lead:lead,body:body}}catch(x){}return true}
+document.addEventListener("click",function(ev){
+ var t=ev.target;if(!t||!t.closest)return;
+ if(t.closest("[data-t148ok]")){hide();return}
+ if(t.closest("[data-t148off]")){P().tipsMode="off";save();hide();try{card()}catch(x){}return}
+ if(box.style.display!=="none"&&!t.closest("#fb148")){/* tapping elsewhere closes the tip but the tap still works */var keep=cur;hide()}
+ /* control tips */
+ if(mode()!=="all"||!ready()||blocked())return;
+ var b=t.closest("button,a[href],[role=button],summary,[data-goto],.chip,select");if(!b||b.closest("#fb148"))return;
+ var lab=((b.innerText||b.textContent||b.getAttribute("aria-label")||b.title||b.value||"")+"").replace(/\s+/g," ").trim(),tab=visTab();
+ if(!lab&&!b.hasAttribute("data-wlopen"))return;
+ for(var i=0;i<R.length;i++){var r=R[i];
+  if(r[1]&&r[1]!=="*"&&r[1].split("|").indexOf(tab)<0)continue;
+  var ok=r[2]===""?(b.hasAttribute("data-wlopen")):r[2].test(lab);if(!ok)continue;
+  if(!seen()["c:"+r[0]]){setTimeout(function(k,tx){show("c:"+k,"Tip","",tx,12000)}.bind(null,r[0],r[3]),30)}
+  return}
+},true);
+/* ---------- screens ---------- */
+var last="",pend=0;
+function screenTip(){var t=visTab();if(!t||t===last)return;last=t;
+ if(mode()==="off"||!ready()||blocked())return;
+ var d=SCR[t];if(!d||seen()["s:"+t])return;
+ if(document.activeElement&&/^(input|textarea|select)$/i.test(document.activeElement.tagName))return;
+ show("s:"+t,"New here",d[0],d[1],20000)}
+var st=showTab;showTab=function(t){var r=st.apply(this,arguments);try{clearTimeout(pend);pend=setTimeout(screenTip,450)}catch(x){}return r};
+setTimeout(screenTip,2800);
+/* ---------- settings card (Me, What I see) ---------- */
+function card(){var tab=document.getElementById("tab-profile");if(!tab)return;var el=document.getElementById("fb148s");
+ var m=mode(),n=Object.keys(seen()).length;
+ var h='<span class="fb-kick">Tips</span><p class="muted small" style="margin:6px 0 8px">A short tip the first time you open a screen or tap something new. Each shows once.</p><div class="chips" style="margin:0 0 8px">'+
+  [["all","All tips"],["screens","Screens only"],["off","Off"]].map(function(o){return '<button type="button" class="chip" data-t148m="'+o[0]+'" aria-pressed="'+(m===o[0])+'">'+o[1]+'</button>'}).join("")+'</div>'+
+  '<button type="button" class="btn ghost sm" data-t148reset>Show tips again</button> <span class="muted small">'+n+' seen</span>';
+ if(!el){el=document.createElement("section");el.id="fb148s";el.className="fb-card";el.dataset.pv="mine";tab.appendChild(el)}
+ if(el.dataset.sig!==h){el.innerHTML=h;el.dataset.sig=h}}
+document.addEventListener("click",function(ev){var b=ev.target.closest&&ev.target.closest("[data-t148m],[data-t148reset]");if(!b)return;
+ if(b.dataset.t148m){P().tipsMode=b.dataset.t148m;save()}else{P().tipsSeen={};save();last=""}card()},true);
+setInterval(function(){try{card()}catch(x){}},1500);
+window.FH148={SCR:SCR,R:R,reset:function(){P().tipsSeen={};P().tipsMode="all";hide();last="";save()},seen:seen,mode:mode,hide:hide,screenTip:screenTip,visible:function(){return box.style.display!=="none"?box.innerText:""}};
+})();
+
 /* FighterBase v44: always a way back, always a next step. */
 var N31=N31||false;
 (function(){
@@ -16799,4 +17099,3 @@ window.FHN={back:back,hist:function(){return hist.slice()},place:place};
 try{place();watch()}catch(e){}
 })();
 </script>
-</body></html>
