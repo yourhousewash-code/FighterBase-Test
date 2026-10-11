@@ -8194,7 +8194,7 @@ function fits1(it,id,personal){var d=BYID[id]||BYID.none,tags=it.contains||it.ta
  if(d.rule==="kosher"&&tags.indexOf("meat")>=0&&tags.indexOf("dairy")>=0)return false;
  return true}
 /* recipes: library meals plus the FighterBase recipe collection */
-function lib(){var have={},out=[];(FB_RECIPES||[]).forEach(function(r){have[r.id]=1;out.push(r)});((typeof S!=="undefined"&&S.meals)||[]).forEach(function(m){if(!have[m.id])out.push(m)});return out}
+function lib(){var have={},out=[];(FB_RECIPES||[]).forEach(function(r){have[r.id]=1;out.push(r)});((typeof S!=="undefined"&&S.profile&&S.profile.myRecipes)||[]).forEach(function(r){if(!have[r.id]){have[r.id]=1;out.push(r)}});((typeof S!=="undefined"&&S.meals)||[]).forEach(function(m){if(!have[m.id])out.push(m)});return out}
 setInterval(function(){try{if(typeof S==="undefined"||!Array.isArray(S.meals))return;var ids={};S.meals.forEach(function(m){ids[m.id]=1});var add=(FB_RECIPES||[]).filter(function(r){return !ids[r.id]});if(add.length)S.meals=S.meals.concat(add.map(function(r){return Object.assign({},r)}))}catch(e){}},1200);
 /* default style: none (nothing promoted) */
 setInterval(function(){try{var p=P();if(p&&p.onboarded&&!p.diet)p.diet="none"}catch(e){}},2000);
@@ -8205,11 +8205,11 @@ var sec=document.getElementById("tab-nutrition");if(!sec){sec=document.createEle
 try{if(GROUPS.fuel.indexOf("nutrition")<0)GROUPS.fuel.unshift("nutrition")}catch(e){}
 function chipList(a,cls){return a.length?'<ul class="nu-ul '+(cls||"")+'">'+a.map(function(x){return '<li>'+esc(x)+'</li>'}).join("")+'</ul>':'<p class="muted small" style="margin:0">Nothing specific.</p>'}
 function badge(d){return '<span class="nu-g" style="--gc:'+GCOL[d.group]+'">'+esc(d.group)+'</span>'}
-var BACKN={home:"Nutrition",diets:"Eating styles",recipes:"Recipes"};function head(t,back){return (back?'<div class="nu-top"><button class="linkbtn nu-bk" type="button" data-nuv="'+back+'">‹ '+BACKN[back]+'</button></div>':'')+(t||"")}
+var BACKN={home:"Nutrition",diets:"Eating styles",recipes:"Recipes",plan:"Meal plan"};function head(t,back){return (back?'<div class="nu-top"><button class="linkbtn nu-bk" type="button" data-nuv="'+back+'">‹ '+BACKN[back]+'</button></div>':'')+(t||"")}
 function homeView(){var d=cur(),pat=BYID[P().dietPattern],rs=lib().filter(function(r){return fits(r,d.id)}).length;
  return '<div class="panel plate nu-hero"><div class="nu-top"><span class="label">Nutrition</span></div><h2>Eat your way</h2><p class="muted" style="margin:0">Pick the style that suits you, explore others, and fuel training and recovery your way. FighterBase doesn\'t recommend one diet over another.</p>'+
   '<div class="nu-mine" style="--gc:'+GCOL[d.group]+'"><div><span class="label">Your style'+(mineAll().length>1?"s":"")+'</span><b>'+esc(names())+(pat?' <em>+ '+esc(pat.name)+'</em>':'')+'</b><span class="muted small">'+esc(d.line)+'</span></div><button class="btn sm gold" type="button" data-nuv="diets">'+(d.id==="none"?"Choose a style":"Add or change")+'</button></div>'+
-  '<div class="nu-tiles"><button type="button" class="nu-tile" data-nuv="diets"><b>'+FB_DIETS.length+'</b><span>Eating styles to explore</span></button><button type="button" class="nu-tile" data-nuv="recipes" data-nux=""><b>'+rs+'</b><span>Recipes that fit '+(d.id==="none"?"you":esc(d.name))+'</span></button><button type="button" class="nu-tile" data-nuv="foods"><b>'+(d.id==="none"?"All":"✓")+'</b><span>Foods: eat, go easy, avoid</span></button><button type="button" class="nu-tile" data-nuv="basics"><b>8</b><span>Recovery and healthy-eating basics</span></button></div></div>'+
+  '<div class="nu-tiles"><button type="button" class="nu-tile" data-nuv="diets"><b>'+FB_DIETS.length+'</b><span>Eating styles to explore</span></button><button type="button" class="nu-tile" data-nuv="recipes" data-nux=""><b>'+rs+'</b><span>Recipes that fit '+(d.id==="none"?"you":esc(d.name))+'</span></button><button type="button" class="nu-tile" data-nuv="plan"><b>&#128197;</b><span>Meal plan and shopping list</span></button><button type="button" class="nu-tile" data-nuv="foods"><b>'+(d.id==="none"?"All":"✓")+'</b><span>Foods: eat, go easy, avoid</span></button><button type="button" class="nu-tile" data-nuv="basics"><b>8</b><span>Recovery and healthy-eating basics</span></button></div></div>'+
   (d.id!=="none"?detailBody(d,true):'')}
 function dietsView(){var d=mine();
  return head('<h2 style="margin:6px 0 0">Eating styles</h2><p class="muted" style="margin:4px 0 0">Tap one to read what it is, what people eat and avoid, and how they train on it. Follow as many as you like. Recipes and foods then fit all of them (for example vegetarian and gluten-free).</p>',"home")+
@@ -8234,7 +8234,7 @@ function recipesView(){var id=X||mine(),d=BYID[id],L=lib().filter(function(r){re
 function recipeView(){var r=lib().filter(function(x){return x.id===R})[0];if(!r){V="recipes";return recipesView()}var st=(typeof starred==="function"?starred():[])||[],sv=st.indexOf(r.id)>=0,ing=String(r.ingredients||"").split(/,\s*/).filter(Boolean);
  var ok=FB_DIETS.filter(function(d){return !d.pattern&&d.id!=="none"&&fits(r,d.id,false)}).map(function(d){return d.name});
  return head('<h2 style="margin:6px 0 0">'+esc(r.name)+'</h2>',"recipes")+'<div class="panel nu-rd"><div class="nu-macs">'+[["kcal",r.kcal,""],["Protein",r.protein,"g"],["Carbs",r.carbs,"g"],["Fat",r.fat,"g"]].map(function(m){return '<div><b>'+(m[1]!=null?m[1]+m[2]:"–")+'</b><span>'+m[0]+'</span></div>'}).join("")+'</div><p class="muted small" style="margin:0">'+esc(SLOTN[r.slot]||"")+(r.mins?' · about '+r.mins+' minutes':'')+' · per serving, approximate</p>'+
-  '<div class="nu-sec"><span class="label">Ingredients</span>'+chipList(ing)+'</div>'+
+  '<div class="nu-sec"><span class="label">Ingredients</span>'+chipList(ing)+'</div>'+(window.FBPLAN?FBPLAN.nutChips(r):'')+
   (r.method&&r.method.length?'<div class="nu-sec"><span class="label">Method</span><ol class="nu-ol">'+r.method.map(function(s){return '<li>'+esc(s)+'</li>'}).join("")+'</ol></div>':'')+
   (r.note?'<p class="small" style="margin:0">'+esc(r.note)+'</p>':'')+
   '<div class="nu-sec"><span class="label">Fits these styles</span><div class="nu-why">'+ok.map(function(n){return '<span>'+esc(n)+'</span>'}).join("")+'</div></div>'+
@@ -8246,7 +8246,7 @@ function foodsView(){var id=X||mine(),d=BYID[id],F=(typeof allFoods==="function"
 function basicsView(){return head('<h2 style="margin:6px 0 0">Recovery and healthy eating</h2><p class="muted" style="margin:4px 0 0">These apply whatever style you follow.</p>',"home")+'<div class="nu-basics">'+FB_BASICS.map(function(b,i){return '<div class="panel nu-b"><span class="nu-n">'+(i+1)+'</span><b>'+esc(b[0])+'</b><p style="margin:0" class="small">'+esc(b[1])+'</p></div>'}).join("")+'</div>'+
  '<p class="small muted" style="margin:0 4px">General information, not personal advice. FighterBase doesn\'t give weight-cut or dehydration guidance.</p>'}
 function page(){var el=document.getElementById("nutBody");if(!el)return;if(document.activeElement&&document.activeElement.id==="nuQ"&&V==="recipes"){var g=document.querySelector(".nu-rgrid");if(g){var tmp=document.createElement("div");tmp.innerHTML=recipesView();var ng=tmp.querySelector(".nu-rgrid");if(ng)g.innerHTML=ng.innerHTML;return}}
- var h=V==="diets"?dietsView():V==="diet"?dietView():V==="recipes"?recipesView():V==="recipe"?recipeView():V==="foods"?foodsView():V==="basics"?basicsView():homeView();el.innerHTML=h}
+ var h=V==="plan"&&window.FBPLAN?FBPLAN.view():V==="diets"?dietsView():V==="diet"?dietView():V==="recipes"?recipesView():V==="recipe"?recipeView():V==="foods"?foodsView():V==="basics"?basicsView():homeView();el.innerHTML=h}
 /* Home card */
 function homeCard(){var d=cur(),n=lib().filter(function(r){return fits(r,d.id)}).length;
  return '<div class="fb-card nu-hc" style="--gc:'+GCOL[d.group]+'"><div class="fb-kick">Nutrition</div><p style="margin:0"><b>'+(d.id==="none"?"No set style yet.":esc(d.name)+".")+'</b> '+(d.id==="none"?"Explore "+FB_DIETS.length+" eating styles, from Mediterranean to vegan to keto, and pick what suits you.":esc(d.line))+'</p><div class="row"><button class="btn sm" type="button" data-nugo="diets">Explore diets</button><button class="btn ghost sm" type="button" data-nugo="recipes">'+n+' recipes</button><button class="linkbtn" type="button" data-nugo="basics">Recovery basics</button></div></div>'}
@@ -8282,7 +8282,7 @@ var css=document.createElement("style");css.textContent=
  ".nu-hc{border-left:4px solid var(--gc)}"+
  ":root[data-theme=light] .nu-tile,:root[data-theme=light] .nu-macs div{background:rgba(255,255,255,.7)}";
 document.head.appendChild(css);
-window.FH62={homeCard:homeCard,fits:fits,go:go,BYID:BYID,mine:mine};
+window.FH62={homeCard:homeCard,fits:fits,go:go,BYID:BYID,mine:mine,lib:lib,page:page,names:names};
 })();
 
 /* FighterBase v71: tidy-up. Old Journey, Charts, Trophies and My stats are replaced by My progress (the engine). Old links land there. */
@@ -15164,6 +15164,201 @@ function buttons(id){if(!has(id))return "";var g=FB_GUIDE[id];
 document.addEventListener("click",function(e){var b=e.target.closest&&e.target.closest("[data-fbdg]");if(!b)return;var p=b.dataset.fbdg.split(":");e.preventDefault();save(p[0],p[1])});
 return {make:make,save:save,has:has,buttons:buttons,name:name,SIGN:SIGN}})();
 if(typeof module!=="undefined")module.exports=FBDG;
+
+/* FighterBase v152: meal plan builder, weekly shopping list, vitamins and minerals, weekly check-in, and the member's own recipes.
+   Sits inside the Nutrition section (view "plan"). Uses FH62 (fh62), FB_RECIPES (fh61b). Plans are general guidance from the member's own choices,
+   not medical advice, and are a draft until a registered dietitian signs the ranges off. Stored in the member's profile:
+   mealPlan, nutFeed (recipe id: 1 like, -1 dislike), nutNotes (week start: text), nutDislike (words), myRecipes, mpCreatine, mpPeople, mpTick. */
+var FBPLAN=(function(){
+if(typeof FH62==="undefined"||!FH62.lib)return {view:function(){return ""},nutChips:function(){return ""}};
+function P(){return S.profile||{}}
+function esc(s){return String(s==null?"":s).replace(/[&<>"']/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]})}
+function save(){try{profChanged()}catch(e){}}
+function draw(){try{FH62.page()}catch(e){console.error(e)}}
+var TAB="plan",WK=0,PEOPLE=null,MSG="";
+var SLOTS=[["breakfast","Breakfast","breakfast"],["am","Morning snack","snack"],["lunch","Lunch","lunch"],["pre","Before training","pre"],["dinner","Dinner","dinner"],["post","After training","post"]];
+var NUT={"Iron":/beef|lamb|liver|spinach|lentil|chickpea|bean|tofu|kale|mince|steak|venison|dark chocolate|pumpkin seed/i,
+ "Vitamin C":/orange|pepper|tomato|broccoli|berr|kiwi|lemon|potato|cabbage|mango|pineapple|strawberr|citrus|chilli/i,
+ "Calcium":/milk|yoghurt|yogurt|cheese|sardine|tofu|kale|almond|kefir|cottage|feta|halloumi|salmon.*bone|chia|fortified/i,
+ "Vitamin D":/salmon|mackerel|sardine|egg|trout|tuna|herring|mushroom|fortified/i,
+ "Omega-3":/salmon|mackerel|sardine|trout|herring|walnut|chia|flax|seabass|anchov/i,
+ "Magnesium":/oat|almond|cashew|nut|seed|spinach|banana|dark chocolate|bean|lentil|quinoa|avocado|brown rice|wholegrain/i,
+ "Potassium":/banana|potato|sweet potato|avocado|bean|spinach|tomato|orange|prune|yoghurt|salmon|squash/i,
+ "B12":/beef|lamb|chicken|turkey|pork|fish|salmon|tuna|egg|milk|yoghurt|cheese|liver|fortified|nutritional yeast/i,
+ "Zinc":/beef|lamb|pumpkin seed|chickpea|oat|cashew|cheese|pork|egg|lentil|mince/i,
+ "Vitamin A":/carrot|sweet potato|spinach|kale|liver|egg|squash|pepper|mango|butter/i,
+ "Folate":/spinach|lentil|broccoli|avocado|asparagus|chickpea|bean|kale|orange|egg/i,
+ "Fibre":/oat|bean|lentil|chickpea|broccoli|pea|berr|apple|pear|whole|brown rice|quinoa|chia|prune|veg|carrot|cabbage/i};
+var NUTKEYS=Object.keys(NUT);
+var EXTRAS=[{n:"Orange juice, small glass",nut:["Vitamin C","Potassium"],c:["sweetfruit"]},{n:"A handful of prunes",nut:["Potassium","Fibre"],c:["sweetfruit"]},{n:"A few olives",nut:["Healthy fats"],c:[]},
+ {n:"2 Brazil nuts",nut:["Selenium"],c:["nut"]},{n:"A handful of pumpkin seeds",nut:["Magnesium","Zinc","Iron"],c:[]},{n:"A kiwi fruit",nut:["Vitamin C"],c:["sweetfruit"]},
+ {n:"Natural yoghurt",nut:["Calcium","B12"],c:["dairy"]},{n:"A few tinned sardines",nut:["Omega-3","Vitamin D","Calcium"],c:["fish"]},{n:"A handful of walnuts",nut:["Omega-3","Magnesium"],c:["nut"]},
+ {n:"A banana",nut:["Potassium","Magnesium"],c:["sweetfruit"]},{n:"A handful of spinach or kale",nut:["Iron","Calcium","Vitamin A","Folate"],c:[]},{n:"2 squares of dark chocolate (70%+)",nut:["Magnesium","Iron"],c:["sugar"]},
+ {n:"A boiled egg",nut:["Vitamin D","B12","Folate"],c:["egg"]},{n:"A glass of fortified soy milk",nut:["Calcium","Vitamin D","B12"],c:["soy"]},{n:"A handful of almonds",nut:["Calcium","Magnesium"],c:["nut"]},{n:"Carrot sticks",nut:["Vitamin A","Fibre"],c:[]}];
+var AISLES=["Fruit and veg","Meat and fish","Dairy, eggs and chilled (tofu, tempeh, hummus)","Grains, bread and cereals","Tins, jars and dry goods","Frozen","Cupboard: oils, spices, sauces and extras"];
+function aisle(n){n=n.toLowerCase();
+ if(/frozen/.test(n))return AISLES[5];
+ if(/seeds?\b|nuts?\b|almond|cashew|walnut|pecan|hazelnut|pistachio|lentil|beans?\b|chickpea|protein|powder|whey|raisin|prune|dates?\b|peanut|trail mix|bar\b/.test(n)&&!/butternut|coconut/.test(n))return AISLES[4];
+ if(/\btins?\b|tinned|canned|\bjar\b|dried|coconut (milk|cream)|stock cube|passata|(peanut|almond|nut|cashew) butter/.test(n))return AISLES[4];
+ if(/black pepper|peppercorn|pepper flakes|salt|oil|vinegar|sauce|honey|syrup|cumin|paprika|turmeric|cinnamon|spice|seasoning|mustard|mayo|ketchup|stock|sugar|baking|curry|herbs? mix|chilli flakes|cocoa|sesame oil|soy sauce|tahini|miso|pesto/.test(n))return AISLES[6];
+ if(/chicken|beef|lamb|pork|bacon|sausage|steak|mince|turkey|salmon|tuna|\bcod\b|fish|prawn|shrimp|mackerel|sardine|\bham\b|liver|duck|venison|haddock|trout|seabass|bass|chorizo/.test(n))return AISLES[1];
+ if(/\begg|tofu|tempeh|hummus|edamame|milk|yoghurt|yogurt|cheese|butter|cream|feta|halloumi|cottage|kefir|paneer|quark|skyr/.test(n))return AISLES[2];
+ if(/banana|apple|berr|orange|lemon|lime|tomato|pepper|onion|garlic|spinach|kale|broccoli|carrot|potato|avocado|cucumber|lettuce|salad|mushroom|courgette|aubergine|cabbage|cauliflower|celery|ginger|parsley|coriander|basil|mint|pumpkin|squash|beetroot|leek|asparagus|\bpeas?\b|fruit|mango|pineapple|grape|kiwi|chilli|rocket|spring onion|pear|plum|peach|melon|sprout|greens|herb|dill|chive|thyme|rosemary/.test(n))return AISLES[0];
+ if(/bread|wrap|tortilla|pitta|bagel|oat|rice|pasta|noodle|quinoa|couscous|flour|cereal|granola|bulgur|barley|crumpet|muffin|sourdough|toast|cracker/.test(n))return AISLES[3];
+ return AISLES[6]}
+function ingList(r){return String(r.ingredients||"").split(/,\s*/).map(function(s){return s.trim()}).filter(Boolean)}
+function nutSet(r){var t=String(r.name||"")+" , "+String(r.ingredients||""),o=[];NUTKEYS.forEach(function(k){if(NUT[k].test(t))o.push(k)});return o}
+function nutChips(r){var a=nutSet(r);return a.length?'<div class="nu-sec"><span class="label">Main vitamins and minerals</span><div class="nu-why">'+a.map(function(n){return '<span>'+esc(n)+'</span>'}).join("")+'</div><p class="muted small" style="margin:0">Where the ingredients are a good source. A guide, not a lab test.</p></div>':""}
+/* ---- tags for the member's own recipes (so diet filtering still works) ---- */
+function tagsFor(t){t=String(t||"").toLowerCase();var o=[];
+ function a(k,re){if(re.test(t)&&o.indexOf(k)<0)o.push(k)}
+ a("pork",/pork|bacon|ham\b|sausage|chorizo|gammon|salami/);a("meat",/chicken|beef|lamb|turkey|steak|mince|duck|venison|liver|bacon|ham\b|pork|sausage|burger/);
+ a("fish",/salmon|tuna|cod\b|fish|mackerel|sardine|haddock|trout|bass|anchov/);a("shellfish",/prawn|shrimp|crab|lobster|mussel|scallop|squid|oyster/);
+ a("egg",/\begg/);a("dairy",/milk|cheese|yoghurt|yogurt|butter|cream|whey|kefir|paneer/);a("gluten",/bread|pasta|wheat|flour|couscous|bulgur|barley|rye|noodle|wrap|tortilla|pitta|bagel|cracker/);
+ a("grain",/bread|pasta|wheat|flour|rice|oat|couscous|bulgur|barley|quinoa|noodle|wrap|tortilla|cereal/);a("oats",/\boats?\b|porridge|granola/);a("legume",/bean|lentil|chickpea|\bpeas?\b|hummus|dal\b|dahl/);
+ a("soy",/soy|tofu|tempeh|edamame|miso/);a("nut",/almond|cashew|walnut|peanut|hazelnut|pecan|pistachio|nut butter|brazil/);a("starchy",/potato|sweet potato|parsnip|squash|corn|cassava|yam/);
+ a("sweetfruit",/banana|mango|pineapple|grape|date\b|dates\b|fig\b|raisin|prune|apple|orange|pear/);a("berry",/berr/);a("bee",/honey/);a("sugar",/sugar|syrup|chocolate|jam\b/);a("sweetener",/sweetener|stevia/);return o}
+/* ---- plan building ---- */
+function kd(d){return dayKey(d)}
+function addDays(k,n){var d=new Date(k+"T12:00:00");d.setDate(d.getDate()+n);return kd(d)}
+function dayLabel(k){return new Date(k+"T12:00:00").toLocaleDateString("en-GB",{weekday:"short",day:"numeric",month:"short"})}
+function disWords(){return (P().nutDislike||[]).map(function(w){return String(w).toLowerCase().trim()}).filter(Boolean)}
+function feed(){return P().nutFeed||{}}
+function okFor(r){var f=feed()[r.id];if(f===-1)return false;var t=(r.name+" "+(r.ingredients||"")).toLowerCase(),w=disWords();for(var i=0;i<w.length;i++)if(t.indexOf(w[i])>=0)return false;return true}
+function pool(){var id=FH62.mine();return FH62.lib().filter(function(r){return r.slot&&FH62.fits(r,id)&&okFor(r)})}
+function mkRng(seed){var s=0;String(seed).split("").forEach(function(c){s=(s*31+c.charCodeAt(0))>>>0});return function(){s=(s*1664525+1013904223)>>>0;return s/4294967296}}
+function pickFor(slotKey,pl,used,i,rng,today){var want=SLOTS.filter(function(s){return s[0]===slotKey})[0][2],A=pl.filter(function(r){return r.slot===want});
+ if(!A.length){var alt={am:"snack",pre:"snack",post:"snack",lunch:"dinner",dinner:"lunch",breakfast:"snack"}[slotKey];A=pl.filter(function(r){return r.slot===alt})}
+ if(!A.length)return null;var best=null,bs=-1e9;A.forEach(function(r){var gap=used[r.id]==null?30:i-used[r.id],sc=Math.min(gap,30)+rng()*2.2+(feed()[r.id]===1?3:0)+(today&&today.indexOf(r.id)>=0?-40:0);if(sc>bs){bs=sc;best=r}});return best?best.id:null}
+function extrasFor(meals,k,rng){var have={};meals.forEach(function(r){nutSet(r).forEach(function(n){have[n]=1})});var id=FH62.mine(),
+ pl=EXTRAS.filter(function(e){return FH62.fits({contains:e.c},id)}),miss=pl.filter(function(e){return e.nut.some(function(n){return !have[n]})});
+ var src=(miss.length>2?miss:pl).slice(),out=[];while(out.length<2&&src.length){var j=Math.floor(rng()*src.length);out.push(src.splice(j,1)[0])}return out.map(function(e){return e.n})}
+function build(start,days,keepFrom,old){var pl=pool(),rng=mkRng(start+"|"+days+"|"+(P().mpSeed||0)),map={},used={},byId={};FH62.lib().forEach(function(r){byId[r.id]=r});
+ for(var i=0;i<days;i++){var k=addDays(start,i);if(old&&old.map[k]&&k<keepFrom){map[k]=old.map[k];Object.keys(old.map[k]).forEach(function(s){var v=old.map[k][s];if(v&&s!=="x"&&s!=="note")used[v]=i});continue}
+  var day={},today=[],meals=[];SLOTS.forEach(function(s){var rid=pickFor(s[0],pl,used,i,rng,today);if(rid){day[s[0]]=rid;used[rid]=i;today.push(rid);if(byId[rid])meals.push(byId[rid])}});
+  day.x=extrasFor(meals,k,rng);map[k]=day}
+ return {start:start,days:days,made:Date.now(),map:map}}
+function plan(){var p=P().mealPlan;return p&&p.map?p:null}
+function recOf(id){return FH62.lib().filter(function(r){return r.id===id})[0]}
+function weekDays(p,w){var a=[];for(var i=w*7;i<Math.min(p.days,w*7+7);i++)a.push(addDays(p.start,i));return a}
+function nWeeks(p){return Math.ceil(p.days/7)}
+function curWeek(p){var t=kd(new Date()),i=0;for(;i<p.days;i++)if(addDays(p.start,i)===t)break;return i>=p.days?(t<p.start?0:nWeeks(p)-1):Math.floor(i/7)}
+/* ---- shopping list ---- */
+function parseIng(s){var m=s.match(/^(\d+(?:\.\d+)?)\s*(kg|g|ml|l|tbsp|tsp|cups?|tins?|cloves?|slices?)?\b\.?\s*(?:of\s+)?(.+)$/i);if(!m)return {q:null,u:"",n:s.replace(/^(a|an|some|a handful of|handful of|a pinch of|pinch of|a splash of|splash of)\s+/i,"")};var u=(m[2]||"").toLowerCase().replace(/^(cup|tin|clove|slice)s$/,"$1");return {q:parseFloat(m[1]),u:u,n:m[3]}}
+function shopFor(p,days,ppl){var agg={},order=[];days.forEach(function(k){var d=p.map[k]||{};SLOTS.forEach(function(s){var r=d[s[0]]&&recOf(d[s[0]]);if(!r)return;ingList(r).forEach(function(raw){var x=parseIng(raw),key=(x.u+"|"+x.n.toLowerCase().replace(/s$/,"").replace(/\s+/g," ")),a=agg[key];if(!a){a=agg[key]={n:x.n,u:x.u,q:0,hasQ:x.q!=null,meals:0};order.push(key)}if(x.q!=null)a.q+=x.q*ppl;a.meals++})});
+  (d.x||[]).forEach(function(e){var nm=e.replace(/^(a handful of|a few|a glass of|a|an|2) /i,"").replace(/^glass of /i,""),key="|"+nm.toLowerCase().replace(/s$/,"").replace(/\s+/g," "),a=agg[key];if(!a){a=agg[key]={n:nm,u:"",q:0,hasQ:false,meals:0,extra:true};order.push(key)}a.meals++});
+  });
+ var groups={};AISLES.forEach(function(a){groups[a]=[]});order.forEach(function(k){var a=agg[k],lab;if(a.hasQ){var q=a.q,u=a.u;if(u==="g"&&q>=1000){q=q/1000;u="kg"}if(u==="ml"&&q>=1000){q=q/1000;u="l"}q=Math.round(q*10)/10;lab=q+(u?" "+u+(/^(cup|tin|clove|slice)$/.test(u)&&q!==1?"s":""):"")+" "+a.n}else lab=a.n+(a.meals>1?" (used "+a.meals+" times)":"");groups[aisle(a.n)].push(lab)});
+ AISLES.forEach(function(a){groups[a].sort(function(x,y){return x.toLowerCase()<y.toLowerCase()?-1:1})});return groups}
+function listText(groups,title){var t=title+"\n";AISLES.forEach(function(a){if(groups[a].length){t+="\n"+a.toUpperCase()+"\n"+groups[a].map(function(x){return "[ ] "+x}).join("\n")+"\n"}});return t}
+/* ---- downloads (same route as the diet guides) ---- */
+function deliver(fn,blob){var dl=(typeof downloads!=="undefined")?downloads:null;
+ function fallback(){try{var u=URL.createObjectURL(blob),a=document.createElement("a");a.href=u;a.download=fn;document.body.appendChild(a);a.click();setTimeout(function(){a.remove();URL.revokeObjectURL(u)},3000);toast("Downloading")}catch(e){try{toast("Could not save the file")}catch(er){}}}
+ if(dl){dl.save({filename:fn,data:blob}).then(function(){toast("Saved")}).catch(function(e){if(e&&e.code==="declined")return;if(e&&(e.code==="unavailable"||e.code==="not_granted"))fallback();else try{toast("Could not save the file")}catch(er){}})}else fallback()}
+var FOOT="FighterBase  |  General guidance, not medical advice. Draft for dietitian sign-off.";
+function shopPdf(p,days,ppl,label){var doc=FBPDF.create({title:"Shopping list",footer:FOOT}),g=shopFor(p,days,ppl),n=0;
+ doc.cover("Shopping list",label,["Eating style: "+((FH62.BYID[FH62.mine()]||{}).name||""),"For "+ppl+(ppl===1?" person":" people"),"Tick each item off as you shop. Quantities are rounded; check what you already have."]);
+ doc.newPage();AISLES.forEach(function(a){if(g[a].length){n+=g[a].length;doc.h2(a+" ("+g[a].length+")");doc.grid(g[a],"chk",2)}});doc.space(10);doc.banner("General guidance built from your own choices. Not medical advice. If you have a medical condition, are pregnant, are under 18 or are cutting weight for a fight, check with your doctor or a registered dietitian.");return doc.build()}
+function planPdf(p,ppl){var doc=FBPDF.create({title:"Meal plan",footer:FOOT}),nm=(FH62.BYID[FH62.mine()]||{}).name||"Your style";
+ doc.cover("Meal plan",p.days+" days from "+dayLabel(p.start),["Eating style: "+nm,"Meals are swappable in the app. Amounts are per person, approximate.","Draft content, not yet reviewed by a registered dietitian."]);
+ for(var w=0;w<nWeeks(p);w++){doc.newPage();doc.h1("Week "+(w+1));weekDays(p,w).forEach(function(k){var d=p.map[k]||{},tk=0,tp=0,rows=[];SLOTS.forEach(function(s){var r=d[s[0]]&&recOf(d[s[0]]);if(r){tk+=+r.kcal||0;tp+=+r.protein||0;rows.push([s[1],r.name+(r.kcal?" ("+r.kcal+" kcal, "+(r.protein||0)+" g protein)":"")])}});
+   doc.h3(dayLabel(k)+(tk?"   about "+tk+" kcal, "+tp+" g protein":""));if(rows.length)doc.table([["Meal","What"]].concat(rows),[.24,.76],true);if(d.x&&d.x.length)doc.p("Extras for vitamins and minerals: "+d.x.join(", ")+".",{size:9,color:[.4,.4,.45]})})}
+ doc.newPage();doc.h1("About this plan");doc.p("Built from the eating style you follow, foods you dislike, and what you rated each week. It is general guidance, not a prescription.");doc.banner("Not medical advice. If you have a medical condition, are pregnant, are under 18 or are cutting weight for a fight, check with your doctor or a registered dietitian first.");return doc.build()}
+/* ---- views ---- */
+function tabs(){return '<div class="mp-tabs">'+[["plan","Meal plan"],["shop","Shopping list"],["week","Weekly check-in"],["mine","My recipes"]].map(function(t){return '<button type="button" class="mp-tab'+(TAB===t[0]?" on":"")+'" data-mptab="'+t[0]+'">'+t[1]+'</button>'}).join("")+'</div>'}
+function head(){var d=FH62.BYID[FH62.mine()];return '<div class="nu-top"><button class="linkbtn nu-bk" type="button" data-nuv="home">&lsaquo; Nutrition</button></div><h2 style="margin:6px 0 0">Meal plan and shopping</h2><p class="muted" style="margin:4px 0 8px">Built from <b>'+esc(FH62.names?FH62.names():d.name)+'</b>'+(disWords().length?', leaving out '+esc(disWords().join(", ")):'')+'. Change your style in Nutrition any time and make a fresh plan.</p>'+tabs()+(MSG?'<p class="nu-on" style="margin:6px 0 0">'+esc(MSG)+'</p>':'')}
+function disc(){return '<p class="small muted mp-disc">General guidance from your own choices, not medical advice. Check with your doctor or a registered dietitian if you have a medical condition, are pregnant, are under 18 or are cutting weight for a fight. Draft until a dietitian signs it off.</p>'}
+function builder(){var fd=P().fightDate,td=kd(new Date()),left=0;if(fd){left=Math.round((new Date(fd+"T12:00:00")-new Date(td+"T12:00:00"))/864e5)}
+ var pl=pool(),thin=["breakfast","lunch","dinner"].filter(function(s){return pl.filter(function(r){return r.slot===s}).length<3});
+ return '<div class="panel mp-b"><h3 style="margin:0">Make me a plan</h3><p class="muted small" style="margin:0">Pick how long, and we fill every day with meals that fit your style, rotating so you do not eat the same thing daily.</p>'+
+ '<div class="mp-row"><label class="small">Start<input type="date" id="mpStart" value="'+td+'"></label><label class="small">Length<select id="mpLen"><option value="7">7 days</option><option value="14">14 days</option><option value="28" selected>28 days</option>'+(left>=3&&left<=120?'<option value="'+left+'">Fight camp: until my fight ('+left+' days)</option>':'')+'<option value="custom">Choose an end date</option></select></label><label class="small" id="mpEndL" hidden>End<input type="date" id="mpEnd" value="'+addDays(td,27)+'"></label></div>'+
+ '<label class="small">Foods I do not like (separate with commas)<input type="text" id="mpDis" placeholder="for example mushrooms, tuna" value="'+esc(disWords().join(", "))+'"></label>'+
+ '<label class="small mp-ck"><input type="checkbox" id="mpCre"'+(P().mpCreatine?" checked":"")+'> I use creatine (shows a reminder with my before-training meal)</label>'+
+ (thin.length?'<p class="small" style="margin:0;color:#E8DFC8">Your style has few '+thin.join(", ")+' recipes, so some meals will repeat. Add your own under My recipes.</p>':'')+
+ '<div class="row"><button class="btn gold" type="button" data-mpmake="1">Make my plan</button></div>'+disc()+'</div>'}
+function mealRow(k,s,rid){var r=recOf(rid);if(!r)return '<div class="mp-meal"><span class="nu-slot">'+s[1]+'</span><span class="muted small">Add your own meal here (My recipes)</span></div>';
+ var f=feed()[rid]||0,nu=nutSet(r).slice(0,4);return '<div class="mp-meal"><span class="nu-slot">'+s[1]+(s[0]==="pre"&&P().mpCreatine?' · creatine with this meal':'')+'</span><div class="mp-main"><button class="linkbtn mp-name" type="button" data-nur="'+esc(rid)+'">'+esc(r.name)+'</button><span class="muted small">'+(r.kcal?r.kcal+' kcal · ':'')+(r.protein!=null?r.protein+'g protein':'')+(r.mins?' · '+r.mins+' min':'')+'</span>'+(nu.length?'<span class="mp-nu">'+nu.map(esc).join(" · ")+'</span>':'')+'</div><div class="mp-act"><button type="button" class="mp-i'+(f===1?" on":"")+'" data-mplike="'+esc(rid)+':1" title="I like this">&#128077;</button><button type="button" class="mp-i'+(f===-1?" bad":"")+'" data-mplike="'+esc(rid)+':-1" title="Not for me">&#128078;</button><button type="button" class="mp-i" data-mpswap="'+k+':'+s[0]+'" title="Swap this meal">&#8635;</button></div></div>'}
+function planView(){var p=plan();if(!p)return builder();var nw=nWeeks(p);if(WK>=nw)WK=nw-1;var days=weekDays(p,WK);
+ var h='<div class="row mp-bar"><div class="mp-wk">'+Array.apply(0,Array(nw)).map(function(_,i){return '<button type="button" class="mp-w'+(i===WK?" on":"")+'" data-mpwk="'+i+'">Week '+(i+1)+'</button>'}).join("")+'</div><div class="row" style="gap:8px"><button class="btn sm gold" type="button" data-mppdf="plan">Download plan (PDF)</button><button class="btn sm ghost" type="button" data-mptab="shop">Shopping list</button></div></div>';
+ days.forEach(function(k){var d=p.map[k]||{},tk=0,tp=0,tc=0,tf=0,meals=[];SLOTS.forEach(function(s){var r=d[s[0]]&&recOf(d[s[0]]);if(r){tk+=+r.kcal||0;tp+=+r.protein||0;tc+=+r.carbs||0;tf+=+r.fat||0;meals.push(r)}});
+  var have={};meals.forEach(function(r){nutSet(r).forEach(function(n){have[n]=1})});(d.x||[]).forEach(function(e){EXTRAS.forEach(function(x){if(x.n===e)x.nut.forEach(function(n){have[n]=1})})});var cov=NUTKEYS.filter(function(n){return have[n]});
+  h+='<div class="panel mp-day'+(k===kd(new Date())?" today":"")+'"><div class="mp-dh"><b>'+dayLabel(k)+(k===kd(new Date())?' · today':'')+'</b><span class="muted small">about '+tk+' kcal · '+tp+'g protein · '+tc+'g carbs · '+tf+'g fat</span></div>'+SLOTS.map(function(s){return mealRow(k,s,d[s[0]])}).join("")+
+   ((d.x&&d.x.length)?'<div class="mp-meal mp-x"><span class="nu-slot">Extras</span><div class="mp-main"><span class="small">'+d.x.map(esc).join(" · ")+'</span><span class="muted small">Easy ways to top up vitamins and minerals</span></div></div>':'')+
+   '<div class="mp-cov"><span class="muted small">Covered today:</span> '+(cov.length?cov.map(function(n){return '<em>'+esc(n)+'</em>'}).join(""):'<em>none yet</em>')+'</div></div>'});
+ return h+'<div class="row" style="margin-top:6px"><button class="btn ghost sm" type="button" data-mpnew="1">Make a new plan</button></div>'+disc()}
+function shopView(){var p=plan();if(!p)return '<div class="panel"><p style="margin:0">Make a meal plan first, and your shopping list builds itself.</p></div>'+builder();var nw=nWeeks(p),ppl=PEOPLE||P().mpPeople||1;if(WK>=nw&&WK!==99)WK=nw-1;
+ var days=weekDays(p,WK===99?0:WK);if(WK===99){days=[];for(var i=0;i<p.days;i++)days.push(addDays(p.start,i))}
+ var g=shopFor(p,days,ppl),tk=P().mpTick||{},n=0,lab=WK===99?"Whole plan":"Week "+(WK+1)+", "+dayLabel(days[0])+" to "+dayLabel(days[days.length-1]);
+ var h='<div class="row mp-bar"><div class="mp-wk">'+Array.apply(0,Array(nw)).map(function(_,i){return '<button type="button" class="mp-w'+(i===WK?" on":"")+'" data-mpwk="'+i+'">Week '+(i+1)+'</button>'}).join("")+(nw>1?'<button type="button" class="mp-w'+(WK===99?" on":"")+'" data-mpwk="99">Whole plan</button>':'')+'</div><label class="small">For <select id="mpPpl">'+[1,2,3,4,5,6].map(function(i){return '<option value="'+i+'"'+(i===ppl?" selected":"")+'>'+i+(i===1?" person":" people")+'</option>'}).join("")+'</select></label></div>';
+ h+='<div class="panel mp-shop"><div class="mp-dh"><b>'+esc(lab)+'</b><span class="muted small">Tick items off as you shop</span></div>';
+ AISLES.forEach(function(a){if(!g[a].length)return;n+=g[a].length;h+='<div class="nu-sec" style="margin-top:8px"><span class="label">'+esc(a)+' ('+g[a].length+')</span><div class="mp-items">'+g[a].map(function(x){var key=WK+"|"+x;return '<label class="mp-it'+(tk[key]?" done":"")+'"><input type="checkbox" data-mptick="'+esc(key)+'"'+(tk[key]?" checked":"")+'> '+esc(x)+'</label>'}).join("")+'</div></div>'});
+ h+='<div class="row" style="margin-top:12px"><button class="btn gold" type="button" data-mppdf="shop">Download shopping list (PDF)</button><button class="btn ghost" type="button" data-mpcopy="1">Copy list</button><button class="linkbtn" type="button" data-mpclear="1">Untick all</button></div><p class="small muted" style="margin:6px 0 0">'+n+' items. Quantities are added up from your plan and rounded. Check your cupboards first.</p></div>'+disc();return h}
+function weekView(){var p=plan();if(!p)return '<div class="panel"><p style="margin:0">Make a meal plan first. Then each week you can rate what you ate and tell us what to change.</p></div>';
+ var nw=nWeeks(p);if(WK>=nw||WK===99)WK=curWeek(p);var days=weekDays(p,WK),seen={},rs=[];days.forEach(function(k){var d=p.map[k]||{};SLOTS.forEach(function(s){var r=d[s[0]]&&recOf(d[s[0]]);if(r&&!seen[r.id]){seen[r.id]=1;rs.push(r)}})});
+ var notes=P().nutNotes||{},wk=days[0],f=feed(),likes=[],bad=[];Object.keys(f).forEach(function(id){var r=recOf(id);if(r){if(f[id]===1)likes.push(r.name);else if(f[id]===-1)bad.push([id,r.name])}});
+ var h='<div class="row mp-bar"><div class="mp-wk">'+Array.apply(0,Array(nw)).map(function(_,i){return '<button type="button" class="mp-w'+(i===WK?" on":"")+'" data-mpwk="'+i+'">Week '+(i+1)+'</button>'}).join("")+'</div></div>';
+ h+='<div class="panel mp-b"><h3 style="margin:0">How did this week go?</h3><p class="muted small" style="margin:0">Mark what was good and what was not. Your answers shape the next plan and the next shopping list.</p>'+rs.map(function(r){var v=f[r.id]||0;return '<div class="mp-meal"><div class="mp-main"><button class="linkbtn mp-name" type="button" data-nur="'+esc(r.id)+'">'+esc(r.name)+'</button><span class="muted small">'+esc((SLOTS.filter(function(s){return s[2]===r.slot})[0]||["","Meal"])[1])+'</span></div><div class="mp-act"><button type="button" class="mp-i'+(v===1?" on":"")+'" data-mplike="'+esc(r.id)+':1">&#128077; Good</button><button type="button" class="mp-i'+(v===-1?" bad":"")+'" data-mplike="'+esc(r.id)+':-1">&#128078; Not for me</button></div></div>'}).join("")+
+  '<label class="small">What would you change, or what worked well? (energy, hunger, cooking time, cost)<textarea id="mpNote" rows="3" placeholder="For example: too much rice, loved the shakshuka, need quicker lunches">'+esc(notes[wk]||"")+'</textarea></label>'+
+  '<label class="small">Foods I do not like (separate with commas)<input type="text" id="mpDis2" value="'+esc(disWords().join(", "))+'" placeholder="for example mushrooms, tuna"></label>'+
+  '<div class="row"><button class="btn gold" type="button" data-mpnext="1">Use this for the next plan</button></div><p class="small muted" style="margin:0">Likes come up more often. Dislikes never come back. The days already gone stay as they were.</p></div>';
+ if(likes.length||bad.length)h+='<div class="panel"><b>What we have learned about you</b><p class="small" style="margin:6px 0 0"><span class="nu-on">Likes:</span> '+(likes.length?likes.map(esc).join(", "):"none yet")+'</p><p class="small" style="margin:4px 0 0"><span style="color:#FF7A7F;font-weight:700">Not for you:</span> '+(bad.length?bad.map(function(b){return esc(b[1])+' <button class="linkbtn" type="button" data-mpundo="'+esc(b[0])+'">undo</button>'}).join(", "):"none yet")+'</p></div>';
+ return h+disc()}
+function mineView(){var my=P().myRecipes||[];var h='<div class="panel mp-b"><h3 style="margin:0">Add your own recipe</h3><p class="muted small" style="margin:0">Your recipes join the plan and the shopping list. Put each ingredient with its amount, separated by commas, like <i>3 eggs, 60 g oats, 250 ml milk</i>.</p>'+
+  '<label class="small">Name<input type="text" id="mrName" placeholder="for example Mum\'s chicken curry"></label><label class="small">Meal<select id="mrSlot"><option value="breakfast">Breakfast</option><option value="snack">Snack</option><option value="lunch">Lunch</option><option value="pre">Before training</option><option value="dinner" selected>Dinner</option><option value="post">After training</option></select></label>'+
+  '<label class="small">Ingredients (one serving)<textarea id="mrIng" rows="3" placeholder="150 g chicken breast, 80 g rice, 1 onion, 1 tbsp olive oil"></textarea></label><label class="small">Method (one step per line)<textarea id="mrMeth" rows="3"></textarea></label>'+
+  '<div class="mp-row"><label class="small">Calories<input type="number" id="mrK" min="0"></label><label class="small">Protein g<input type="number" id="mrP" min="0"></label><label class="small">Carbs g<input type="number" id="mrC" min="0"></label><label class="small">Fat g<input type="number" id="mrF" min="0"></label></div>'+
+  '<p class="small muted" style="margin:0">Not sure of the numbers? Leave them blank. We guess which foods it contains from the ingredients, so it only shows up for styles that allow it.</p><div class="row"><button class="btn gold" type="button" data-mpaddr="1">Save recipe</button></div></div>';
+ if(my.length)h+='<div class="panel"><b>My recipes ('+my.length+')</b>'+my.map(function(r){return '<div class="mp-meal"><div class="mp-main"><button class="linkbtn mp-name" type="button" data-nur="'+esc(r.id)+'">'+esc(r.name)+'</button><span class="muted small">'+esc((SLOTS.filter(function(s){return s[2]===r.slot})[0]||["","Meal"])[1])+(r.kcal?' · '+r.kcal+' kcal':'')+'</span></div><div class="mp-act"><button type="button" class="mp-i bad" data-mpdelr="'+esc(r.id)+'">Remove</button></div></div>'}).join("")+'</div>';
+ return h+disc()}
+function view(){var body=TAB==="shop"?shopView():TAB==="week"?weekView():TAB==="mine"?mineView():planView();return head()+body}
+/* ---- actions ---- */
+function makePlan(){var st=(document.getElementById("mpStart")||{}).value||kd(new Date()),sel=(document.getElementById("mpLen")||{}).value||"28",n=+sel;
+ if(sel==="custom"){var e=(document.getElementById("mpEnd")||{}).value;n=e?Math.round((new Date(e+"T12:00:00")-new Date(st+"T12:00:00"))/864e5)+1:28}
+ n=Math.max(1,Math.min(112,n||28));var dis=(document.getElementById("mpDis")||{}).value||"";P().nutDislike=dis.split(",").map(function(s){return s.trim()}).filter(Boolean);var cr=document.getElementById("mpCre");if(cr)P().mpCreatine=!!cr.checked;
+ P().mpSeed=(P().mpSeed||0)+1;P().mealPlan=build(st,n);save();WK=0;TAB="plan";MSG="Your plan is ready. Swap anything you do not fancy.";draw()}
+function nextPlan(){var p=plan();if(!p)return;var d2=(document.getElementById("mpDis2")||{}).value;if(d2!=null)P().nutDislike=d2.split(",").map(function(s){return s.trim()}).filter(Boolean);var nt=document.getElementById("mpNote");if(nt){var wk=weekDays(p,WK)[0],o=P().nutNotes||{};o[wk]=nt.value;P().nutNotes=o}
+ var t=kd(new Date()),last=addDays(p.start,p.days-1);P().mpSeed=(P().mpSeed||0)+1;
+ if(t>last){P().mealPlan=build(addDays(last,1),p.days>28?28:p.days)}else{var from=t<p.start?p.start:addDays(t,1);P().mealPlan=build(p.start,p.days,from,p)}
+ save();WK=Math.min(nWeeks(P().mealPlan)-1,t>last?0:curWeek(P().mealPlan));TAB="plan";MSG="Next plan updated with what you told us.";draw()}
+function swap(k,slot){var p=plan();if(!p||!p.map[k])return;var pl=pool(),s=SLOTS.filter(function(x){return x[0]===slot})[0],want=s[2],cur=p.map[k][slot],A=pl.filter(function(r){return r.slot===want&&r.id!==cur});
+ if(!A.length)A=pl.filter(function(r){return r.slot==="snack"&&r.id!==cur});if(!A.length){toast("No other meal fits here","Add your own under My recipes");return}
+ var used={};Object.keys(p.map).forEach(function(d){if(Math.abs((new Date(d)-new Date(k))/864e5)<=2)Object.keys(p.map[d]).forEach(function(sl){if(sl!=="x")used[p.map[d][sl]]=1})});var fresh=A.filter(function(r){return !used[r.id]});if(fresh.length)A=fresh;
+ p.map[k][slot]=A[Math.floor(Math.random()*A.length)].id;save();draw()}
+document.addEventListener("click",function(e){var t=e.target;if(!t.closest||!t.closest("#tab-nutrition"))return;var b;
+ if(b=t.closest("[data-mptab]")){TAB=b.dataset.mptab;MSG="";draw();return}
+ if(b=t.closest("[data-mpwk]")){WK=+b.dataset.mpwk;draw();return}
+ if(b=t.closest("[data-mpmake]")){makePlan();return}
+ if(b=t.closest("[data-mpnew]")){P().mealPlan=null;save();MSG="";draw();return}
+ if(b=t.closest("[data-mplike]")){var q=b.dataset.mplike.split(":"),id=q[0],v=+q[1],f=Object.assign({},feed());if(f[id]===v)delete f[id];else f[id]=v;P().nutFeed=f;save();draw();return}
+ if(b=t.closest("[data-mpundo]")){var f2=Object.assign({},feed());delete f2[b.dataset.mpundo];P().nutFeed=f2;save();draw();return}
+ if(b=t.closest("[data-mpswap]")){var s=b.dataset.mpswap.split(":");swap(s[0],s[1]);return}
+ if(b=t.closest("[data-mpnext]")){nextPlan();return}
+ if(b=t.closest("[data-mpaddr]")){addRecipe();return}
+ if(b=t.closest("[data-mpdelr]")){P().myRecipes=(P().myRecipes||[]).filter(function(r){return r.id!==b.dataset.mpdelr});save();draw();return}
+ if(b=t.closest("[data-mpclear]")){P().mpTick={};save();draw();return}
+ if(b=t.closest("[data-mpcopy]")){var p=plan();if(!p)return;var days=[];if(WK===99){for(var i=0;i<p.days;i++)days.push(addDays(p.start,i))}else days=weekDays(p,WK);var txt=listText(shopFor(p,days,PEOPLE||P().mpPeople||1),"FighterBase shopping list");try{navigator.clipboard.writeText(txt).then(function(){toast("List copied","Paste it into your notes or a supermarket app")},function(){toast("Could not copy")})}catch(er){toast("Could not copy")}return}
+ if(b=t.closest("[data-mppdf]")){var pp=plan();if(!pp)return;var ppl=PEOPLE||P().mpPeople||1;try{if(b.dataset.mppdf==="plan"){deliver("fighterbase-meal-plan.pdf",new Blob([planPdf(pp,ppl)],{type:"application/pdf"}))}else{var ds=[];if(WK===99){for(var j=0;j<pp.days;j++)ds.push(addDays(pp.start,j))}else ds=weekDays(pp,WK);deliver("fighterbase-shopping-list"+(WK===99?"":"-week-"+(WK+1))+".pdf",new Blob([shopPdf(pp,ds,ppl,WK===99?"Whole plan":"Week "+(WK+1)+", "+dayLabel(ds[0])+" to "+dayLabel(ds[ds.length-1]))],{type:"application/pdf"}))}}catch(er){console.error(er);toast("Could not build the PDF")}return}});
+document.addEventListener("change",function(e){var t=e.target;if(!t.closest||!t.closest("#tab-nutrition"))return;
+ if(t.id==="mpLen"){var l=document.getElementById("mpEndL");if(l)l.hidden=t.value!=="custom"}
+ if(t.id==="mpPpl"){PEOPLE=+t.value;P().mpPeople=PEOPLE;save();draw()}
+ if(t.dataset&&t.dataset.mptick){var o=Object.assign({},P().mpTick||{});if(t.checked)o[t.dataset.mptick]=1;else delete o[t.dataset.mptick];P().mpTick=o;save();var lab=t.closest("label");if(lab)lab.classList.toggle("done",t.checked)}
+ if(t.id==="mpNote"){var p=plan();if(p){var wk=weekDays(p,WK)[0],n=Object.assign({},P().nutNotes||{});n[wk]=t.value;P().nutNotes=n;save()}}});
+function addRecipe(){var g=function(i){var el=document.getElementById(i);return el?el.value.trim():""},nm=g("mrName"),ing=g("mrIng");if(!nm||!ing){toast("Add a name and the ingredients");return}
+ var n=function(i){var v=g(i);return v===""?null:Math.max(0,+v||0)},r={id:"mine-"+Date.now().toString(36),name:nm,slot:g("mrSlot"),contains:tagsFor(nm+" "+ing),kcal:n("mrK"),protein:n("mrP"),carbs:n("mrC"),fat:n("mrF"),ingredients:ing.replace(/\n+/g,", "),method:g("mrMeth").split(/\n+/).map(function(s){return s.trim()}).filter(Boolean),mine:true};
+ var a=(P().myRecipes||[]).slice();a.push(r);P().myRecipes=a;save();MSG="Saved. It can now come up in your plans.";draw()}
+var css=document.createElement("style");css.textContent=
+ ".mp-tabs{display:flex;gap:6px;flex-wrap:wrap;margin:6px 0 10px}.mp-tab{all:unset;cursor:pointer;box-sizing:border-box;padding:8px 14px;border-radius:999px;border:1px solid var(--line);font-size:14px;font-weight:700}.mp-tab.on{background:#A9172F;border-color:#A9172F;color:#fff}"+
+ ".mp-b{display:flex;flex-direction:column;gap:10px}.mp-b label,.mp-row label{display:flex;flex-direction:column;gap:4px}.mp-b input[type=text],.mp-b input[type=date],.mp-b input[type=number],.mp-b select,.mp-b textarea,.mp-bar select{background:rgba(255,255,255,.04);border:1px solid var(--line);border-radius:10px;color:inherit;padding:9px 12px;font:inherit;font-size:14px;width:100%;box-sizing:border-box}.mp-bar select{width:auto}"+
+ ".mp-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px}.mp-ck{flex-direction:row!important;align-items:center;gap:8px!important}.mp-ck input{width:auto!important}"+
+ ".mp-bar{justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin:4px 0 8px}.mp-wk{display:flex;gap:6px;flex-wrap:wrap}.mp-w{all:unset;cursor:pointer;padding:6px 12px;border-radius:999px;border:1px solid var(--line);font-size:13px;font-weight:700}.mp-w.on{background:rgba(255,106,61,.2);border-color:#A9172F}"+
+ ".mp-day{display:flex;flex-direction:column;gap:2px;margin-top:10px}.mp-day.today{border-color:#A9172F}.mp-dh{display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;align-items:baseline;margin-bottom:4px}"+
+ ".mp-meal{display:grid;grid-template-columns:110px 1fr auto;gap:10px;align-items:center;padding:8px 0;border-top:1px solid var(--line)}.mp-meal .nu-slot{line-height:1.3}.mp-main{display:flex;flex-direction:column;gap:2px;min-width:0}.mp-name{text-align:left;font-weight:700;font-size:15px}.mp-nu{font-size:11px;color:#55C7D9}"+
+ ".mp-act{display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end}.mp-i{all:unset;cursor:pointer;padding:5px 9px;border-radius:999px;border:1px solid var(--line);font-size:13px;line-height:1.2}.mp-i.on{background:rgba(63,197,126,.2);border-color:#3FC57E}.mp-i.bad{background:rgba(255,90,95,.14);border-color:rgba(255,90,95,.5)}"+
+ ".mp-x .small{font-weight:600}.mp-cov{display:flex;flex-wrap:wrap;gap:5px;align-items:center;padding-top:8px;border-top:1px solid var(--line)}.mp-cov em{font-style:normal;font-size:11px;padding:2px 8px;border-radius:999px;background:rgba(63,197,126,.12);border:1px solid rgba(63,197,126,.35)}"+
+ ".mp-items{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:4px 14px;margin-top:4px}.mp-it{display:flex;gap:8px;align-items:flex-start;font-size:14px;padding:3px 0;cursor:pointer}.mp-it.done{opacity:.45;text-decoration:line-through}.mp-it input{margin-top:3px}.mp-disc{margin:12px 0 0}"+
+ "@media(max-width:560px){.mp-meal{grid-template-columns:1fr}.mp-act{justify-content:flex-start}}";
+document.head.appendChild(css);
+return {view:view,nutChips:nutChips,nutSet:nutSet,shopFor:shopFor,parseIng:parseIng,aisle:aisle,build:build,tagsFor:tagsFor,plan:plan,EXTRAS:EXTRAS}})();
 
 /* FighterBase v44: always a way back, always a next step. */
 var N31=N31||false;
