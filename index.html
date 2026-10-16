@@ -17437,7 +17437,7 @@ function ptInfo(){try{var c=club();if(!c||!inClub())return null;var all=c.ptSlot
  var offered=all.length>0||(c.teachers||[]).some(function(t){return t.pt});
  return {next:nx,last:ps,offered:offered,tname:function(sl){var t=(c.teachers||[]).filter(function(x){return x.id===sl.tid})[0];return t&&t.name||"your coach"}}}catch(x){return null}}
 function msgUnread(){try{if(!window.FH56)return null;var seen=P().nseen||{};return FH56.items().filter(function(x){return !seen[x.id]&&(x.kind==="coach"||x.kind==="club")})[0]||null}catch(x){return null}}
-function sleepNow(){try{var m=logMap();for(var i=0;i<=2;i++){var l=m[addDays(TODAY,-i)];if(!l)continue;var v=+(((typeof wearOf==="function"?wearOf(l):l.wear)||{}).sleepH??l.sleep);if(v>0)return Math.round(v*10)/10}}catch(x){}return null}
+function sleepNow(){try{var m=logMap();for(var i=0;i<=2;i++){var l=m[addDays(TODAY,-i)];if(!l)continue;var v=+(((typeof wearOf==="function"?wearOf(l):l.wear)||{}).sleepH);if(v>0)return Math.round(v*10)/10}}catch(x){}return null}
 function week(){try{return FBE.week(weekStartKey())}catch(x){return {sessions:0,target:0}}}
 function sugg(w){var p=P();if(!(p.road&&p.road.start))return {h:"Set your goal",s:"Pick what you are working towards and the app builds your week around it.",b:"Set my goal",g:"goals2"};
  if(+w.target&&w.sessions<w.target)return {h:"Log a session",s:"Trained today? Record it so it counts towards your week.",b:"Log it",g:"train"};
