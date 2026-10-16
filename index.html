@@ -17431,6 +17431,13 @@ function lastSess(){try{var m=logMap();for(var i=0;i<=90;i++){var k=addDays(TODA
 function ago(i){return i===0?"Today":i===1?"Yesterday":i+" days ago"}
 function n30(){var n=0;try{var m=logMap();for(var i=0;i<30;i++){var l=m[addDays(TODAY,-i)];if(l&&l.sessions)n+=l.sessions.length}}catch(x){}return n}
 function myNext(){try{var u=window.FH100&&FH100.upcoming();return u&&u[0]||null}catch(x){return null}}
+function ptInfo(){try{var c=club();if(!c||!inClub())return null;var all=c.ptSlots||[],mine=all.filter(function(x){return x.uid===S.uid&&x.status==="booked"}),now=new Date(),hm=("0"+now.getHours()).slice(-2)+":"+("0"+now.getMinutes()).slice(-2);
+ var nx=mine.filter(function(x){return x.d>TODAY||(x.d===TODAY&&(x.time||"")>=hm)}).sort(function(a,b){return (a.d+a.time).localeCompare(b.d+b.time)})[0]||null;
+ var ps=mine.filter(function(x){return x.d<TODAY||(x.d===TODAY&&!nx)}).sort(function(a,b){return b.d.localeCompare(a.d)})[0]||null;
+ var offered=all.length>0||(c.teachers||[]).some(function(t){return t.pt});
+ return {next:nx,last:ps,offered:offered,tname:function(sl){var t=(c.teachers||[]).filter(function(x){return x.id===sl.tid})[0];return t&&t.name||"your coach"}}}catch(x){return null}}
+function msgUnread(){try{if(!window.FH56)return null;var seen=P().nseen||{};return FH56.items().filter(function(x){return !seen[x.id]&&(x.kind==="coach"||x.kind==="club")})[0]||null}catch(x){return null}}
+function sleepNow(){try{var m=logMap();for(var i=0;i<=2;i++){var l=m[addDays(TODAY,-i)];if(!l)continue;var v=+(((typeof wearOf==="function"?wearOf(l):l.wear)||{}).sleepH??l.sleep);if(v>0)return Math.round(v*10)/10}}catch(x){}return null}
 function week(){try{return FBE.week(weekStartKey())}catch(x){return {sessions:0,target:0}}}
 function sugg(w){var p=P();if(!(p.road&&p.road.start))return {h:"Set your goal",s:"Pick what you are working towards and the app builds your week around it.",b:"Set my goal",g:"goals2"};
  if(+w.target&&w.sessions<w.target)return {h:"Log a session",s:"Trained today? Record it so it counts towards your week.",b:"Log it",g:"train"};
@@ -17447,6 +17454,7 @@ var css=document.createElement("style");css.textContent=
 "#fb155 .c155.r155{display:flex;flex-direction:row;gap:14px;align-items:center}#fb155 .r155 p{margin:0}"+
 "#fb155 .btn{min-height:46px;align-self:flex-start}#fb155 .row155{display:flex;gap:10px}#fb155 .row155 .btn{flex:1}"+
 "#fb155 .g155{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}#fb155 .s155{border:1px solid var(--line,rgba(255,255,255,.1));border-radius:14px;padding:10px 12px;background:rgba(255,255,255,.035)}#fb155 .s155 b{display:block;font:800 22px/1.1 var(--cond,'Barlow Condensed'),sans-serif}#fb155 .s155 span{font-size:.72rem;opacity:.7}"+
+"#fb155 .m155{border:1px solid var(--line,rgba(255,255,255,.1));border-radius:14px;padding:10px 12px;background:rgba(255,255,255,.035);display:flex;align-items:center;gap:10px}#fb155 .m155 div{flex:1;min-width:0}#fb155 .m155 p{margin:0}#fb155 .m155 .btn{min-height:44px;flex:none}#fb155 .m155.hi{border-color:var(--red,#C81E3A)}"+
 "#fb155 .l155{border-style:dashed;flex-direction:row;align-items:center;justify-content:space-between;gap:10px}"+
 "#tab-today #perf89{order:800}#tab-today #fb154{order:-10}"+
 "#fb155back{display:none}"+
@@ -17468,6 +17476,7 @@ function drawHero(){try{var tb=document.getElementById("tab-today"),el=document.
  if(!memberView()){if(el)el.remove();return}
  var w=week(),n=nextClass(),sg=sugg(w),sk=stage(),nm=first(),h="";
  h+='<div><p class="h155">'+e(greet())+(nm?", "+e(nm):"")+'</p></div><p class="q155">'+e(pick(sk,0))+'</p>';
+ var mu=msgUnread();if(mu)h+='<div class="m155 hi"><div><p class="k155">'+(mu.kind==="coach"?"From your coach":"From your club")+'</p><p style="font-weight:700">'+e(mu.t)+'</p><p class="muted small" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+e(mu.b||"")+'</p></div><button type="button" class="btn ghost sm" data-f155inbox>Read</button></div>';
  if(n){h+='<div class="c155"><p class="k155">Next class</p><p class="t155">'+e(n.cl.title||n.cl.name||"Class")+'</p><p class="muted small" style="margin:0">'+(n.today?"Today":e(dayName(n.d)))+" "+e(n.cl.time)+" · "+e(club().name)+'</p><div class="row155"><button type="button" class="btn" data-goto="clubpage">Class and check-in</button></div></div>'}
  else if(inClub()){h+='<div class="c155"><p class="k155">Next class</p><p class="t155">Nothing coming up</p><p class="muted small" style="margin:0">Check your club timetable for the week.</p><button type="button" class="btn ghost" data-goto="clubpage">Open club page</button></div>'}
  var ls=lastSess(),mn=myNext();
@@ -17476,11 +17485,15 @@ function drawHero(){try{var tb=document.getElementById("tab-today"),el=document.
  if(!n&&mn)h+='<div class="c155"><p class="k155">Next session (your plan)</p><p class="t155" style="font-size:20px">'+e(mn.title||"Session")+'</p><p class="muted small" style="margin:0">'+e(mn.date===TODAY?"Today":dayName(mn.date))+(mn.time?" "+e(mn.time):"")+(mn.mins?" · "+(+mn.mins)+" min":"")+'</p></div>';
  else if(!n&&!inClub())h+='<div class="c155"><p class="k155">Next session</p><p class="muted small" style="margin:0">Nothing planned. Plan one and it shows here.</p><button type="button" class="btn ghost" data-goto="train">Plan a session</button></div>';
  var st0=null,wt=null;try{st0=FBE.streaks();wt=FBE.weight()}catch(x){}
- var tiles=[];tiles.push('<div class="s155"><b>'+n30()+'</b><span>sessions, 30 days</span></div>');
+ var tiles=[],sl=sleepNow(),camp=(sk==="camp");tiles.push('<div class="s155"><b>'+n30()+'</b><span>sessions, 30 days</span></div>');
+ if(sl!=null)tiles.push('<div class="s155"><b>'+sl+' h</b><span>sleep, last night</span></div>');
+ if(camp&&wt&&wt.now!=null)tiles.push('<div class="s155"><b>'+(Math.round(wt.now*10)/10)+' kg</b><span>weight now</span></div>');
  if(st0&&st0.cur>0)tiles.push('<div class="s155"><b>'+st0.cur+(st0.cur===1?" wk":" wks")+'</b><span>streak</span></div>');
- if(wt&&wt.now!=null)tiles.push('<div class="s155"><b>'+(Math.round(wt.now*10)/10)+' kg</b><span>weight now</span></div>');
- if(tiles.length<3&&!wt)tiles.push('<div class="s155"><b>'+(+w.sessions||0)+'</b><span>this week</span></div>');
+ if(!camp&&wt&&wt.now!=null)tiles.push('<div class="s155"><b>'+(Math.round(wt.now*10)/10)+' kg</b><span>weight now</span></div>');
+ tiles=tiles.slice(0,3);
  h+='<div class="g155">'+tiles.join("")+'</div>';
+ var pt=ptInfo();if(pt){if(pt.next){h+='<div class="m155"><div><p class="k155">Next PT</p><p style="font-weight:700">'+e(pt.tname(pt.next))+' · '+(pt.next.d===TODAY?"Today":e(dayName(pt.next.d)+" "+new Date(pt.next.d+"T12:00").toLocaleDateString("en-GB",{day:"numeric",month:"short"})))+' '+e(pt.next.time||"")+'</p></div></div>'}
+  else if(pt.offered){var wk=pt.last?Math.floor(diffDays(pt.last.d,TODAY)/7):null;if(wk==null||wk>=8)h+='<div class="m155"><div><p class="k155">Catch-up PT</p><p style="font-weight:700">'+(wk==null?"Try a PT session":"Time for a catch-up PT?")+'</p><p class="muted small">'+(wk==null?"One hour to work on your goals.":"It has been "+wk+" weeks. Review where you are and set your next goals.")+'</p></div><button type="button" class="btn ghost sm" data-goto="schedule">Book</button></div>'}}
  h+='<div class="c155 r155">'+ring(w.sessions||0,w.target)+'<div><p class="t155" style="font-size:22px">This week</p><p class="muted small">'+((+w.target)?"Hit your target, and a missed session never wipes your week.":"Set a weekly plan and it shows here.")+'</p></div></div>';
  h+='<div class="c155"><p class="k155">Suggested next</p><p class="t155" style="font-size:20px">'+e(sg.h)+'</p><p class="muted small" style="margin:0">'+e(sg.s)+'</p><button type="button" class="btn ghost" data-goto="'+e(sg.g)+'">'+e(sg.b)+'</button></div>';
  if(!inClub())h+='<div class="c155 l155"><p class="muted small" style="margin:0;flex:1">Train at a gym? Link it for class booking, check-in and coach messages. Your history stays yours.</p><button type="button" class="btn ghost sm" data-goto="club">Link a gym</button></div>';
@@ -17501,6 +17514,7 @@ function fixHeader(){try{var hd=document.querySelector("header.top");if(!hd)retu
  var show=cur!=="today"&&!!window.FHN;document.body.classList.toggle("b155",show);
  var bk=document.getElementById("fb155back");if(!bk){bk=document.createElement("button");bk.type="button";bk.id="fb155back";bk.setAttribute("aria-label","Go back");bk.textContent="‹";bk.addEventListener("click",function(){try{FHN.back()}catch(x){showTab("today")}});hd.insertBefore(bk,hd.firstChild)}}catch(x){}}
 function tick(){fixNav();fixHeader();drawHero();drawQuotes()}
+document.addEventListener("click",function(ev){var t=ev.target;if(t.closest&&t.closest("[data-f155inbox]")){try{FH56.openInbox()}catch(x){}}});
 var st=showTab;showTab=function(){var r=st.apply(this,arguments);try{tick()}catch(x){}return r};
 setInterval(tick,1200);
 var nbEl=document.querySelector("nav.bottom");if(nbEl&&window.MutationObserver)new MutationObserver(function(){fixNav()}).observe(nbEl,{childList:true,subtree:true,attributes:true,attributeFilter:["data-group"]});
