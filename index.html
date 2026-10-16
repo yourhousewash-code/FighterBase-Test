@@ -7735,9 +7735,9 @@ function body(){var s=steps()[step],h="";
   (A.skQ?'<div class="chips">'+L.map(function(x){return '<button type="button" class="chip" data-obsk="'+esc(x)+'" aria-pressed="'+(A.skills.indexOf(x)>=0)+'">'+esc(x)+'</button>'}).join("")+'</div><div class="ob-rec" style="margin-top:12px"><div class="field" style="flex:1"><label class="label" for="obSkNew">Something else? Add your own</label><input type="text" id="obSkNew" maxlength="40" placeholder="e.g. Body kick defence"></div><button type="button" class="btn ghost sm" data-obskadd>Add</button></div><p class="ob-sub small">'+A.skills.length+' of 3 chosen</p>':'')}
  if(s==="head"){var hs=heads();if(hs.indexOf(A.head)<0)A.head=hs.indexOf("fight")>=0?"fight":hs[1]||"train";
   h='<h2>What matters most right now?</h2><p class="ob-sub">Your Home leads with this. Everything else still gets tracked.</p><div class="ob-list">'+HEADS().filter(function(x){return hs.indexOf(x[0])>=0}).map(function(x){return '<button type="button" class="ob-c wide'+(A.head===x[0]?" on":"")+'" data-obhead="'+x[0]+'"><b>'+x[1]+'</b><span>'+x[2]+'</span></button>'}).join("")+'</div>'}
- if(s==="gym")h='<h2>Do you train at a gym on FighterBase?</h2><p class="ob-sub">Link up so your coach can see your progress and help with your goals. You choose what they see.</p>'+yn("gymQ","Yes","Not yet")+
+ if(s==="gym")h='<h2>Train at a gym? Link it for extras</h2><p class="ob-sub">Optional. FighterBase works fully on its own. Linking a gym adds:</p><ul class="ob-ben"><li>See the timetable and book classes</li><li>Check in, and count towards gradings</li><li>Coach messages, notes and PT bookings</li><li>Gym events and fight team</li></ul><p class="ob-sub small">You choose what your gym sees. Leave a gym later and your history stays with you.</p>'+yn("gymQ","Yes, link my gym","Skip, I train on my own")+
   (A.gymQ?(A.club?'<div class="ob-club"><span class="ob-cl">'+(A.club.brand&&A.club.brand.logo?'<img src="'+esc(A.club.brand.logo)+'" alt="">':esc((A.club.name||"C").slice(0,1)))+'</span><div><b>'+esc(A.club.name)+'</b><span class="ob-sub small">Found it. Next, choose what they can see.</span></div><button class="linkbtn" type="button" data-obunclub>Change</button></div>'
-   :'<div class="row" style="align-items:flex-end"><div class="field"><label class="label" for="obCode">Club code</label><input type="text" id="obCode" maxlength="16" value="'+esc(A.code)+'" placeholder="e.g. WARRIOR" style="text-transform:uppercase;max-width:200px" autocapitalize="characters"></div><button class="btn sm" type="button" data-obfind>Find my gym</button><button class="btn ghost sm" type="button" data-fb116find>Find a club</button></div><p class="ob-sub small" id="obMsg">'+esc(A.msg||"Your coach can give you the code or a link.")+'</p>'):'<p class="ob-sub small">You can link your gym any time from Club.</p>');
+   :'<div class="row" style="align-items:flex-end"><div class="field"><label class="label" for="obCode">Club code</label><input type="text" id="obCode" maxlength="16" value="'+esc(A.code)+'" placeholder="e.g. WARRIOR" style="text-transform:uppercase;max-width:200px" autocapitalize="characters"></div><button class="btn sm" type="button" data-obfind>Find my gym</button><button class="btn ghost sm" type="button" data-fb116find>Find a club</button></div><p class="ob-sub small" id="obMsg">'+esc(A.msg||"Your coach can give you the code or a link.")+'</p>'):'<p class="ob-sub small">No problem. You can link a gym any time from Me, or when a gym sends you an invite.</p>');
  if(s==="share"){var t=window.FB54?FB54.track(A.club):{training:true,goals:true,skills:true,weight:true,fights:true,injury:true},C=(window.FB54&&FB54.CATS)||[];if(!A.cons){A.cons={};C.forEach(function(c){A.cons[c[0]]=c[0]==="training"?true:(t[c[0]]&&c[3])})}
   h='<h2>What can '+esc(A.club.name)+' see?</h2><p class="ob-sub">Training is always shared with your gym. Everything else is your choice and you can change it any time.</p><div class="ob-list">'+C.filter(function(c){return t[c[0]]||c[0]==="training"}).map(function(c){var lock=c[0]==="training";return '<label class="ob-tog'+(lock?" lock":"")+'"><input type="checkbox" data-obcons="'+c[0]+'"'+(A.cons[c[0]]?" checked":"")+(lock?" disabled":"")+'><span><b>'+esc(c[1])+(lock?' <em>always on</em>':'')+'</b><small>'+esc(c[2])+'</small></span></label>'}).join("")+'</div>'}
  if(s==="done"){var it=[];it.push(["Training",A.tmode==="days"?A.tdays.slice().sort().map(function(i){return DN[i]}).join(" · "):A.tn+" a week"]);
@@ -7856,7 +7856,8 @@ var css=document.createElement("style");css.textContent=
  ".ob-c:hover{border-color:rgba(255,140,60,.55)}.ob-c:active{transform:scale(.98)}.ob-c b{font:800 18px var(--cond,'Barlow Condensed'),sans-serif;letter-spacing:.04em;text-transform:uppercase}.ob-c span{font-size:13px;color:var(--muted)}"+
  ".ob-c .ob-rec-tag,.ob-rec-tag{color:#0B0C0F!important;font:700 10px var(--cond,'Barlow Condensed'),sans-serif;letter-spacing:.14em;text-transform:uppercase;color:#0B0C0F;background:#E8DFC8;border-radius:999px;padding:2px 8px;align-self:flex-start}.ob-c.on{border-color:#C81E3A;background:linear-gradient(135deg,rgba(200,30,58,.18),rgba(232,223,200,.08));box-shadow:0 0 0 3px rgba(200,30,58,.15)}.ob-c.wide{align-items:flex-start;text-align:left}.ob-c:focus-visible{outline:2px solid #E8DFC8;outline-offset:2px}"+
  ".ob-rec{display:flex;flex-wrap:wrap;gap:12px;align-items:flex-end;padding:14px;border-radius:16px;border:1px solid var(--line);background:rgba(0,0,0,.2);animation:obIn .3s ease}"+
- ".ob-club{display:flex;align-items:center;gap:12px;padding:14px;border-radius:16px;border:1px solid rgba(255,140,60,.35);background:rgba(200,30,58,.08)}.ob-club>div{flex:1;display:flex;flex-direction:column}.ob-cl{width:48px;height:48px;border-radius:12px;overflow:hidden;display:grid;place-items:center;background:#1a1b20;font:900 22px var(--display,'Big Shoulders Display'),sans-serif}.ob-cl img{width:100%;height:100%;object-fit:cover}"+
+ ".ob-ben{margin:6px 0 10px;padding-left:20px;display:grid;gap:4px;font-size:.95rem}.ob-ben li::marker{color:var(--red,#C81E3A)}"+
+".ob-club{display:flex;align-items:center;gap:12px;padding:14px;border-radius:16px;border:1px solid rgba(255,140,60,.35);background:rgba(200,30,58,.08)}.ob-club>div{flex:1;display:flex;flex-direction:column}.ob-cl{width:48px;height:48px;border-radius:12px;overflow:hidden;display:grid;place-items:center;background:#1a1b20;font:900 22px var(--display,'Big Shoulders Display'),sans-serif}.ob-cl img{width:100%;height:100%;object-fit:cover}"+
  ".ob-ynl{display:flex;flex-direction:column;gap:8px}.ob-ynr{display:flex;align-items:center;gap:12px;padding:12px 14px;border-radius:14px;border:1px solid var(--line);background:rgba(255,255,255,.02)}.ob-ynr>div:first-child{flex:1;display:flex;flex-direction:column;gap:2px}.ob-ynr span{font-size:13px;color:var(--muted)}.ob-ynb{display:flex;gap:6px;flex:none}.ob-p{all:unset;cursor:pointer;min-width:52px;text-align:center;padding:9px 12px;border-radius:999px;border:1.5px solid var(--line2,rgba(255,255,255,.14));font:800 14px var(--cond,'Barlow Condensed'),sans-serif;letter-spacing:.06em;text-transform:uppercase}.ob-p.on{background:#C81E3A;border-color:#C81E3A;color:#fff}.ob-p.no{background:rgba(255,255,255,.1);border-color:rgba(255,255,255,.3)}.ob-tog{display:flex;gap:12px;align-items:flex-start;padding:12px 14px;border-radius:14px;border:1px solid var(--line);cursor:pointer}.ob-tog input{width:20px;height:20px;margin-top:2px;accent-color:#C81E3A;flex:none}.ob-tog span{display:flex;flex-direction:column;gap:2px}.ob-tog small{color:var(--muted)}.ob-tog em{font-style:normal;font-size:11px;color:#3FC57E;margin-left:6px}.ob-tog.lock{opacity:.85;cursor:default}"+
  ".ob-sum{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:10px}.ob-sum div{padding:12px 14px;border-radius:14px;border:1px solid var(--line);background:rgba(0,0,0,.2);display:flex;flex-direction:column;gap:3px}.ob-sum em{font:700 10px var(--cond,'Barlow Condensed'),sans-serif;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);font-style:normal}.ob-sum b{font-size:15px}"+
  ".ob-foot{display:flex;justify-content:space-between;gap:10px;position:sticky;bottom:0;padding:12px 0 4px;background:linear-gradient(180deg,transparent,var(--bg,#0B0C0F) 40%)}.ob-foot .btn{min-width:130px}.ob-foot .btn[disabled]{opacity:.4;pointer-events:none}"+
@@ -17469,7 +17470,7 @@ var css=document.createElement("style");css.textContent=
 "body:not(.fb-desk):not(.hubview) header.top .fb-line{display:none}"+
 "body:not(.fb-desk):not(.hubview) #navBar{display:none!important}"+
 "body:not(.fb-desk):not(.hubview) #subnav{padding-block:4px}body:not(.fb-desk):not(.hubview) #subnav button{min-height:38px;padding:6px 14px;font-size:13px}"+
-"body.b155 #fb155back{display:inline-flex;align-items:center;justify-content:center;width:44px;height:44px;flex:none;margin-left:-8px;border:0;background:transparent;color:inherit;font-size:26px;line-height:1;cursor:pointer}"+
+"body.b155:not(.fb-desk):not(.hubview) #fb155back{display:inline-flex;align-items:center;justify-content:center;width:44px;height:44px;flex:none;margin-left:-8px;border:0;background:transparent;color:inherit;font-size:26px;line-height:1;cursor:pointer}"+
 "}";
 document.head.appendChild(css);
 function drawHero(){try{var tb=document.getElementById("tab-today"),el=document.getElementById("fb155");if(!tb)return;
@@ -17495,7 +17496,8 @@ function drawHero(){try{var tb=document.getElementById("tab-today"),el=document.
  var pt=ptInfo();if(pt){if(pt.next){h+='<div class="m155"><div><p class="k155">Next PT</p><p style="font-weight:700">'+e(pt.tname(pt.next))+' · '+(pt.next.d===TODAY?"Today":e(dayName(pt.next.d)+" "+new Date(pt.next.d+"T12:00").toLocaleDateString("en-GB",{day:"numeric",month:"short"})))+' '+e(pt.next.time||"")+'</p></div></div>'}
   else if(pt.offered){var wk=pt.last?Math.floor(diffDays(pt.last.d,TODAY)/7):null;if(wk==null||wk>=8)h+='<div class="m155"><div><p class="k155">Catch-up PT</p><p style="font-weight:700">'+(wk==null?"Try a PT session":"Time for a catch-up PT?")+'</p><p class="muted small">'+(wk==null?"One hour to work on your goals.":"It has been "+wk+" weeks. Review where you are and set your next goals.")+'</p></div><button type="button" class="btn ghost sm" data-goto="schedule">Book</button></div>'}}
  h+='<div class="c155 r155">'+ring(w.sessions||0,w.target)+'<div><p class="t155" style="font-size:22px">This week</p><p class="muted small">'+((+w.target)?"Hit your target, and a missed session never wipes your week.":"Set a weekly plan and it shows here.")+'</p></div></div>';
- h+='<div class="c155"><p class="k155">Suggested next</p><p class="t155" style="font-size:20px">'+e(sg.h)+'</p><p class="muted small" style="margin:0">'+e(sg.s)+'</p><button type="button" class="btn ghost" data-goto="'+e(sg.g)+'">'+e(sg.b)+'</button></div>';
+ var fmOn=false;try{fmOn=!!(window.FH156&&FH156.state())}catch(x){}
+ if(!fmOn)h+='<div class="c155"><p class="k155">Suggested next</p><p class="t155" style="font-size:20px">'+e(sg.h)+'</p><p class="muted small" style="margin:0">'+e(sg.s)+'</p><button type="button" class="btn ghost" data-goto="'+e(sg.g)+'">'+e(sg.b)+'</button></div>';
  if(!inClub())h+='<div class="c155 l155"><p class="muted small" style="margin:0;flex:1">Train at a gym? Link it for class booking, check-in and coach messages. Your history stays yours.</p><button type="button" class="btn ghost sm" data-goto="club">Link a gym</button></div>';
  if(!el){el=document.createElement("section");el.id="fb155";tb.insertBefore(el,tb.firstChild)}else if(tb.firstChild!==el)tb.insertBefore(el,tb.firstChild);
  if(el.dataset.sig!==h){el.innerHTML=h;el.dataset.sig=h}}catch(x){console.error(x)}}
@@ -17520,6 +17522,97 @@ setInterval(tick,1200);
 var nbEl=document.querySelector("nav.bottom");if(nbEl&&window.MutationObserver)new MutationObserver(function(){fixNav()}).observe(nbEl,{childList:true,subtree:true,attributes:true,attributeFilter:["data-group"]});
 tick();
 window.FH155={tick:tick,stage:stage};
+})();
+
+/* FighterBase v200: "Your first month". A gentle 12-step path for people new to their sport, shown on Today for the first weeks.
+   Steps for striking and for grappling, plus a general set. The step wording is a starter set: the club coach should review it before it is relied on.
+   Some steps tick themselves (first session, two sessions in a week, an effort rating); the rest the member ticks. Nothing is judged, skipping is fine,
+   and the whole card can be hidden. Saved on the member's own profile as fm {start, done{}, off}. */
+var F156=F156||false;
+(function(){
+if(F156)return;F156=true;
+function e(s){return esc(String(s==null?"":s))}
+function P(){return S.profile||{}}
+function memberView(){return P().onboarded&&(P().viewMode||"member")==="member"&&!document.body.classList.contains("hubview")}
+function save(){try{profChanged()}catch(x){}}
+/* id, week, title, how, auto-check */
+var STR=[
+ ["s1",1,"Go to your first class","Tell the coach it is your first one. Nobody expects anything.","any"],
+ ["s2",1,"Learn your stance","Feet, hands and weight. Ask your coach to check it.",""],
+ ["s3",1,"Wrap your hands","Ask someone to show you. It protects your wrists.",""],
+ ["s4",2,"Jab and cross","The two basic punches. Slow and correct beats fast.",""],
+ ["s5",2,"Train twice this week","Two sessions is a great start.","two"],
+ ["s6",2,"Learn the round kick","Technique first. Power comes later.",""],
+ ["s7",3,"Your first pad round","Hold pads or work on them with your coach.",""],
+ ["s8",3,"Tell your coach your goal","Fitness, a fight or just fun. They will help you towards it.",""],
+ ["s9",3,"Rate how hard a session felt","Log a session with an effort score. It helps you pace yourself.","rpe"],
+ ["s10",4,"Train twice again","Repeat week two. Habits are built by repeating.","two"],
+ ["s11",4,"Try a light drill session","Easy technique work with a partner. No hard contact.",""],
+ ["s12",4,"Month check-in","Look at how far you have come. Pick the next goal.",""]];
+var GRP=[
+ ["g1",1,"Go to your first class","Tell the coach it is your first one. Nobody expects anything.","any"],
+ ["g2",1,"Learn to fall safely","Breakfalls keep you safe. Ask your coach to run you through them.",""],
+ ["g3",1,"Learn the hip escape","The basic movement on the ground. Slow and smooth.",""],
+ ["g4",2,"Closed guard basics","Where your legs and hands go.",""],
+ ["g5",2,"Train twice this week","Two sessions is a great start.","two"],
+ ["g6",2,"Learn how to tap","Tapping is how everyone stays safe.",""],
+ ["g7",3,"Your first light roll","Easy pace with a partner your coach chooses.",""],
+ ["g8",3,"Tell your coach your goal","Fitness, competing or just fun.",""],
+ ["g9",3,"Rate how hard a session felt","Log a session with an effort score.","rpe"],
+ ["g10",4,"Train twice again","Repeat week two. Habits are built by repeating.","two"],
+ ["g11",4,"Learn one sweep","Pick one with your coach and repeat it.",""],
+ ["g12",4,"Month check-in","Look at how far you have come. Pick the next goal.",""]];
+var GEN=[
+ ["n1",1,"Go to your first session","Say it is your first one. Nobody expects anything.","any"],
+ ["n2",1,"Ask your coach for the basics","Ask what a beginner should learn first.",""],
+ ["n3",1,"Log your session","Minutes and effort are optional.","any"],
+ ["n4",2,"Train twice this week","Two sessions is a great start.","two"],
+ ["n5",2,"Learn one new thing","Write it in your session note.",""],
+ ["n6",2,"Plan your next week","Pick the days you will train.",""],
+ ["n7",3,"Tell your coach your goal","Fitness, competing or just fun.",""],
+ ["n8",3,"Rate how hard a session felt","Log a session with an effort score.","rpe"],
+ ["n9",3,"Try something a bit harder","Add a few minutes or one more round.",""],
+ ["n10",4,"Train twice again","Repeat week two.","two"],
+ ["n11",4,"Review your first month","See your sessions and how you felt.",""],
+ ["n12",4,"Pick your next goal","Set it in Goals.",""]];
+function set(){var sp=(P().sports||[]).join(" ");if(/Muay|Kick|Box|MMA/i.test(sp))return STR;if(/Jiu|BJJ|Grappl/i.test(sp))return GRP;return GEN}
+function logs(){try{return logMap()}catch(x){return {}}}
+function totalSess(){var n=0,m=logs();Object.keys(m).forEach(function(k){var l=m[k];if(l&&l.sessions)n+=l.sessions.length});return n}
+function anyRpe(since){var m=logs(),r=false;Object.keys(m).forEach(function(k){var l=m[k];if(k>=since&&l&&l.sessions&&l.sessions.some(function(s){return +s.rpe>0}))r=true});return r}
+function weekMax(since){var best=0;try{for(var i=0;i<6;i++){var ws=addDays(weekStartKey(),-7*i);if(addDays(ws,6)<since)break;var w=FBE.week(ws);best=Math.max(best,w.sessions||0)}}catch(x){}return best}
+function auto(st,fm){if(st[4]==="any")return totalSess()>0;if(st[4]==="two")return weekMax(fm.start)>=2;if(st[4]==="rpe")return anyRpe(fm.start);return false}
+function show(){var p=P();if(!memberView())return false;var fm=p.fm;if(fm&&fm.off)return false;if(!fm){if(totalSess()>=8)return false;p.fm={start:TODAY,done:{}};save();fm=p.fm}
+ var d=diffDays(fm.start,TODAY);return d<=42}
+function state(){var fm=P().fm,S0=set(),dn=fm.done||{},wk=Math.min(4,Math.floor(diffDays(fm.start,TODAY)/7)+1);
+ var rows=S0.map(function(st){var ok=!!dn[st[0]]||auto(st,fm);return {id:st[0],wk:st[1],t:st[2],h:st[3],ok:ok,man:!st[4],locked:st[1]>wk}});
+ var done=rows.filter(function(r){return r.ok}).length,nxt=rows.filter(function(r){return !r.ok&&!r.locked})[0]||null;return {rows:rows,done:done,nxt:nxt,wk:wk,d:diffDays(fm.start,TODAY)}}
+var OPEN=false;
+function draw(){try{var tb=document.getElementById("tab-today"),el=document.getElementById("fb156");if(!tb)return;
+ if(!show()){if(el)el.remove();return}
+ var s=state(),h='<div class="k156">Your first month · week '+s.wk+'</div><div class="bar156"><i style="width:'+Math.round(s.done/12*100)+'%"></i></div><p class="muted small" style="margin:0">'+s.done+' of 12 done. No pressure, skip anything you like.</p>';
+ if(s.nxt){h+='<div class="n156"><div><b>'+e(s.nxt.t)+'</b><span class="muted small">'+e(s.nxt.h)+'</span></div>'+(s.nxt.man?'<button type="button" class="btn sm" data-f156done="'+s.nxt.id+'">Done</button>':'<span class="muted small">Ticks itself</span>')+'</div>'}
+ else h+='<p style="margin:0"><b>You are all caught up.</b> Nice work.</p>';
+ h+='<button type="button" class="linkbtn" data-f156open aria-expanded="'+OPEN+'">'+(OPEN?"Hide all steps":"See all 12 steps")+'</button>';
+ if(OPEN){h+='<div class="l156">'+s.rows.map(function(r){return '<div class="r156'+(r.ok?" ok":"")+(r.locked?" lk":"")+'"><span class="c156" aria-hidden="true">'+(r.ok?"✓":"")+'</span><div><b>'+e(r.t)+'</b><span class="muted small">Week '+r.wk+(r.locked?" · unlocks later":"")+'</span></div>'+((r.man&&!r.locked)?'<button type="button" class="btn ghost sm" data-f156tick="'+r.id+'">'+(r.ok?"Undo":"Done")+'</button>':'')+'</div>'}).join("")+'<button type="button" class="linkbtn" data-f156off>Hide this card</button><p class="muted small" style="margin:6px 0 0">Starter steps. Your coach can change them.</p></div>'}
+ if(!el){el=document.createElement("section");el.id="fb156";tb.insertBefore(el,tb.firstChild)}
+ var hero=document.getElementById("fb155");if(hero&&el.previousElementSibling!==hero&&hero.parentNode===tb)tb.insertBefore(el,hero.nextSibling);
+ if(el.dataset.sig!==h){el.innerHTML=h;el.dataset.sig=h}}catch(x){console.error(x)}}
+document.addEventListener("click",function(ev){var t=ev.target;if(!t.closest)return;var b;
+ if(t.closest("[data-f156open]")){OPEN=!OPEN;draw();return}
+ if(b=t.closest("[data-f156done],[data-f156tick]")){var id=b.dataset.f156done||b.dataset.f156tick,fm=P().fm;fm.done=fm.done||{};if(fm.done[id])delete fm.done[id];else fm.done[id]=1;save();draw();try{toast("Nice one","One more step")}catch(x){}return}
+ if(t.closest("[data-f156off]")){P().fm.off=true;save();draw()}});
+var css=document.createElement("style");css.textContent=
+"#tab-today #fb156{order:-19;grid-column:1/-1;border:1px solid var(--line,rgba(255,255,255,.1));border-radius:16px;padding:14px 16px;background:rgba(255,255,255,.035);display:flex;flex-direction:column;gap:8px}"+
+"#fb156 .k156{font-size:.7rem;letter-spacing:.14em;text-transform:uppercase;opacity:.75;font-weight:700}"+
+"#fb156 .bar156{height:6px;border-radius:3px;background:rgba(255,255,255,.12)}#fb156 .bar156 i{display:block;height:6px;border-radius:3px;background:var(--red,#C81E3A)}"+
+"#fb156 .n156{display:flex;gap:10px;align-items:center;justify-content:space-between}#fb156 .n156>div{display:flex;flex-direction:column;gap:2px;min-width:0}#fb156 .n156 b{font-size:1.05rem}#fb156 .btn{min-height:44px;flex:none}"+
+"#fb156 .linkbtn{align-self:flex-start;min-height:44px}"+
+"#fb156 .l156{display:flex;flex-direction:column;gap:6px}#fb156 .r156{display:flex;gap:10px;align-items:center;padding:6px 0;border-top:1px solid var(--line,rgba(255,255,255,.08))}#fb156 .r156>div{flex:1;display:flex;flex-direction:column}#fb156 .r156.lk{opacity:.55}"+
+"#fb156 .c156{width:22px;height:22px;border-radius:11px;border:2px solid rgba(255,255,255,.3);display:flex;align-items:center;justify-content:center;font-size:13px;flex:none}#fb156 .r156.ok .c156{background:var(--red,#C81E3A);border-color:var(--red,#C81E3A);color:#fff}";
+document.head.appendChild(css);
+var st=showTab;showTab=function(){var r=st.apply(this,arguments);try{draw()}catch(x){}return r};
+setInterval(draw,1500);
+window.FH156={draw:draw,state:function(){return show()?state():null}};
 })();
 
 /* FighterBase v44: always a way back, always a next step. */
