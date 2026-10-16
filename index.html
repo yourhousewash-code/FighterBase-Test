@@ -17401,6 +17401,97 @@ setTimeout(run,300);
 window.FH154={run:run};
 })();
 
+/* FighterBase v196: slim header, Today / Train / Fuel / Progress / Me tabs, and a "Today" block at the top of Home.
+   Phones only for the header and tab changes (desktop keeps its sidebar). Each person sees one short motivating line matched to where they are:
+   first weeks, fight camp, coming back after a gap, a good run, or steady training. Lines are our own wording, never attributed to anyone.
+   Nothing here changes any saved data. */
+var T155=T155||false;
+(function(){
+if(T155)return;T155=true;
+function e(s){return esc(String(s==null?"":s))}
+function P(){return S.profile||{}}
+function club(){try{return clubState&&clubState.club}catch(x){return null}}
+function inClub(){return !!(P().clubId&&club())}
+function memberView(){return P().onboarded&&(P().viewMode||"member")==="member"&&!document.body.classList.contains("hubview")}
+function nutOn(){try{return window.FHL?FHL.nutOn():true}catch(x){return true}}
+var Q={
+ neu:["Showing up is the whole job right now. Everything else comes later.","Nobody was good at this on day one. Walk in, learn one thing, walk out.","Small and regular beats big and rare. This week only needs two sessions.","You do not need to be fit to start. You start, and then you get fit.","Every fighter you admire once had a first nervous class."],
+ camp:["Trust the work you have already done. Today is one more brick.","Camp is a lot of ordinary days stacked up. Do today well.","Rest is part of the plan. Fresh legs win rounds.","You have put in the weeks. Now sharpen, sleep and stay calm.","Steady and sharp. That is how you walk in confident."],
+ back:["Coming back is the hard part, and you are doing it.","One session restarts everything. Pick an easy one and go.","A gap is just a gap. You are back, and that is what counts.","Start lighter than you think. Momentum builds quickly.","Nobody keeps a perfect record. The best keep returning."],
+ run:["Look at that run. Keep it simple and keep it going.","Consistency is quietly working on you. Keep turning up.","You are building something real. Protect your sleep and keep going.","Good weeks come from ordinary days. Have another one.","This is what progress looks like from the inside."],
+ std:["Get a little better today. That is enough.","Technique first, speed second, power third.","A tough session you finish beats a perfect one you skip.","Train hard, recover well, repeat. It works.","The mat does not care how you feel. It rewards you for turning up."]};
+function stage(){try{var f=FBE.upcomingFight();if(f&&f.days<=84)return"camp";var st=FBE.streaks();if(st.inComeback)return"back";var W=FBE.allWeeks(),n=W.reduce(function(a,w){return a+(w.sessions||0)},0);if(n<6)return"neu";if(st.cur>=4)return"run"}catch(x){}return"std"}
+function pick(k,salt){var a=Q[k]||Q.std,d=new Date(),doy=Math.floor((d-new Date(d.getFullYear(),0,0))/864e5);return a[(doy+(salt||0))%a.length]}
+function first(){var n=(P().name||"").trim().split(/\s+/)[0];return n}
+function greet(){var h=new Date().getHours();return h<12?"Good morning":h<18?"Good afternoon":"Good evening"}
+function nextClass(){var c=club();if(!c||!inClub())return null;var now=new Date(),hm=("0"+now.getHours()).slice(-2)+":"+("0"+now.getMinutes()).slice(-2);
+ try{for(var i=0;i<7;i++){var k=addDays(TODAY,i),cl=classesOn(c,k).filter(function(x){return !x.kids||S.canEdit}).filter(function(x){return i>0||x.time>=hm})[0];if(cl)return {d:k,cl:cl,today:i===0}}}catch(x){}return null}
+function dayName(k){var t=new Date(k+"T12:00");return t.toLocaleDateString("en-GB",{weekday:"long"})}
+function week(){try{return FBE.week(weekStartKey())}catch(x){return {sessions:0,target:0}}}
+function sugg(w){var p=P();if(!(p.road&&p.road.start))return {h:"Set your goal",s:"Pick what you are working towards and the app builds your week around it.",b:"Set my goal",g:"goals2"};
+ if(+w.target&&w.sessions<w.target)return {h:"Log a session",s:"Trained today? Record it so it counts towards your week.",b:"Log it",g:"train"};
+ if(nutOn())return {h:"Plan your food",s:"Meals that fit your training, in a couple of taps.",b:"Plan meals",g:"meals"};
+ return {h:"Week done. Rest well.",s:"You hit your target. Recovery is part of training.",b:"See progress",g:"stats"}}
+function ring(a,b){var C=163.4,t=+b||0,f=t?Math.min(1,a/t):0;return '<svg width="64" height="64" viewBox="0 0 64 64" role="img" aria-label="'+a+' of '+(t||"?")+' sessions this week"><circle cx="32" cy="32" r="26" fill="none" stroke="rgba(255,255,255,.12)" stroke-width="7"/><circle cx="32" cy="32" r="26" fill="none" stroke="var(--red,#C81E3A)" stroke-width="7" stroke-linecap="round" stroke-dasharray="'+C+'" stroke-dashoffset="'+Math.round(C*(1-f))+'" transform="rotate(-90 32 32)"/><text x="32" y="38" text-anchor="middle" fill="currentColor" font-size="16" font-weight="700">'+a+(t?"/"+t:"")+'</text></svg>'}
+var css=document.createElement("style");css.textContent=
+"#tab-today #fb155{order:-20;padding-top:8px;grid-column:1/-1;display:flex;flex-direction:column;gap:12px}"+
+"#fb155 .h155{font:800 clamp(26px,7vw,34px)/1.05 var(--cond,'Barlow Condensed'),sans-serif;letter-spacing:.01em;margin:0}"+
+".q155{display:block;margin:0;padding:2px 0 2px 12px;border-left:3px solid var(--red,#C81E3A);font-size:.95rem;line-height:1.4;opacity:.92;font-style:italic}"+
+"#fb155 .c155{border:1px solid var(--line,rgba(255,255,255,.1));border-radius:16px;padding:14px 16px;background:rgba(255,255,255,.035);display:flex;flex-direction:column;gap:8px}"+
+"#fb155 .k155{font-size:.7rem;letter-spacing:.14em;text-transform:uppercase;opacity:.7;font-weight:700;margin:0}"+
+"#fb155 .t155{font:800 clamp(22px,6vw,28px)/1.05 var(--cond,'Barlow Condensed'),sans-serif;margin:0}"+
+"#fb155 .c155.r155{display:flex;flex-direction:row;gap:14px;align-items:center}#fb155 .r155 p{margin:0}"+
+"#fb155 .btn{min-height:46px;align-self:flex-start}#fb155 .row155{display:flex;gap:10px}#fb155 .row155 .btn{flex:1}"+
+"#fb155 .l155{border-style:dashed;flex-direction:row;align-items:center;justify-content:space-between;gap:10px}"+
+"#tab-today #perf89{order:800}#tab-today #fb154{order:-10}"+
+"#fb155back{display:none}"+
+"@media (max-width:700px){"+
+"body:not(.fb-desk):not(.hubview) header.top{flex-wrap:nowrap!important;align-items:center;gap:8px!important;padding-block:6px!important;min-height:56px;max-height:60px;overflow:visible}"+
+"body:not(.fb-desk):not(.hubview) header.top .brand{flex:1 1 auto;min-width:0;gap:8px}"+
+"body:not(.fb-desk):not(.hubview) header.top .brand .fb-mark,body:not(.fb-desk):not(.hubview) header.top .brand .cb-logo,body:not(.fb-desk):not(.hubview) header.top .brand img{width:32px!important;height:32px!important}"+
+"body:not(.fb-desk):not(.hubview) header.top .brand h1{font-size:clamp(15px,4.4vw,20px)!important;white-space:nowrap!important;overflow:hidden;text-overflow:ellipsis;margin:0;line-height:1.1}"+
+"body:not(.fb-desk):not(.hubview) header.top .brand p,body:not(.fb-desk):not(.hubview) header.top #dietLine,body:not(.fb-desk):not(.hubview) header.top .cb-pow,body:not(.fb-desk):not(.hubview) header.top .date,body:not(.fb-desk):not(.hubview) header.top #allSec90{display:none!important}"+
+"body:not(.fb-desk):not(.hubview) header.top>.stack{flex:none;margin-left:auto;gap:0!important;align-items:center}"+
+"body:not(.fb-desk):not(.hubview) header.top .modebar{gap:2px}"+
+"body:not(.fb-desk):not(.hubview) header.top .fb-line{display:none}"+
+"body:not(.fb-desk):not(.hubview) #navBar{display:none!important}"+
+"body:not(.fb-desk):not(.hubview) #subnav{padding-block:4px}body:not(.fb-desk):not(.hubview) #subnav button{min-height:38px;padding:6px 14px;font-size:13px}"+
+"body.b155 #fb155back{display:inline-flex;align-items:center;justify-content:center;width:44px;height:44px;flex:none;margin-left:-8px;border:0;background:transparent;color:inherit;font-size:26px;line-height:1;cursor:pointer}"+
+"}";
+document.head.appendChild(css);
+function drawHero(){try{var tb=document.getElementById("tab-today"),el=document.getElementById("fb155");if(!tb)return;
+ if(!memberView()){if(el)el.remove();return}
+ var w=week(),n=nextClass(),sg=sugg(w),sk=stage(),nm=first(),h="";
+ h+='<div><p class="h155">'+e(greet())+(nm?", "+e(nm):"")+'</p></div><p class="q155">'+e(pick(sk,0))+'</p>';
+ if(n){h+='<div class="c155"><p class="k155">Next class</p><p class="t155">'+e(n.cl.title||n.cl.name||"Class")+'</p><p class="muted small" style="margin:0">'+(n.today?"Today":e(dayName(n.d)))+" "+e(n.cl.time)+" · "+e(club().name)+'</p><div class="row155"><button type="button" class="btn" data-goto="clubpage">Class and check-in</button></div></div>'}
+ else if(inClub()){h+='<div class="c155"><p class="k155">Next class</p><p class="t155">Nothing coming up</p><p class="muted small" style="margin:0">Check your club timetable for the week.</p><button type="button" class="btn ghost" data-goto="clubpage">Open club page</button></div>'}
+ h+='<div class="c155 r155">'+ring(w.sessions||0,w.target)+'<div><p class="t155" style="font-size:22px">This week</p><p class="muted small">'+((+w.target)?"Hit your target, and a missed session never wipes your week.":"Set a weekly plan and it shows here.")+'</p></div></div>';
+ h+='<div class="c155"><p class="k155">Suggested next</p><p class="t155" style="font-size:20px">'+e(sg.h)+'</p><p class="muted small" style="margin:0">'+e(sg.s)+'</p><button type="button" class="btn ghost" data-goto="'+e(sg.g)+'">'+e(sg.b)+'</button></div>';
+ if(!inClub())h+='<div class="c155 l155"><p class="muted small" style="margin:0;flex:1">Train at a gym? Link it for class booking, check-in and coach messages. Your history stays yours.</p><button type="button" class="btn ghost sm" data-goto="club">Link a gym</button></div>';
+ if(!el){el=document.createElement("section");el.id="fb155";tb.insertBefore(el,tb.firstChild)}else if(tb.firstChild!==el)tb.insertBefore(el,tb.firstChild);
+ if(el.dataset.sig!==h){el.innerHTML=h;el.dataset.sig=h}}catch(x){console.error(x)}}
+var TABQ={train:1,meals:2,journey:3,progress:3,club:4,profile:5,shop:2,foods:2,challenges:3};
+function drawQuotes(){try{var t=document.querySelector("section[id^=tab-]:not([hidden])");if(!t)return;var id=t.id.slice(4);
+ document.querySelectorAll(".q155.pg").forEach(function(q){if(q.parentNode!==t)q.remove()});
+ if(id==="today"||!P().onboarded||(P().viewMode||"member")!=="member"){return}
+ var q=t.querySelector(":scope > .q155.pg"),tx=pick(stage(),TABQ[id]||(id.length%5)+1);
+ if(!q){q=document.createElement("p");q.className="q155 pg";t.insertBefore(q,t.firstChild)}
+ if(q.textContent!==tx)q.textContent=tx;if(t.firstChild!==q)t.insertBefore(q,t.firstChild)}catch(x){}}
+function fixNav(){try{var nb=document.querySelector("nav.bottom");if(!nb)return;
+ var t=nb.querySelector("[data-group=today] span"),l=nb.querySelector("[data-group=train] span");if(t&&t.textContent!=="Today")t.textContent="Today";if(l&&l.textContent!=="Train")l.textContent="Train";
+ var b=nb.querySelector("button:nth-child(4)");if(b&&b.dataset.group==="club"){b.dataset.group="progress";b.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 20h18M5 16l4-5 4 3 6-8"/></svg><span>Progress</span>'}
+ if(typeof GROUPS!=="undefined"){var g=["journey","progress"];if(P().clubId)g.push("club");g.push("challenges","growth","partners");if(GROUPS.progress.join()!==g.join())GROUPS.progress=g}}catch(x){}}
+function fixHeader(){try{var hd=document.querySelector("header.top");if(!hd)return;var cur=(document.querySelector("section[id^=tab-]:not([hidden])")||{id:"tab-today"}).id.slice(4);
+ var show=cur!=="today"&&!!window.FHN;document.body.classList.toggle("b155",show);
+ var bk=document.getElementById("fb155back");if(!bk){bk=document.createElement("button");bk.type="button";bk.id="fb155back";bk.setAttribute("aria-label","Go back");bk.textContent="‹";bk.addEventListener("click",function(){try{FHN.back()}catch(x){showTab("today")}});hd.insertBefore(bk,hd.firstChild)}}catch(x){}}
+function tick(){fixNav();fixHeader();drawHero();drawQuotes()}
+var st=showTab;showTab=function(){var r=st.apply(this,arguments);try{tick()}catch(x){}return r};
+setInterval(tick,1200);
+var nbEl=document.querySelector("nav.bottom");if(nbEl&&window.MutationObserver)new MutationObserver(function(){fixNav()}).observe(nbEl,{childList:true,subtree:true,attributes:true,attributeFilter:["data-group"]});
+tick();
+window.FH155={tick:tick,stage:stage};
+})();
+
 /* FighterBase v44: always a way back, always a next step. */
 var N31=N31||false;
 (function(){
