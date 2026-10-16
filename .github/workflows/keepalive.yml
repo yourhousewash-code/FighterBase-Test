@@ -1,0 +1,18 @@
+# Keeps the FighterBase-Dev Supabase project from being auto-paused for inactivity.
+# Sends a few harmless requests every 2 days using the public publishable key (the same one the test page uses).
+name: keepalive
+on:
+  schedule:
+    - cron: "17 6 */2 * *"
+  workflow_dispatch:
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ping Supabase
+        run: |
+          U=https://xwuqyzjdyfypyglkvpnp.supabase.co
+          K=sb_publishable_UE7Dwez6cWHaU0jRwxYQJg_lYFkD-6g
+          curl -sS -o /dev/null -w "auth health %{http_code}\n" "$U/auth/v1/health" -H "apikey: $K"
+          curl -sS -o /dev/null -w "rest root %{http_code}\n" "$U/rest/v1/" -H "apikey: $K"
+          curl -sS -o /dev/null -w "clubs query %{http_code}\n" "$U/rest/v1/clubs?select=id&limit=1" -H "apikey: $K" -H "Authorization: Bearer $K"
