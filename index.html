@@ -17427,6 +17427,10 @@ function greet(){var h=new Date().getHours();return h<12?"Good morning":h<18?"Go
 function nextClass(){var c=club();if(!c||!inClub())return null;var now=new Date(),hm=("0"+now.getHours()).slice(-2)+":"+("0"+now.getMinutes()).slice(-2);
  try{for(var i=0;i<7;i++){var k=addDays(TODAY,i),cl=classesOn(c,k).filter(function(x){return !x.kids||S.canEdit}).filter(function(x){return i>0||x.time>=hm})[0];if(cl)return {d:k,cl:cl,today:i===0}}}catch(x){}return null}
 function dayName(k){var t=new Date(k+"T12:00");return t.toLocaleDateString("en-GB",{weekday:"long"})}
+function lastSess(){try{var m=logMap();for(var i=0;i<=90;i++){var k=addDays(TODAY,-i),l=m[k],ss=l&&l.sessions;if(ss&&ss.length){return {k:k,i:i,s:ss[ss.length-1],n:ss.length}}}}catch(x){}return null}
+function ago(i){return i===0?"Today":i===1?"Yesterday":i+" days ago"}
+function n30(){var n=0;try{var m=logMap();for(var i=0;i<30;i++){var l=m[addDays(TODAY,-i)];if(l&&l.sessions)n+=l.sessions.length}}catch(x){}return n}
+function myNext(){try{var u=window.FH100&&FH100.upcoming();return u&&u[0]||null}catch(x){return null}}
 function week(){try{return FBE.week(weekStartKey())}catch(x){return {sessions:0,target:0}}}
 function sugg(w){var p=P();if(!(p.road&&p.road.start))return {h:"Set your goal",s:"Pick what you are working towards and the app builds your week around it.",b:"Set my goal",g:"goals2"};
  if(+w.target&&w.sessions<w.target)return {h:"Log a session",s:"Trained today? Record it so it counts towards your week.",b:"Log it",g:"train"};
@@ -17442,6 +17446,7 @@ var css=document.createElement("style");css.textContent=
 "#fb155 .t155{font:800 clamp(22px,6vw,28px)/1.05 var(--cond,'Barlow Condensed'),sans-serif;margin:0}"+
 "#fb155 .c155.r155{display:flex;flex-direction:row;gap:14px;align-items:center}#fb155 .r155 p{margin:0}"+
 "#fb155 .btn{min-height:46px;align-self:flex-start}#fb155 .row155{display:flex;gap:10px}#fb155 .row155 .btn{flex:1}"+
+"#fb155 .g155{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}#fb155 .s155{border:1px solid var(--line,rgba(255,255,255,.1));border-radius:14px;padding:10px 12px;background:rgba(255,255,255,.035)}#fb155 .s155 b{display:block;font:800 22px/1.1 var(--cond,'Barlow Condensed'),sans-serif}#fb155 .s155 span{font-size:.72rem;opacity:.7}"+
 "#fb155 .l155{border-style:dashed;flex-direction:row;align-items:center;justify-content:space-between;gap:10px}"+
 "#tab-today #perf89{order:800}#tab-today #fb154{order:-10}"+
 "#fb155back{display:none}"+
@@ -17465,6 +17470,17 @@ function drawHero(){try{var tb=document.getElementById("tab-today"),el=document.
  h+='<div><p class="h155">'+e(greet())+(nm?", "+e(nm):"")+'</p></div><p class="q155">'+e(pick(sk,0))+'</p>';
  if(n){h+='<div class="c155"><p class="k155">Next class</p><p class="t155">'+e(n.cl.title||n.cl.name||"Class")+'</p><p class="muted small" style="margin:0">'+(n.today?"Today":e(dayName(n.d)))+" "+e(n.cl.time)+" · "+e(club().name)+'</p><div class="row155"><button type="button" class="btn" data-goto="clubpage">Class and check-in</button></div></div>'}
  else if(inClub()){h+='<div class="c155"><p class="k155">Next class</p><p class="t155">Nothing coming up</p><p class="muted small" style="margin:0">Check your club timetable for the week.</p><button type="button" class="btn ghost" data-goto="clubpage">Open club page</button></div>'}
+ var ls=lastSess(),mn=myNext();
+ if(ls){var sp=(ls.s.sport&&ls.s.sport!=="General"?ls.s.sport+" · ":"")+(ls.s.type||"Session");h+='<div class="c155"><p class="k155">Last session</p><p class="t155" style="font-size:20px">'+e(sp)+'</p><p class="muted small" style="margin:0">'+e(ago(ls.i))+(ls.s.mins?" · "+(+ls.s.mins)+" min":"")+(ls.s.rpe?" · effort "+(+ls.s.rpe)+"/10":"")+'</p></div>'}
+ else h+='<div class="c155"><p class="k155">Last session</p><p class="t155" style="font-size:20px">None logged yet</p><p class="muted small" style="margin:0">Your first one starts the record.</p><button type="button" class="btn ghost" data-goto="train">Log a session</button></div>';
+ if(!n&&mn)h+='<div class="c155"><p class="k155">Next session (your plan)</p><p class="t155" style="font-size:20px">'+e(mn.title||"Session")+'</p><p class="muted small" style="margin:0">'+e(mn.date===TODAY?"Today":dayName(mn.date))+(mn.time?" "+e(mn.time):"")+(mn.mins?" · "+(+mn.mins)+" min":"")+'</p></div>';
+ else if(!n&&!inClub())h+='<div class="c155"><p class="k155">Next session</p><p class="muted small" style="margin:0">Nothing planned. Plan one and it shows here.</p><button type="button" class="btn ghost" data-goto="train">Plan a session</button></div>';
+ var st0=null,wt=null;try{st0=FBE.streaks();wt=FBE.weight()}catch(x){}
+ var tiles=[];tiles.push('<div class="s155"><b>'+n30()+'</b><span>sessions, 30 days</span></div>');
+ if(st0&&st0.cur>0)tiles.push('<div class="s155"><b>'+st0.cur+(st0.cur===1?" wk":" wks")+'</b><span>streak</span></div>');
+ if(wt&&wt.now!=null)tiles.push('<div class="s155"><b>'+(Math.round(wt.now*10)/10)+' kg</b><span>weight now</span></div>');
+ if(tiles.length<3&&!wt)tiles.push('<div class="s155"><b>'+(+w.sessions||0)+'</b><span>this week</span></div>');
+ h+='<div class="g155">'+tiles.join("")+'</div>';
  h+='<div class="c155 r155">'+ring(w.sessions||0,w.target)+'<div><p class="t155" style="font-size:22px">This week</p><p class="muted small">'+((+w.target)?"Hit your target, and a missed session never wipes your week.":"Set a weekly plan and it shows here.")+'</p></div></div>';
  h+='<div class="c155"><p class="k155">Suggested next</p><p class="t155" style="font-size:20px">'+e(sg.h)+'</p><p class="muted small" style="margin:0">'+e(sg.s)+'</p><button type="button" class="btn ghost" data-goto="'+e(sg.g)+'">'+e(sg.b)+'</button></div>';
  if(!inClub())h+='<div class="c155 l155"><p class="muted small" style="margin:0;flex:1">Train at a gym? Link it for class booking, check-in and coach messages. Your history stays yours.</p><button type="button" class="btn ghost sm" data-goto="club">Link a gym</button></div>';
