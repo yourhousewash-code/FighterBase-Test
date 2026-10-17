@@ -13591,6 +13591,18 @@ function nowMin(){var d=new Date();return d.getHours()*60+d.getMinutes()}
 function first(m){return String(m.name||"Member").split(" ")[0]}
 function tname(x){try{var t=(FH69.teachers()||[]).filter(function(t){return t.id===x.tid})[0];return t?t.name:(x.coach||"")}catch(z){return x.coach||""}}
 function fmtDay(k){return k===TODAY?"today":k===addDays(TODAY,1)?"tomorrow":new Date(k+"T12:00").toLocaleDateString("en-GB",{weekday:"short",day:"numeric",month:"short"})}
+function who(c,M,cls){
+ var rows=[],tot={c:0,h:0},seen={};
+ cls.forEach(function(x){var key=TODAY+"_"+x.id,here=M.filter(function(m){return m.att&&m.att[key]}),com=M.filter(function(m){return m.rsvp&&m.rsvp[key]&&!(m.att&&m.att[key])});
+  here.forEach(function(m){seen["h"+m.uid]=1});com.forEach(function(m){seen["c"+m.uid]=1});
+  var end=(hm(x.time)||0)+(+x.mins||60),st=(hm(x.time)||0)>nowMin()?"":end>nowMin()?"On now":"Finished";
+  rows.push('<div class="d113-c"><div class="d113-h"><span class="d112-k">'+e(x.time)+'</span> <b>'+e(x.title)+'</b>'+(st?' <em class="d112-s s-none">'+st+'</em>':'')+'</div>'+
+   ((here.length||com.length)?'<div class="d113-p">'+here.map(function(m){return '<span class="d113-n ok"><i aria-hidden="true">✓</i>'+e(m.name||"Member")+'<span class="sr-only"> checked in</span></span>'}).join("")+com.map(function(m){return '<span class="d113-n">'+e(m.name||"Member")+'<span class="sr-only"> coming</span></span>'}).join("")+'</div>':'<p class="muted small" style="margin:2px 0 0">Nobody has said they are coming yet.</p>')+'</div>')});
+ var pts=(c.ptSlots||[]).filter(function(s){return s.d===TODAY&&s.status==="booked"}).sort(function(a,b){return String(a.time).localeCompare(String(b.time))});
+ if(pts.length)rows.push('<div class="d113-c"><div class="d113-h"><b>Personal training</b></div><div class="d113-p">'+pts.map(function(s){return '<span class="d113-n"><b>'+e(s.time)+'</b> '+e(s.name||"Member")+'</span>'}).join("")+'</div></div>');
+ tot.c=Object.keys(seen).filter(function(k){return k[0]==="c"}).length;tot.h=Object.keys(seen).filter(function(k){return k[0]==="h"}).length;
+ if(!rows.length)return "";
+ return '<div class="d112-sec" id="d113who"><h3>Who is training today</h3><p class="d112-p" style="margin:0">'+(tot.h+tot.c)+' confirmed today'+(tot.h?', '+tot.h+' already here':'')+'. Updates as members confirm or check in.</p>'+rows.join("")+'</div>'}
 function html(){
  var c=club();if(!c)return "";var M=mem(),h='',cls=[];
  try{cls=classesOn(c,TODAY)}catch(x){}
@@ -13601,6 +13613,7 @@ function html(){
  else h+=cls.map(function(x){var key=TODAY+"_"+x.id,coming=M.filter(function(m){return m.rsvp&&m.rsvp[key]}).length,here=M.filter(function(m){return m.att&&m.att[key]}).length,end=(hm(x.time)||0)+(+x.mins||60),st=(hm(x.time)||0)>nowMin()?"Not started":end>nowMin()?"On now":"Finished",cap=+x.cap||0,full=cap&&coming>=cap;
   return '<div class="d112-r"><div class="d112-w"><span class="d112-k">'+e(x.time)+(x.mins?' · '+(+x.mins)+' min':'')+'</span><b>'+e(x.title)+'</b><span class="muted small">'+e([tname(x),x.level&&x.level!=="All levels"?x.level:""].filter(Boolean).join(" · "))+'</span></div><div class="d112-a"><em class="d112-s s-'+(full?"no":"none")+'">'+coming+' coming'+(cap?' of '+cap:'')+(full?' · full':'')+'</em><em class="d112-s s-'+(here?"ok":"none")+'">'+here+' checked in</em><em class="d112-s s-none">'+st+'</em></div></div>'}).join("")+'<p class="muted small" style="margin:6px 0 0">"Coming" is what members planned. "Checked in" is arrivals recorded by phone location or added by the member. Neither is a register.</p>';
  h+='</div>';
+ h+=who(c,M,cls);
  /* personal training */
  var slots=(c.ptSlots||[]),today=slots.filter(function(s){return s.d===TODAY}).sort(function(a,b){return String(a.time).localeCompare(String(b.time))});
  var reqs=[];M.forEach(function(m){(m.ptReq||[]).forEach(function(r){var s=slots.filter(function(x){return x.id===r.slot})[0];if(s&&s.status!=="booked"&&s.d>=TODAY&&!((s.decl||{})[m.uid]))reqs.push({m:m,s:s})})});
@@ -13622,6 +13635,7 @@ function draw(){var host=document.getElementById("huboverBody");if(!host||!staff
  var h=html();if(el.dataset.sig!==h){el.innerHTML=h;el.dataset.sig=h}}
 function safe(){try{draw()}catch(x){try{console.warn("f113",x)}catch(_){}}}
 var st=showTab;showTab=function(t){var r=st.apply(this,arguments);try{if(t==="hubover")setTimeout(safe,60)}catch(x){}return r};
+(function(){var c=document.createElement("style");c.textContent=".d113-c{display:flex;flex-direction:column;gap:4px;padding:8px 0;border-top:1px solid var(--line,rgba(255,255,255,.1))}.d113-h{display:flex;gap:8px;align-items:center;flex-wrap:wrap}.d113-p{display:flex;flex-wrap:wrap;gap:6px}.d113-n{display:inline-flex;align-items:center;gap:6px;padding:4px 10px;border-radius:999px;border:1px solid var(--line,rgba(255,255,255,.18));font-size:.9rem}.d113-n.ok{border-color:#3DA66B;background:rgba(61,166,107,.14)}.d113-n i{font-style:normal;font-weight:700;color:#3DA66B}.sr-only{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}";document.head.appendChild(c)})();
 document.addEventListener("click",function(ev){var t=ev.target;if(t.closest&&t.closest("[data-ptconf],[data-ptdecl]"))setTimeout(safe,500)},true);
 setInterval(function(){try{var o=document.getElementById("tab-hubover");if(o&&!o.hidden)safe()}catch(x){}},2500);
 window.FH113={draw:safe};
