@@ -4810,10 +4810,11 @@ if(FULL.fuel&&FULL.fuel.indexOf("nutrition")<0)FULL.fuel.unshift("nutrition");
 if(FULL.train.indexOf("schedule")<0)FULL.train.splice(FULL.train.indexOf("clubpage")+1,0,"schedule");
 (function(){var mv=["clubpage","schedule","club"];FULL.train=FULL.train.filter(function(x){return mv.indexOf(x)<0});var cl=(FULL.club||["club","challenges"]).filter(function(x){return mv.indexOf(x)<0});FULL.club=["mygym","clubpage","schedule","club"].concat(cl)})();
 if(FULL.today.indexOf("mylib")<0)FULL.today.splice(FULL.today.indexOf("engine")+1,0,"mylib");if(FULL.more&&FULL.more.indexOf("clubsee")<0)FULL.more.splice(1,0,"clubsee");
+window.FH32FULL=FULL;
 function refreshGroups(){var nut=nutOn(),adv=advanced(),h={};
  if(!nut){["meals","shop","foods","supps"].forEach(function(x){h[x]=1})}else if(!adv){h.supps=1}
- if(!adv){["growth","devices","learn","invite","coach"].forEach(function(x){h[x]=1})}
- ["journey","trophies","stats"].forEach(function(x){h[x]=1});if(!(S.profile&&S.profile.clubId))h.mygym=1;
+ if(!adv){["growth","devices","invite","coach"].forEach(function(x){h[x]=1})}
+ ["journey","trophies","stats"].forEach(function(x){h[x]=1});if(!(S.profile&&S.profile.clubId)){h.mygym=1;h.schedule=1;h.club=1;h.clubsee=1}
  if(!tkOn("together")){h.club=1;h.clubpage=1;h.schedule=1;h.clubsee=1;h.partners=1;h.challenges=1}
  Object.keys(FULL).forEach(function(g){var a=FULL[g].filter(function(x){return !h[x]});if(!GROUPS[g])GROUPS[g]=[];GROUPS[g].length=0;a.forEach(function(x){GROUPS[g].push(x)})});
  return h}
@@ -5802,14 +5803,14 @@ var D46=D46||false;
 if(D46)return;D46=true;
 var mq=window.matchMedia?window.matchMedia("(min-width:1024px)"):{matches:false,addListener:function(){}};
 var side=document.createElement("aside");side.id="fbSide";side.setAttribute("aria-label","Main menu");document.body.appendChild(side);
-var GLAB={today:"Home",train:"Log",fuel:"Fuel",progress:"Progress",more:"Me"};
+var GLAB={today:"Today",train:"Log",fuel:"Fuel",progress:"Progress",more:"Me"};
 function curTab(){var s=document.querySelector("section[id^=tab-]:not([hidden])");return s?s.id.slice(4):"today"}
 function name(t){return (typeof TABNAME!=="undefined"&&TABNAME[t])||t}
 function brandHTML(){return '<div class="sd-brand" data-sdhome>'+(window.FB_MARK?FB_MARK():"")+'<div><b class="sd-word">Fighter<span>Base</span></b><small>Train. Grow. Win.</small></div></div>'}
 var IC={home:'<path d="M3 11l9-8 9 8v9a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/>',log:'<rect x="4" y="3" width="16" height="18" rx="3"/><path d="M8 8h8M8 12h8M8 16h5"/>',prog:'<path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/>',club:'<circle cx="9" cy="8" r="3.2"/><path d="M3 20c0-3.3 2.7-6 6-6s6 2.7 6 6M16 5.5a3 3 0 0 1 0 5.8M18 14.5c2 .6 3.5 2.6 3.5 5.5"/>',fuel:'<path d="M7 3v8a3 3 0 0 0 6 0V3M10 3v18M17 3c-1.7 1.5-2 4-2 6s1 3 2 3v9"/>',me:'<circle cx="12" cy="8" r="4"/><path d="M4 21c0-4.4 3.6-8 8-8s8 3.6 8 8"/>'};
-var SECT=[["Home","home",["today","goals2","skills"]],["Log","log",["log","train","diary","workouts"]],["Progress","prog",["engine","mylib","film","growth"]],["Club","club",["clubpage","schedule","club","challenges","partners","invite"]],["Fuel","fuel",["nutrition","meals","shop","foods","supps","cut"]],["Me","me",["profile","clubsee","specialists","devices","learn","coach"]]];
+var SECT=[["Today","home",["today","log"]],["Train","log",["train","workouts","schedule","mylib","skills"]],["Fuel","fuel",["diary","meals","shop","foods","nutrition","cut"]],["Progress","prog",["engine","progress","goals2","growth","film","challenges","partners"]],["Me","me",["profile","mygym","clubpage","club","clubsee","devices","learn","supps","invite","specialists","coach"]]];
 var ALWAYS={today:1,engine:1,goals2:1,skills:1,log:1,train:1,diary:1,stats:1,journey:1,trophies:1,film:1,profile:1,specialists:1};
-var LBL={today:"Home",log:"Log today",train:"Sessions",club:"Club",profile:"Settings",progress:"Charts",stats:"My stats"};
+var LBL={};
 function allowed(x){if(!document.getElementById("tab-"+x))return false;if(x==="coach"&&!S.canEdit)return false;if(ALWAYS[x])return true;var g=typeof GROUPS!=="undefined"?GROUPS:{};return Object.keys(g).some(function(k){return (g[k]||[]).indexOf(x)>=0})}
 function ico(k){return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">'+IC[k]+'</svg>'}
 function structure(hub){if(hub){var items=[];document.querySelectorAll("nav.hubnav [data-hub]").forEach(function(b){items.push([b.dataset.hub,(b.querySelector("span")||b).textContent.trim(),b.querySelector("svg")?b.querySelector("svg").outerHTML:""])});
@@ -5822,7 +5823,7 @@ function draw(){if(!mq.matches){document.body.classList.remove("fb-desk");return
  var h=brandHTML()+structure(hub)+'<div class="sd-foot">'+(S.profile&&S.profile.name?'<span class="sd-me">'+esc(S.profile.name)+'</span>':'<span></span>')+(own?'<button type="button" class="sd-sw" data-sdview="'+(hub?"member":"club")+'">'+(hub?"Member view":"Club hub")+'</button>':'')+'</div>';
  if(side.dataset.sig!==h){side.innerHTML=h;side.dataset.sig=h}
  side.querySelectorAll("[data-sdtab],[data-sdhub]").forEach(function(b){var k=b.dataset.sdtab||b.dataset.sdhub,on=k===((b.dataset.sdhub&&window.FH150&&FH150.rep)?FH150.rep(t):t);if(b.classList.contains("on")!==on)b.classList.toggle("on",on);if(on)b.setAttribute("aria-current","page");else b.removeAttribute("aria-current")});
- var ti=document.getElementById("fbTitle"),hd=document.querySelector("header.top");if(hd){if(!ti){ti=document.createElement("div");ti.id="fbTitle";hd.insertBefore(ti,hd.firstChild)}var sec="";SECT.forEach(function(sc){if(sc[2].indexOf(t)>=0&&!sec)sec=sc[0]});var html='<span class="label">'+esc(hub?"Club hub":(t==="today"?"FighterBase":sec))+'</span><h2>'+esc(t==="today"?"Home":(LBL[t]&&t!=="today"?LBL[t]:name(t)))+'</h2>';if(ti.innerHTML!==html)ti.innerHTML=html}}
+ var ti=document.getElementById("fbTitle"),hd=document.querySelector("header.top");if(hd){if(!ti){ti=document.createElement("div");ti.id="fbTitle";hd.insertBefore(ti,hd.firstChild)}var sec="";SECT.forEach(function(sc){if(sc[2].indexOf(t)>=0&&!sec)sec=sc[0]});var html='<span class="label">'+esc(hub?"Club hub":(t==="today"?"FighterBase":sec))+'</span><h2>'+esc(name(t))+'</h2>';if(ti.innerHTML!==html)ti.innerHTML=html}}
 side.addEventListener("click",function(e){var b=e.target.closest("button,[data-sdhome]");if(!b)return;
  if(b.dataset.sdtab){showTab(b.dataset.sdtab);scrollTo(0,0);return}
  if(b.dataset.sdhub){var h=document.querySelector('nav.hubnav [data-hub="'+b.dataset.sdhub+'"]');if(h)h.click();scrollTo(0,0);return}
@@ -13312,11 +13313,11 @@ if(typeof orig==="function"){window.openOnboarding=function(){var self=this,args
  var go=function(){if(document.getElementById("fbSplash")){setTimeout(go,250);return}showW(function(){window.__fbWelcomeBusy=false;orig.apply(self,args)})};go()}}
 /* ---------- tour of the five tabs ---------- */
 var TOUR=[
- ["Home","Your day at a glance: this week, what is next, and what to do today."],
- ["Log","Add a session, a weigh-in or a quick check-in. This is the button you will use most."],
- ["Fuel","Your food diary and meals. Optional: only track what is useful to you."],
- ["Progress","Goals, trophies and trends. Come here to see how far you have come."],
- ["Me","Your details, your gym and your privacy choices. You can redo the sign-up questions here any time."]];
+ ["Today","Your day at a glance: your next class, your last session, your week and any note from your coach. Check-in is next to it."],
+ ["Train","Log a session, build or follow a workout, see classes and what you have been taught. This is the button you will use most."],
+ ["Fuel","Your food diary, meals and shopping list. Optional: only track what is useful to you."],
+ ["Progress","Your training record, charts, goals, fights and crews. Come here to see how far you have come."],
+ ["Me","Your settings, your gym, what your club sees, and Learn and guides. Redo the sign-up questions here any time."]];
 var TS=-1,TL=[];
 function tourList(){var bt=document.querySelectorAll("nav.bottom .inner > button");return TOUR.map(function(t,i){return {t:t,b:bt[i]}}).filter(function(x){return x.b&&x.b.offsetParent&&x.b.getBoundingClientRect().width>4})}
 function tourDraw(){var el=document.getElementById("fbt");if(TS<0){if(el)el.remove();return}style();
@@ -17135,7 +17136,7 @@ document.addEventListener("click",function(ev){var b=ev.target.closest&&ev.targe
 function mark(t){var nv=document.querySelector("nav.hubnav");if(!nv)return;var r=rep(t);if(r!==t){var b=nv.querySelector('[data-hub="'+r+'"]');if(b)b.setAttribute("aria-current","true")}}
 var st=showTab;showTab=function(t){var r=st.apply(this,arguments);try{setTimeout(function(){strips();mark(t)},120)}catch(x){}return r};
 /* member groups */
-function groups(){try{if(typeof GROUPS==="undefined")return;
+function groups(){return;try{if(typeof GROUPS==="undefined")return;
  if(GROUPS.train&&GROUPS.train.indexOf("cut")>=0)GROUPS.train=GROUPS.train.filter(function(x){return x!=="cut"});
  if(GROUPS.fuel&&GROUPS.fuel.indexOf("cut")<0&&GROUPS.fuel.length>1)GROUPS.fuel.push("cut");
  if(GROUPS.progress&&GROUPS.progress.length>1){GROUPS.progress=GROUPS.progress.filter(function(x){return x!=="progress"&&x!=="challenges"});if(GROUPS.progress.indexOf("invite")<0&&GROUPS.progress.indexOf("partners")>=0)GROUPS.progress.push("invite")}
@@ -17519,7 +17520,7 @@ function drawQuotes(){try{var t=document.querySelector("section[id^=tab-]:not([h
 function fixNav(){try{var nb=document.querySelector("nav.bottom");if(!nb)return;
  var t=nb.querySelector("[data-group=today] span"),l=nb.querySelector("[data-group=train] span");if(t&&t.textContent!=="Today")t.textContent="Today";if(l&&l.textContent!=="Train")l.textContent="Train";
  var b=nb.querySelector("button:nth-child(4)");if(b&&b.dataset.group==="club"){b.dataset.group="progress";b.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 20h18M5 16l4-5 4 3 6-8"/></svg><span>Progress</span>'}
- if(typeof GROUPS!=="undefined"){var g=["journey","progress"];if(P().clubId)g.push("club");g.push("challenges","growth","partners");if(GROUPS.progress.join()!==g.join())GROUPS.progress=g}}catch(x){}}
+}catch(x){}}
 function fixHeader(){try{var hd=document.querySelector("header.top");if(!hd)return;var cur=(document.querySelector("section[id^=tab-]:not([hidden])")||{id:"tab-today"}).id.slice(4);
  var show=cur!=="today"&&!!window.FHN;document.body.classList.toggle("b155",show);
  var bk=document.getElementById("fb155back");if(!bk){bk=document.createElement("button");bk.type="button";bk.id="fb155back";bk.setAttribute("aria-label","Go back");bk.textContent="‹";bk.addEventListener("click",function(){try{FHN.back()}catch(x){showTab("today")}});hd.insertBefore(bk,hd.firstChild)}}catch(x){}}
@@ -17946,6 +17947,42 @@ var css=document.createElement("style");css.textContent=
 document.head.appendChild(css);
 window.FH158={GD:GD,find:find,start:start,stop:stop,list:mine,state:st,refresh:refresh,sect:sect};
 })();
+
+/* FighterBase v203: one clear home for every member screen.
+   Before: several modules each rewrote the tab groups every 1.5 seconds, so the same screen appeared under different tabs
+   (Charts under Today, Food diary under Train, club screens only reachable from buttons).
+   Now there is one list, here, and the older rewrites are switched off.
+     Today    : Today, Check-in
+     Train    : Sessions, Workouts, Classes, My training, Skills
+     Fuel     : Food diary, Meals, Shopping, Foods, Eating style, Weight cut
+     Progress : My progress, Charts, Goals, Growth, Fights, Challenges, Crews
+     Me       : Settings, My gym, Club page, Attendance, What my club sees, Devices, Learn, Supplements, Invite, Specialists
+   Screens still hide themselves when they do not apply (no club, nutrition off, essentials view). */
+var F159=F159||false;
+(function(){
+if(F159)return;F159=true;
+function apply(){try{var F=window.FH32FULL;if(!F)return;
+ F.today=["today","log"];
+ F.train=["train","workouts","schedule","mylib","skills"];
+ F.fuel=["diary","meals","shop","foods","nutrition","cut"];
+ F.progress=["engine","progress","goals2","growth","film","challenges","partners"];
+ F.more=["profile","mygym","clubpage","club","clubsee","devices","learn","supps","invite","specialists","coach"];
+ F.club=[];
+ var N={today:"Today",log:"Check-in",train:"Sessions",workouts:"Workouts",schedule:"Classes",mylib:"My training",skills:"Skills",diary:"Food diary",meals:"Meals",shop:"Shopping",foods:"Foods",nutrition:"Eating style",cut:"Weight cut",engine:"My progress",progress:"Charts",goals2:"Goals",growth:"Growth",film:"Fights and film",challenges:"Challenges",partners:"Crews",profile:"Settings",mygym:"My gym",clubpage:"Club page",club:"Attendance",clubsee:"What my club sees",devices:"Devices",learn:"Learn and guides",supps:"Supplements",invite:"Invite",specialists:"Specialist Hub"};
+ Object.keys(N).forEach(function(k){TABNAME[k]=N[k]});
+ try{TABNAME.clubpage=(S.profile&&S.profile.clubId)?"Club page":"Find a club"}catch(x){}
+ try{FHL.groups()}catch(x){}}catch(x){console.error(x)}}
+apply();
+/* no club: hide club-only screens so a solo member never meets an empty page */
+var rg=window.FHL&&FHL.groups;
+var st0=showTab;showTab=function(){try{apply()}catch(x){}return st0.apply(this,arguments)};
+window.FH159={apply:apply};
+})();
+/* Club Overview: the daily jobs first (what is on today, what needs a reply), set-up and settings panels last. */
+(function(){var s=document.createElement("style");s.textContent=
+"#huboverBody>#fb113{order:-60}#huboverBody>#ciOver{order:-55}#huboverBody>#fb118Camp{order:-50}#huboverBody>#fb120Panel{order:-45}#huboverBody>#td76{order:-40}#huboverBody>#m142p{order:-35}#huboverBody>#hbTop{order:-30}"+
+"#huboverBody>#fb119Panel,#huboverBody>#swCard,#huboverBody>#grOver,#huboverBody>#trkPanel,#huboverBody>#geoOwner,#huboverBody>#cpOwner,#huboverBody>#nbComp{order:40}";
+document.head.appendChild(s)})();
 
 /* FighterBase v44: always a way back, always a next step. */
 var N31=N31||false;
