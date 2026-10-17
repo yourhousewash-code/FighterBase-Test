@@ -1599,6 +1599,14 @@ const LEARN=[
 ["Get the right help","If you need to make a specific weight for a fight, work with a qualified sports nutritionist (in the UK, look for SENr registration) and follow your governing body's rules, including any hydration testing."],
 ["After weigh-in","Rehydrate and refuel steadily with fluids, salt and familiar carbohydrate foods. Avoid trying anything new on fight day."]
 ]},
+{id:"twophases",title:"Fat loss and weigh-in: two different jobs",mins:4,tag:"Fight camp",body:[
+["Two phases, not one","Getting to fight weight is usually two separate jobs. The first is gradual fat loss over weeks of camp. The second is the short run-in to the weigh-in. They work differently and carry very different risks, so it helps to keep them apart in your head."],
+["Phase one: steady loss over weeks","This is where real fat comes off. A loss of roughly 0.5 to 1% of bodyweight a week is a commonly used pace that keeps strength, energy and recovery. Slower is fine. Going faster usually costs you the training you are in camp to do. FighterBase compares your own weigh-ins with that pace and tells you if you are running ahead of it."],
+["Phase two: the weigh-in","The last days are about arriving at the scales rested and fuelled, not about losing more. Water and food changes in this window can cost performance and carry real medical risk, which is why FighterBase gives no water-cutting methods. Follow your coach, your event rules and any hydration testing."],
+["What a number can and cannot tell you","Average figures for fighters do not fit everyone. Your frame, sport, age and history matter, and body-fat percentages from scales or calipers are rough. FighterBase does not set body-fat targets. If a figure online makes you want to lose weight faster, treat that as a reason to talk to someone, not to push harder."],
+["Your starting point matters","Staying reasonably close to your fight weight between camps makes the cut smaller and easier. If the gap to your weight class is large, a longer camp or a different weight class is usually the better answer than a harder cut."],
+["Get the right help","For a specific weight, work with your coach and a qualified sports nutritionist (in the UK, look for SENr registration). If food, weight or weigh-ins are starting to feel stressful or out of control, speak to your GP, or Beat on 0808 801 0677 (UK helpline). Always check numbers with a professional."]
+]},
 {id:"recovery",title:"Recovery and sleep",mins:4,tag:"Recovery",body:[
 ["Sleep is the main recovery tool","Most adults need 7–9 hours. Hard training needs the upper end. Poor sleep reduces reaction time, power and decision-making, and increases injury risk and hunger."],
 ["Better sleep habits","Keep a regular bedtime and wake time, a cool dark room, and screens away for the last 30–60 minutes. Stop caffeine at least 8 hours before bed. Alcohol makes sleep worse even when it makes you drowsy."],
@@ -17613,6 +17621,55 @@ document.head.appendChild(css);
 var st=showTab;showTab=function(){var r=st.apply(this,arguments);try{draw()}catch(x){}return r};
 setInterval(draw,1500);
 window.FH156={draw:draw,state:function(){return show()?state():null}};
+})();
+
+/* FighterBase v201: camp fat-loss pace on the Weight cut screen, and a "too fast" flag on a planned cut.
+   Pace: from the member's OWN weigh-in trend, shown as a share of bodyweight per week against the commonly used 0.5 to 1% a week.
+   Flag: if the plan (target weight and weigh-in date) needs more than about 1% of bodyweight a week, we say so plainly and point to a slower plan,
+   a longer camp, a different weight class, the coach or a registered sports nutritionist. It never tells anyone to cut harder, never gives body-fat
+   targets and never gives water or food-restriction methods. Not shown to under-18s. Draft wording: not yet reviewed by a qualified professional. */
+var W157=W157||false;
+(function(){
+if(W157)return;W157=true;
+function e(s){return esc(String(s==null?"":s))}
+function P(){return S.profile||{}}
+function r1(x){return Math.round(x*10)/10}
+function r2(x){return Math.round(x*100)/100}
+function under18(){var a=+P().age;return a>0&&a<18}
+function trend(){try{var w=FBE.weight();if(!w||w.now==null)return null;if(!(w.pts>=5)||w.rate==null)return {now:w.now,enough:false};return {now:+w.now,rate:+w.rate,enough:true}}catch(x){return null}}
+function paceCard(){var t=trend();if(!t)return "";var h='<div class="panel pace157" id="pace157"><div class="sec-h"><h3>Camp fat-loss pace</h3></div>';
+ if(!t.enough)return h+'<p class="muted small" style="margin:0">Log a few weigh-ins over a week or two and your pace shows here. Daily weight moves around with water and food, so we look at the trend, not one day.</p>'+foot()+'</div>';
+ var pw=r2(-t.rate/t.now*100),loss=pw>0,a=Math.abs(pw);var tag,txt,cls;
+ if(!loss&&a<0.25){tag="Steady";txt="Your weight is holding steady over the last few weeks.";cls="ok"}
+ else if(!loss){tag="Going up";txt="Your trend is up by about "+a+"% of bodyweight a week. If you are aiming to lose weight, that is worth looking at with your coach.";cls="ok"}
+ else if(a<0.5){tag="Gentle pace";txt="You are losing about "+a+"% of bodyweight a week. A slow pace like this protects training and recovery.";cls="ok"}
+ else if(a<=1){tag="Within the usual range";txt="You are losing about "+a+"% of bodyweight a week, inside the commonly used 0.5 to 1%.";cls="ok"}
+ else if(a<=1.25){tag="A little fast";txt="You are losing about "+a+"% of bodyweight a week, a bit above the usual range. Easing off a little can protect your training. Ask your coach or a sports nutritionist.";cls="warn"}
+ else{tag="Faster than usual";txt="You are losing about "+a+"% of bodyweight a week, well above the usual range. Slow down, and speak to your coach or a registered sports nutritionist soon.";cls="bad"}
+ var icon=cls==="ok"?"✓":cls==="warn"?"!":"▲";
+ h+='<div class="pc157 '+cls+'"><span class="ic157" aria-hidden="true">'+icon+'</span><div><b>'+e(tag)+'</b><p class="small" style="margin:2px 0 0">'+e(txt)+'</p></div></div><div class="ga-r"><span>Trend</span><b>'+(loss?"-":"+")+r2(Math.abs(t.rate))+' kg a week</b></div><div class="ga-r"><span>Weight now (7-day average)</span><b>'+r1(t.now)+' kg</b></div>';
+ return h+foot()+'</div>'}
+function foot(){return '<p class="muted small" style="margin:8px 0 0">Based on your own weigh-ins. General information, not medical advice. Draft wording, not yet reviewed by a qualified professional. <button type="button" class="linkbtn" data-learn157>Read: fat loss and weigh-in</button></p>'}
+function flagCard(){var c=P().cut;if(!c||!c.target||!c.weighDate)return "";var left=diffDays(TODAY,c.weighDate);if(left<0)return "";
+ var t=trend(),from=t&&t.now!=null?+t.now:(+c.startWeight||null);if(!from)return "";var lose=from-+c.target;if(!(lose>0))return "";
+ var wks=Math.max(left,1)/7,pw=r1(lose/wks/from*100);if(pw<=1)return "";
+ var near=left<14;
+ return '<div class="panel flag157" id="flag157" role="note"><div class="pc157 bad"><span class="ic157" aria-hidden="true">▲</span><div><b>This plan is faster than the usual pace</b><p class="small" style="margin:2px 0 0">Your target needs about '+pw+'% of bodyweight a week. The commonly used range is 0.5 to 1%. '+(near?"With the weigh-in this close, talk to your coach and the event organiser about the weight class, and follow the event rules.":"A longer camp, a different weight class, or a slower plan is usually the better answer than losing faster.")+'</p></div></div><p class="small" style="margin:8px 0 0">Please talk it through with your coach or a registered sports nutritionist before you go on. If food or weight is starting to feel stressful, speak to your GP.</p></div>'}
+function inject(){try{if(under18())return;var el=document.getElementById("cutBody");if(!el)return;
+ if(el.querySelector(".notice b")&&/under-18/i.test(el.textContent))return;
+ ["pace157","flag157"].forEach(function(id){var o=document.getElementById(id);if(o)o.remove()});
+ var f=flagCard(),p=paceCard(),pace=el.querySelector(".pace108"),first=el.querySelector(".panel");
+ var html=(f||"")+(p||"");if(!html)return;
+ if(pace)pace.insertAdjacentHTML("beforebegin",html);else if(first)first.insertAdjacentHTML("afterend",html);else el.insertAdjacentHTML("afterbegin",html)}catch(x){console.error(x)}}
+var rc=window.renderCut;if(typeof rc==="function"){window.renderCut=function(){var r=rc.apply(this,arguments);try{inject()}catch(x){}return r}}
+document.addEventListener("click",function(ev){var t=ev.target;if(t.closest&&t.closest("[data-learn157]")){try{showTab("learn");S.learnTag="All";try{renderLearn()}catch(x){}openArticle("twophases")}catch(x){console.error(x)}}});
+var css=document.createElement("style");css.textContent=
+".pc157{display:flex;gap:10px;align-items:flex-start;padding:10px 12px;border-radius:12px;border:1px solid var(--line,rgba(255,255,255,.12));margin-bottom:6px}"+
+".pc157 .ic157{width:24px;height:24px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:13px;flex:none;background:rgba(255,255,255,.12)}"+
+".pc157.warn{border-color:#D3C8AA}.pc157.warn .ic157{background:#D3C8AA;color:#0B0C0F}.pc157.bad{border-color:#E5484D}.pc157.bad .ic157{background:#E5484D;color:#fff}.pc157.ok .ic157{background:#3DA66B;color:#fff}"+
+"#pace157 .ga-r{display:grid;grid-template-columns:1fr auto;gap:2px 12px;padding:8px 0;border-top:1px solid var(--line)}";
+document.head.appendChild(css);
+window.FH157={pace:paceCard,flag:flagCard};
 })();
 
 /* FighterBase v44: always a way back, always a next step. */
