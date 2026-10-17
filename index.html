@@ -2107,7 +2107,7 @@ function renderSweat(){
   $("#srOut").innerHTML=`<div class="calc"><div><span class="label">Sweat rate</span><b>${r1(perHr)} L/hr</b></div><div><span class="label">Bodyweight lost</span><b>${r1(pct)}%</b><span class="badge ${cls}">${pct>2?"Too much":pct>1?"Watch it":"Good"}</span></div><div><span class="label">Drink now</span><b>${r1(Math.max(0,lost)*1.25)}–${r1(Math.max(0,lost)*1.5)} L</b><span class="small muted">Over the next few hours, with salt</span></div><div><span class="label">During training</span><b>${r1(perHr*0.6)}–${r1(perHr*0.8)} L/hr</b><span class="small muted">To stay under 2% loss</span></div></div>`;
 }
 ["#srPre","#srPost","#srDrink","#srMins"].forEach(id=>$(id).addEventListener("input",renderSweat));
-$("#templates").innerHTML=TEMPLATES.map(t=>`<div class="panel"><div class="slot-h"><h2>${t.name}</h2><span class="badge ev-early">${t.weeks}</span></div><p class="muted small" style="margin:0">${t.who}</p><div class="rules">${t.plan.map(([a,b])=>`<div class="rule"><b>${a}</b><span>${b}</span></div>`).join("")}</div></div>`).join("")+`<div class="panel"><div class="slot-h"><h2>Read more</h2></div><div class="chips"><button class="chip" data-goto="learn" data-article="injury">Coming back from injury</button><button class="chip" data-goto="learn" data-article="recovery">Recovery and sleep</button><button class="chip" data-goto="learn" data-article="hydration">Hydration</button></div></div>`;
+$("#templates").innerHTML=TEMPLATES.filter(t=>!/comeback/i.test(t.name)).map(t=>`<div class="panel"><div class="slot-h"><h2>${t.name}</h2><span class="badge ev-early">${t.weeks}</span></div><p class="muted small" style="margin:0">${t.who}</p><div class="rules">${t.plan.map(([a,b])=>`<div class="rule"><b>${a}</b><span>${b}</span></div>`).join("")}</div></div>`).join("")+`<div class="panel"><div class="slot-h"><h2>Read more</h2></div><div class="chips"><button class="chip" data-goto="learn" data-article="injury">Coming back from injury</button><button class="chip" data-goto="learn" data-article="recovery">Recovery and sleep</button><button class="chip" data-goto="learn" data-article="hydration">Hydration</button></div></div>`;
 
 /* ---------- Progress ---------- */
 const charts={};
@@ -3062,7 +3062,7 @@ function renderOb(){
     <div class="ob-opts">${LEVELS.map(([k,n,sub])=>optBtn("data-oblevel",k,p.level===k,n,sub)).join("")}</div>
     <div class="field"><span class="label">Sessions a week</span><div class="seg-ctl" id="obSess">${[0,1,2,3,4,5,6,7,8,10,12].map(n=>`<button type="button" data-v="${n}" aria-pressed="${+p.sessions===n&&p.sessions!=null}">${n===12?"12+":n}</button>`).join("")}</div></div>
     <div class="field"><span class="label">Usually train in the</span><div class="seg-ctl" id="obSlot">${[["morning","Morning"],["midday","Midday"],["evening","Evening"]].map(([k,n])=>`<button type="button" data-v="${k}" aria-pressed="${p.trainSlot===k}">${n}</button>`).join("")}</div></div>
-    ${p.level==="returning"?'<p class="notice"><b>Coming back from injury or surgery?</b> Get clearance from your physio before contact work. The Comeback block in Train builds you back gradually.</p>':""}`;
+    ${p.level==="returning"?'<p class="notice"><b>Coming back from injury or surgery?</b> Get clearance from your physio before contact work. Start light and build back gradually.</p>':""}`;
   if(s==="goal")h=`<span class="ob-kick">Goal</span><h2>What's the goal?</h2><div class="ob-opts">${[["lose","Lose fat","Drop body fat, keep muscle and power"],["maintain","Maintain","Fuel training, stay at fighting weight"],["build","Build muscle","Add size and strength"]].map(([k,n,sub])=>optBtn("data-obgoal",k,p.goal===k,n,sub)).join("")}</div>
     ${p.path&&p.path!=="fighter"?"":`<label class="toggle"><input type="checkbox" id="obFight" ${ob.fight?"checked":""}><span><b>I have a fight booked</b><br><span class="muted small">We'll count down and check your weight-loss rate stays safe.</span></span></label>`}
     ${ob.fight?`<div class="grid2" style="max-width:520px"><div class="field"><label class="label" for="obFDate">Fight date</label><input type="date" id="obFDate" min="${TODAY}" value="${p.fightDate??""}"></div><div class="field"><label class="label" for="obWeigh">Weigh-in target (kg)</label><input type="number" step="0.1" id="obWeigh" value="${p.weighIn??""}"></div></div>`:""}`;
@@ -18280,11 +18280,21 @@ function form(k){var d=EDIT,lab={run:"Run",gym:"Gym session",own:"Session"}[d.ki
   '<label>'+(run?'Target time (min, optional)':'Minutes (optional)')+'<span class="st162"><button type="button" data-wa-step="tmin:-5" aria-label="Less time">−</button><input id="wa-mn" type="number" min="0" step="5" inputmode="numeric" value="'+e(d.tmin)+'"><button type="button" data-wa-step="tmin:5" aria-label="More time">+</button></span></label></div>'+
   '<div class="fr"><button type="button" class="btn sm" data-wa-save>'+(d.id?"Save changes":"Add to my week")+'</button><button type="button" class="btn ghost sm" data-wa-cancel>Cancel</button></div></div>'}
 function dots(a){return '<span class="dots162" aria-hidden="true">'+a.map(function(q){return '<i class="'+q.s+'"></i>'}).join("")+'</span>'}
+function prevItems(wk){var pw=addDays(wk,-7),o=[];for(var i=0;i<7;i++){var k=addDays(pw,i);
+ psl().filter(function(x){return x.date===k&&x.st!=="skip"}).forEach(function(x){o.push({t:"own",x:x,d:i})});
+ classesDay(k).forEach(function(cl){if((P().rsvp||{})[k+"_"+cl.id])o.push({t:"class",cl:cl,d:i})})}
+ return o}
+function repBtn(wk){var n=prevItems(wk).length;if(!n)return "";return '<div class="rep162"><button type="button" class="btn ghost sm" data-wa-rep="'+wk+'">Repeat last week ('+n+')</button><span class="muted small">Copies last week\'s sessions and classes to the days still to come. Change anything you like.</span></div>'}
+function repeatWeek(wk){var added=0,a=psl().slice();
+ prevItems(wk).forEach(function(q){var k=addDays(wk,q.d);if(k<TODAY)return;
+  if(q.t==="own"){if(a.some(function(z){return z.date===k&&z.title===q.x.title}))return;a.push({id:uid(),date:k,time:q.x.time||"",title:q.x.title,mins:q.x.mins||0,km:q.x.km||0,tmin:q.x.tmin||0,kind:q.x.kind||"own",wid:"",note:""});added++}
+  else{var has=classesDay(k).filter(function(c){return c.id===q.cl.id})[0],key=k+"_"+q.cl.id;if(has&&!(P().rsvp||{})[key]){try{toggleRsvp(key)}catch(x){var r=Object.assign({},P().rsvp||{});r[key]=Date.now();P().rsvp=r}added++}}});
+ P().psched=a;P().pschedSeen=true;var w=WAW(wk),pw=WA(addDays(wk,-7));if(!w.diet&&pw.diet)w.diet=pw.diet;save();return added}
 function plan(wk){var t=tally(wk),w=WA(wk),rest=0,tr=0,days="";
  for(var i=0;i<7;i++){var k=addDays(wk,i);days+=dayBlock(wk,k);var has=t.all.some(function(q){return q.k===k});if(has)tr++;else if(w.rest[k])rest++}
  var mp=0;try{var m=P().mealPlan||{};for(var j=0;j<7;j++){var v=m[addDays(wk,j)];if(v&&(Array.isArray(v)?v.length:Object.keys(v).length))mp++}}catch(x){}
  var D=["Follow my plan","Keep it flexible","Cutting weight","Eating out or a treat day"];
- return '<div class="wa162"><div class="top162"><div><b class="tt">Week of '+e(fm(wk))+'</b><span class="muted small">'+t.n+' planned · '+tr+' training day'+(tr===1?"":"s")+(rest?' · '+rest+' rest day'+(rest===1?"":"s"):'')+'</span></div>'+dots(t.all)+'</div>'+
+ return '<div class="wa162"><div class="top162"><div><b class="tt">Week of '+e(fm(wk))+'</b><span class="muted small">'+t.n+' planned · '+tr+' training day'+(tr===1?"":"s")+(rest?' · '+rest+' rest day'+(rest===1?"":"s"):'')+'</span></div>'+dots(t.all)+'</div>'+repBtn(wk)+
   '<div class="days162">'+days+'</div>'+
   '<div class="x162"><span class="k">Food this week</span><div class="chips162">'+D.map(function(o){return '<button type="button" class="chip'+(w.diet===o?' on':'')+'" data-wa-diet="'+e(o)+'" aria-pressed="'+(w.diet===o)+'">'+e(o)+'</button>'}).join("")+'</div><span class="muted small">'+(mp?'Meals planned for '+mp+' of 7 days. ':'No meals planned yet. ')+'<button type="button" class="linkbtn" data-goto="meals" data-wa-close>Plan meals</button></span></div>'+
   '<div class="x162"><span class="k">Anything else that affects the week?</span><input id="wa-ot" maxlength="140" placeholder="Work, travel, family, a niggle. Only if you want to note it." value="'+e(w.other||"")+'"></div>'+
@@ -18325,6 +18335,7 @@ document.addEventListener("click",function(ev){var t=ev.target;if(!t.closest)ret
   if(ex){ex.title=full.slice(0,60);ex.time=d2.time||"";ex.mins=mn;ex.km=km;ex.tmin=mn;ex.kind=d2.kind}
   else a.push({id:uid(),date:d2.k,time:d2.time||"",title:full.slice(0,60),mins:mn,km:km,tmin:mn,kind:d2.kind,wid:"",note:""});
   P().psched=a;P().pschedSeen=true;var w=WAW(ws(d2.k));delete w.rest[d2.k];EDIT=null;save();redraw();return}
+ if(b=t.closest("[data-wa-rep]")){var nn=repeatWeek(b.dataset.waRep);toast(nn?"Copied last week ("+nn+")":"Nothing new to copy");redraw();return}
  if(b=t.closest("[data-wa-del]")){P().psched=psl().filter(function(q){return q.id!==b.dataset.waDel});save();redraw();return}
  if(b=t.closest("[data-wa-rest]")){var k=b.dataset.waRest,w2=WAW(ws(k));if(w2.rest[k])delete w2.rest[k];else w2.rest[k]=1;save();redraw();return}
  if(b=t.closest("[data-wa-diet]")){var w3=WAW(curWk(b));w3.diet=w3.diet===b.dataset.waDiet?"":b.dataset.waDiet;save();redraw();return}
@@ -18342,7 +18353,7 @@ var css=document.createElement("style");css.textContent=[
 ".days162{display:grid;grid-template-columns:1fr;gap:8px}@media (min-width:900px){.days162{grid-template-columns:repeat(auto-fit,minmax(300px,1fr))}}",
 ".d162{border:1px solid var(--line,rgba(255,255,255,.1));border-radius:14px;padding:10px 12px;background:rgba(255,255,255,.03);display:flex;flex-direction:column;gap:6px;min-width:0}.d162.now{border-color:var(--red,#C81E3A)}.d162.past{opacity:.75}",
 ".d162 .dh{display:flex;gap:8px;align-items:baseline}.d162 .dh span{font-size:.8rem;opacity:.7}.d162 .rt{margin-left:auto;font-size:.7rem;letter-spacing:.1em;text-transform:uppercase;border:1px solid rgba(255,255,255,.3);border-radius:999px;padding:1px 8px}",
-".r162{display:grid;grid-template-columns:48px 1fr auto;gap:8px;align-items:center;padding:4px 0;border-top:1px solid var(--line,rgba(255,255,255,.07))}.r162 .tm{font-variant-numeric:tabular-nums;opacity:.75;font-size:.85rem}.r162 em{font-style:normal;font-size:.72rem;opacity:.7;border:1px solid rgba(255,255,255,.25);border-radius:999px;padding:0 7px}.r162 em.tg{opacity:1;border-color:var(--red,#C81E3A)}",
+".r162{display:grid;grid-template-columns:48px 1fr auto;gap:8px;align-items:center;padding:4px 0;border-top:1px solid var(--line,rgba(255,255,255,.07))}.r162 .tm{font-variant-numeric:tabular-nums;opacity:.75;font-size:.85rem}.rep162{display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin:6px 0 10px}.r162 em{font-style:normal;font-size:.72rem;opacity:.7;border:1px solid rgba(255,255,255,.25);border-radius:999px;padding:0 7px}.r162 em.tg{opacity:1;border-color:var(--red,#C81E3A)}",
 ".r162 .st{font-size:.8rem;opacity:.7}.r162 .st.ok{color:#6fe0a3;opacity:1}.r162 .ac{display:flex;gap:10px}",
 ".ad162{display:flex;flex-wrap:wrap;gap:6px}.ad162 .btn{min-height:40px}.ad162 .btn.on{border-color:#6fe0a3;color:#6fe0a3}",
 ".chip{all:unset;box-sizing:border-box;cursor:pointer;min-height:40px;display:inline-flex;align-items:center;padding:4px 14px;border-radius:999px;border:1px solid var(--line,rgba(255,255,255,.25));font-size:.85rem}.chip.on{background:rgba(63,197,126,.15);border-color:#3FC57E}.chip:focus-visible{outline:3px solid #fff}",
@@ -18502,6 +18513,65 @@ D+" .fb-card:not([class*=camp]):not(.h139){background-image:none}",
 "@media (prefers-reduced-motion:reduce){*{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important;scroll-behavior:auto!important}}"
 ].join("\n");document.head.appendChild(css);
 window.FH164={on:true};
+})();
+
+/* FighterBase v209: "Saved. Where next?" pop-up after every save, and the rarely used tools tucked away.
+   - Replaces the "where next" box at the bottom of each page. After a save you get a small pop-up: two suggested next steps (based on what is still undone today or this week) and Home.
+   - Sweat-rate calculator and training blocks move into a closed "More tools" section at the bottom of Sessions. The Comeback block is removed (no injury advice from the app).
+   - Weekly plan: "Repeat last week" button (in fh162). Nothing here changes saved data. */
+var D165=D165||false;
+(function(){
+if(D165)return;D165=true;
+var css=document.createElement("style");css.textContent=[
+"#navNext{display:none!important}",
+".dn165{position:fixed;left:50%;transform:translateX(-50%);bottom:24px;width:min(460px,calc(100vw - 24px));z-index:95;background:var(--surface,#1B1D21);border:1px solid var(--line,#35383E);border-radius:16px;box-shadow:0 18px 50px rgba(0,0,0,.55);padding:16px 16px 14px;animation:dn165 .22s ease-out}",
+"@keyframes dn165{from{opacity:0;transform:translate(-50%,14px)}to{opacity:1;transform:translate(-50%,0)}}",
+"@media (max-width:1023px){.dn165{bottom:92px}}",
+".dn165 .hd{display:flex;align-items:flex-start;gap:12px}.dn165 .ok{flex:none;width:34px;height:34px;border-radius:50%;background:#2E9E5B;color:#fff;display:grid;place-items:center;font-weight:800;font-size:18px}",
+".dn165 .tt{flex:1;min-width:0}.dn165 .tt b{display:block;font-size:1.1rem}.dn165 .tt span{display:block;color:var(--muted,#B6B7BD);font-size:14px;margin-top:2px}",
+".dn165 .x{flex:none;min-height:44px;min-width:44px;background:none;border:0;color:var(--muted,#B6B7BD);font-size:22px;cursor:pointer;margin:-8px -8px 0 0}",
+".dn165 .wn{margin:12px 0 8px;font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted,#B6B7BD);font-weight:700}",
+".dn165 .ol{display:grid;gap:8px}.dn165 .o{display:flex;align-items:center;gap:10px;text-align:left;width:100%;min-height:52px;padding:10px 12px;border:1px solid var(--line,#35383E);border-radius:12px;background:var(--surface2,#23262B);color:var(--fg,#F4F3EF);cursor:pointer;font:inherit}",
+".dn165 .o.lead{border-color:#E63E50;background:rgba(230,62,80,.12)}.dn165 .o b{display:block}.dn165 .o small{display:block;color:var(--muted,#B6B7BD);font-size:13px}.dn165 .o i{margin-left:auto;font-style:normal;opacity:.7}",
+".dn165 .o.home{min-height:44px;justify-content:center;background:none}",
+".rep162{display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin:6px 0 10px}.r162 em{font-size:12px!important}",
+"#xt165{margin-top:6px}#xt165>summary{cursor:pointer;min-height:44px;display:flex;align-items:center;font-weight:700;padding:6px 2px}#xt165>.xb{display:grid;gap:14px;margin-top:8px}"
+].join("\n");document.head.appendChild(css);
+var OK=/^(saved|logged|checked in|booking confirmed|class saved|teacher saved|plan agreed|plan sent|request sent|workout posted|posted to club|review (done|confirmed)|weekly review saved|saved to your fight record|opponent saved|target updated|weekly target|next week planned|tomorrow planned|easy week planned|copied last week|.*check-in done)/i;
+var NO=/couldn|not saved|could not|copy|pick |add a|add the|select|welcome|you're in|up to three/i;
+var el=null,timer=0,lastAt=0;
+function onb(){try{return !!(S.profile&&S.profile.onboarded)}catch(e){return false}}
+function wkStart(){try{var d=new Date(),dd=(d.getDay()+6)%7;return addDays(TODAY,-dd)}catch(e){return TODAY}}
+function cur(){var s=document.querySelector("section[id^=tab-]:not([hidden])");return s?s.id.slice(4):"today"}
+function nutOn(){try{return window.FHL?FHL.nutOn():true}catch(e){return true}}
+function sugg(tab,msg){var o=[],P=S.profile||{},wk=wkStart();
+ try{var w=(P.wahead||{})[wk];if(!(w&&w.locked)&&!/week/i.test(msg))o.push({h:"Plan your week",s:"Set it once and it just runs",fn:"week"})}catch(e){}
+ try{var pl=(P.psched||[]).filter(function(x){return x.date===TODAY&&x.st!=="done"&&x.st!=="skip"})[0];if(pl&&tab!=="train")o.push({h:"Log today's session",s:pl.title,g:"train"})}catch(e){}
+ try{var lg=typeof isLogged==="function"&&isLogged(logMap()[TODAY]);if(!lg&&nutOn()&&tab!=="meals"&&tab!=="diary")o.push({h:"Log today's food",s:"Two minutes keeps the day honest",g:"diary"})}catch(e){}
+ [["Check my goals","See how the week is going","goals2"],["See my progress","Watch the trend build","engine"],["Plan my food","Meals that fit your training","meals"]].forEach(function(f){o.push({h:f[0],s:f[1],g:f[2]})});
+ var seen={},out=[];o.forEach(function(x){var k=x.g||x.fn;if(seen[k]||x.g===tab)return;seen[k]=1;out.push(x)});return out.slice(0,2)}
+function close(){if(el){el.remove();el=null}clearTimeout(timer)}
+function show(msg,sub){if(!onb())return;if(Date.now()-lastAt<6000)return;lastAt=Date.now();close();var tab=cur(),sg=sugg(tab,msg);
+ el=document.createElement("div");el.className="dn165";el.setAttribute("role","dialog");el.setAttribute("aria-label","Saved. Where next?");
+ el.innerHTML='<div class="hd"><span class="ok" aria-hidden="true">✓</span><div class="tt"><b>'+esc(msg)+'</b>'+(sub?'<span>'+esc(sub)+'</span>':'<span>All done.</span>')+'</div><button type="button" class="x" data-dn165x aria-label="Close">×</button></div><p class="wn">Where next?</p><div class="ol">'+
+  sg.map(function(x,i){return '<button type="button" class="o'+(i?'':' lead')+'" '+(x.fn?'data-dn165fn="'+x.fn+'"':'data-dn165g="'+x.g+'"')+'><span><b>'+esc(x.h)+'</b><small>'+esc(x.s)+'</small></span><i>›</i></button>'}).join("")+
+  '<button type="button" class="o home" data-dn165g="today"><b>Home</b></button></div>';
+ document.body.appendChild(el);try{var t=document.getElementById("toast");if(t)t.hidden=true}catch(e){}
+ timer=setTimeout(close,16000)}
+try{var t0=toast;toast=function(m,s){var r=t0.apply(this,arguments);try{var k=String(m||"");if(OK.test(k)&&!NO.test(k))setTimeout(function(){show(k,s)},250)}catch(e){}return r}}catch(e){}
+document.addEventListener("click",function(ev){var t=ev.target;if(!t.closest)return;
+ if(t.closest("[data-dn165x]")){close();return}
+ var b=t.closest("[data-dn165g]");if(b){var g=b.dataset.dn165g;close();try{showTab(g);toTop()}catch(e){}return}
+ b=t.closest("[data-dn165fn]");if(b){close();try{FH162.open()}catch(e){try{showTab("today")}catch(z){}}return}},true);
+document.addEventListener("keydown",function(e){if(e.key==="Escape")close()});
+/* tuck away rarely used tools */
+function tuck(){try{var tab=document.getElementById("tab-train");if(!tab||document.getElementById("xt165"))return;
+ var tp=document.getElementById("templates"),sw=[].slice.call(tab.querySelectorAll(".panel")).filter(function(p){var h=p.querySelector("h2");return h&&/sweat-rate/i.test(h.textContent)})[0];
+ if(!tp&&!sw)return;
+ var d=document.createElement("details");d.id="xt165";d.className="panel";d.innerHTML='<summary>More tools: sweat-rate calculator and training blocks</summary><div class="xb"></div>';
+ var xb=d.querySelector(".xb");if(sw)xb.appendChild(sw);if(tp)xb.appendChild(tp);tab.appendChild(d)}catch(e){}}
+setInterval(tuck,1500);setTimeout(tuck,300);
+window.FH165={show:show,close:close};
 })();
 
 /* FighterBase v44: always a way back, always a next step. */
