@@ -17792,6 +17792,36 @@ var GD=[
  ["check-in style","How often we ask","Weekly, daily or only when you want. Change it any time."],
  ["calorie target","Your targets","Set your calories here. Changes save as you go."],
  ["guide","Tips and guides","Turn tips on or off and replay guides here."]]},
+{id:"diary",tab:"diary",t:"Food diary",m:1,why:"What you ate, with water.",s:[
+ ["food diary","One day at a time","Use the arrows to move between days. Everything you ate is here with your water."],
+ ["today's planned meals","Planned meals","Tap Ate it to move a planned meal into what you have eaten.",0],
+ ["quick add","Quick add","Type a food and its calories fast. Rough is fine."],
+ ["\\+250 ml","Water","Tap to add water. It adds to today's total."]]},
+{id:"engine",tab:"engine",t:"My progress",m:1,why:"Your training record.",s:[
+ ["your training record","Your record","Sessions, milestones and camps in one place. Missed weeks are not held against you."],
+ ["last 30 days","Pick a time range","This changes every number and chart on the screen.",0],
+ ["sessions per week","Sessions per week","See your usual rhythm at a glance."],
+ ["^milestones$","Milestones","Moments like a first sparring session or a grading. Some come from your coach."]]},
+{id:"goals2",tab:"goals2",t:"Goals",m:1,why:"What you are working towards.",s:[
+ ["your goals right now","What you are working on","Your goals and how you are getting on with each."],
+ ["my main goal","Pick a main goal","The app builds your weekly target around it. Change it any time."],
+ ["^training plan$","Types of goal","Training plan, food, body, grading or fight. Pick what fits you.",0],
+ ["save talking points","For your next chat with your coach","Write what you want to talk about, and your wins.",0]]},
+{id:"skills",tab:"skills",t:"Skills",m:1,why:"Track what is sticking.",s:[
+ ["add a skill","Add a skill","A technique you are learning.",0],
+ ["^introduced$","Move it along","Introduced, practised, then applied in live work.",0]]},
+{id:"mylib",tab:"mylib",t:"My training",m:1,why:"What you have been taught.",s:[
+ ["my training","What you have been taught","Your stance, what your club set for you, and fitness tests."],
+ ["assigned to me","Set for you","Workouts your coach assigned.",0],
+ ["fitness tests","Fitness tests","Repeat every few weeks to see change.",0]]},
+{id:"clubsee",tab:"clubsee",t:"What my club sees",m:1,why:"You decide.",s:[
+ ["always shared","Always shared","The few things a club needs while you are a member."],
+ ["you choose","You choose","Switch each item on or off. Share all or share none.",0],
+ ["never shared","Never shared","These stay private to you, always."],
+ ["preview: what your coach sees","Preview","See exactly what your coach would see right now."]]},
+{id:"specialists",tab:"specialists",t:"Specialist Hub",m:1,why:"Expert help, later.",s:[
+ ["expert help","What this will be","Qualified practitioners will join here. Nothing is live yet."],
+ ["register interest","Register interest","We will tell you when it opens. No payment, nothing shared.",0]]},
 /* ---------------- coach ---------------- */
 {id:"c-setup",tab:"hubsetup",t:"Getting set up",m:2,why:"Start here.",s:[
  ["get set up","Pick what to do first","Choose payments, classes, workouts or fight camps. The guide then walks you through it. Skip anything for later."],
@@ -17875,7 +17905,8 @@ function find(g,s){var sc=sect(g);if(!sc)return null;var t=s[0],el=null;
  return el}
 function byText(sc,re){var c=sc.querySelectorAll("button,summary,h1,h2,h3,label,a,input,select");for(var i=0;i<c.length;i++){var n=c[i];if(!vis(n))continue;var tx=(n.innerText||n.getAttribute("aria-label")||n.getAttribute("placeholder")||"").trim().replace(/\s+/g," ");if(tx&&re.test(tx))return n}return null}
 /* ---------- state ---------- */
-var CUR=null,IDX=0,raf=0,lastFocus=null;
+var CUR=null,IDX=0,raf=0,lastFocus=null,CH=null;
+var CHAINS={m:["today","train","log","meals","progress","club","profile"],c:["c-setup","c-over","c-classes","c-mem","c-acc","c-ins"]};
 function mine(){var hv=hubMode();return GD.filter(function(g){return hv===(g.tab.indexOf("hub")===0)})}
 function doneCount(){var d=st().done;return mine().filter(function(g){return d[g.id]}).length}
 /* ---------- overlay ---------- */
@@ -17901,8 +17932,12 @@ function place(){var o=document.getElementById("fb158");if(!o)return;cancelAnima
  var r=el.getBoundingClientRect();if(r.width===0&&r.height===0){h.style.display="none";return}
  h.style.display="block";var pad=6;h.style.left=Math.max(r.left-pad,2)+"px";h.style.top=Math.max(r.top-pad,2)+"px";h.style.width=Math.min(r.width+pad*2,innerWidth-4)+"px";h.style.height=Math.min(r.height+pad*2,innerHeight*.7)+"px"})}
 function go(d){if(!CUR)return;var n=CUR.s.length;if(d>0&&IDX===n-1){finish();return}IDX=Math.max(0,IDX+d);RETRY=0;draw()}
-function finish(){var id=CUR.id;st().done[id]=1;save();CUR=null;unmount();try{toast("Guide done","Nice. Open Guided tours for the next one.")}catch(x){}refresh()}
-function stop(){CUR=null;unmount();refresh()}
+function avail(id){var g=GD.filter(function(x){return x.id===id})[0];if(!g)return false;if(g.tab.indexOf("hub")===0)return !!document.getElementById("tab-"+g.tab);try{return Object.keys(GROUPS).some(function(k){return GROUPS[k].indexOf(g.tab)>=0})}catch(x){return true}}
+function nextInChain(id){if(!CH)return null;var i=CH.indexOf(id);return i>=0&&i<CH.length-1?CH[i+1]:null}
+function finish(){var id=CUR.id,nx=nextInChain(id);st().done[id]=1;save();CUR=null;unmount();
+ if(nx){var g=GD.filter(function(x){return x.id===nx})[0];if(g){try{showTab(g.tab)}catch(x){}setTimeout(function(){start(nx)},350);return}}
+ CH=null;try{toast("Guide done","Nice. Open Guided tours for the next one.")}catch(x){}refresh()}
+function stop(){CUR=null;CH=null;unmount();refresh()}
 /* ---------- chip on first open ---------- */
 function tipsOff(){return P().tipsMode==="off"}
 function chips(){try{if(CUR||tipsOff())return;var s0=st();
@@ -17914,9 +17949,10 @@ function chips(){try{if(CUR||tipsOff())return;var s0=st();
    sc.insertBefore(d,sc.firstChild)}})}catch(x){console.error(x)}}
 /* ---------- guided tours list ---------- */
 function listHtml(){var s0=st(),L=mine(),dn=doneCount();
+ var ck=hubMode()?CHAINS.c:CHAINS.m,tourB='<button type="button" class="btn sm" data-g158chain="'+(hubMode()?"c":"m")+'">'+(hubMode()?"Take the new-coach tour":"Take the full tour")+' · about '+(ck.length*1.2|0)+' minutes</button>';
  return '<div class="k158">Guided tours · '+dn+' of '+L.length+' done</div><p class="muted small" style="margin:2px 0 8px">Each one lights up the real buttons on a screen and explains them. About a minute. Nothing changes while you watch.</p>'+
  L.map(function(g){var ok=s0.done[g.id];return '<div class="l158'+(ok?" ok":"")+'"><span class="c158t" aria-hidden="true">'+(ok?"✓":"")+'</span><div><b>'+e(g.t)+'</b><span class="muted small">'+e(g.why)+' · '+g.s.length+' steps'+(ok?" · done":"")+'</span></div><button type="button" class="btn ghost sm" data-g158l="'+g.id+'">'+(ok?"Again":"Start")+'</button></div>'}).join("")+
- '<button type="button" class="linkbtn" data-g158reset>Offer the guides on every screen again</button>'}
+ tourB+'<button type="button" class="linkbtn" data-g158reset>Offer the guides on every screen again</button>'}
 function hub(){try{var tab=hubMode()?"hubsetup":"learn",sc=document.getElementById("tab-"+tab);if(!sc||!vis(sc))return;
  var el=document.getElementById("fb158hub");
  if(!el){el=document.createElement("section");el.id="fb158hub";el.className="panel";var ch=sc.querySelector(":scope > .g158chip");sc.insertBefore(el,ch?ch.nextSibling:sc.firstChild)}
@@ -17927,6 +17963,7 @@ document.addEventListener("click",function(ev){var t=ev.target;if(!t.closest)ret
   if(sect(g)&&vis(sect(g))){start(id)}else{try{showTab(g.tab)}catch(x){}setTimeout(function(){start(id)},250)}return}
  if(b=t.closest("[data-g158n]")){st().skip[b.dataset.g158n]=1;save();refresh();return}
  if(b=t.closest("[data-g158]")){var a=b.dataset.g158;if(a==="next")go(1);else if(a==="back")go(-1);else stop();return}
+ if(b=t.closest("[data-g158chain]")){CH=CHAINS[b.dataset.g158chain].filter(avail);if(!CH.length)return;var f0=GD.filter(function(x){return x.id===CH[0]})[0];try{showTab(f0.tab)}catch(x){}setTimeout(function(){start(CH[0])},350);return}
  if(t.closest("[data-g158reset]")){P().guides={done:st().done,skip:{}};save();refresh()}});
 var sh=showTab;showTab=function(){var r=sh.apply(this,arguments);try{setTimeout(refresh,60)}catch(x){}return r};
 setInterval(function(){if(!CUR){chips();hub()}},1500);
@@ -17983,6 +18020,95 @@ window.FH159={apply:apply};
 "#huboverBody>#fb113{order:-60}#huboverBody>#ciOver{order:-55}#huboverBody>#fb118Camp{order:-50}#huboverBody>#fb120Panel{order:-45}#huboverBody>#td76{order:-40}#huboverBody>#m142p{order:-35}#huboverBody>#hbTop{order:-30}"+
 "#huboverBody>#fb119Panel,#huboverBody>#swCard,#huboverBody>#grOver,#huboverBody>#trkPanel,#huboverBody>#geoOwner,#huboverBody>#cpOwner,#huboverBody>#nbComp{order:40}";
 document.head.appendChild(s)})();
+/* v204 tidy: Settings opens with its menu; Recent sessions shows the latest 8; icon-only buttons get plain names. */
+(function(){
+var s=document.createElement("style");s.textContent=
+"section>.q155.pg{order:-26}#tab-profile>#pmHead{order:-25}#tab-profile>#pmMenu{order:-20}#tab-profile>#acctRole{order:50}#tab-profile>#l109link{order:60}"+
+"#sessList>.m160{display:none!important}.sm160{margin:8px 0}";
+document.head.appendChild(s);
+function sess(){try{var l=document.getElementById("sessList");if(!l)return;var kids=[].slice.call(l.children).filter(function(k){return !k.classList.contains("sm160")}),LIM=8,open=l.dataset.open==="1";
+ kids.forEach(function(k,i){var h=!open&&i>=LIM;if(k.classList.contains("m160")!==h)k.classList.toggle("m160",h)});
+ var b=document.getElementById("sm160");
+ if(kids.length<=LIM){if(b)b.remove();return}
+ var txt=open?"Show fewer sessions":"Show all "+kids.length+" sessions";
+ if(!b){b=document.createElement("button");b.type="button";b.id="sm160";b.className="btn ghost sm160";l.parentNode.insertBefore(b,l.nextSibling)}
+ if(b.textContent!==txt)b.textContent=txt;b.setAttribute("aria-expanded",open?"true":"false")}catch(x){}}
+document.addEventListener("click",function(ev){var b=ev.target.closest&&ev.target.closest("#sm160");if(!b)return;var l=document.getElementById("sessList");if(l){l.dataset.open=l.dataset.open==="1"?"0":"1";sess()}});
+var SYM={"‹":"Previous","›":"Next","×":"Remove","✕":"Remove","★":"Favourite","☆":"Favourite","−250":"Remove 250 millilitres of water","+250 ml":"Add 250 millilitres of water"};
+function names(){try{document.querySelectorAll("button:not([aria-label]),a[role=button]:not([aria-label])").forEach(function(b){var t=(b.textContent||"").trim().replace(/\s+/g," ");
+ if(SYM[t]){var c=b.closest("section[id^=tab-]");b.setAttribute("aria-label",SYM[t]+(t==="‹"||t==="›"?(c&&c.id==="tab-diary"?" day":""):""));return}
+ if(!(b.innerText||"").trim()&&t)b.setAttribute("aria-label",t.slice(0,60))})}catch(x){}}
+setInterval(function(){sess();names()},1500);
+})();
+
+/* FighterBase v204: club owner on a phone.
+   1. Phone bottom bar: Overview, Classes, Members and "Menu". Menu opens the same groups as the desktop sidebar
+      (Run the club, People, Money, Grow, Set up). Every screen stays one tap from Menu; nothing is removed.
+   2. The header takes less room (the duplicate club-name card is hidden on phones).
+   3. "Set up your club" sits first on Overview while it is unfinished and drops to the bottom once it is done.
+   4. A short "Club digest" on Overview: visits against the last period, how many are active, new members and who has gone quiet,
+      with one button to the Members list. Read-only: it never sends anything. Only members who chose to share are counted. */
+var C160=C160||false;
+(function(){
+if(C160)return;C160=true;
+function e(s){return esc(String(s==null?"":s))}
+function hub(){return document.body.classList.contains("hubview")}
+var SECT=[["Run the club",[["hubover","Overview","What is on today"],["hubclasses","Classes and workouts","Timetable, PT, workouts"],["hubcomp","Competition","Fights and interclubs"],["hubevt","Events","Shows, seminars, camps"]]],
+ ["People",[["hubmem","Members","Who needs a check-in"],["hubleads","Leads","People who asked to join"],["hubcomm","Community","Other clubs"],["hubkids","Kids (sketch)","Early design"]]],
+ ["Money",[["hubacc","Money","Who has paid, plans"]]],
+ ["Grow",[["hubmkt","Marketing","Ready-made posts"],["hubins","Insights and growth","Who to check on"]]],
+ ["Set up",[["hubsetup","Set up","Guided set-up"],["club","Tools","Club tools"],["profile","Me","Your details"],["member","Member view","See the app as a member"]]]];
+var MAIN={hubover:1,hubmem:1,hubclasses:1};var FOLD={hubwk:"hubclasses",hubms:"hubclasses",hubplans:"hubacc",hubana:"hubins",hubgrow:"hubins"};
+function curTab(){var s=document.querySelector("section[id^=tab-]:not([hidden])");return s?s.id.slice(4):""}
+function front(t){return FOLD[t]||t}
+/* ----- bottom bar ----- */
+function bar(){try{var inner=document.querySelector("nav.hubnav .inner");if(!inner)return;
+ var b=document.getElementById("fb160more");
+ if(!hub()){if(b)b.remove();return}
+ if(!b){b=document.createElement("button");b.type="button";b.id="fb160more";b.setAttribute("aria-haspopup","dialog");
+  b.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h16"/></svg><span>Menu</span>';inner.appendChild(b)}
+ var t=front(curTab()),inMain=!!MAIN[t];b.setAttribute("aria-current",inMain?"false":"true");
+ if(inMain){var cur=inner.querySelector('[data-hub="'+t+'"]');if(cur)cur.setAttribute("aria-current","true")}else{inner.querySelectorAll("[data-hub]").forEach(function(x){x.setAttribute("aria-current","false")})}}catch(x){}}
+/* ----- menu sheet ----- */
+function open(){close();var o=document.createElement("div");o.id="fb160sheet";o.setAttribute("role","dialog");o.setAttribute("aria-modal","true");o.setAttribute("aria-label","Club menu");
+ var t=front(curTab());
+ o.innerHTML='<div class="s160"><div class="t160"><b>Club menu</b><button type="button" class="btn ghost sm" data-c160x>Close</button></div>'+
+  SECT.map(function(g){return '<div class="g160"><span class="h160">'+e(g[0])+'</span><div class="l160">'+g[1].map(function(it){return '<button type="button" class="i160'+(it[0]===t?" on":"")+'" data-c160go="'+it[0]+'"><b>'+e(it[1])+'</b><span>'+e(it[2])+'</span></button>'}).join("")+'</div></div>'}).join("")+'</div>';
+ document.body.appendChild(o);document.addEventListener("keydown",esc160,true);var f=o.querySelector(".i160.on")||o.querySelector(".i160");if(f)f.focus()}
+function esc160(ev){if(ev.key==="Escape"){ev.preventDefault();close()}}
+function close(){var o=document.getElementById("fb160sheet");if(o)o.remove();document.removeEventListener("keydown",esc160,true)}
+document.addEventListener("click",function(ev){var t=ev.target;if(!t.closest)return;var b;
+ if(t.closest("#fb160more")){ev.preventDefault();ev.stopPropagation();open();return}
+ if(t.closest("[data-c160x]")){close();return}
+ if(b=t.closest("[data-c160go]")){var id=b.dataset.c160go,h=document.querySelector('nav.hubnav [data-hub="'+id+'"]');close();if(h)h.click();else{try{showTab(id)}catch(x){}}try{scrollTo(0,0)}catch(x){}return}
+ if(t.id==="fb160sheet")close()},true);
+/* ----- set-up card order ----- */
+function setupOrder(){try{var w=document.getElementById("swCard");if(!w)return;var h=w.querySelector("h3"),open=h&&/^set up your club/i.test(h.textContent);var v=open?"-70":"40";if(w.style.order!==v)w.style.order=v}catch(x){}}
+/* ----- digest ----- */
+function digest(){try{var host=document.getElementById("huboverBody"),sec=document.getElementById("tab-hubover");if(!host||!sec||sec.hidden||!hub()||!window.FH76||!FH76.stats){var d0=document.getElementById("fb160dig");if(d0&&(!sec||sec.hidden))d0.remove();return}
+ var s=FH76.stats();if(!s||!s.total)return;
+ var diff=s.v-s.pv,dir=diff>0?"up":diff<0?"down":"the same",away=(s.away||[]).slice(0,4).map(function(m){return m.name}).filter(Boolean);
+ var h='<div class="sec-h"><h3>Club digest</h3><span class="badge">'+e((s.r&&s.r.lbl)||"recent")+'</span></div>'+
+  '<div class="t160d"><div><b>'+s.v+'</b><span>visits'+(s.pv?" ("+(diff>0?"+":"")+diff+" on the period before)":"")+'</span></div><div><b>'+s.a+' of '+s.total+'</b><span>trained</span></div><div><b>'+(s.nw||0)+'</b><span>new members</span></div></div>'+
+  '<p class="small" style="margin:6px 0 0">Visits are '+dir+(s.pv?" on the period before.":".")+(away.length?" Gone quiet: "+e(away.join(", "))+(s.away.length>away.length?" and "+(s.away.length-away.length)+" more":"")+".":" Nobody has gone quiet.")+' Only members who chose to share are counted.</p>'+
+  '<div class="row"><button type="button" class="btn ghost sm" data-goto="hubmem">Open members</button></div>';
+ var w=document.getElementById("fb160dig");if(!w){w=document.createElement("div");w.id="fb160dig";w.className="panel";host.appendChild(w)}
+ if(w.dataset.sig!==h){w.innerHTML=h;w.dataset.sig=h}}catch(x){console.error(x)}}
+function tick(){bar();setupOrder();digest()}
+var st0=showTab;showTab=function(){var r=st0.apply(this,arguments);try{setTimeout(tick,120)}catch(x){}return r};
+setInterval(tick,1500);setTimeout(tick,400);
+var css=document.createElement("style");css.textContent=
+"#huboverBody>#fb160dig{order:-53}#fb160dig .t160d{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}#fb160dig .t160d>div{display:flex;flex-direction:column;border:1px solid var(--line,rgba(255,255,255,.12));border-radius:12px;padding:8px 10px}#fb160dig .t160d b{font-size:1.3rem}#fb160dig .t160d span{font-size:.78rem;opacity:.8}"+
+"@media(max-width:700px){body.hubview:not(.fb-desk) nav.hubnav [data-hub]:not([data-hub=hubover]):not([data-hub=hubmem]):not([data-hub=hubclasses]){display:none!important}"+
+" body.hubview:not(.fb-desk) nav.hubnav .inner{display:flex;justify-content:space-around}body.hubview:not(.fb-desk) nav.hubnav .inner>button{flex:1;min-width:0}"+
+" body.hubview:not(.fb-desk) #fbSide115{display:none!important}}"+
+"#fb160sheet{position:fixed;inset:0;z-index:9400;background:var(--bg,#0B0C0F);overflow-y:auto;padding:12px 16px 40px}#fb160sheet .s160{max-width:520px;margin:0 auto;display:flex;flex-direction:column;gap:14px}"+
+"#fb160sheet .t160{display:flex;align-items:center;justify-content:space-between;font-size:1.2rem}#fb160sheet .btn{min-height:44px}"+
+"#fb160sheet .h160{font-size:.7rem;letter-spacing:.14em;text-transform:uppercase;font-weight:700;opacity:.75}"+
+"#fb160sheet .l160{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:6px}#fb160sheet .i160{all:unset;box-sizing:border-box;cursor:pointer;min-height:64px;padding:10px 12px;border:1px solid var(--line,rgba(255,255,255,.14));border-radius:12px;display:flex;flex-direction:column;gap:2px;background:rgba(255,255,255,.035)}#fb160sheet .i160 span{font-size:.8rem;opacity:.75}#fb160sheet .i160.on{border-color:var(--red,#C81E3A);outline:2px solid var(--red,#C81E3A)}#fb160sheet .i160:focus-visible{outline:3px solid #fff}";
+document.head.appendChild(css);
+window.FH160={open:open,close:close,tick:tick};
+})();
 
 /* FighterBase v44: always a way back, always a next step. */
 var N31=N31||false;
