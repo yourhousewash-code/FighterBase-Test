@@ -18533,13 +18533,14 @@ var css=document.createElement("style");css.textContent=[
 ".dn165 .wn{margin:12px 0 8px;font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted,#B6B7BD);font-weight:700}",
 ".dn165 .ol{display:grid;gap:8px}.dn165 .o{display:flex;align-items:center;gap:10px;text-align:left;width:100%;min-height:52px;padding:10px 12px;border:1px solid var(--line,#35383E);border-radius:12px;background:var(--surface2,#23262B);color:var(--fg,#F4F3EF);cursor:pointer;font:inherit}",
 ".dn165 .o.lead{border-color:#E63E50;background:rgba(230,62,80,.12)}.dn165 .o b{display:block}.dn165 .o small{display:block;color:var(--muted,#B6B7BD);font-size:13px}.dn165 .o i{margin-left:auto;font-style:normal;opacity:.7}",
+".dn165 .rp{margin:12px 0 0;padding:12px;border:1px solid #E63E50;border-radius:12px;background:rgba(230,62,80,.10)}.dn165 .rp b{display:block}.dn165 .rp span{display:block;color:var(--muted,#B6B7BD);font-size:14px;margin:2px 0 10px}.dn165 .rr{display:flex;gap:8px;flex-wrap:wrap}",
 ".dn165 .o.home{min-height:44px;justify-content:center;background:none}",
 ".rep162{display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin:6px 0 10px}.r162 em{font-size:12px!important}",
 "#xt165{margin-top:6px}#xt165>summary{cursor:pointer;min-height:44px;display:flex;align-items:center;font-weight:700;padding:6px 2px}#xt165>.xb{display:grid;gap:14px;margin-top:8px}"
 ].join("\n");document.head.appendChild(css);
 var OK=/^(saved|logged|checked in|booking confirmed|class saved|teacher saved|plan agreed|plan sent|request sent|workout posted|posted to club|review (done|confirmed)|weekly review saved|saved to your fight record|opponent saved|target updated|weekly target|next week planned|tomorrow planned|easy week planned|copied last week|.*check-in done)/i;
 var NO=/couldn|not saved|could not|copy|pick |add a|add the|select|welcome|you're in|up to three/i;
-var el=null,timer=0,lastAt=0;
+var el=null,timer=0,lastAt=0,OFFER=null;
 function onb(){try{return !!(S.profile&&S.profile.onboarded)}catch(e){return false}}
 function wkStart(){try{var d=new Date(),dd=(d.getDay()+6)%7;return addDays(TODAY,-dd)}catch(e){return TODAY}}
 function cur(){var s=document.querySelector("section[id^=tab-]:not([hidden])");return s?s.id.slice(4):"today"}
@@ -18551,9 +18552,9 @@ function sugg(tab,msg){var o=[],P=S.profile||{},wk=wkStart();
  [["Check my goals","See how the week is going","goals2"],["See my progress","Watch the trend build","engine"],["Plan my food","Meals that fit your training","meals"]].forEach(function(f){o.push({h:f[0],s:f[1],g:f[2]})});
  var seen={},out=[];o.forEach(function(x){var k=x.g||x.fn;if(seen[k]||x.g===tab)return;seen[k]=1;out.push(x)});return out.slice(0,2)}
 function close(){if(el){el.remove();el=null}clearTimeout(timer)}
-function show(msg,sub){if(!onb())return;if(Date.now()-lastAt<6000)return;lastAt=Date.now();close();var tab=cur(),sg=sugg(tab,msg);
+function show(msg,sub,offer){if(!onb())return;if(!offer&&Date.now()-lastAt<6000)return;lastAt=Date.now();close();OFFER=offer||null;var tab=cur(),sg=sugg(tab,msg);
  el=document.createElement("div");el.className="dn165";el.setAttribute("role","dialog");el.setAttribute("aria-label","Saved. Where next?");
- el.innerHTML='<div class="hd"><span class="ok" aria-hidden="true">✓</span><div class="tt"><b>'+esc(msg)+'</b>'+(sub?'<span>'+esc(sub)+'</span>':'<span>All done.</span>')+'</div><button type="button" class="x" data-dn165x aria-label="Close">×</button></div><p class="wn">Where next?</p><div class="ol">'+
+ el.innerHTML='<div class="hd"><span class="ok" aria-hidden="true">✓</span><div class="tt"><b>'+esc(msg)+'</b>'+(sub?'<span>'+esc(sub)+'</span>':'<span>All done.</span>')+'</div><button type="button" class="x" data-dn165x aria-label="Close">×</button></div>'+(OFFER?'<div class="rp" id="dn165r"><b>Will you repeat this?</b><span>'+esc(OFFER.label)+'. You can change it at your weekly check-in.</span><div class="rr"><button type="button" class="btn sm" data-dn165rep>Yes, repeat weekly</button><button type="button" class="btn ghost sm" data-dn165no>Not now</button></div></div>':'')+'<p class="wn">Where next?</p><div class="ol">'+
   sg.map(function(x,i){return '<button type="button" class="o'+(i?'':' lead')+'" '+(x.fn?'data-dn165fn="'+x.fn+'"':'data-dn165g="'+x.g+'"')+'><span><b>'+esc(x.h)+'</b><small>'+esc(x.s)+'</small></span><i>›</i></button>'}).join("")+
   '<button type="button" class="o home" data-dn165g="today"><b>Home</b></button></div>';
  document.body.appendChild(el);try{var t=document.getElementById("toast");if(t)t.hidden=true}catch(e){}
@@ -18561,9 +18562,26 @@ function show(msg,sub){if(!onb())return;if(Date.now()-lastAt<6000)return;lastAt=
 try{var t0=toast;toast=function(m,s){var r=t0.apply(this,arguments);try{var k=String(m||"");if(OK.test(k)&&!NO.test(k))setTimeout(function(){show(k,s)},250)}catch(e){}return r}}catch(e){}
 document.addEventListener("click",function(ev){var t=ev.target;if(!t.closest)return;
  if(t.closest("[data-dn165x]")){close();return}
+ if(t.closest("[data-dn165no]")){var r0=document.getElementById("dn165r");if(r0)r0.remove();OFFER=null;return}
+ if(t.closest("[data-dn165rep]")){var n=OFFER?repeat(OFFER):0,r1=document.getElementById("dn165r");if(r1)r1.innerHTML='<b>'+(n?'Repeating for the next '+n+' week'+(n===1?'':'s'):'Nothing more to add')+'</b><span style="margin:2px 0 0">Change or remove any of them in Plan my week.</span>';OFFER=null;return}
  var b=t.closest("[data-dn165g]");if(b){var g=b.dataset.dn165g;close();try{showTab(g);toTop()}catch(e){}return}
  b=t.closest("[data-dn165fn]");if(b){close();try{FH162.open()}catch(e){try{showTab("today")}catch(z){}}return}},true);
 document.addEventListener("keydown",function(e){if(e.key==="Escape")close()});
+/* repeat on save: copies to the same weekday for the next 4 weeks (never past what the club has on) */
+var WEEKS=4;
+function dow(k){return new Date(k+"T12:00:00").getDay()}
+function repeat(o){var P=S.profile||{},n=0,a=(P.psched||[]).slice();
+ for(var i=1;i<=WEEKS;i++){var k=addDays(o.date,7*i);
+  if(o.t==="own"){if(a.some(function(z){return z.date===k&&z.title===o.title}))continue;a.push({id:Date.now().toString(36)+Math.random().toString(36).slice(2,5),date:k,time:o.time||"",title:o.title,mins:o.mins||0,km:0,tmin:0,kind:"own",wid:"",note:""});n++}
+  else if(o.t==="class"){var key=k+"_"+o.cid;var has=false;try{has=classesOn(clubState.club,k).some(function(c){return c.id===o.cid})}catch(e){}if(has&&!(P.rsvp||{})[key]){var r=Object.assign({},P.rsvp||{});r[key]=Date.now();P.rsvp=r;n++}}}
+ if(o.t==="own")P.psched=a;P.pschedSeen=true;try{profChanged()}catch(e){}try{if(window.FH162)FH162.close&&0}catch(e){}return n}
+var SF=null;
+document.addEventListener("submit",function(e){if(e.target&&e.target.id==="sessForm"){try{var g=function(i){return (document.getElementById(i)||{}).value};SF={date:g("sDate")||TODAY,sport:g("sSport"),type:g("sType"),mins:Number(g("sMins"))||0}}catch(x){SF=null}}},true);
+try{var ss=document.getElementById("sessSaved");if(ss&&window.MutationObserver)new MutationObserver(function(){if(/session logged/i.test(ss.textContent)&&SF&&SF.mins){var f=SF;SF=null;if(f.date>TODAY)return;
+ var ti=(f.sport&&f.sport!=="General"?f.sport:"Training")+(f.type&&!/technique/i.test(f.type)?" · "+f.type:"");
+ var fut=addDays(f.date,7);setTimeout(function(){show("Session logged","Counts toward your week",{t:"own",date:f.date,title:ti.slice(0,60),mins:f.mins,time:"",label:"Same day, next "+WEEKS+" weeks, as "+ti+" ("+f.mins+" min)"})},300)}}).observe(ss,{childList:true,characterData:true,subtree:true})}catch(e){}
+try{var tr0=toggleRsvp;toggleRsvp=function(key){var had=!!((S.profile||{}).rsvp||{})[key];var r=tr0.apply(this,arguments);try{if(!had&&((S.profile||{}).rsvp||{})[key]&&!document.getElementById("wa162m")){var d=key.slice(0,10),cid=key.slice(11),cl=null;try{cl=classesOn(clubState.club,d).filter(function(c){return c.id===cid})[0]}catch(e){}
+ if(cl&&d>=TODAY)setTimeout(function(){show("You're booked in",(cl.title||cl.name||"Class")+" · "+cl.time,{t:"class",date:d,cid:cid,label:(cl.title||cl.name||"This class")+", same day, next "+WEEKS+" weeks"})},250)}}catch(e){}return r}}catch(e){}
 /* tuck away rarely used tools */
 function tuck(){try{var tab=document.getElementById("tab-train");if(!tab||document.getElementById("xt165"))return;
  var tp=document.getElementById("templates"),sw=[].slice.call(tab.querySelectorAll(".panel")).filter(function(p){var h=p.querySelector("h2");return h&&/sweat-rate/i.test(h.textContent)})[0];
