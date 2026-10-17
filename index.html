@@ -17498,6 +17498,8 @@ var css=document.createElement("style");css.textContent=
 document.head.appendChild(css);
 function drawHero(){try{var tb=document.getElementById("tab-today"),el=document.getElementById("fb155");if(!tb)return;
  if(!memberView()){if(el)el.remove();return}
+ var dh=null;try{if(window.FH161&&FH161.on())dh=FH161.html()}catch(x){console.error(x)}
+ if(dh!=null){var el0=document.getElementById("fb155");if(!el0){el0=document.createElement("section");el0.id="fb155";tb.insertBefore(el0,tb.firstChild)}else if(tb.firstChild!==el0)tb.insertBefore(el0,tb.firstChild);dh="<!--d161-->"+dh;if(el0.dataset.sig!==dh){el0.innerHTML=dh;el0.dataset.sig=dh}el0.classList.add("d161");return}
  var w=week(),n=nextClass(),sg=sugg(w),sk=stage(),nm=first(),h="";
  h+='<div><p class="h155">'+e(greet())+(nm?", "+e(nm):"")+'</p></div><p class="q155">'+e(pick(sk,0))+'</p>';
  var mu=msgUnread();if(mu)h+='<div class="m155 hi"><div><p class="k155">'+(mu.kind==="coach"?"From your coach":"From your club")+'</p><p style="font-weight:700">'+e(mu.t)+'</p><p class="muted small" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+e(mu.b||"")+'</p></div><button type="button" class="btn ghost sm" data-f155inbox>Read</button></div>';
@@ -17544,7 +17546,7 @@ var st=showTab;showTab=function(){var r=st.apply(this,arguments);try{tick()}catc
 setInterval(tick,1200);
 var nbEl=document.querySelector("nav.bottom");if(nbEl&&window.MutationObserver)new MutationObserver(function(){fixNav()}).observe(nbEl,{childList:true,subtree:true,attributes:true,attributeFilter:["data-group"]});
 tick();
-window.FH155={tick:tick,stage:stage};
+window.FH155={tick:tick,stage:stage};window.FH155X={club:club,inClub:inClub,nextClass:nextClass,lastSess:lastSess,ptInfo:ptInfo,week:week,ring:ring,sugg:sugg,stage:stage,pick:pick,msgUnread:msgUnread,dayName:dayName,ago:ago,first:first,greet:greet,myNext:myNext};
 })();
 
 /* FighterBase v200: "Your first month". A gentle 12-step path for people new to their sport, shown on Today for the first weeks.
@@ -18122,6 +18124,100 @@ var css=document.createElement("style");css.textContent=
 "#fb160sheet .l160{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:6px}#fb160sheet .i160{all:unset;box-sizing:border-box;cursor:pointer;min-height:64px;padding:10px 12px;border:1px solid var(--line,rgba(255,255,255,.14));border-radius:12px;display:flex;flex-direction:column;gap:2px;background:rgba(255,255,255,.035)}#fb160sheet .i160 span{font-size:.8rem;opacity:.75}#fb160sheet .i160.on{border-color:var(--red,#C81E3A);outline:2px solid var(--red,#C81E3A)}#fb160sheet .i160:focus-visible{outline:3px solid #fff}";
 document.head.appendChild(css);
 window.FH160={open:open,close:close,tick:tick};
+})();
+
+/* FighterBase v206: desktop dashboard. On wide screens (the sidebar layout) Today becomes a tiled page:
+   one grouped Training box (next class, the next two days of classes, last session, PT, a 30-day strip), a This week tile, and three small charts
+   (sessions per week, weight, training load). Pages with many cards use three columns when there is room. Supplements become small tick chips.
+   Picture slots: any image dropped in /images/<slot>.jpg is embedded at build time (window.FB_IMAGES); a slot with no image is simply not shown.
+   Phones keep the single-column Today from fh155. Read-only: it never changes saved data. */
+var D161=D161||false;
+(function(){
+if(D161)return;D161=true;
+function e(s){return esc(String(s==null?"":s))}
+function X(){return window.FH155X}
+function desk(){return document.body.classList.contains("fb-desk")}
+/* ----- small charts (plain SVG, labelled, no colour-only meaning) ----- */
+function bars(vals,tgt,w,h,lab){var mx=Math.max.apply(null,vals.concat([tgt||0,1])),n=vals.length,bw=w/n,s='<svg viewBox="0 0 '+w+' '+h+'" width="100%" height="'+h+'" role="img" aria-label="'+e(lab)+'" preserveAspectRatio="none">';
+ vals.forEach(function(v,i){var bh=Math.round((h-4)*v/mx);s+='<rect x="'+(i*bw+bw*.15).toFixed(1)+'" y="'+(h-bh)+'" width="'+(bw*.7).toFixed(1)+'" height="'+Math.max(bh,v?2:0)+'" rx="2" fill="'+(i===n-1?'var(--red,#C81E3A)':'rgba(255,255,255,.38)')+'"/>'});
+ if(tgt){var y=h-Math.round((h-4)*tgt/mx);s+='<line x1="0" x2="'+w+'" y1="'+y+'" y2="'+y+'" stroke="rgba(255,255,255,.55)" stroke-dasharray="4 3" stroke-width="1"/>'}
+ return s+'</svg>'}
+function line(vals,w,h,lab){var p=vals.filter(function(v){return v!=null});if(p.length<2)return '';var mn=Math.min.apply(null,p),mx=Math.max.apply(null,p),r=(mx-mn)||1,n=vals.length,pts=[];
+ vals.forEach(function(v,i){if(v==null)return;pts.push([(i/(n-1))*(w-8)+4,h-6-((v-mn)/r)*(h-14)])});
+ var d=pts.map(function(q,i){return(i?"L":"M")+q[0].toFixed(1)+" "+q[1].toFixed(1)}).join(" "),l=pts[pts.length-1];
+ return '<svg viewBox="0 0 '+w+' '+h+'" width="100%" height="'+h+'" role="img" aria-label="'+e(lab)+'" preserveAspectRatio="none"><path d="'+d+'" fill="none" stroke="var(--red,#C81E3A)" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"/><circle cx="'+l[0].toFixed(1)+'" cy="'+l[1].toFixed(1)+'" r="4" fill="var(--red,#C81E3A)"/></svg>'}
+function strip30(){var m=window.logMap?logMap():{},o='<div class="s30-161" role="img" aria-label="Training days in the last 30 days">',n=0;
+ for(var i=29;i>=0;i--){var l=m[addDays(TODAY,-i)],c=l&&l.sessions?l.sessions.length:0;n+=c;o+='<i class="'+(c>1?"b2":c?"b1":"")+(i===0?" now":"")+'" title="'+e(addDays(TODAY,-i))+': '+c+' session'+(c===1?'':'s')+'"></i>'}
+ return {h:o+'</div>',n:n}}
+/* ----- image slots ----- */
+function img(slot,cls,cap){var m=window.FB_IMAGES;if(!m||!m[slot])return "";return '<figure class="im161 '+(cls||"")+'"><img src="'+m[slot]+'" alt="'+e(cap||"")+'" loading="lazy">'+(cap?'<figcaption>'+e(cap)+'</figcaption>':'')+'</figure>'}
+/* ----- Today ----- */
+function comingUp(){var x=X(),c=x.club(),o=[];if(!c||!x.inClub())return o;var now=new Date(),hm=("0"+now.getHours()).slice(-2)+":"+("0"+now.getMinutes()).slice(-2);
+ try{for(var i=0;i<=2;i++){var k=addDays(TODAY,i);classesOn(c,k).filter(function(q){return !q.kids||S.canEdit}).filter(function(q){return i>0||q.time>=hm}).forEach(function(q){var key=k+"_"+q.id,mine=false;try{var me=(clubState.members||[]).filter(function(m){return m.uid===S.uid})[0];mine=!!(me&&me.rsvp&&me.rsvp[key])}catch(z){}o.push({d:k,i:i,cl:q,mine:mine})})}}catch(z){}return o}
+function hero(){var x=X();if(!x)return null;var w=x.week(),n=x.nextClass(),nm=x.first(),sk=x.stage(),h="",mu=x.msgUnread();
+ h+='<div class="hd161"><div><p class="h155">'+e(x.greet())+(nm?", "+e(nm):"")+'</p><p class="q155">'+e(x.pick(sk,0))+'</p></div></div>';
+ if(mu)h+='<div class="m155 hi"><div><p class="k155">'+(mu.kind==="coach"?"From your coach":"From your club")+'</p><p style="font-weight:700">'+e(mu.t)+'</p><p class="muted small" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+e(mu.b||"")+'</p></div><button type="button" class="btn ghost sm" data-f155inbox>Read</button></div>';
+ /* training group */
+ var cu=comingUp(),first=cu[0]||null,more=cu.slice(first?1:0,first?5:4),ls=x.lastSess(),pt=x.ptInfo(),s30=strip30(),g='';
+ g+='<div class="g161-l"><p class="k155">Next up</p>';
+ if(first){g+='<p class="t155">'+e(first.cl.title||first.cl.name||"Class")+'</p><p class="muted small" style="margin:0">'+(first.i===0?"Today":e(x.dayName(first.d)))+" "+e(first.cl.time)+' · '+e(x.club().name)+'</p><div><button type="button" class="btn" data-goto="clubpage">Class and check-in</button></div>'}
+ else if(x.inClub())g+='<p class="t155">Nothing coming up</p><div><button type="button" class="btn ghost" data-goto="clubpage">Open club page</button></div>';
+ else{var mn=x.myNext();g+=mn?'<p class="t155">'+e(mn.title||"Session")+'</p><p class="muted small" style="margin:0">'+e(mn.date===TODAY?"Today":x.dayName(mn.date))+(mn.time?" "+e(mn.time):"")+'</p>':'<p class="muted small" style="margin:0">Nothing planned. Plan one and it shows here.</p><div><button type="button" class="btn ghost" data-goto="train">Plan a session</button></div>'}
+ if(more.length)g+='<ul class="cu161" aria-label="Coming up in the next two days">'+more.map(function(q){return '<li><span class="d">'+(q.i===0?"Today":q.i===1?"Tomorrow":e(x.dayName(q.d)))+'</span><span class="tm">'+e(q.cl.time)+'</span><span class="nm">'+e(q.cl.title||q.cl.name||"Class")+'</span>'+(q.mine?'<span class="ok161">Booked</span>':'')+'</li>'}).join("")+'</ul>';
+ g+='</div><div class="g161-r"><p class="k155">Recent</p>';
+ if(ls){var sp=(ls.s.sport&&ls.s.sport!=="General"?ls.s.sport+" · ":"")+(ls.s.type||"Session");g+='<p class="t155" style="font-size:22px">'+e(sp)+'</p><p class="muted small" style="margin:0">'+e(x.ago(ls.i))+(ls.s.mins?" · "+(+ls.s.mins)+" min":"")+(ls.s.rpe?" · effort "+(+ls.s.rpe)+"/10":"")+'</p>'}
+ else g+='<p class="t155" style="font-size:22px">None logged yet</p><p class="muted small" style="margin:0">Your first one starts the record.</p><div><button type="button" class="btn ghost" data-goto="train">Log a session</button></div>';
+ if(pt){if(pt.next)g+='<div class="pt161"><span class="k155">Next PT</span><b>'+e(pt.tname(pt.next))+' · '+(pt.next.d===TODAY?"Today":e(x.dayName(pt.next.d)))+' '+e(pt.next.time||"")+'</b></div>';
+  else if(pt.offered)g+='<div class="pt161"><span class="k155">PT</span><b>'+(pt.last?"Last PT "+e(x.ago(Math.max(0,diffDays(pt.last.d,TODAY)))):"Try a PT session")+'</b><button type="button" class="btn ghost sm" data-goto="schedule">Book</button></div>'}
+ g+='</div><div class="g161-f"><div class="sh161"><span class="k155">Last 30 days</span><b>'+s30.n+' session'+(s30.n===1?'':'s')+'</b></div>'+s30.h+'</div>';
+ var sg=x.sugg(w);
+ h+='<div class="dg161">'+
+  '<section class="t161 w8" aria-label="Training"><h2 class="th161">Training</h2><div class="gg161">'+g+'</div></section>'+
+  '<section class="t161 w4"><h2 class="th161">This week</h2><div class="wk161">'+x.ring(w.sessions||0,w.target)+'<div><p class="muted small" style="margin:0">'+((+w.target)?(w.sessions>=w.target?"Target hit. Rest counts too.":"Hit your target. A missed session never wipes your week."):"Set a weekly plan and it shows here.")+'</p></div></div>'+
+   '<div class="sg161"><p class="k155">Suggested next</p><b>'+e(sg.h)+'</b><button type="button" class="btn ghost sm" data-goto="'+e(sg.g)+'">'+e(sg.b)+'</button></div></section>';
+ var W=[];try{W=FBE.weeks(8)}catch(z){}
+ if(W.length){h+='<section class="t161 w4"><h2 class="th161">Sessions per week</h2>'+bars(W.map(function(q){return q.sessions||0}),+w.target||0,240,70,"Sessions per week, last 8 weeks")+'<p class="muted small cap161">Last 8 weeks'+((+w.target)?' · dashed line is your target of '+(+w.target):'')+'</p></section>';
+  var ld=W.map(function(q){return Math.round(q.load||0)});if(ld.some(Boolean))h+='<section class="t161 w4"><h2 class="th161">Training load</h2>'+bars(ld,0,240,70,"Training load per week, last 8 weeks")+'<p class="muted small cap161">Effort times minutes, last 8 weeks</p></section>'}
+ var m=window.logMap?logMap():{},wv=[],last=null;for(var i=59;i>=0;i--){var l=m[addDays(TODAY,-i)],v=l&&+l.weight>0?+l.weight:null;wv.push(v);if(v)last=v}
+ var wl=line(wv,240,70,"Weight, last 60 days");if(wl)h+='<section class="t161 w4"><h2 class="th161">Weight</h2><b class="big161">'+(Math.round(last*10)/10)+' kg</b>'+wl+'<p class="muted small cap161">Last 60 days</p></section>';
+ h+='</div>';
+ var im=img("today-banner","wide","");if(im)h+=im;
+ if(!x.inClub())h+='<div class="c155 l155"><p class="muted small" style="margin:0;flex:1">Train at a gym? Link it for class booking, check-in and coach messages. Your history stays yours.</p><button type="button" class="btn ghost sm" data-goto="club">Link a gym</button></div>';
+ return h}
+/* ----- club overview: little bar for the digest ----- */
+function digestBar(){try{var d=document.getElementById("fb160dig");if(!d||d.querySelector(".cmp161")||!window.FH76)return;var s=FH76.stats();if(!s||!s.total)return;var mx=Math.max(s.v,s.pv,1);
+ var h='<div class="cmp161" role="img" aria-label="Visits this period '+s.v+', period before '+s.pv+'"><div><span>This period</span><i style="width:'+Math.round(100*s.v/mx)+'%"></i><b>'+s.v+'</b></div><div><span>Before</span><i class="p" style="width:'+Math.round(100*s.pv/mx)+'%"></i><b>'+s.pv+'</b></div></div>';
+ var t=d.querySelector(".t160d");if(t)t.insertAdjacentHTML("afterend",h)}catch(z){}}
+setInterval(digestBar,1600);
+var css=document.createElement("style");css.textContent=[
+"body.fb-desk .wrap{max-width:1680px}",
+"@media (min-width:1400px){body.fb-desk section.stack:not([hidden]),body.fb-desk section.stack>.stack[id$=Body]{grid-template-columns:repeat(3,minmax(0,1fr))!important}}",
+"body.fb-desk #fb154{grid-column:1/-1}",
+"@media (min-width:1000px){body.fb-desk #tab-today #fb154>.g154,body.fb-desk #tab-today #fb154>.g154.one154{display:block!important;column-count:2!important;column-gap:16px}body.fb-desk #tab-today #fb154>.g154>*{margin:0 0 16px!important;break-inside:avoid}body.fb-desk #tab-today #fb154>.g154>#fb115{column-span:all}}",
+"@media (min-width:1400px){body.fb-desk #tab-today #fb154>.g154,body.fb-desk #tab-today #fb154>.g154.one154{column-count:3!important}body.fb-desk #tab-today #fb112,body.fb-desk #tab-today .wk-card{grid-column:span 2}}",
+".hd161{display:flex;align-items:flex-end;justify-content:space-between;gap:20px}.hd161 .q155{margin-top:6px}",
+".dg161{display:grid;grid-template-columns:repeat(12,minmax(0,1fr));gap:16px}",
+".t161{grid-column:span 4;border:1px solid var(--line,rgba(255,255,255,.1));border-radius:16px;padding:14px 16px;background:rgba(255,255,255,.035);display:flex;flex-direction:column;gap:8px;min-width:0}",
+".t161.w8{grid-column:span 8}.t161.w4{grid-column:span 4}.t161.w6{grid-column:span 6}",
+"@media (max-width:1250px){.t161.w8{grid-column:span 12}.t161.w4{grid-column:span 6}}",
+".th161{margin:0;font:700 .72rem/1 var(--body,inherit);letter-spacing:.16em;text-transform:uppercase;opacity:.75}",
+".gg161{display:grid;grid-template-columns:1.2fr 1fr;gap:18px 26px}",
+".g161-l,.g161-r{display:flex;flex-direction:column;gap:8px;min-width:0}.g161-l .btn,.g161-r .btn{min-height:44px;align-self:flex-start}",
+".g161-f{grid-column:1/-1;border-top:1px solid var(--line,rgba(255,255,255,.1));padding-top:10px}",
+".sh161{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:6px}.sh161 b{font:800 20px/1 var(--cond,'Barlow Condensed'),sans-serif}",
+".s30-161{display:grid;grid-template-columns:repeat(30,minmax(0,1fr));gap:3px;height:34px;align-items:end}.s30-161 i{display:block;height:6px;border-radius:2px;background:rgba(255,255,255,.14)}.s30-161 i.b1{height:22px;background:rgba(255,255,255,.55)}.s30-161 i.b2{height:34px;background:var(--red,#C81E3A)}.s30-161 i.now{outline:1px solid #fff;outline-offset:1px}",
+".cu161{list-style:none;margin:2px 0 0;padding:0;display:flex;flex-direction:column;gap:2px}.cu161 li{display:grid;grid-template-columns:78px 52px 1fr auto;gap:8px;align-items:baseline;padding:6px 0;border-top:1px solid var(--line,rgba(255,255,255,.08));font-size:.9rem}.cu161 .d{opacity:.7}.cu161 .tm{font-variant-numeric:tabular-nums}.cu161 .nm{font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.ok161{font-size:.7rem;border:1px solid rgba(63,197,126,.6);color:#6fe0a3;border-radius:999px;padding:1px 8px}",
+".pt161{display:flex;flex-wrap:wrap;gap:8px;align-items:center;border-top:1px solid var(--line,rgba(255,255,255,.08));padding-top:8px}.pt161 b{flex:1;min-width:0}",
+".wk161{display:flex;gap:14px;align-items:center}.wk161 svg{flex:none}",
+".sg161{margin-top:auto;display:flex;flex-direction:column;gap:6px;border-top:1px solid var(--line,rgba(255,255,255,.08));padding-top:10px}.sg161 .btn{align-self:flex-start;min-height:40px}",
+".cap161{margin:0}.big161{font:800 28px/1 var(--cond,'Barlow Condensed'),sans-serif}",
+".im161{margin:0;position:relative;border-radius:16px;overflow:hidden;grid-column:1/-1}.im161 img{display:block;width:100%;max-height:220px;object-fit:cover}.im161 figcaption{position:absolute;left:14px;bottom:10px;font:800 22px var(--cond,'Barlow Condensed'),sans-serif;text-shadow:0 2px 8px #000}",
+/* supplements as chips */
+".a137-s{flex-direction:row!important;flex-wrap:wrap;gap:6px!important}.a137-s>.muted{flex:0 0 100%}.a137-b{padding:5px 11px!important;border-radius:999px!important;font-size:13px!important;gap:6px!important;min-height:36px}.a137-b em{display:none}.a137-b .a137-t{width:16px!important;height:16px!important;border-radius:50%!important;font-size:11px!important}",
+"@media (min-width:1000px){body.fb-desk #fb113.d112:not(#x){display:grid;grid-template-columns:repeat(auto-fit,minmax(330px,1fr));gap:0 30px;align-items:start}body.fb-desk #fb113.d112:not(#x)>.d112-top{grid-column:1/-1}body.fb-desk #fb113 .d112-sec{border-top:1px solid var(--line,rgba(255,255,255,.1));padding-top:10px}}",
+".cmp161{display:flex;flex-direction:column;gap:5px;margin-top:8px}.cmp161>div{display:grid;grid-template-columns:84px 1fr 36px;gap:8px;align-items:center;font-size:.8rem}.cmp161 span{opacity:.75}.cmp161 i{display:block;height:10px;border-radius:5px;background:var(--red,#C81E3A)}.cmp161 i.p{background:rgba(255,255,255,.35)}.cmp161 b{text-align:right}"
+].join("\n");document.head.appendChild(css);
+window.FH161={html:hero,on:desk,img:img,bars:bars,line:line};
 })();
 
 /* FighterBase v44: always a way back, always a next step. */
