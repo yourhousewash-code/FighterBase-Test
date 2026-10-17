@@ -7273,7 +7273,7 @@ function composer(){var host=document.getElementById("huboverBody"),c=club();if(
   (CD.aud==="cls"?'<select id="nbCls"><option value="">Choose a class</option>'+(c.timetable||[]).map(function(cl){return '<option value="'+esc(cl.id)+'"'+(CD.cls===cl.id?" selected":"")+'>'+esc((cl.title||"Class")+" · "+["Mon","Tue","Wed","Thu","Fri","Sat","Sun"][cl.dow]+" "+cl.time)+'</option>'}).join("")+'</select>':'')+
   (CD.aud==="pick"?'<div class="chips nb-pick">'+members().map(function(m){return '<button type="button" class="chip" data-nbpick="'+esc(m.uid)+'" aria-pressed="'+!!CD.pick[m.uid]+'">'+esc(m.name||"Member")+'</button>'}).join("")+'</div>':'')+
   '<div class="row" style="align-items:center"><button class="btn sm" type="button" data-nbsend>Send to '+tg.length+' member'+(tg.length===1?"":"s")+'</button><span class="muted small">Members who\'ve turned club messages off won\'t get it.</span></div>'+
-  '<details class="fb-det"><summary>Automatic notifications</summary><label class="toggle"><input type="checkbox" data-nbcfg="remind"'+(cfg.remind!==false?" checked":"")+'><span>Class reminder before a class they booked</span></label><label class="toggle"><input type="checkbox" data-nbcfg="comeback"'+(cfg.comeback?" checked":"")+'><span>"We miss you" after 14 days without a check-in</span></label></details>'+
+  '<details class="fb-det"><summary>Automatic notifications</summary><label class="toggle"><input type="checkbox" data-nbcfg="remind"'+(cfg.remind!==false?" checked":"")+'><span>Class reminder before a class they booked</span></label><label class="toggle"><input type="checkbox" data-nbcfg="morning"'+(cfg.morning!==false?" checked":"")+'><span>Morning "training today?" check on members\' Today screen (booked: see you later; regulars not booked: your goals need you)</span></label><label class="toggle"><input type="checkbox" data-nbcfg="comeback"'+(cfg.comeback?" checked":"")+'><span>"We miss you" after 14 days without a check-in</span></label></details>'+
   (hist.length?'<span class="label">Recent</span>'+hist.map(function(x){var reach=(x.aud==="all"?members():members().filter(function(m){return (x.uids||[]).indexOf(m.uid)>=0})),seen=reach.filter(function(m){return m.pseen&&(c.push||[]).findIndex(function(p){return p.id===m.pseen})>=(c.push||[]).findIndex(function(p){return p.id===x.id})}).length;return '<div class="fb-row"><span>'+esc(x.t)+' <em class="muted small">'+fmtT(x.at)+'</em></span><b class="small">'+seen+' of '+reach.length+' seen</b></div>'}).join(""):'');
  if(!w){w=document.createElement("div");w.id="nbComp";w.className="panel";var a=document.getElementById("trkPanel")||document.getElementById("ciOver")||document.getElementById("hbTop");if(a&&a.parentNode===host)host.insertBefore(w,a.nextSibling);else host.appendChild(w)}
  if(w.dataset.sig!==html){w.innerHTML=html;w.dataset.sig=html}}
@@ -18590,6 +18590,56 @@ function tuck(){try{var tab=document.getElementById("tab-train");if(!tab||docume
  var xb=d.querySelector(".xb");if(sw)xb.appendChild(sw);if(tp)xb.appendChild(tp);tab.appendChild(d)}catch(e){}}
 setInterval(tuck,1500);setTimeout(tuck,300);
 window.FH165={show:show,close:close};
+})();
+
+/* FighterBase v211: the morning "training today?" check, in the app (no phone-closed alert yet).
+   Two messages, shown at the top of Today until the class has started:
+   - Booked for a class today: "See you later" with Yes, still coming / Can't make it. Can't make it frees the booking and the club's live list updates.
+   - Regular for today's weekday but not booked: "Your goals need you" with a one-tap "I'm in" / Not today.
+   The club can switch it off (Send a notification > Automatic notifications). Dismissals are remembered for the day. */
+var M166=M166||false;
+(function(){
+if(M166)return;M166=true;
+var css=document.createElement("style");css.textContent=[
+".mc166{margin:12px 0 14px;padding:16px 18px;border:1px solid var(--line,#35383E);border-left:4px solid #E63E50;border-radius:14px;background:var(--surface,#1B1D21)}",
+"#tab-today>.mc166{grid-column:1/-1!important;order:-30;column-span:all;-webkit-column-span:all}",
+".mc166.go{border-left-color:#2E9E5B}",
+".mc166 .k{font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted,#B6B7BD);font-weight:700;margin:0 0 4px}",
+".mc166 b.t{display:block;font-size:1.2rem;margin:0 0 4px}.mc166 p.m{margin:0 0 12px;color:var(--muted,#B6B7BD);font-size:15px}",
+".mc166 .r{display:flex;gap:10px;flex-wrap:wrap}"
+].join("\n");document.head.appendChild(css);
+var P=function(){return S.profile||{}};
+function club(){return (typeof clubState!=="undefined"&&clubState.club)||null}
+function nowHM(){var d=new Date();return String(d.getHours()).padStart(2,"0")+":"+String(d.getMinutes()).padStart(2,"0")}
+function owner(){try{return window.FHC&&FHC.isOwner()}catch(e){return false}}
+function pick(){var c=club(),p=P();if(!c||!p.clubId||!p.onboarded||owner()||(c.pushCfg||{}).morning===false)return null;
+ if((p.morn166||{})[TODAY])return null;
+ var cls;try{cls=classesOn(c,TODAY).filter(function(x){return (!x.kids||S.canEdit)&&String(x.time||"")>=nowHM()})}catch(e){return null}
+ if(!cls.length)return null;var rs=p.rsvp||{},cant=p.cant142||{};
+ var b=cls.filter(function(x){return rs[TODAY+"_"+x.id]})[0];
+ if(b)return {v:"A",cl:b};
+ var at=p.att||{},cut=addDays(TODAY,-56),dw=(new Date(TODAY+"T12:00").getDay()+6)%7,cnt={};
+ Object.keys(at).forEach(function(k){var d=k.slice(0,10),id=k.slice(11);if(d>=cut&&d<TODAY&&(new Date(d+"T12:00").getDay()+6)%7===dw)cnt[id]=(cnt[id]||0)+1});
+ var best=cls.filter(function(x){return (cnt[x.id]||0)>=2&&!cant[TODAY+"_"+x.id]}).sort(function(a,b){return cnt[b.id]-cnt[a.id]})[0];
+ return best?{v:"B",cl:best}:null}
+function weekLine(){try{var w=FBE.weeks(1);w=w[w.length-1];var t=+w.target||0,n=w.sessions||0;if(t)return n+" of "+t+" sessions this week";return n+" session"+(n===1?"":"s")+" this week"}catch(e){return ""}}
+function html(o){var cl=o.cl,nm=cl.title||cl.name||"Class",tm=cl.time;
+ if(o.v==="A")return '<div class="mc166 go" id="mc166" role="region" aria-label="Training today"><p class="k">Training today</p><b class="t">See you later: '+esc(nm)+' at '+esc(tm)+'</b><p class="m">You are down for this one. Still coming?</p><div class="r"><button type="button" class="btn" data-m166in>Yes, still coming</button><button type="button" class="btn ghost" data-m166out>Can\'t make it</button></div></div>';
+ var wl=weekLine();
+ return '<div class="mc166" id="mc166" role="region" aria-label="Training today"><p class="k">Your goals need you</p><b class="t">'+esc(nm)+' at '+esc(tm)+' today</b><p class="m">'+(wl?esc(wl)+'. ':'')+'You usually train on this day. Count yourself in?</p><div class="r"><button type="button" class="btn" data-m166join>I\'m in</button><button type="button" class="btn ghost" data-m166skip>Not today</button></div></div>'}
+var cur=null;
+function paint(){try{var tab=document.getElementById("tab-today");if(!tab)return;var o=pick(),ex=document.getElementById("mc166"),sig=o?o.v+o.cl.id:"";
+ if(!o||tab.hidden){if(ex&&!o)ex.remove();cur=null;return}
+ if(ex&&ex.dataset.sig===sig){var hh=document.getElementById("fb155");if(hh&&hh.parentNode===tab&&ex.nextElementSibling!==hh&&hh.previousElementSibling!==ex)tab.insertBefore(ex,hh);return}if(ex)ex.remove();cur=o;var d=document.createElement("div");d.innerHTML=html(o);var n=d.firstChild;n.dataset.sig=sig;
+ var h=tab.querySelector("#fb155,.hero161,#fbHero");var h2=document.getElementById('fb155');tab.insertBefore(n,h2&&h2.parentNode===tab?h2:tab.firstChild);try{if(window.FH152)setTimeout(FH152.run,50)}catch(x){}}catch(e){}}
+function done(msg){var el=document.getElementById("mc166");if(el)el.remove();var p=P();p.morn166=Object.assign({},p.morn166||{});p.morn166[TODAY]=1;try{profChanged()}catch(e){}if(msg)try{toast(msg)}catch(e){}}
+document.addEventListener("click",function(e){var t=e.target;if(!t.closest)return;var o=cur;
+ if(t.closest("[data-m166in]")){done("See you there");return}
+ if(t.closest("[data-m166skip]")){done();return}
+ if(t.closest("[data-m166join]")&&o){var key=TODAY+"_"+o.cl.id;try{if(!(P().rsvp||{})[key])toggleRsvp(key)}catch(x){}done("You're in",(o.cl.title||"Class")+" · "+o.cl.time);return}
+ if(t.closest("[data-m166out]")&&o){var k2=TODAY+"_"+o.cl.id,p=P();p.cant142=p.cant142||{};p.cant142[k2]=Date.now();try{if((p.rsvp||{})[k2])toggleRsvp(k2)}catch(x){}try{if(typeof scheduleLeague==="function")scheduleLeague()}catch(x){}done("Thanks, noted","Your place is freed up");return}},true);
+setInterval(paint,2000);setTimeout(paint,800);
+window.FH166={pick:pick,paint:paint};
 })();
 
 /* FighterBase v44: always a way back, always a next step. */
