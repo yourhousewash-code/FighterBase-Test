@@ -17672,6 +17672,281 @@ document.head.appendChild(css);
 window.FH157={pace:paceCard,flag:flagCard};
 })();
 
+/* FighterBase v202: guided walkthroughs for every feature.
+   Why: the one-line tips (fh148) explain a button once; they do not walk a new person through setting a feature up. These do.
+   How: each screen has a short guide (3 to 5 steps). A step lights up the real control on the screen and says what it is, why it matters and what to do.
+   - The first time a screen opens, a slim chip offers "Show me how (1 min)". "Not now" hides the chip but the guide stays in the list.
+   - "Guided tours" list (Learn for members, Set up for coaches) shows every guide with a tick when done and a Start button.
+   - Nothing is changed by a guide. It only points and explains. Skip or stop at any step.
+   - Saved on the profile (guides {done, skip}), so it follows the person. Tips setting "Off" hides the chips; the list stays.
+   Step wording is plain; steps on weight, food and supplements repeat the "not medical advice, food first" lines and need professional sign-off. */
+var G158=G158||false;
+(function(){
+if(G158)return;G158=true;
+function e(s){return esc(String(s==null?"":s))}
+function P(){return S.profile||{}}
+function save(){try{profChanged()}catch(x){}}
+function st(){var p=P();if(!p.guides)p.guides={done:{},skip:{}};if(!p.guides.done)p.guides.done={};if(!p.guides.skip)p.guides.skip={};return p.guides}
+function hubMode(){return document.body.classList.contains("hubview")}
+/* target: "css:selector" or a text pattern (case-insensitive) matched on buttons, headings, labels and inputs. up = climb parents. */
+var GD=[
+/* ---------------- member ---------------- */
+{id:"today",tab:"today",t:"Your Today page",m:1,why:"Your day on one page.",s:[
+ ["css:#fb155","Your day, top to bottom","The top card shows your next class, your last session, your week and anything from your coach. Start here each day."],
+ ["css:nav.bottom","Five tabs, that is all","Today, Train, Fuel, Progress and Me. Everything else lives inside one of these."],
+ ["your progress","Your progress","Your week and your streak. Missing a day is never marked against you."],
+ ["hide weight and calories","You choose what shows","Prefer not to see weight or calories on Home? Hide them here. You can bring them back any time."]]},
+{id:"train",tab:"train",t:"Log a session",m:1,why:"20 seconds, builds your week.",s:[
+ ["log a session","Log what you trained","Choose the type and how long. Minutes and notes are optional. This is what builds your weekly picture."],
+ ["css:#tab-train button[data-rpe],#tab-train .rpe","How hard did it feel?","Pick 1 (easy) to 10 (all out). It helps you pace your week and spot hard weeks. Optional.",0,"^1$"],
+ ["^log session$","Save it","Tap this to save. It counts toward your weekly plan straight away."],
+ ["training load","Your training load","A simple picture of how much you have done lately, so you do not do too much too fast."]]},
+{id:"log",tab:"log",t:"Daily check-in",m:1,why:"Weight, sleep, water, food.",s:[
+ ["log today","A quick daily check-in","Weight, sleep, water, steps and food. Skip anything you do not want to track. Blanks are never counted against you."],
+ ["add something to track","Pick what matters to you","Add a tracker such as sleep or mood. Each gets its own chart. Remove it any time."],
+ ["log any food by weight","Log food","Search a food, type the grams and it adds the calories and protein. Rough is fine."],
+ ["scan a nutrition label","Scan a label","Take a photo of a nutrition table. Always check the numbers it reads before saving."]]},
+{id:"workouts",tab:"workouts",t:"Workouts",m:1,why:"Your own, starters, or your coach's.",s:[
+ ["^class plan$","Four libraries","Class plan is what your coach set. My workouts are yours. Starters are ready-made. Community is shared by other clubs.",1],
+ ["^starters$","Start with a starter","If you are new, pick a starter. Open it to see each move, then run it or log it.",0],
+ ["build a workout","Build your own","Name it, add moves with reps or time, then save it to My workouts."]]},
+{id:"cut",tab:"cut",t:"Weight cut planner",m:2,why:"A calculator, not advice.",s:[
+ ["plan a weight cut","Plan, do not guess","This is a calculator to explore your fight-week options. It is not medical advice. Talk to your coach or a registered sports nutritionist before any cut.",1],
+ ["day before the fight","Safe limits are built in","The planner stays inside conservative limits and will not suggest dehydration methods. Under-18s do not get a cut plan."],
+ ["camp fat-loss pace","Check your pace","Once you have a few weigh-ins this shows how fast you are losing as a share of bodyweight. The usual range is 0.5 to 1% a week.",1],
+ ["save as a simulation","Try what-ifs first","Save as a simulation to explore. Nothing changes in your real plan."],
+ ["save as my plan","Make it your plan","Only when you and your coach are happy. You can change it later."]]},
+{id:"meals",tab:"meals",t:"Meals",m:1,why:"Meals that fit your diet.",s:[
+ ["my meals","What you have planned","Meals you have added for today and this week appear here."],
+ ["meal ideas for your diet","Ideas that match","Ideas follow the eating style you picked. Tap one to see the food and add it to your day."],
+ ["build my own meal","Or build your own","Pick foods and amounts. It shows calories, protein and carbs as you go."]]},
+{id:"shop",tab:"shop",t:"Shopping list",m:1,why:"Built from your meals.",s:[
+ ["cooking this week","What you are cooking","The list is built from the meals you planned."],
+ ["shopping list","Tick as you shop","Tap an item when it is in the basket."],
+ ["copy list","Take it with you","Copy the list into your notes or messages."]]},
+{id:"foods",tab:"foods",t:"Foods",m:1,why:"Real numbers in your meals.",s:[
+ ["scan a nutrition label","Scan a label","Photograph the nutrition table. Check the numbers before you trust them."],
+ ["add a food by hand","Add your own food","Save a food with its numbers so your meals can use it."],
+ ["my foods","Your list","Everything you saved. Edit or remove any time."]]},
+{id:"nutrition",tab:"nutrition",t:"Eating style",m:1,why:"One choice shapes your food ideas.",s:[
+ ["add or change","Choose an eating style","Your recipes, foods and meal ideas adjust to it. Change it any time."],
+ ["meal plan and shopping","A week at once","Builds a week of meals and a shopping list."],
+ ["foods: eat, go easy","Guidance, not bans","A list for your style: eat, go easy, avoid. It is information, not medical advice."]]},
+{id:"progress",tab:"progress",t:"Charts and goals",m:1,why:"See change over time.",s:[
+ ["your progress","Where you are","Your training and numbers in one place."],
+ ["your goal in numbers","Your goal in numbers","Turns your goal into weekly targets. Change the goal any time."],
+ ["add a goal","Add a goal","Pick what you are working towards and the app builds your week around it.",0],
+ ["view charts","Charts","Tap a chart to read the values. The more you log, the clearer it gets.",0],
+ ["weekly stats","Weekly stats","Sessions, minutes and effort by week."]]},
+{id:"growth",tab:"growth",t:"Growth and fitness checks",m:1,why:"Repeat checks, see change.",s:[
+ ["your growth","What this is","Fitness checks and confidence. It shows how you change, not how you compare."],
+ ["just the essentials","How much you see","Switch between essentials, a bit more, or everything. Nothing is lost."],
+ ["fitness checks","Repeat every few weeks","Do a check, tap Log, then repeat in a few weeks to see the difference."]]},
+{id:"partners",tab:"partners",t:"Crews",m:1,why:"Train with others.",s:[
+ ["crews","Small groups","A crew is a small group you train with, such as a Sunday sparring group."],
+ ["start a crew","Start one","You get a code to share with friends. Nothing is sent unless you tap Share.",0],
+ ["join with a code","Or join one","Ask the organiser for their code.",0],
+ ["what you share","You are in control","See exactly what a crew can see. Change it any time."]]},
+{id:"challenges",tab:"challenges",t:"Challenges",m:1,why:"Short goals, with others.",s:[
+ ["your challenges","Your challenges","Ones you joined show here with your progress."],
+ ["take one on","Take one on","Your logged sessions count automatically. Leave any time."]]},
+{id:"club",tab:"club",t:"Your club",m:2,why:"Check in, classes, membership.",s:[
+ ["my club","Everything about your gym","Check in, see classes, your attendance and your membership."],
+ ["at the gym","Check in","When you are at the gym, check in here. Your phone's location is used once to confirm it, and only the check-in is shared."],
+ ["classes","Say you are coming","Tap I'm coming on a class. It is a plan, not a payment."],
+ ["what my club can see","You decide what is shared","A plain list of what your club sees and what it never sees."],
+ ["show more","More sections","Your membership and payment sit under Show more. Check your club's notice terms before cancelling."]]},
+{id:"clubpage",tab:"clubpage",t:"Club page",m:1,why:"Timetable, booking, news.",s:[
+ ["timetable and booking","Timetable and booking","Pick a class and book it. Your plan shows whether it is covered."],
+ ["your membership","Your membership","What you are on and what you owe."],
+ ["show more","More sections","Club news and more sit under Show more."]]},
+{id:"mygym",tab:"mygym",t:"My gym",m:1,why:"Shortcuts at your gym.",s:[
+ ["sessions","Sessions","Your timetable."],
+ ["workouts","Workouts","What your coach set for you."],
+ ["^pt$","Personal training","Book a PT slot with your coach.",0],
+ ["technique","Technique","Your skills and what you have been taught."]]},
+{id:"schedule",tab:"schedule",t:"Schedule and PT",m:2,why:"Classes and personal training.",s:[
+ ["^schedule$","Your timetable","Pick a day, then tap a class to say you are coming.",0],
+ ["^personal training$","Personal training","Request a slot. Your coach confirms it, and you will be told.",0],
+ ["club events","Club events","Seminars and shows your club is running."]]},
+{id:"learn",tab:"learn",t:"Learn",m:1,why:"Short reads on a topic.",s:[
+ ["^all$","Pick a topic","Tap a topic to filter. Fat loss, hydration, recovery and more.",1],
+ ["css:#articles .article-card","Open a read","Most take under 5 minutes. They are general information, not medical advice."]]},
+{id:"devices",tab:"devices",t:"Watch and health data",m:2,why:"Optional.",s:[
+ ["your devices","Completely optional","Connect a watch or add readings by hand. The app works fine without."],
+ ["import from apple health","Import","Bring in steps and sleep from Apple Health or Google Fit."],
+ ["enter today by hand","Or type it in","Steps, sleep or heart rate. Rough is fine."]]},
+{id:"supps",tab:"supps",t:"Supplements",m:1,why:"Evidence first, food first.",s:[
+ ["what do you need it for","Start with what you need","Choose a need such as recovery. Food comes first. Check with a professional if you take medication or are under 18."],
+ ["^strong$","How strong is the evidence?","Strong means well studied. Early means limited research.",0],
+ ["mark as taking","Mark what you take","This is a note for you. It is not advice to start anything."]]},
+{id:"film",tab:"film",t:"Fights and film",m:1,why:"Your record and fight film.",s:[
+ ["my competition record","Your record","Wins, losses and interclubs in one list."],
+ ["add fight or interclub","Add a fight","Add the date, the opponent and the result."],
+ ["fight film","Fight film","Save links to fights and sparring to review later."]]},
+{id:"invite",tab:"invite",t:"Invite",m:1,why:"Friends or your club.",s:[
+ ["invite a friend","Bring a friend","Share a link. Nothing is sent unless you tap Share."],
+ ["invite your club","Bring your club","Share this with your coach so your gym can join."]]},
+{id:"profile",tab:"profile",t:"Settings",m:2,why:"Targets, reminders, what you see.",s:[
+ ["check-in style","How often we ask","Weekly, daily or only when you want. Change it any time."],
+ ["calorie target","Your targets","Set your calories here. Changes save as you go."],
+ ["guide","Tips and guides","Turn tips on or off and replay guides here."]]},
+/* ---------------- coach ---------------- */
+{id:"c-setup",tab:"hubsetup",t:"Getting set up",m:2,why:"Start here.",s:[
+ ["get set up","Pick what to do first","Choose payments, classes, workouts or fight camps. The guide then walks you through it. Skip anything for later."],
+ ["run the club","Run the club","Your day-to-day jobs."],
+ ["learn as you go","Short lessons","Coach learning and the 7-step basics are here whenever you want them."]]},
+{id:"c-over",tab:"hubover",t:"Club Overview",m:2,why:"What needs you today.",s:[
+ ["today at the club","Today at the club","Classes and personal training today."],
+ ["needs you","Work from the top","Requests that need a reply. Confirm or decline and the member is told straight away."],
+ ["brand your club","Make it yours","Add your logo and colours so members see your club."],
+ ["copy invite link","Invite members","Copy your link, or use the QR poster. Nothing is sent by us."]]},
+{id:"c-classes",tab:"hubclasses",t:"Classes and timetable",m:2,why:"Build the timetable.",s:[
+ ["weekly timetable","Your week","Classes appear on members' timetables straight away."],
+ ["\\+ add class","Add a class","Name, day, time, teacher and sport.",0],
+ ["\\+ add teacher","Add your teachers","So classes show who is teaching.",0],
+ ["personal training","PT slots","Times members can request. You confirm each one."],
+ ["share this week on whatsapp","Share it","Opens WhatsApp with this week's classes. You tap send."]]},
+{id:"c-wk",tab:"hubwk",t:"Workouts",m:1,why:"Build and set workouts.",s:[
+ ["\\+ build a workout","Build a workout","Name it, add moves, save it. You can set it for a class.",0],
+ ["^library$","Library","Reuse workouts, session formats and fitness tests.",0],
+ ["^hide( starter workouts)?$","Starters","Ready-made workouts. Hide them if you do not want them.",0]]},
+{id:"c-ms",tab:"hubms",t:"Milestones",m:1,why:"Moments members can earn.",s:[
+ ["your club milestones","Your milestones","Moments such as a first sparring session."],
+ ["add a club milestone","Create one","Name it and members can earn it.",0],
+ ["^award$","Award it","Gives it to the member and tells them.",0]]},
+{id:"c-mem",tab:"hubmem",t:"Members",m:2,why:"Who needs a check-in.",s:[
+ ["club snapshot","Snapshot","How the club looks at a glance."],
+ ["^all \\d+","Filter to who needs you","For example nobody in 14 days, or fight coming.",0],
+ ["last in","Open a member","You only see what each member chose to share.",0],
+ ["possible check-ins","Possible check-ins","Members who may have trained but not checked in. Confirm to keep records right."]]},
+{id:"c-leads",tab:"hubleads",t:"Leads and trials",m:1,why:"Nobody forgotten.",s:[
+ ["leads and trials","People who asked","Everyone who asked about joining."],
+ ["add a lead","Log a lead","Name, interest and how they found you.",0],
+ ["^1 new","Move them along","New, contacted, trial booked, attended, joined.",0]]},
+{id:"c-comp",tab:"hubcomp",t:"Fights",m:1,why:"Fights and interclubs.",s:[
+ ["competition","Your club's record","Fights, interclubs and results."],
+ ["fights coming up","Coming up","Who is fighting and who is going."],
+ ["confirm on overview","Confirm","Confirm fights on Overview so everyone knows."]]},
+{id:"c-ins",tab:"hubins",t:"Insights",m:1,why:"Who to check on.",s:[
+ ["club insights","Plain summaries","How classes are doing and who to check on."],
+ ["classes","Class by class","Spot which classes are growing or slipping."],
+ ["send one gentle reminder","A gentle nudge","Drafts a reminder you approve. Nothing sends without you."]]},
+{id:"c-ana",tab:"hubana",t:"Analysis",m:1,why:"Deeper numbers.",s:[
+ ["schedule map","Schedule map","Attendance by class and day."],
+ ["training map","Training map","What is being trained."],
+ ["workout analysis","Workout analysis","Which workouts are used."]]},
+{id:"c-grow",tab:"hubgrow",t:"Growth",m:1,why:"Win and keep members.",s:[
+ ["what to do next","What to do next","The few things most likely to help."],
+ ["new member journey","New member journey","Where new members drop off."],
+ ["draft group message","Draft a message","A draft for you to approve. Nothing is sent for you."]]},
+{id:"c-mkt",tab:"hubmkt",t:"Marketing",m:1,why:"Ready-made posts.",s:[
+ ["ideas for this week","Ideas for this week","Posts that suit what is happening at your club."],
+ ["post maker","Make a post","Pick a type. It fills in your club details."],
+ ["copy words","Copy and post yourself","Copy the words and download the picture. Nothing is posted for you."]]},
+{id:"c-comm",tab:"hubcomm",t:"Community",m:1,why:"Share with other clubs.",s:[
+ ["community","Other clubs","Borrow workouts, tips and events."],
+ ["share one of yours","Share yours","Publish a workout or tip for other clubs."]]},
+{id:"c-evt",tab:"hubevt",t:"Events",m:1,why:"Seminars, shows, camps.",s:[
+ ["\\+ new event","Create an event","Members can sign up. You can share it to other clubs.",0],
+ ["our events","Your events","Edit, share or cancel."],
+ ["tell members on whatsapp","Tell members","Opens WhatsApp. You tap send."]]},
+{id:"c-acc",tab:"hubacc",t:"Accounts",m:2,why:"Who has paid.",s:[
+ ["members and payments","Who owes and who paid","Record cash payments and send reminders."],
+ ["add a member","Add a member","One at a time, or use the template to add many.",0],
+ ["owes money","Filter to who owes","Then record a payment or send a reminder.",0]]},
+{id:"c-plans",tab:"hubplans",t:"Memberships",m:2,why:"Plans and prices.",s:[
+ ["^plans$","Your plans","Prices and what each includes."],
+ ["add a plan","Add a plan","Name, price and which classes are covered.",0],
+ ["attendance and membership mismatch","Mismatches","Spots members attending more than their plan covers."]]}
+];
+/* ---------- find the real control ---------- */
+function vis(el){return !!(el&&(el.offsetParent!==null||getComputedStyle(el).position==="fixed"))}
+function sect(g){return document.getElementById("tab-"+g.tab)}
+function find(g,s){var sc=sect(g);if(!sc)return null;var t=s[0],el=null;
+ try{
+ if(/^css:/.test(t)){var l=t.slice(4).split(",");for(var i=0;i<l.length&&!el;i++){var q=sc.ownerDocument.querySelector(l[i]);if(q&&vis(q))el=q}
+  if(!el&&s[4]){el=byText(sc,new RegExp(s[4],"i"))}}
+ else el=byText(sc,new RegExp(t,"i"));
+ }catch(x){}
+ if(!el)return null;var up=s[3]||0;while(up-->0&&el.parentElement&&el.parentElement!==sc)el=el.parentElement;
+ if(/^H[1-6]$/.test(el.tagName)){var p=el.closest(".panel,.card,.cd,section");if(p&&p!==sc&&p.getBoundingClientRect().height<innerHeight*.55)el=p}
+ return el}
+function byText(sc,re){var c=sc.querySelectorAll("button,summary,h1,h2,h3,label,a,input,select");for(var i=0;i<c.length;i++){var n=c[i];if(!vis(n))continue;var tx=(n.innerText||n.getAttribute("aria-label")||n.getAttribute("placeholder")||"").trim().replace(/\s+/g," ");if(tx&&re.test(tx))return n}return null}
+/* ---------- state ---------- */
+var CUR=null,IDX=0,raf=0,lastFocus=null;
+function mine(){var hv=hubMode();return GD.filter(function(g){return hv===(g.tab.indexOf("hub")===0)})}
+function doneCount(){var d=st().done;return mine().filter(function(g){return d[g.id]}).length}
+/* ---------- overlay ---------- */
+function mount(){var o=document.getElementById("fb158");if(o)return o;o=document.createElement("div");o.id="fb158";o.setAttribute("role","dialog");o.setAttribute("aria-modal","true");o.setAttribute("aria-label","Guided tour");
+ o.innerHTML='<div class="b158"></div><div class="h158" aria-hidden="true"></div><div class="c158" tabindex="-1"></div>';document.body.appendChild(o);return o}
+function unmount(){var o=document.getElementById("fb158");if(o)o.remove();cancelAnimationFrame(raf);document.removeEventListener("keydown",key,true);window.removeEventListener("resize",place);window.removeEventListener("scroll",place,true);if(lastFocus&&lastFocus.focus)try{lastFocus.focus()}catch(x){}}
+function key(ev){if(!CUR)return;if(ev.key==="Escape"){ev.preventDefault();stop()}else if(ev.key==="ArrowRight"){ev.preventDefault();go(1)}else if(ev.key==="ArrowLeft"){ev.preventDefault();go(-1)}}
+function start(id){var g=GD.filter(function(x){return x.id===id})[0];if(!g)return;try{closeTips()}catch(x){}
+ lastFocus=document.activeElement;
+ var sc=sect(g);if(!sc||!vis(sc)){try{showTab(g.tab)}catch(x){}}
+ CUR=g;IDX=0;RETRY=0;mount();document.addEventListener("keydown",key,true);window.addEventListener("resize",place);window.addEventListener("scroll",place,true);setTimeout(draw,120)}
+function closeTips(){try{FH148.hide()}catch(x){}}
+var RETRY=0;
+function draw(){if(!CUR)return;var o=document.getElementById("fb158");if(!o)return;var g=CUR,s=g.s[IDX],n=g.s.length,el=find(g,s);
+ var c=o.querySelector(".c158");
+ c.innerHTML='<div class="k158">'+e(g.t)+' · step '+(IDX+1)+' of '+n+'</div><h3>'+e(s[1])+'</h3><p>'+e(s[2])+'</p>'+(el?"":'<p class="muted small">This part is not on your screen yet. It shows once there is something to show.</p>')+
+  '<div class="d158">'+g.s.map(function(_,i){return '<i class="'+(i===IDX?"on":"")+'"></i>'}).join("")+'</div><div class="r158"><button type="button" class="btn ghost" data-g158="back"'+(IDX?"":" disabled")+'>Back</button><button type="button" class="btn" data-g158="next">'+(IDX===n-1?"Done":"Next")+'</button></div><button type="button" class="linkbtn" data-g158="stop">Stop the guide</button>';
+ o._el=el;if(!el&&RETRY<4){RETRY++;setTimeout(function(){if(CUR&&document.getElementById('fb158'))draw()},600)}else if(el)RETRY=0;
+ if(el){try{if(innerWidth>=700){el.scrollIntoView({block:"center",behavior:"auto"})}else{var r0=el.getBoundingClientRect();if(r0.top<96||r0.top>innerHeight*.45)window.scrollBy(0,r0.top-96)}}catch(x){}}
+ place();var nb=c.querySelector('[data-g158="next"]');if(nb)nb.focus({preventScroll:true})}
+function place(){var o=document.getElementById("fb158");if(!o)return;cancelAnimationFrame(raf);raf=requestAnimationFrame(function(){var h=o.querySelector(".h158"),el=o._el;
+ if(!el||!document.body.contains(el)){h.style.display="none";return}
+ var r=el.getBoundingClientRect();if(r.width===0&&r.height===0){h.style.display="none";return}
+ h.style.display="block";var pad=6;h.style.left=Math.max(r.left-pad,2)+"px";h.style.top=Math.max(r.top-pad,2)+"px";h.style.width=Math.min(r.width+pad*2,innerWidth-4)+"px";h.style.height=Math.min(r.height+pad*2,innerHeight*.7)+"px"})}
+function go(d){if(!CUR)return;var n=CUR.s.length;if(d>0&&IDX===n-1){finish();return}IDX=Math.max(0,IDX+d);RETRY=0;draw()}
+function finish(){var id=CUR.id;st().done[id]=1;save();CUR=null;unmount();try{toast("Guide done","Nice. Open Guided tours for the next one.")}catch(x){}refresh()}
+function stop(){CUR=null;unmount();refresh()}
+/* ---------- chip on first open ---------- */
+function tipsOff(){return P().tipsMode==="off"}
+function chips(){try{if(CUR||tipsOff())return;var s0=st();
+ GD.forEach(function(g){var sc=sect(g),ex=sc&&sc.querySelector(":scope > .g158chip");
+  var want=sc&&vis(sc)&&!s0.done[g.id]&&!s0.skip[g.id]&&P().onboarded&&(hubMode()===(g.tab.indexOf("hub")===0));
+  if(ex&&!want){ex.remove();return}
+  if(want&&!ex){var d=document.createElement("div");d.className="g158chip";d.dataset.gid=g.id;
+   d.innerHTML='<span class="t158">New here? A '+g.m+'-minute guide to this screen.</span><button type="button" class="btn sm" data-g158s="'+g.id+'">Show me how</button><button type="button" class="linkbtn" data-g158n="'+g.id+'" aria-label="Not now, hide this guide offer">Not now</button>';
+   sc.insertBefore(d,sc.firstChild)}})}catch(x){console.error(x)}}
+/* ---------- guided tours list ---------- */
+function listHtml(){var s0=st(),L=mine(),dn=doneCount();
+ return '<div class="k158">Guided tours · '+dn+' of '+L.length+' done</div><p class="muted small" style="margin:2px 0 8px">Each one lights up the real buttons on a screen and explains them. About a minute. Nothing changes while you watch.</p>'+
+ L.map(function(g){var ok=s0.done[g.id];return '<div class="l158'+(ok?" ok":"")+'"><span class="c158t" aria-hidden="true">'+(ok?"✓":"")+'</span><div><b>'+e(g.t)+'</b><span class="muted small">'+e(g.why)+' · '+g.s.length+' steps'+(ok?" · done":"")+'</span></div><button type="button" class="btn ghost sm" data-g158l="'+g.id+'">'+(ok?"Again":"Start")+'</button></div>'}).join("")+
+ '<button type="button" class="linkbtn" data-g158reset>Offer the guides on every screen again</button>'}
+function hub(){try{var tab=hubMode()?"hubsetup":"learn",sc=document.getElementById("tab-"+tab);if(!sc||!vis(sc))return;
+ var el=document.getElementById("fb158hub");
+ if(!el){el=document.createElement("section");el.id="fb158hub";el.className="panel";var ch=sc.querySelector(":scope > .g158chip");sc.insertBefore(el,ch?ch.nextSibling:sc.firstChild)}
+ var h=listHtml();if(el.dataset.sig!==h){el.innerHTML=h;el.dataset.sig=h}}catch(x){console.error(x)}}
+function refresh(){chips();hub();var o=document.getElementById("fb158hub");if(o)o.dataset.sig=""}
+document.addEventListener("click",function(ev){var t=ev.target;if(!t.closest)return;var b;
+ if(b=t.closest("[data-g158s],[data-g158l]")){var id=b.dataset.g158s||b.dataset.g158l,g=GD.filter(function(x){return x.id===id})[0];if(!g)return;
+  if(sect(g)&&vis(sect(g))){start(id)}else{try{showTab(g.tab)}catch(x){}setTimeout(function(){start(id)},250)}return}
+ if(b=t.closest("[data-g158n]")){st().skip[b.dataset.g158n]=1;save();refresh();return}
+ if(b=t.closest("[data-g158]")){var a=b.dataset.g158;if(a==="next")go(1);else if(a==="back")go(-1);else stop();return}
+ if(t.closest("[data-g158reset]")){P().guides={done:st().done,skip:{}};save();refresh()}});
+var sh=showTab;showTab=function(){var r=sh.apply(this,arguments);try{setTimeout(refresh,60)}catch(x){}return r};
+setInterval(function(){if(!CUR){chips();hub()}},1500);
+var css=document.createElement("style");css.textContent=
+"#fb158{position:fixed;inset:0;z-index:9500}#fb158 .b158{position:absolute;inset:0}"+
+"#fb158 .h158{position:fixed;border-radius:12px;box-shadow:0 0 0 9999px rgba(0,0,0,.62);outline:3px solid #fff;outline-offset:0;pointer-events:none;transition:all .18s ease;display:none}"+
+"#fb158 .c158{position:fixed;left:12px;right:12px;bottom:84px;max-width:420px;margin:0 auto;background:var(--card,#17171A);color:var(--ink,#F4F4F5);border:1px solid var(--line,#2A2A2F);border-radius:16px;padding:14px 16px;box-shadow:0 10px 40px rgba(0,0,0,.5);display:flex;flex-direction:column;gap:8px;outline:none}"+
+"@media(min-width:700px){#fb158 .c158{left:auto;right:24px;bottom:24px;margin:0;width:380px}}"+
+"#fb158 .k158,#fb158hub .k158{font-size:.7rem;letter-spacing:.12em;text-transform:uppercase;font-weight:700;opacity:.75}"+
+"#fb158 h3{margin:0;font-size:1.15rem}#fb158 p{margin:0;line-height:1.4}"+
+"#fb158 .d158{display:flex;gap:6px}#fb158 .d158 i{width:8px;height:8px;border-radius:4px;background:rgba(255,255,255,.25)}#fb158 .d158 i.on{background:var(--red,#C81E3A);width:18px}"+
+"#fb158 .r158{display:flex;gap:8px}#fb158 .r158 .btn{flex:1;min-height:44px}#fb158 .linkbtn{min-height:44px;align-self:flex-start}"+
+".g158chip{grid-column:1/-1;display:flex;flex-wrap:wrap;gap:8px 12px;align-items:center;padding:10px 12px;margin:0 0 10px;border:1px dashed var(--line,rgba(255,255,255,.2));border-radius:12px;order:-30}"+
+".g158chip .t158{flex:1 1 180px;font-size:.92rem}.g158chip .btn,.g158chip .linkbtn{min-height:44px}"+
+"#fb158hub{grid-column:1/-1;order:-29;display:flex;flex-direction:column;gap:6px}"+
+"#fb158hub .l158{display:flex;gap:10px;align-items:center;padding:6px 0;border-top:1px solid var(--line,rgba(255,255,255,.08))}#fb158hub .l158>div{flex:1;display:flex;flex-direction:column;min-width:0}#fb158hub .btn{min-height:44px;flex:none}#fb158hub .linkbtn{min-height:44px;align-self:flex-start}"+
+"#fb158hub .c158t{width:22px;height:22px;border-radius:11px;border:2px solid rgba(255,255,255,.3);display:flex;align-items:center;justify-content:center;font-size:13px;flex:none}#fb158hub .l158.ok .c158t{background:var(--red,#C81E3A);border-color:var(--red,#C81E3A);color:#fff}";
+document.head.appendChild(css);
+window.FH158={GD:GD,find:find,start:start,stop:stop,list:mine,state:st,refresh:refresh,sect:sect};
+})();
+
 /* FighterBase v44: always a way back, always a next step. */
 var N31=N31||false;
 (function(){
