@@ -2158,7 +2158,7 @@ function renderProgress(){
   const w=val("weight").filter(v=>v!=null);const wd=w.length>1?(w[w.length-1]-w[0]):null;
   const c=calc(S.profile);
   const tileX=(f,N,fr)=>{try{if(!window.FBW||!FBW.arrow||!N)return "";const a=FBW.n(f,N),b=FBW.n(f,N,N);return `<span class="pvp">${fr!=null?`<em>${Math.round(fr*100)}% of days</em>`:""}${FBW.arrow(a,b,1)}<span class="muted">vs the ${N} days before</span></span>`}catch(e){return ""}};
-  const rec=fightRecord();const tiles=[["Record",`${rec.w}-${rec.d}`,"wins-draws"],["Days logged",`${logged.length}`,`of ${S.range}`,tileX("chk",S.range,logged.length/S.range)],["Sessions",`${logged.reduce((a,k)=>a+(map[k].sessions||[]).length,0)}`,"logged",tileX("sess",S.range)],["On plan",`${pct("carbsOnPlan")}%`,"of logged days"],
+  const rec=fightRecord();const tiles=[["Days logged",`${logged.length}`,`of ${S.range}`,tileX("chk",S.range,logged.length/S.range)],["Sessions",`${logged.reduce((a,k)=>a+(map[k].sessions||[]).length,0)}`,"logged",tileX("sess",S.range)],["On plan",`${pct("carbsOnPlan")}%`,"of logged days"],
     ["Weight change",wd==null?"–":`${wd>0?"+":""}${wd.toFixed(1)}`,"kg"],["Avg sleep",avg(val("sleep"))==null?"–":avg(val("sleep")).toFixed(1),"hours"],["Avg energy",avg(val("energy"))==null?"–":avg(val("energy")).toFixed(1),"out of 5"]];
   if(S.profile.quitDate)tiles.splice(1,0,["Smoke-free",`${logged.filter(k=>map[k].smokeFree).length}`,"days logged"]);
   $("#tiles").innerHTML=tiles.map(([a,b,s,x])=>`<div class="tile"><span class="label">${a}</span><b>${b}</b><span class="small muted">${s}</span>${x||""}</div>`).join("");
