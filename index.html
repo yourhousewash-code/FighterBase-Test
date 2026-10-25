@@ -2157,10 +2157,11 @@ function renderProgress(){
   const avg=a=>{const x=a.filter(v=>v!=null);return x.length?(x.reduce((s,v)=>s+v,0)/x.length):null};
   const w=val("weight").filter(v=>v!=null);const wd=w.length>1?(w[w.length-1]-w[0]):null;
   const c=calc(S.profile);
-  const rec=fightRecord();const tiles=[["Record",`${rec.w}-${rec.d}`,"wins-draws"],["Days logged",`${logged.length}`,`of ${S.range}`],["Sessions",`${logged.reduce((a,k)=>a+(map[k].sessions||[]).length,0)}`,"logged"],["On plan",`${pct("carbsOnPlan")}%`,"of logged days"],
+  const tileX=(f,N,fr)=>{try{if(!window.FBW||!FBW.arrow||!N)return "";const a=FBW.n(f,N),b=FBW.n(f,N,N);return `<span class="pvp">${fr!=null?`<em>${Math.round(fr*100)}% of days</em>`:""}${FBW.arrow(a,b,1)}<span class="muted">vs the ${N} days before</span></span>`}catch(e){return ""}};
+  const rec=fightRecord();const tiles=[["Record",`${rec.w}-${rec.d}`,"wins-draws"],["Days logged",`${logged.length}`,`of ${S.range}`,tileX("chk",S.range,logged.length/S.range)],["Sessions",`${logged.reduce((a,k)=>a+(map[k].sessions||[]).length,0)}`,"logged",tileX("sess",S.range)],["On plan",`${pct("carbsOnPlan")}%`,"of logged days"],
     ["Weight change",wd==null?"–":`${wd>0?"+":""}${wd.toFixed(1)}`,"kg"],["Avg sleep",avg(val("sleep"))==null?"–":avg(val("sleep")).toFixed(1),"hours"],["Avg energy",avg(val("energy"))==null?"–":avg(val("energy")).toFixed(1),"out of 5"]];
   if(S.profile.quitDate)tiles.splice(1,0,["Smoke-free",`${logged.filter(k=>map[k].smokeFree).length}`,"days logged"]);
-  $("#tiles").innerHTML=tiles.map(([a,b,s])=>`<div class="tile"><span class="label">${a}</span><b>${b}</b><span class="small muted">${s}</span></div>`).join("");
+  $("#tiles").innerHTML=tiles.map(([a,b,s,x])=>`<div class="tile"><span class="label">${a}</span><b>${b}</b><span class="small muted">${s}</span>${x||""}</div>`).join("");
   $("#progEmpty").hidden=logged.length>0;$("#charts").hidden=logged.length===0;
   renderAdjust();
   if(logged.length){
@@ -6995,7 +6996,7 @@ function memPage(force){var el=$("#hubmemBody"),c=club();if(!el||!c)return;var a
  var cnt={};FILTERS.forEach(function(f){var o=F;F=f[0];cnt[f[0]]=all.filter(function(m){return pass(m,f[0])}).length;F=o});
  var __h=0;el.dataset.sig=''; el.innerHTML='<div class="panel plate"><div class="sec-h"><h2>Members</h2><span class="muted small">'+all.length+' in the app</span></div><p class="muted small" style="margin:0">Tap a member to see what they share and how to help. Status comes from check-ins: check for holidays and injuries before chasing anyone.</p><div class="chips pm-f">'+FILTERS.map(function(f){return '<button type="button" class="chip" data-pmf="'+f[0]+'" aria-pressed="'+(F===f[0])+'">'+f[1]+' <b>'+cnt[f[0]]+'</b></button>'}).join("")+'</div></div>'+
  '<div class="panel pm-list">'+(list.length?list.map(function(m){var x=facts(m),tags=[];if(x.isNew)tags.push(["New","n"]);if(x.fight)tags.push(["Fight "+fmtD(x.fight.date),"f"]);try{var rt=window.FH58&&FH58.tag(m);if(rt)tags.push([rt,"r"])}catch(e){}if(x.help.length||x.rev.length)tags.push(["Request","h"]);if(x.mod)tags.push(["Training modified","m"]);
-  var wk=x.cons&&m.week?(m.week.sessions||0)+(x.eg&&x.eg.wk?"/"+x.eg.wk.t:"")+" this week":"";
+  var wk=x.cons&&m.week?(m.week.sessions||0)+(x.eg&&x.eg.wk?"/"+x.eg.wk.t:"")+" this week"+(x.eg&&x.eg.wk&&+x.eg.wk.t>0?" · "+Math.round((m.week.sessions||0)/x.eg.wk.t*100)+"%"+((m.week.sessions||0)>=x.eg.wk.t?" ▲":""):""):"";
   return '<button type="button" class="pm-row" data-pmopen="'+esc(m.uid)+'"><span class="pm-av">'+esc((m.name||"M").slice(0,1))+'</span><span class="pm-mid"><b>'+esc(m.name||"Member")+'</b><span class="muted small">'+esc((m.sports||[]).map(function(s){return s==="Brazilian Jiu-Jitsu"?"BJJ":s}).join(" · "))+(x.eg?' · goal: '+esc((HEAD[x.eg.headline]||"Training").toLowerCase()):'')+'</span><span class="pm-tags">'+tags.map(function(t){return '<em class="t-'+t[1]+'">'+esc(t[0])+'</em>'}).join("")+'</span></span><span class="pm-right">'+bars(x.wk)+'<span class="small '+(x.days==null||x.days>=21?"bad":x.days>=7?"warn":"ok")+'">'+(x.days==null?"No check-ins":x.days===0?"In today":"Last in "+x.days+"d")+'</span>'+(wk?'<span class="muted small">'+wk+'</span>':'')+'</span></button>'}).join(""):'<p class="muted small" style="margin:0">Nobody here. Try another filter.</p>')+'</div>'}
 function detail(m){var x=facts(m),c=club(),note=((c&&c.cnote)||{})[m.uid];
  var h='<div class="panel plate pm-d"><div class="row" style="justify-content:space-between;align-items:center"><button class="btn ghost sm" type="button" data-pmback>‹ All members</button><span class="small '+(x.days==null||x.days>=21?"bad":x.days>=7?"warn":"ok")+'">'+(x.days==null?"No check-ins yet":x.days===0?"Checked in today":"Last check-in "+x.days+(x.days===1?" day":" days")+" ago")+'</span></div>'+
@@ -18682,7 +18683,7 @@ function sel(){var s=P().nums167;return Array.isArray(s)&&s.length?s:DEFSEL}
 function calc(id,ws0){var ws=ws0||W(),n=ws.length||1,t=0;try{t=FBE.target()}catch(e){}
  var ses=sum(ws,"sessions"),mins=sum(ws,"mins"),ld=sum(ws,"load"),tg=t*n;
  if(id==="sessions")return {big:ses+"/"+tg,sub:"sessions done of target",p:pct(ses,tg),cnt:ses,tg:tg};
- if(id==="time"){var all=[];try{all=FBE.weeks(5).slice(0,4)}catch(e){}var base=all.length?sum(all,"mins")/all.length:0;return {big:hm(mins),sub:"time trained"+(base?" · your usual is "+hm(base*n)+" for this period":""),p:base?pct(mins,base*n):null,num:true,m:mins}}
+ if(id==="time"){var all=[];try{all=FBE.weeks(5).slice(0,4)}catch(e){}var base=all.length?sum(all,"mins")/all.length:0;var gh=+P().tgoal167||0,gm=gh*60*n;if(gm>0)return {big:hm(mins),sub:"time trained · your goal is "+hm(gm)+" for this period",p:pct(mins,gm),num:true,m:mins,gm:gm};return {big:hm(mins),sub:"time trained"+(base?" · your usual is "+hm(base*n)+" for this period":""),p:base?pct(mins,base*n):null,num:true,m:mins}}
  if(id==="avg"){return {big:ses?hm(mins/ses):"–",sub:"per session across "+ses+" session"+(ses===1?"":"s"),p:null,num:true,m:ses?mins/ses:0}}
  if(id==="effort"){var rn=sum(ws,"rpeN");return {big:rn&&mins?(Math.round(10*ld/mins)/10)+"/10":"–",sub:"average effort, hard is 8 or more",p:rn&&mins?Math.round(10*ld/mins):null,num:true,m:rn&&mins?ld/mins:0}}
  if(id==="load"){var usual=0;try{var q=FBE.weeks(6).slice(1,5).filter(function(w){return w.load>0});usual=q.length?q.reduce(function(a,w){return a+w.load},0)/q.length:0}catch(e){}return {big:Math.round(ld)+"",sub:usual?"effort times minutes · usual week is "+Math.round(usual*n):"effort times minutes · needs 3 weeks of history",p:usual?pct(ld,usual*n):null,num:true,m:ld}}
@@ -18703,6 +18704,7 @@ function arrow(id,c,pc){ /* returns {cls,sym,txt} */
  if(id==="sessions"){cur=c.cnt;prv=pc&&pc.cnt}else if(id==="time"){cur=c.m;prv=pc&&pc.m}else if(id==="days"||id==="food"||id==="water"){cur=c.cnt;prv=pc&&pc.cnt}else if(id==="plan"){cur=c.cnt;prv=pc&&pc.cnt}else if(id==="avg"||id==="effort"||id==="load"){cur=c.m;prv=pc&&pc.m}
  var parts=[];
  if(id==="sessions"&&cp!=null){if(cp>=100)parts.push({c:"up",s:"▲",t:"Target "+(cp>100?"beaten":"hit")});else if(cw)parts.push({c:"nt",s:"●",t:"Still to go: "+(Math.max(0,c.tg-c.cnt))+" more"});else parts.push({c:"dn",s:"▼",t:"Missed by "+(c.tg-c.cnt)})}
+ if(id==="time"&&c.gm){if(cp>=100)parts.push({c:"up",s:"▲",t:"Time goal "+(cp>100?"beaten":"hit")});else if(cw)parts.push({c:"nt",s:"●",t:"Still to go: "+hm(Math.max(0,c.gm-c.m))});else parts.push({c:"dn",s:"▼",t:"Missed by "+hm(c.gm-c.m)})}
  if(cur!=null&&prv!=null&&prv>0){var d=cur-prv,pr=Math.round(100*d/prv),lab=cw?"last week":"previous 4 weeks";
   if(d>0)parts.push({c:good?"up":"nt",s:"▲",t:"Up "+pr+"% on "+lab});else if(d<0&&!(cw&&id!=="sessions"&&false))parts.push({c:good?(cw?"nt":"dn"):"nt",s:"▼",t:(cw?"Below ":"Down ")+Math.abs(pr)+"% on "+lab});else parts.push({c:"nt",s:"▬",t:"Same as "+lab})}
  return parts}
@@ -18722,7 +18724,7 @@ function strip(){var out=[],t=0;try{t=FBE.target()}catch(e){}
  return '<div class="st">'+out.map(function(o){return '<div class="sc '+o.a.c+'"><div class="k">'+esc(o.k)+'</div><div class="bg"><b aria-hidden="true">'+o.a.s+'</b><span>'+esc(o.big)+'</span></div><div class="t">'+esc(o.t)+'</div></div>'}).join("")+'</div>'}
 function html(){var S0=sel(),f=fmt(),sc=scope(),cards=DEF.filter(function(d){return S0.indexOf(d[0])>=0}).map(function(d){return card(d[0],d[1])}).join("");
  var seg=function(a,k,cur){return a.map(function(o){return '<button type="button" class="sg" aria-pressed="'+(cur===o[0])+'" data-n167'+k+'="'+o[0]+'">'+o[1]+'</button>'}).join("")};
- var ed=P().nedit167?'<div class="ed"><span class="k">Show these</span><div class="chs">'+DEF.map(function(d){return '<button type="button" class="chip'+(S0.indexOf(d[0])>=0?' on':'')+'" aria-pressed="'+(S0.indexOf(d[0])>=0)+'" data-n167m="'+d[0]+'">'+esc(d[1])+'</button>'}).join("")+'</div></div>':"";
+ var ed=P().nedit167?'<div class="ed"><span class="k">Show these</span><div class="chs">'+DEF.map(function(d){return '<button type="button" class="chip'+(S0.indexOf(d[0])>=0?' on':'')+'" aria-pressed="'+(S0.indexOf(d[0])>=0)+'" data-n167m="'+d[0]+'">'+esc(d[1])+'</button>'}).join("")+'</div><label class="tg167"><span class="k">Weekly training time goal, in hours (optional)</span><input type="number" min="0" max="40" step="0.5" inputmode="decimal" data-n167tg value="'+(+P().tgoal167||"")+'" placeholder="e.g. 5"></label></div>':"";
  return '<section class="nm167" id="nm167" aria-label="Your numbers"><div class="hd"><h2>Your numbers</h2><div class="ct"><div class="sgs">'+seg([["w","This week"],["4","Last 4 full weeks"]],"sc",sc)+'</div><div class="sgs">'+seg([["both","Both"],["frac","Fractions"],["percent","Percent"]],"f",f)+'</div><button type="button" class="linkbtn" data-n167ed>'+(P().nedit167?"Done":"Choose numbers")+'</button></div></div>'+strip()+ed+'<div class="gr">'+cards+'</div></section>'}
 var css=document.createElement("style");css.textContent=[
 ".nm167{border:1px solid var(--line,#35383E);border-radius:16px;background:var(--surface,#1B1D21);padding:16px 18px}",
@@ -18738,7 +18740,7 @@ var css=document.createElement("style");css.textContent=[
 ".nm167 .br{position:relative;height:8px;border-radius:6px;background:rgba(255,255,255,.12);display:flex;align-items:center}.nm167 .br i{display:block;height:100%;border-radius:6px;background:#E63E50}.nm167 .br i.ov{background:#2E9E5B}.nm167 .br b{position:absolute;right:0;top:12px;font-size:12px;color:var(--muted,#B6B7BD);font-weight:600}",
 ".nm167 .br{margin-bottom:22px}",
 ".nm167 .s{font-size:14px;color:var(--muted,#B6B7BD);line-height:1.35}",
-".nm167 .ed{margin:0 0 12px;display:flex;flex-direction:column;gap:8px}.nm167 .chs{display:flex;gap:8px;flex-wrap:wrap}",
+".nm167 .tg167{display:flex;flex-direction:column;gap:6px;max-width:320px}.nm167 .tg167 input{min-height:44px;border-radius:12px;border:1px solid var(--line);background:transparent;color:inherit;padding:0 12px;font-size:16px}.nm167 .ed{margin:0 0 12px;display:flex;flex-direction:column;gap:8px}.nm167 .chs{display:flex;gap:8px;flex-wrap:wrap}",
 ".nm167 .st{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px;margin-bottom:14px}",
 ".nm167 .sc{border:1px solid var(--line,#35383E);border-left-width:5px;border-radius:12px;padding:12px 14px;background:var(--surface2,#23262B)}.nm167 .sc.up{border-left-color:#2E9E5B}.nm167 .sc.dn{border-left-color:#E63E50}.nm167 .sc.nt{border-left-color:#8A8D96}",
 ".nm167 .bg{display:flex;align-items:baseline;gap:8px;margin:4px 0}.nm167 .bg span{font:800 1.9rem/1 var(--cond,'Barlow Condensed'),sans-serif}.nm167 .bg b{font-size:1.4rem}",
@@ -18751,6 +18753,7 @@ var css=document.createElement("style");css.textContent=[
 function paint(){try{var tab=document.getElementById("tab-today");if(!tab||tab.hidden||!P().onboarded)return;var ex=document.getElementById("nm167");if(ex&&ex.contains(document.activeElement))return;
  var h=html();if(ex&&ex.dataset.sig===h)return;var d=document.createElement("div");d.innerHTML=h;var n=d.firstChild;n.dataset.sig=h;if(ex)ex.replaceWith(n);else{var a=document.getElementById("fb155");if(a&&a.parentNode===tab)a.parentNode.insertBefore(n,a.nextSibling);else tab.appendChild(n)}}catch(e){}}
 function set(k,v){P()[k]=v;try{profChanged()}catch(e){}paint()}
+document.addEventListener("change",function(e){var t=e.target;if(t&&t.matches&&t.matches("[data-n167tg]")){var v=Math.max(0,Math.min(40,+t.value||0));P().tgoal167=v||null;try{profChanged()}catch(x){}try{toast("Time goal saved")}catch(x){}paint()}},true);
 document.addEventListener("click",function(e){var t=e.target;if(!t.closest)return;var b;
  if(b=t.closest("[data-n167sc]")){set("numsc167",b.dataset.n167sc);return}
  if(b=t.closest("[data-n167f]")){set("numfmt167",b.dataset.n167f);return}
@@ -18758,6 +18761,66 @@ document.addEventListener("click",function(e){var t=e.target;if(!t.closest)retur
  if(b=t.closest("[data-n167m]")){var s=sel().slice(),i=s.indexOf(b.dataset.n167m);if(i>=0){if(s.length>1)s.splice(i,1)}else s.push(b.dataset.n167m);set("nums167",s)}},true);
 setInterval(paint,2500);setTimeout(paint,900);
 window.FH167={pct:pct,hm:hm,paint:paint};
+})();
+
+/* FighterBase v216: monthly progress photos. Private to the member, kept on this device only (nothing is uploaded, club and coach cannot see them).
+   Card at the top of Progress > Summary, a gentle monthly reminder on Today, side-by-side compare. Never comments on a body, no advice from photos. */
+(function(){
+if(window.FH168)return;
+var mem=[],db=null,useMem=false,ready=false,pose="Front",view={a:null,b:null},open=null,delArm=null;
+function P(){return S.profile||{}}
+function openDB(){try{var r=indexedDB.open("fb168",1);r.onupgradeneeded=function(){r.result.createObjectStore("ph",{keyPath:"id"})};r.onsuccess=function(){db=r.result;try{var q=db.transaction("ph","readonly").objectStore("ph").getAll();q.onsuccess=function(){mem=q.result||[];ready=true;paint()};q.onerror=function(){useMem=true;ready=true;paint()}}catch(e){useMem=true;ready=true;paint()}};r.onerror=function(){useMem=true;ready=true}}catch(e){useMem=true;ready=true}}
+function put(o){mem.push(o);if(db&&!useMem)try{db.transaction("ph","readwrite").objectStore("ph").put(o)}catch(e){useMem=true}}
+function del(id){mem=mem.filter(function(x){return x.id!==id});if(db)try{db.transaction("ph","readwrite").objectStore("ph").delete(id)}catch(e){}}
+function mine(){var u=S.uid;return mem.filter(function(x){return x.uid===u}).sort(function(a,b){return a.d<b.d?-1:a.d>b.d?1:a.at-b.at})}
+function esc2(t){return typeof esc==="function"?esc(t):String(t).replace(/[&<>"]/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]})}
+function fmt(d){try{return new Date(d+"T12:00").toLocaleDateString("en-GB",{day:"numeric",month:"short",year:"numeric"})}catch(e){return d}}
+function wtOn(d){try{var l=logMap()[d];return l&&l.weight!=null&&l.weight!==""?+l.weight:null}catch(e){return null}}
+function info(){var L=mine(),last=L.length?L[L.length-1]:null,days=last?diffDays(last.d,TODAY):null;return {L:L,last:last,days:days,due:last?days>=28:false,next:last?addDays(last.d,28):null}}
+function compress(file,cb){var fr=new FileReader();fr.onerror=function(){cb(null)};fr.onload=function(){var im=new Image();im.onerror=function(){cb(null)};im.onload=function(){try{var m=900,w=im.width,h=im.height,k=Math.min(1,m/Math.max(w,h)),c=document.createElement("canvas");c.width=Math.round(w*k);c.height=Math.round(h*k);c.getContext("2d").drawImage(im,0,0,c.width,c.height);cb(c.toDataURL("image/jpeg",.78))}catch(e){cb(null)}};im.src=fr.result};fr.readAsDataURL(file)}
+function add(file){compress(file,function(u){if(!u){try{toast("That photo could not be read","Try a JPEG or PNG.")}catch(e){}return}
+ put({id:"p"+Date.now()+Math.random().toString(36).slice(2,6),uid:S.uid,d:TODAY,pose:pose,img:u,w:wtOn(TODAY),at:Date.now()});view={a:null,b:null};
+ try{toast("Photo saved","Private to you. It stays on this device.")}catch(e){}paint();nudge()})}
+var inp=null;function picker(){if(!inp){inp=document.createElement("input");inp.type="file";inp.accept="image/*";inp.style.cssText="position:fixed;left:-9999px;opacity:0";inp.id="ph168in";inp.setAttribute("aria-label","Choose a progress photo");inp.addEventListener("change",function(){var f=inp.files&&inp.files[0];inp.value="";if(f)add(f)});document.body.appendChild(inp)}inp.click()}
+function sel(L,id){return '<select class="ph-s" data-ph168sel="'+id+'" aria-label="Photo '+id+'">'+L.map(function(x,i){return '<option value="'+x.id+'"'+((view[id]||defv(L)[id])===x.id?' selected':'')+'>'+esc2(fmt(x.d))+' · '+esc2(x.pose)+'</option>'}).join("")+'</select>'}
+function defv(L){var last=L[L.length-1],same=L.filter(function(x){return x.pose===last.pose});return {a:same.length>1?same[0].id:L[0].id,b:last.id}}
+function byId(i){return mem.filter(function(x){return x.id===i})[0]}
+function compare(L){if(L.length<2)return '<p class="small muted" style="margin:10px 0 0">Add a second photo next month and you can compare them side by side here.</p>';
+ var dv=defv(L),a=byId(view.a||dv.a),b=byId(view.b||dv.b);if(!a||!b)return "";
+ var days=Math.abs(diffDays(a.d,b.d)),wa=a.w!=null?a.w:wtOn(a.d),wb=b.w!=null?b.w:wtOn(b.d),dw=wa!=null&&wb!=null?Math.round((wb-wa)*10)/10:null;
+ return '<div class="ph-cmp"><div><span class="k">Before</span>'+sel(L,"a")+'<img src="'+a.img+'" alt="Progress photo, '+esc2(fmt(a.d))+', '+esc2(a.pose)+'"></div><div><span class="k">After</span>'+sel(L,"b")+'<img src="'+b.img+'" alt="Progress photo, '+esc2(fmt(b.d))+', '+esc2(b.pose)+'"></div></div><p class="small muted" style="margin:8px 0 0">'+days+' days apart'+(dw!=null?' · weight '+(dw>0?'+':'')+dw+' kg ('+wa+' to '+wb+')':'')+'. Lighting, clothing and time of day change how a photo looks, so use the same spot and light if you can.</p>'}
+function html(){var o=info(),L=o.L,rem=P().phrem168!==false;
+ var st=!L.length?'No photos yet. Take your first now. It becomes your starting point.':o.due?'Your monthly photo is due. Last one was '+fmt(o.last.d)+'.':'Last photo '+fmt(o.last.d)+'. Next one around '+fmt(o.next)+'.';
+ var thumbs=L.length?'<div class="ph-g">'+L.slice().reverse().map(function(x){return '<button type="button" class="ph-t" data-ph168open="'+x.id+'" aria-label="Open photo from '+esc2(fmt(x.d))+', '+esc2(x.pose)+'"><img src="'+x.img+'" alt=""><span>'+esc2(fmt(x.d))+'<br>'+esc2(x.pose)+'</span></button>'}).join("")+'</div>':"";
+ return '<div class="panel ph168" id="ph168"><div class="sec-h"><h3>Monthly progress photos</h3><span class="badge">Private</span></div><p class="small" style="margin:0 0 8px"><b>'+esc2(st)+'</b></p>'+
+ '<div class="ph-pose" role="group" aria-label="Which view"><span class="k">View</span>'+["Front","Side","Back","Other"].map(function(p){return '<button type="button" class="chip" data-ph168pose="'+p+'" aria-pressed="'+(pose===p)+'">'+p+'</button>'}).join("")+'</div>'+
+ '<div class="row"><button type="button" class="btn'+(o.due||!L.length?' gold':' ghost')+'" data-ph168add>Add '+(L.length?"this month\'s":"first")+' photo</button></div>'+thumbs+compare(L)+
+ '<p class="small muted" style="margin:10px 0 0">A visual record for you. It stays on this device only: nothing is uploaded, and your club and coach cannot see it. FighterBase does not judge bodies or give advice from photos. Intended for adults. If photos ever make you feel worse, switch them off or delete them.'+(useMem?' <b>This preview cannot save photos after you close it.</b>':'')+' Clearing your browser data or changing phone will remove them.</p>'+
+ '<div class="row" style="margin-top:8px"><button type="button" class="linkbtn" data-ph168rem>'+(rem?"Monthly reminder: on (turn off)":"Monthly reminder: off (turn on)")+'</button>'+(L.length?'<button type="button" class="linkbtn" data-ph168all>'+(delArm==="all"?"Tap again to delete all my photos":"Delete all my photos")+'</button>':'')+'</div></div>'}
+function paint(){try{var el=document.getElementById("pvReport");if(!el)return;var ex=document.getElementById("ph168");if(ex&&ex.contains(document.activeElement)&&document.activeElement.tagName==="SELECT")return;
+ var h=html(),sig=h.length+":"+mem.length+":"+pose+":"+delArm+":"+(view.a||"")+(view.b||"");if(ex&&ex.dataset.sig===sig)return;var d=document.createElement("div");d.innerHTML=h;var n=d.firstChild;n.dataset.sig=sig;if(ex)ex.replaceWith(n);else{var hero=el.querySelector(".pv-hero");if(hero)hero.after(n);else el.insertBefore(n,el.firstChild)}}catch(e){}}
+function viewer(id){var x=byId(id);var v=document.getElementById("phv168");if(v)v.remove();if(!x){open=null;return}open=id;v=document.createElement("div");v.id="phv168";v.setAttribute("role","dialog");v.setAttribute("aria-modal","true");v.setAttribute("aria-label","Progress photo");
+ var w=x.w!=null?x.w:wtOn(x.d);v.innerHTML='<div class="phv-in"><img src="'+x.img+'" alt="Progress photo, '+esc2(fmt(x.d))+', '+esc2(x.pose)+'"><p class="small" style="margin:8px 0"><b>'+esc2(fmt(x.d))+' · '+esc2(x.pose)+'</b>'+(w!=null?' · weight '+w+' kg':'')+'</p><div class="row"><button type="button" class="btn ghost" data-ph168close>Close</button><button type="button" class="btn ghost" data-ph168del="'+x.id+'">'+(delArm===x.id?"Tap again to delete":"Delete this photo")+'</button></div></div>';document.body.appendChild(v)}
+function nudge(){try{var tab=document.getElementById("tab-today"),ex=document.getElementById("phn168");var o=info();var sn=P().phsnooze168;var show=tab&&!tab.hidden&&P().onboarded&&P().phrem168!==false&&o.last&&o.due&&!(sn&&sn>TODAY);
+ if(!show){if(ex)ex.remove();return}if(ex)return;var d=document.createElement("div");d.id="phn168";d.className="panel phn168";d.innerHTML='<div><b>Monthly progress photo</b><p class="small muted" style="margin:2px 0 0">Last one was '+esc2(fmt(o.last.d))+'. It takes ten seconds and stays private on this device.</p></div><div class="row"><button type="button" class="btn gold sm" data-ph168nudge>Take photo</button><button type="button" class="btn ghost sm" data-ph168snz>Not now</button></div>';
+ var a=document.getElementById("nm167")||document.getElementById("fb155");if(a&&a.parentNode===tab)a.parentNode.insertBefore(d,a);else tab.appendChild(d)}catch(e){}}
+document.addEventListener("click",function(e){var t=e.target;if(!t.closest)return;var b;
+ if(t.closest("[data-ph168add]")){picker();return}
+ if(b=t.closest("[data-ph168pose]")){pose=b.dataset.ph168pose;paint();return}
+ if(b=t.closest("[data-ph168open]")){delArm=null;viewer(b.dataset.ph168open);return}
+ if(t.closest("[data-ph168close]")||t.id==="phv168"){var v=document.getElementById("phv168");if(v)v.remove();open=null;delArm=null;return}
+ if(b=t.closest("[data-ph168del]")){var id=b.dataset.ph168del;if(delArm===id){del(id);delArm=null;view={a:null,b:null};var v2=document.getElementById("phv168");if(v2)v2.remove();open=null;try{toast("Photo deleted")}catch(x){}paint();nudge()}else{delArm=id;viewer(id)}return}
+ if(t.closest("[data-ph168all]")){if(delArm==="all"){mine().forEach(function(x){del(x.id)});delArm=null;view={a:null,b:null};try{toast("All your progress photos deleted")}catch(x){}}else delArm="all";paint();nudge();return}
+ if(t.closest("[data-ph168rem]")){P().phrem168=P().phrem168===false?true:false;try{profChanged()}catch(x){}paint();nudge();return}
+ if(t.closest("[data-ph168nudge]")){pose="Front";picker();return}
+ if(t.closest("[data-ph168snz]")){P().phsnooze168=addDays(TODAY,7);try{profChanged()}catch(x){}nudge();return}
+},true);
+document.addEventListener("change",function(e){var t=e.target;if(t&&t.matches&&t.matches("[data-ph168sel]")){view[t.dataset.ph168sel]=t.value;paint()}},true);
+document.addEventListener("keydown",function(e){if(e.key==="Escape"){var v=document.getElementById("phv168");if(v){v.remove();open=null;delArm=null}}});
+var rp=window.renderPvReport;if(typeof rp==="function"){window.renderPvReport=function(){var r=rp.apply(this,arguments);try{paint()}catch(x){}return r}}
+var css=document.createElement("style");css.textContent=".ph168 .k{font:700 11px/1 system-ui;letter-spacing:.12em;text-transform:uppercase;opacity:.7}.ph-pose{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin:0 0 10px}.ph-g{display:grid;grid-template-columns:repeat(auto-fill,minmax(96px,1fr));gap:8px;margin-top:12px}.ph-t{padding:0;border:1px solid var(--line);border-radius:12px;overflow:hidden;background:transparent;color:inherit;text-align:left;cursor:pointer;min-height:44px}.ph-t img{display:block;width:100%;aspect-ratio:3/4;object-fit:cover}.ph-t span{display:block;padding:6px 8px;font-size:12px;line-height:1.3}.ph-cmp{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:14px}.ph-cmp img{display:block;width:100%;aspect-ratio:3/4;object-fit:cover;border-radius:12px;margin-top:6px}.ph-s{width:100%;min-height:44px;margin-top:6px;border-radius:10px;border:1px solid var(--line);background:transparent;color:inherit;padding:0 8px;font-size:14px}.ph-s option{color:#111}@media(max-width:480px){.ph-cmp{gap:6px}}#phv168{position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,.82);display:flex;align-items:center;justify-content:center;padding:16px}.phv-in{max-width:520px;width:100%;max-height:100%;overflow:auto;background:var(--panel,#1c1d22);border-radius:16px;padding:14px;color:inherit}.phv-in img{display:block;width:100%;max-height:68vh;object-fit:contain;border-radius:10px}.phn168{grid-column:1/-1;order:-18;column-span:all;display:flex;gap:12px;align-items:center;justify-content:space-between;flex-wrap:wrap}";document.head.appendChild(css);
+openDB();setInterval(function(){nudge();var t=document.getElementById("tab-progress");if(t&&!t.hidden)paint()},2500);setTimeout(nudge,1200);
+window.FH168={mine:mine,info:info};
 })();
 
 /* FighterBase v44: always a way back, always a next step. */
