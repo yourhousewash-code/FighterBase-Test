@@ -18709,8 +18709,8 @@ function arrow(id,c,pc){ /* returns {cls,sym,txt} */
   if(d>0)parts.push({c:good?"up":"nt",s:"▲",t:"Up "+pr+"% on "+lab});else if(d<0&&!(cw&&id!=="sessions"&&false))parts.push({c:good?(cw?"nt":"dn"):"nt",s:"▼",t:(cw?"Below ":"Down ")+Math.abs(pr)+"% on "+lab});else parts.push({c:"nt",s:"▬",t:"Same as "+lab})}
  return parts}
 function card(id,lab){var c=calc(id),pc=calc(id,WP()),f=fmt(),p=c.p,over=p!=null&&p>100,big=c.big;
- var bigTxt=f==="percent"&&p!=null?p+"%":big,pill=(f==="both"&&p!=null)?'<span class="pl'+(over?' ov':'')+'">'+p+'%</span>':"";
- var bar=p!=null?'<div class="br" role="img" aria-label="'+lab+' '+p+' percent"><i style="width:'+Math.min(100,Math.max(0,p))+'%"'+(over?' class="ov"':'')+'></i>'+(over?'<b>+'+(p-100)+'% over</b>':'')+'</div>':"";
+ var bigTxt=f==="percent"&&p!=null?p+"%":big,pill=(f==="both"&&p!=null)?'<span class="pl'+(p>=100?' ov':'')+'">'+p+'%</span>':"";
+ var bar=p!=null?'<div class="br" role="img" aria-label="'+lab+' '+p+' percent"><i style="width:'+Math.min(100,Math.max(0,p))+'%"'+(p>=100?' class="ov"':'')+'></i>'+(over?'<b>+'+(p-100)+'% over</b>':'')+'</div>':"";
  var ar=arrow(id,c,pc).map(function(a){return '<div class="ar '+a.c+'"><b aria-hidden="true">'+a.s+'</b><span>'+esc(a.t)+'</span></div>'}).join("");
  return '<div class="c"><div class="k">'+esc(lab)+'</div><div class="v"><span>'+esc(bigTxt)+'</span>'+pill+'</div>'+bar+ar+'<div class="s">'+esc(c.sub)+'</div></div>'}
 function score(ws){var xs=[],c=calc("sessions",ws);if(c.p!=null)xs.push(Math.min(100,c.p));var f=calc("food",ws);if(f.p!=null)xs.push(f.p);var pl=calc("plan",ws);if(pl.cnt!=null&&pl.p!=null)xs.push(Math.min(100,pl.p));var cs=calc("consist",ws);if(cs.p!=null)xs.push(cs.p);return xs.length?Math.round(xs.reduce(function(a,b){return a+b},0)/xs.length):null}
@@ -18821,6 +18821,99 @@ var rp=window.renderPvReport;if(typeof rp==="function"){window.renderPvReport=fu
 var css=document.createElement("style");css.textContent=".ph168 .k{font:700 11px/1 system-ui;letter-spacing:.12em;text-transform:uppercase;opacity:.7}.ph-pose{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin:0 0 10px}.ph-g{display:grid;grid-template-columns:repeat(auto-fill,minmax(96px,1fr));gap:8px;margin-top:12px}.ph-t{padding:0;border:1px solid var(--line);border-radius:12px;overflow:hidden;background:transparent;color:inherit;text-align:left;cursor:pointer;min-height:44px}.ph-t img{display:block;width:100%;aspect-ratio:3/4;object-fit:cover}.ph-t span{display:block;padding:6px 8px;font-size:12px;line-height:1.3}.ph-cmp{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:14px}.ph-cmp img{display:block;width:100%;aspect-ratio:3/4;object-fit:cover;border-radius:12px;margin-top:6px}.ph-s{width:100%;min-height:44px;margin-top:6px;border-radius:10px;border:1px solid var(--line);background:transparent;color:inherit;padding:0 8px;font-size:14px}.ph-s option{color:#111}@media(max-width:480px){.ph-cmp{gap:6px}}#phv168{position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,.82);display:flex;align-items:center;justify-content:center;padding:16px}.phv-in{max-width:520px;width:100%;max-height:100%;overflow:auto;background:var(--panel,#1c1d22);border-radius:16px;padding:14px;color:inherit}.phv-in img{display:block;width:100%;max-height:68vh;object-fit:contain;border-radius:10px}.phn168{grid-column:1/-1;order:-18;column-span:all;display:flex;gap:12px;align-items:center;justify-content:space-between;flex-wrap:wrap}";document.head.appendChild(css);
 openDB();setInterval(function(){nudge();var t=document.getElementById("tab-progress");if(t&&!t.hidden)paint()},2500);setTimeout(nudge,1200);
 window.FH168={mine:mine,info:info};
+})();
+
+/* FighterBase v217: Club numbers for owners. The club-side mirror of "Your numbers": check-ins, members active, class fill, members kept, quiet members, new members,
+   an overall club score, green/red arrows against the previous period, optional club goals, attendance by class and by member.
+   Based only on check-ins from members who use the app. Read only. Goals are saved on the owner's own profile (cgoal169, cgoalA169), not on club data. */
+(function(){
+if(window.FH169)return;
+var Pf=function(){return S.profile||{}};
+function esc2(t){return typeof esc==="function"?esc(t):String(t).replace(/[&<>"]/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]})}
+var MORE=false;
+function scope(){return Pf().cnsc169||"w"}
+function fmtD(d){try{return new Date(d+"T12:00").toLocaleDateString("en-GB",{day:"numeric",month:"short"})}catch(e){return d}}
+function dow(d){return (new Date(d+"T12:00").getDay()+6)%7}
+function ms(){try{return FH76.members()}catch(e){return []}}
+function cl(){try{return (typeof clubState!=="undefined"&&clubState.club)||{}}catch(e){return {}}}
+function hub(){return document.body.classList.contains("hubview")}
+function dates(m){try{return FH76.ckDates(m)}catch(e){return []}}
+function periods(){var mon=mondayOf(TODAY);
+ if(scope()==="w"){var el=diffDays(mon,TODAY);return {cur:[mon,TODAY],prev:[addDays(mon,-7),addDays(mon,-7+el)],pp:[addDays(mon,-14),addDays(mon,-14+el)],n:el+1,lab:"this week",plab:"last week at this point",wk:1}}
+ return {cur:[addDays(mon,-28),addDays(mon,-1)],prev:[addDays(mon,-56),addDays(mon,-29)],pp:[addDays(mon,-84),addDays(mon,-57)],n:28,lab:"the last 4 full weeks",plab:"the 4 weeks before",wk:4}}
+function inR(d,r){return d>=r[0]&&d<=r[1]}
+function visits(M,r){var n=0;M.forEach(function(m){dates(m).forEach(function(d){if(inR(d,r))n++})});return n}
+function activeSet(M,r){var o={};M.forEach(function(m){if(dates(m).some(function(d){return inR(d,r)}))o[m.uid]=1});return o}
+function nActive(M,r){return Object.keys(activeSet(M,r)).length}
+function retention(M,cr,pr){var a=activeSet(M,pr),b=activeSet(M,cr),n=0,k=0;Object.keys(a).forEach(function(u){n++;if(b[u])k++});return n?Math.round(k/n*100):null}
+function newM(M,r){return M.filter(function(m){var f=m.first||dates(m)[0];return f&&inR(f,r)}).length}
+function quiet(M,at){var n=0;M.forEach(function(m){var l=dates(m).filter(function(d){return d<=at}).pop();var f=m.first||dates(m)[0];if(!f||f>at)return;if(!l||diffDays(l,at)>=14)n++});return n}
+function walk(M,r){var n=0;M.forEach(function(m){Object.keys(m.att||{}).forEach(function(k){if(/_open$/.test(k)&&inR(k.slice(0,10),r))n++})});return n}
+function nowHM(){var d=new Date();return ("0"+d.getHours()).slice(-2)+":"+("0"+d.getMinutes()).slice(-2)}
+function classStats(M,r){var c=cl(),tt=c.timetable||[],cx=c.cx||{},rows=[],sCap=0,sHd=0;
+ tt.forEach(function(k){var occ=0,tot=0;for(var d=r[0];d<=r[1];d=addDays(d,1)){if(dow(d)!==k.dow)continue;if(d===TODAY&&String(k.time||"")>nowHM())continue;if(cx[d+"_"+k.id])continue;occ++;tot+=M.filter(function(m){return (m.att||{})[d+"_"+k.id]}).length}
+  var cap=+k.cap>0?+k.cap:0;if(occ&&cap){sCap+=cap*occ;sHd+=tot}rows.push({cl:k,occ:occ,avg:occ?tot/occ:null,cap:cap,fill:occ&&cap?Math.round(tot/occ/cap*100):null})});
+ return {rows:rows,fill:sCap?Math.round(sHd/sCap*100):null}}
+function goalC(){return +Pf().cgoal169||0}
+function goalA(){return +Pf().cgoalA169||0}
+/* arrow: mode "hi" higher is better, "lo" lower is better, "nt" neutral */
+function arr(cur,prev,mode,plab,unit){if(cur==null||prev==null)return [];var d=cur-prev;if(d===0)return [{c:"nt",s:"▬",t:"Same as "+plab}];var up=d>0,good=mode==="nt"?null:(mode==="hi"?up:!up);var c=good==null?"nt":good?"up":"dn";
+ var amt=unit==="pts"?Math.abs(d)+" point"+(Math.abs(d)===1?"":"s"):(prev>0?Math.round(Math.abs(d)/prev*100)+"%":Math.abs(d));return [{c:c,s:up?"▲":"▼",t:(up?"Up ":"Down ")+amt+" on "+plab}]}
+function pctOf(a,b){return b>0?Math.round(a/b*100):null}
+function bar(p,lab){if(p==null)return "";var ov=p>100,full=p>=100;return '<div class="br" role="img" aria-label="'+esc2(lab)+' '+p+' percent"><i style="width:'+Math.min(100,Math.max(0,p))+'%"'+(full?' class="ov"':'')+'></i>'+(ov?'<b>+'+(p-100)+'% over</b>':'')+'</div>'}
+function card(k,big,p,parts,sub){var pill=p!=null?'<span class="pl'+(p>=100?' ov':'')+'">'+p+'%</span>':"";return '<div class="c"><div class="k">'+esc2(k)+'</div><div class="v"><span>'+esc2(big)+'</span>'+pill+'</div>'+bar(p,k)+parts.map(function(a){return '<div class="ar '+a.c+'"><b aria-hidden="true">'+a.s+'</b><span>'+esc2(a.t)+'</span></div>'}).join("")+'<div class="s">'+esc2(sub||"")+'</div></div>'}
+function data(){var M=ms(),P=periods(),O={M:M,P:P},wk=P.wk;
+ O.v=visits(M,P.cur);O.pv=visits(M,P.prev);O.ppv=visits(M,P.pp);
+ O.a=nActive(M,P.cur);O.pa=nActive(M,P.prev);O.ppa=nActive(M,P.pp);O.t=M.length;
+ var cs=classStats(M,P.cur),ps=classStats(M,P.prev),pps=classStats(M,P.pp);O.cs=cs;O.ps=ps;O.fill=cs.fill;O.pfill=ps.fill;O.ppfill=pps.fill;
+ O.ret=retention(M,P.cur,P.prev);O.pret=retention(M,P.prev,P.pp);
+ O.q=quiet(M,P.cur[1]);O.pq=quiet(M,P.prev[1]);O.nw=newM(M,P.cur);O.pnw=newM(M,P.prev);O.wi=walk(M,P.cur);O.pwi=walk(M,P.prev);
+ var gc=goalC()*wk;O.gc=gc;O.gp=gc?pctOf(O.v,gc):null;O.pgp=gc?pctOf(O.pv,gc):null;
+ O.ap=pctOf(O.a,O.t);O.pap=pctOf(O.pa,O.t);
+ function score(ap,fill,ret,gp){var xs=[];if(ap!=null)xs.push(Math.min(100,ap));if(fill!=null)xs.push(Math.min(100,fill));if(ret!=null)xs.push(Math.min(100,ret));if(gp!=null)xs.push(Math.min(100,gp));return xs.length?Math.round(xs.reduce(function(a,b){return a+b},0)/xs.length):null}
+ O.score=score(O.ap,O.fill,O.ret,O.gp);O.pscore=score(O.pap,O.pfill,O.pret,O.pgp);return O}
+function strip(O){var P=O.P,out=[],plab=P.plab;
+ var vp=O.gc?O.gp:null;
+ if(O.gc){var hit=O.v>=O.gc;out.push({k:"Check-ins",a:hit?{c:"up",s:"▲"}:(scope()==="w"?{c:"nt",s:"●"}:{c:"dn",s:"▼"}),big:O.v+"/"+O.gc,t:hit?"Goal "+(O.v>O.gc?"beaten":"hit"):(scope()==="w"?(O.gc-O.v)+" to go":"Missed by "+(O.gc-O.v))})}
+ else{var d=O.v-O.pv;out.push({k:"Check-ins",a:d>0?{c:"up",s:"▲"}:d<0?{c:"dn",s:"▼"}:{c:"nt",s:"▬"},big:String(O.v),t:O.pv?(d>0?"Up "+d:d<0?"Down "+Math.abs(d):"Same")+" on "+plab:"No earlier period to compare"})}
+ var da=O.ap!=null&&O.pap!=null?O.ap-O.pap:null;out.push({k:"Members active",a:da==null||da===0?{c:"nt",s:"▬"}:da>0?{c:"up",s:"▲"}:{c:"dn",s:"▼"},big:(O.ap==null?"–":O.ap+"%"),t:O.a+" of "+O.t+" trained"+(da?" · "+(da>0?"up ":"down ")+Math.abs(da)+" point"+(Math.abs(da)===1?"":"s"):"")});
+ var df=O.fill!=null&&O.pfill!=null?O.fill-O.pfill:null;out.push({k:"Class fill",a:df==null||df===0?{c:"nt",s:"▬"}:df>0?{c:"up",s:"▲"}:{c:"dn",s:"▼"},big:O.fill==null?"–":O.fill+"%",t:O.fill==null?"Set class capacity to see this":(df?(df>0?"Up ":"Down ")+Math.abs(df)+" point"+(Math.abs(df)===1?"":"s")+" on "+plab:"Same as "+plab)});
+ var ds=O.score!=null&&O.pscore!=null?O.score-O.pscore:null;out.push({k:"Club score",a:ds==null||ds===0?{c:"nt",s:"▬"}:ds>0?{c:"up",s:"▲"}:{c:"dn",s:"▼"},big:O.score==null?"–":O.score+"%",t:ds==null?"Active members, class fill, members kept"+(O.gc?", goal":""):(ds>0?"Up ":ds<0?"Down ":"Level ")+(ds?Math.abs(ds)+" point"+(Math.abs(ds)===1?"":"s")+" on "+plab:"with "+plab)});
+ return '<div class="st">'+out.map(function(o){return '<div class="sc '+o.a.c+'"><div class="k">'+esc2(o.k)+'</div><div class="bg"><b aria-hidden="true">'+o.a.s+'</b><span>'+esc2(o.big)+'</span></div><div class="t">'+esc2(o.t)+'</div></div>'}).join("")+'</div>'}
+function cards(O){var P=O.P,pl=P.plab,h="";
+ h+=card("Check-ins vs goal",O.gc?O.v+"/"+O.gc:String(O.v),O.gp,arr(O.v,O.pv,"hi",pl),O.gc?"your goal is "+goalC()+" a week":"set a weekly goal under Choose numbers");
+ h+=card("Members active",O.a+"/"+O.t,O.ap,arr(O.ap,O.pap,"hi",pl,"pts"),goalA()?"your goal is "+goalA()+"% of members":"members who checked in at least once");
+ h+=card("Class fill",O.fill==null?"–":O.fill+"%",O.fill,arr(O.fill,O.pfill,"hi",pl,"pts"),"check-ins as a share of class capacity");
+ h+=card("Members kept",O.ret==null?"–":O.ret+"%",O.ret,arr(O.ret,O.pret,"hi",pl,"pts"),"of members active the period before who came again");
+ h+=card("Quiet 14+ days",String(O.q),null,arr(O.q,O.pq,"lo",pl),"no check-in for two weeks or more. Fewer is better");
+ h+=card("New members",String(O.nw),null,arr(O.nw,O.pnw,"hi",pl),"first check-in in this period");
+ h+=card("Walk-ins",String(O.wi),null,arr(O.wi,O.pwi,"nt",pl),"open check-ins, not on a class");
+ return '<div class="gr">'+h+'</div>'}
+function classTable(O){var rows=O.cs.rows.filter(function(r){return r.occ}).map(function(r){var p=O.ps.rows.filter(function(x){return x.cl.id===r.cl.id})[0];return {r:r,p:p}}).sort(function(a,b){return (b.r.fill==null?-1:b.r.fill)-(a.r.fill==null?-1:a.r.fill)||(b.r.avg||0)-(a.r.avg||0)});
+ if(!rows.length)return "";var DN=["Mon","Tue","Wed","Thu","Fri","Sat","Sun"];
+ return '<div class="cn-t"><div class="k">Attendance by class</div>'+rows.map(function(x){var r=x.r,A=window.FBW&&FBW.arrow&&x.p&&x.p.avg!=null&&r.avg!=null?FBW.arrow(Math.round(r.avg*10)/10,Math.round(x.p.avg*10)/10,1):"";return '<div class="cn-r"><span><b>'+esc2(r.cl.title||r.cl.name||"Class")+'</b><small>'+DN[r.cl.dow]+" "+esc2(r.cl.time||"")+'</small></span><span class="cn-n">'+(r.avg!=null?(Math.round(r.avg*10)/10)+(r.cap?" / "+r.cap:""):"–")+'</span><span class="cn-p">'+(r.fill!=null?r.fill+"%":"")+'</span><span class="cn-a">'+A+'</span></div>'}).join("")+'</div>'}
+function memberTable(O){var P=O.P,M=O.M,wk=P.wk,list=M.map(function(m){var c=dates(m).filter(function(d){return inR(d,P.cur)}).length,p=dates(m).filter(function(d){return inR(d,P.prev)}).length,t=(m.eg&&m.eg.wk&&+m.eg.wk.t)||0;return {m:m,c:c,p:p,t:t,tp:t?Math.round(c/(t*wk)*100):null}});
+ if(!list.length)return "";list.sort(function(a,b){var da=a.c-a.p,db=b.c-b.p;return da-db||a.c-b.c});var all=Pf().cnall169,show=all?list:list.slice(0,8);
+ return '<div class="cn-t"><div class="k">Attendance by member · quietest and falling first</div>'+show.map(function(x){var A=window.FBW&&FBW.arrow?FBW.arrow(x.c,x.p,1):"";return '<button type="button" class="cn-r cn-m" data-cn169m="'+esc2(x.m.uid)+'"><span><b>'+esc2(x.m.name||"Member")+'</b><small>'+(x.t?"target "+x.t+" a week":"target not shared")+'</small></span><span class="cn-n">'+x.c+' check-in'+(x.c===1?"":"s")+'</span><span class="cn-p">'+(x.tp!=null?x.tp+"%":"")+'</span><span class="cn-a">'+A+'</span></button>'}).join("")+(list.length>8?'<button type="button" class="linkbtn" data-cn169all>'+(all?"Show fewer":"Show all "+list.length)+'</button>':"")+'<p class="small muted" style="margin:6px 0 0">Check-ins only. No check-in does not mean a member has not trained. Check for holidays and injuries before chasing anyone.</p></div>'}
+function html(){var O=data();if(!O.t)return "";var sc=scope(),ed=Pf().cnedit169;
+ var seg=function(a,k,cur){return a.map(function(o){return '<button type="button" class="sg" aria-pressed="'+(cur===o[0])+'" data-cn169'+k+'="'+o[0]+'">'+o[1]+'</button>'}).join("")};
+ var edh=ed?'<div class="ed"><label class="tg167"><span class="k">Weekly check-in goal for the club (optional)</span><input type="number" min="0" max="2000" step="1" inputmode="numeric" data-cn169g="cgoal169" value="'+(goalC()||"")+'" placeholder="e.g. 60"></label><label class="tg167"><span class="k">Goal: share of members active each week, % (optional)</span><input type="number" min="0" max="100" step="1" inputmode="numeric" data-cn169g="cgoalA169" value="'+(goalA()||"")+'" placeholder="e.g. 70"></label></div>':"";
+ return '<section class="nm167 cn169" id="cn169" aria-label="Club numbers"><div class="hd"><h2>Club numbers</h2><div class="ct"><div class="sgs">'+seg([["w","This week"],["4","Last 4 full weeks"]],"sc",sc)+'</div><button type="button" class="linkbtn" data-cn169ed>'+(ed?"Done":"Set goals")+'</button></div></div><p class="s" style="margin:0 0 10px">'+(sc==="w"?"This week so far, against the same point last week.":fmtD(O.P.cur[0])+" to "+fmtD(O.P.cur[1])+", against the 4 weeks before.")+' From members who use the app.</p>'+strip(O)+edh+'<button type="button" class="btn ghost cn-tg" data-cn169more aria-expanded="'+(MORE?'true':'false')+'">'+(MORE?'Show fewer numbers':'Show all club numbers')+'</button><div class="cn-more'+(MORE?' open':'')+'">'+cards(O)+classTable(O)+memberTable(O)+'</div></section>'}
+function paint(){try{var sec=document.getElementById("tab-hubover"),host=document.getElementById("huboverBody");if(!sec||sec.hidden||!host||!hub()){var o0=document.getElementById("cn169");if(o0&&(!sec||sec.hidden))o0.remove();return}
+ var ex=document.getElementById("cn169");if(ex&&ex.contains(document.activeElement)&&document.activeElement.tagName==="INPUT")return;var h=html();if(!h){if(ex)ex.remove();return}
+ if(ex&&ex.dataset.sig===h)return;var d=document.createElement("div");d.innerHTML=h;var n=d.firstChild;n.dataset.sig=h;if(ex)ex.replaceWith(n);else host.insertBefore(n,host.firstChild)}catch(e){}}
+function set(k,v){Pf()[k]=v;try{profChanged()}catch(e){}paint()}
+document.addEventListener("click",function(e){var t=e.target;if(!t.closest)return;var b;
+ if(b=t.closest("[data-cn169sc]")){set("cnsc169",b.dataset.cn169sc);return}
+ if(t.closest("[data-cn169more]")){MORE=!MORE;paint();return}
+ if(t.closest("[data-cn169ed]")){set("cnedit169",!Pf().cnedit169);return}
+ if(t.closest("[data-cn169all]")){set("cnall169",!Pf().cnall169);return}
+ if(b=t.closest("[data-cn169m]")){try{var h=document.querySelector('nav.hubnav [data-hub="hubmem"]');if(h)h.click();else showTab("hubmem");setTimeout(function(){var r=document.querySelector('[data-pmopen="'+b.dataset.cn169m+'"]');if(r)r.click()},400)}catch(x){}return}
+},true);
+document.addEventListener("change",function(e){var t=e.target;if(t&&t.matches&&t.matches("[data-cn169g]")){var v=Math.max(0,Math.round(+t.value||0));if(t.dataset.cn169g==="cgoalA169")v=Math.min(100,v);set(t.dataset.cn169g,v||null);try{toast("Goal saved")}catch(x){}}},true);
+var css=document.createElement("style");css.textContent=".cn169{grid-column:1/-1;column-span:all;order:-52;margin:0 0 16px;padding:16px;border:1px solid var(--line,#35383E);border-radius:16px;background:var(--surface,#1c1d22)}.cn169 .cn-t{margin-top:16px;display:flex;flex-direction:column}.cn169 .cn-r{display:grid;grid-template-columns:minmax(0,1.6fr) auto 52px minmax(96px,auto);gap:10px;align-items:center;padding:10px 4px;border-top:1px solid var(--line,#35383E);text-align:left;background:none;border-left:0;border-right:0;border-bottom:0;color:inherit;font:inherit;width:100%}.cn169 .cn-r small{display:block;color:var(--muted,#B6B7BD);font-size:12px}.cn169 .cn-m{cursor:pointer;min-height:48px}.cn169 .cn-n{font-weight:700;text-align:right}.cn169 .cn-p{text-align:right;color:var(--muted,#B6B7BD);font-size:13px}.cn169 .cn-a{text-align:right}.cn169 .cn-a .fbA{font-size:12px}@media(max-width:560px){.cn169 .cn-r{grid-template-columns:minmax(0,1fr) auto;row-gap:2px}.cn169 .cn-p,.cn169 .cn-a{text-align:left}}html[data-mode=light] .cn169{background:#fff}.cn169 .cn-tg{display:none;width:100%;margin-top:4px}@media(max-width:700px){.cn169 .cn-tg{display:block}.cn169 .cn-more{display:none}.cn169 .cn-more.open{display:block}}";document.head.appendChild(css);
+setInterval(paint,2500);setTimeout(paint,1200);
+window.FH169={data:data,paint:paint};
 })();
 
 /* FighterBase v44: always a way back, always a next step. */
