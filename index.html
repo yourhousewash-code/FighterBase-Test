@@ -1636,7 +1636,7 @@ const LEARN=[
 ["Phase two: the weigh-in","The last days are about arriving at the scales rested and fuelled, not about losing more. Water and food changes in this window can cost performance and carry real medical risk, which is why FighterBase gives no water-cutting methods. Follow your coach, your event rules and any hydration testing."],
 ["What a number can and cannot tell you","Average figures for fighters do not fit everyone. Your frame, sport, age and history matter, and body-fat percentages from scales or calipers are rough. FighterBase does not set body-fat targets. If a figure online makes you want to lose weight faster, treat that as a reason to talk to someone, not to push harder."],
 ["Your starting point matters","Staying reasonably close to your fight weight between camps makes the cut smaller and easier. If the gap to your weight class is large, a longer camp or a different weight class is usually the better answer than a harder cut."],
-["Get the right help","For a specific weight, work with your coach and a qualified sports nutritionist (in the UK, look for SENr registration). If food, weight or weigh-ins are starting to feel stressful or out of control, speak to your GP, or Beat on 0808 801 0677 (UK helpline). Always check numbers with a professional."]
+["Get the right help","For a specific weight, work with your coach and a qualified sports nutritionist (in the UK, look for SENr registration). If food, weight or weigh-ins are starting to feel stressful or out of control, speak to your GP, or Beat, the UK eating disorder charity. Helpline: England 0808 801 0677, Scotland 0808 801 0432, Wales 0808 801 0433, Northern Ireland 0808 801 0434 (free; listed hours were 3pm to 8pm Monday to Friday when checked on 29 Oct 2026, so confirm at beateatingdisorders.org.uk). In a crisis, call 999 or text Shout to 85258."]
 ]},
 {id:"recovery",title:"Recovery and sleep",mins:4,tag:"Recovery",body:[
 ["Sleep is the main recovery tool","Most adults need 7–9 hours. Hard training needs the upper end. Poor sleep reduces reaction time, power and decision-making, and increases injury risk and hunger."],
@@ -19018,6 +19018,59 @@ function profile(m){if(!m||!(window.FHC&&FHC.isOwner&&FHC.isOwner()))return "";v
  var note=tot&&hit<tot?"Behind their own plan so far. A friendly check-in could help.":(tot?"On track with their own plan.":"");
  return '<div class="pm-sec"><span class="label">Week plan (shared by '+nm+')</span>'+wp.map(strip).join("")+(note?'<p class="muted small" style="margin:0">'+note+' Their plan is a promise to themselves, so keep it kind.</p>':'')+'</div>'}
 window.FH171={profile:profile};
+})();
+
+/* FighterBase v224: alerts when the app is closed (client side).
+   Adds an "Alerts when the app is closed" block to the Notifications sheet. The member taps Allow once; the phone gives the app a private address
+   (a push subscription) which is saved on the profile (push172). A server piece (see docs/push-alerts-v224.md) sends the alerts.
+   Opt-in only. Quiet hours, an off switch, and nothing is sent unless the member allowed it. Needs https, a service worker, and FH_CONFIG.vapidPublicKey.
+   Where it cannot work (demo, the sandboxed preview, no key yet) the block says so and the button stays off. */
+var K172=K172||false;
+(function(){
+if(K172)return;K172=true;
+function e2(s){return esc(String(s==null?"":s))}
+function P(){return S.profile||{}}
+function cfg(){return (window.FH_CONFIG&&FH_CONFIG.vapidPublicKey)||""}
+function sup(){return ("serviceWorker" in navigator)&&("PushManager" in window)&&("Notification" in window)&&location.protocol==="https:"}
+function demo(){try{return !!sessionStorage.getItem("fbDemo")}catch(x){return false}}
+function st(){return P().push172||null}
+function why(){if(demo())return "Not available in the demo.";if(!sup())return "This browser or page cannot do it. On iPhone, add FighterBase to your Home Screen first (iOS 16.4 or later).";if(!cfg())return "Not switched on for this version yet.";return ""}
+function b64(s){var p="=".repeat((4-s.length%4)%4),b=(s+p).replace(/-/g,"+").replace(/_/g,"/"),r=atob(b),o=new Uint8Array(r.length);for(var i=0;i<r.length;i++)o[i]=r.charCodeAt(i);return o}
+function html(){var s=st(),w=why(),perm=("Notification" in window)?Notification.permission:"unsupported";
+ var on=s&&s.on&&perm==="granted";
+ return '<div id="pu172" class="cs-box" style="margin-top:12px"><b>Alerts when the app is closed</b>'+
+ '<p class="muted small" style="margin:4px 0 8px">Your club\'s class reminders and the morning "Training today?" check, on your phone even when the app is shut. Only if you allow it. Turn it off any time.</p>'+
+ (w?'<p class="muted small" style="margin:0">'+e2(w)+'</p>':
+  on?'<div class="row" style="gap:8px;align-items:center;flex-wrap:wrap"><span class="small">On for this phone.</span><button class="btn ghost sm" type="button" data-pu172off>Turn off</button></div>'+
+   '<div style="margin-top:10px" class="small"><span class="muted">Quiet hours (no alerts)</span><div class="row" style="gap:8px;align-items:center;margin-top:4px"><select data-pu172q="0" aria-label="Quiet from">'+hrs(s.q?s.q[0]:22)+'</select><span>to</span><select data-pu172q="1" aria-label="Quiet until">'+hrs(s.q?s.q[1]:7)+'</select></div></div>'+
+   '<label class="toggle" style="margin-top:8px"><input type="checkbox" data-pu172m '+(s.m!==false?"checked":"")+'><span><b>Morning "Training today?" check</b></span></label>'
+  :perm==="denied"?'<p class="muted small" style="margin:0">Blocked in your browser settings. Allow notifications for this site there, then come back.</p>'
+  :'<button class="btn gold sm" type="button" data-pu172on>Allow alerts</button>')+'</div>'}
+function hrs(sel){var o="";for(var h=0;h<24;h++)o+='<option value="'+h+'"'+(h===sel?" selected":"")+'>'+(h<10?"0":"")+h+':00</option>';return o}
+function inject(){var n=document.querySelector(".nb-in");if(n&&!n.querySelector("#pu172"))n.insertAdjacentHTML("beforeend",html())}
+function refresh(){var x=document.getElementById("pu172");if(x){var d=document.createElement("div");d.innerHTML=html();x.replaceWith(d.firstChild)}}
+async function enable(){
+ try{var reg=await navigator.serviceWorker.register("sw.js");await navigator.serviceWorker.ready;
+  var perm=await Notification.requestPermission();if(perm!=="granted"){toast("Alerts not allowed");refresh();return}
+  var sub=await reg.pushManager.getSubscription()||await reg.pushManager.subscribe({userVisibleOnly:true,applicationServerKey:b64(cfg())});
+  P().push172={on:true,at:TODAY,q:[22,7],m:true,sub:JSON.parse(JSON.stringify(sub))};profChanged();upload();toast("Alerts are on","Quiet hours 22:00 to 07:00.")}
+ catch(x){toast("Could not turn alerts on","Try again on https, or on a phone.")}
+ refresh()}
+async function disable(){try{var reg=await navigator.serviceWorker.getRegistration();var s=reg&&await reg.pushManager.getSubscription();if(s)await s.unsubscribe()}catch(x){}
+ var o=st();if(o){o.on=false;o.sub=null}profChanged();upload();toast("Alerts are off");refresh()}
+function upload(){try{if(window.FH172UP)window.FH172UP(st())}catch(x){}}
+document.addEventListener("click",function(ev){var t=ev.target;if(!t.closest)return;
+ if(t.closest("[data-pu172on]")){enable();return}
+ if(t.closest("[data-pu172off]")){disable();return}},true);
+document.addEventListener("change",function(ev){var t=ev.target;if(!t||!t.matches)return;var o=st();if(!o)return;
+ if(t.matches("[data-pu172q]")){o.q=o.q||[22,7];o.q[+t.dataset.pu172q]=+t.value;profChanged();upload()}
+ if(t.matches("[data-pu172m]")){o.m=!!t.checked;profChanged();upload()}});
+new MutationObserver(function(){try{inject()}catch(x){}}).observe(document.body,{childList:true,subtree:true});
+/* tapping an alert button opens the app and answers the morning check for them */
+function act(){var m=/[#&]fbact=(\w+)/.exec(location.hash);if(!m)return;var map={yes:"in",no:"out",in:"join"},sel=m[1]==="no"?"[data-m166out],[data-m166skip]":"[data-m166"+map[m[1]]+"]",n=0;
+ var t=setInterval(function(){var b=document.querySelector(sel);if(b){clearInterval(t);b.click();history.replaceState(null,"",location.href.replace(/[#&]fbact=\w+/,""))}else if(++n>30){clearInterval(t)}},500)}
+setTimeout(act,1500);window.addEventListener("hashchange",act);
+window.FH172={state:st,why:why,enable:enable,disable:disable};
 })();
 
 /* FighterBase v44: always a way back, always a next step. */
