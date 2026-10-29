@@ -1227,6 +1227,16 @@ store["clubs/"+CID].cfx={"demo-alex_af1":{s:"ok",by:uidO,at:ago(14)}};
 store["clubs/"+CID].track={training:true,goals:true,skills:true,weight:true,food:true,recovery:true,injury:true,fights:true};store["clubs/"+CID].show={training:true,goals:true,skills:true,weight:true,food:false,recovery:false,injury:true,fights:true};
 store["league/m1"].cons={training:true,goals:true,skills:true,weight:false,food:true,recovery:true,injury:true,fights:true};store["league/m1"].skills=[{n:"Guard retention",st:"prac"},{n:"Back takes",st:"intro"}];store["league/m1"].food={days:5,prot:118};store["league/m1"].rec={sleep:7.4,energy:3.8,n:6};
 store["league/m2"].helpAreas=["fight","weight","inj"];store["league/m2"].helpNote="Want a plan for my first cut";if(store["league/m3"]){store["league/m3"].helpAreas=["conf","tech"];store["league/m3"].helpNote="Nervous about first sparring"}
+
+/* v222 demo: members who share their week plan */
+(function(){var t=new Date();t.setHours(12,0,0,0);var dw=(t.getDay()+6)%7,mon=new Date(t);mon.setDate(t.getDate()-dw);var wk=key(mon),nx=new Date(mon);nx.setDate(mon.getDate()+7);var nk=key(nx);
+function P(a){return {w:wk,l:1,d:a}}function N(a){return {w:nk,l:0,d:a}}
+var Z=[0,0,0],R=[0,0,1];
+function mk(a){return a.map(function(x){return x===1?[1,1,0]:x===2?[1,0,0]:x===3?[1,0,0]:x===9?R:Z})}
+var sets={m2:[1,1,2,9,1,0,0],m1:[1,2,1,0,0,0,0],m4:[1,9,1,1,3,0,0],m0:[1,1,1,9,0,0,0]};
+Object.keys(sets).forEach(function(u){if(!store["league/"+u])return;var a=mk(sets[u]);var dd=(t.getDay()+6)%7;a=a.map(function(c,i){if(c[0]&&i>dd)return [1,0,0];if(c[0]&&i===dd)return [1,0,0];return c});store["league/"+u].wp=[P(a),N([[1,0,0],[0,0,0],[1,0,0],[0,0,1],[1,0,0],[0,0,0],[0,0,0]])];store["league/"+u].cons=Object.assign(store["league/"+u].cons||{},{plan:true})});
+if(store["league/m3"]){store["league/m3"].cons=Object.assign(store["league/m3"].cons||{},{plan:false})}
+store["clubs/"+CID].track=Object.assign(store["clubs/"+CID].track||{},{plan:true});store["clubs/"+CID].show=Object.assign(store["clubs/"+CID].show||{},{plan:true});})();
 store["league/m2"].campReq={k:"m2f_"+ago(-21),fid:"m2f",event:"Manchester MMA Amateur",date:ago(-21),at:Date.now()-3600000};store["league/m2"].fplan={k:ago(-21),at:Date.now()-7200000,support:"Full camp",spw:4,travel:"My coach",weigh:"My coach",cost:"",notes:"Happy to add Saturday sparring"};store["clubs/"+CID].corners={};store["clubs/"+CID].corners["demo-alex_"+ago(-26)]={list:[{id:"c1",name:"Mo Haddad",role:"Head coach",uid:uidO,st:"ok"},{id:"c2",name:"Jordan Hayes",role:"Second",uid:"m0",st:"wait"}],at:Date.now()-86400000};(function(){var dd=(new Date().getDay()+6)%7,w0=ago(dd+7);store["league/m2"].campShare={k:ago(-21),on:true,items:{training:true,skills:true,recovery:true,injury:true,mood:true,weight:false,food:false},day:0,at:ago(20)};store["league/m2"].campReports={};store["league/m2"].campReports[ago(dd)]={ws:ago(dd),sent:Date.now()-3600000,note:"Legs heavy Thursday but sparring went well.",mood:3,snap:{sess:3,target:4,mins:210,hard:6,prev:4,skills:["Wall work"],rec:{e:3.5,s:3,sl:3.2},inj:[]}}})();store["league/m2"].cons={training:true,goals:true,skills:true,weight:true,food:false,recovery:false,injury:true,fights:true};store["league/m2"].skills=[{n:"Wall work",st:"live"}];store["league/m2"].wt={pct:62,rate:-0.6,dir:"lose"};
 store["clubs/"+CID].cnote={"demo-alex":{t:"Great camp so far. Keep Saturday rounds sharp and get your weigh-ins in each Friday. Proud of you.",by:uidO,byName:"Mo",at:ago(0)}};
 alexProf.rsvp[TODAYK+"_"+((TT.filter(function(c){return c.dow===dow(TODAYK)})[0]||{}).id||"c1")]=1;
@@ -7030,7 +7040,7 @@ function detail(m){var x=facts(m),c=club(),note=((c&&c.cnote)||{})[m.uid];
   (x.eg&&x.eg.focus&&x.eg.focus.length?'<div class="pm-sec"><span class="label">Working on</span><div class="ci-th">'+x.eg.focus.map(function(f){return '<span>'+esc(f)+'</span>'}).join("")+'</div></div>':'')+
   (x.mod?'<p class="fb-obs" style="margin:0">Training modified. No details are shared: ask them how they want to train.</p>':'')+
   ((x.help.length||x.rev.length||(m.upf&&!((c.cfx||{})[m.uid+"_"+m.upf.id])))?'<div class="pm-sec"><span class="label">Waiting for you</span><p class="small" style="margin:0">'+[x.help.length?x.help.length+" help request"+(x.help.length>1?"s":""):"",x.rev.length?x.rev.length+" skill review"+(x.rev.length>1?"s":""):"",(m.upf&&!((c.cfx||{})[m.uid+"_"+m.upf.id]))?"a fight to confirm":""].filter(Boolean).join(" · ")+'</p><button class="btn sm" type="button" data-hub="hubins">Answer in Insights</button></div>':'')+
-  (window.FH68?FH68.grading(m)+FH68.notes(m):'')+(window.FH67?FH67.profile(m):'')+(window.FH66?FH66.profile(m):'')+(window.FH71?FH71.profile(m):'')+(window.FH73?FH73.profile(m):'')+(window.FH74?FH74.profile(m):'')+(window.FH75?FH75.profileCamp(m):'')+(window.FH77?FH77.profile(m):'')+(window.FH146?FH146.profile(m):'')+
+  (window.FH68?FH68.grading(m)+FH68.notes(m):'')+(window.FH67?FH67.profile(m):'')+(window.FH66?FH66.profile(m):'')+(window.FH71?FH71.profile(m):'')+(window.FH73?FH73.profile(m):'')+(window.FH74?FH74.profile(m):'')+(window.FH75?FH75.profileCamp(m):'')+(window.FH77?FH77.profile(m):'')+(window.FH146?FH146.profile(m):'')+(window.FH171?FH171.profile(m):'')+
   '<div class="pm-sec"><span class="label">Note to '+esc(m.name||"member")+'</span>'+(note?'<p class="small" style="margin:0">Last note ('+fmtD(note.at)+'): "'+esc(note.t)+'"</p>':'')+'<textarea id="pmNote" rows="2" maxlength="300" placeholder="e.g. Good to see you back. Thursday pads is a great one to ease in."></textarea><div class="row"><button class="btn sm" type="button" data-pmnote="'+esc(m.uid)+'">Send note</button><span class="muted small">Shows on their Home. One at a time.</span></div></div>'+
   '<p class="muted small" style="margin:0">You only see what '+esc(m.name||"this member")+' chose to share. Food, weight, injuries and notes stay private unless they share them.</p></div>';
  return h}
@@ -7091,13 +7101,14 @@ var CATS=[
  ["food","Food summary","Days logged and average protein. Never your meals, photos or calories.",false],
  ["recovery","Recovery","Average sleep and energy from your check-ins.",false],
  ["chart","Progress chart","The Home chart for the last 30 days: steps, active minutes, sessions, sleep and your FB Activity Level, so your coach can see how camp and training are going. Never calories. Weight only if you also share Weight trend. Not available under 18.",false],
+ ["plan","Your week plan","Which days you plan to train and whether you did them. Never what your own sessions are or any notes.",false],
  ["injury","Training modified","That you're training around an injury. Never the details.",true],
  ["fights","Fights and camps","Fights you ask the club to confirm, and fight-camp details.",true],
  ["history","Wider training history","Training you log away from this club: solo sessions, other gyms, runs.",false],
  ["workouts","Workouts outside the club","Workouts you do on your own, with your notes and effort ratings.",false],
  ["tests","Your own fitness test results","Results you log yourself. Tests your coach runs with you are part of club activity.",false]];
 var LBL={};CATS.forEach(function(c){LBL[c[0]]=c[1]});
-var DEF_TRACK={training:true,goals:true,skills:true,weight:true,food:false,recovery:false,chart:false,injury:true,fights:true,history:true,workouts:true,tests:true};
+var DEF_TRACK={training:true,goals:true,skills:true,weight:true,food:false,recovery:false,chart:false,plan:false,injury:true,fights:true,history:true,workouts:true,tests:true};
 function track(c){c=c||club();var t=(c&&c.track)||DEF_TRACK,o={};CATS.forEach(function(x){o[x[0]]=t[x[0]]!=null?!!t[x[0]]:!!DEF_TRACK[x[0]]});return o}
 function show(c){c=c||club();var t=track(c),s=(c&&c.show)||{},o={};CATS.forEach(function(x){o[x[0]]=t[x[0]]&&(s[x[0]]!=null?!!s[x[0]]:true)});return o}
 /* member consent, with the older keys mapped in */
@@ -7127,6 +7138,7 @@ document.addEventListener("click",function(e){var b=e.target.closest&&e.target.c
 function extend(o){var c=club();if(!c)return o;var t=track(c);
  if(!allowed("goals"))o.eg=null;else if(o.eg&&!allowed("training"))o.eg.wk=null;
  o.mod=allowed("injury")?o.mod:false;
+ try{if(allowed("plan")&&window.FH162){var wk0=mondayOf(TODAY),wp=[];[wk0,addDays(wk0,7)].forEach(function(w){var t=FH162.tally(w),wa=(P().wahead||{})[w]||{rest:{}},d=[];for(var i=0;i<7;i++){var k=addDays(w,i),a=t.all.filter(function(q){return q.k===k});d.push([a.length,a.filter(function(q){return q.s==="yes"}).length,wa.rest&&wa.rest[k]?1:0])}wp.push({w:w,l:wa.locked?1:0,d:d})});o.wp=wp}else o.wp=null}catch(e){o.wp=null}
  if(!allowed("fights"))o.upf=null;
  o.share={c:allowed("training"),w:allowed("weight")};
  o.cons=(function(){var r={};CATS.forEach(function(x){r[x[0]]=allowed(x[0])});return r})();
@@ -7157,11 +7169,12 @@ document.addEventListener("click",function(e){var t=e.target;if(!t.closest)retur
  if(t.closest("[data-tksave]")&&tDraft&&c){var d=tDraft;db.doc("clubs/"+c.id).update({track:d.t,show:d.s}).then(function(){c.track=d.t;c.show=d.s;tDraft=null;toast("Saved","Members will be asked about anything new.");trackPanel()}).catch(function(){toast("Couldn't save")});return}});
 /* ---------- club side: what this member shares (for the member profile) ---------- */
 function memberView(m){var c=club(),t=track(c),s=show(c),cs=m.cons||{training:!!(m.share||{}).c,weight:!!(m.share||{}).w,goals:!!m.eg,injury:m.mod!=null},rows=[];
- CATS.forEach(function(x){var k=x[0];if(!s[k])return;var on=t[k]&&cs[k],v="";
+ CATS.forEach(function(x){var k=x[0];if(!s[k])return;var on=t[k]&&(k==="plan"?!!m.wp:cs[k]),v="";
   if(on){if(k==="training")v=m.week?(m.week.sessions||0)+(m.eg&&m.eg.wk?" of "+m.eg.wk.t:"")+" sessions this week":"–";
    else if(k==="goals")v=m.eg?((({train:"Training plan",weight:"Body goal",grading:(window.FBS?FBS.terms().gradeHead:"Next grading"),fight:(window.FBS?FBS.terms().fightHead:"Next fight"),skill:"Skill focus",diet:"Food goals"})[m.eg.headline])||"Training plan"):"–";
    else if(k==="skills")v=(m.skills||[]).length?m.skills.map(function(z){return z.n+" ("+({intro:"introduced",prac:"practised",live:"applied"})[z.st]+")"}).join(", "):"No focus skills yet";
    else if(k==="weight")v=m.wt?(m.wt.pct!=null?m.wt.pct+"% to goal":"")+(m.wt.rate!=null?" · "+(m.wt.rate>0?"+":"")+m.wt.rate+" kg/wk":""):"–";
+   else if(k==="plan")v="Shown below";
    else if(k==="food")v=m.food?m.food.days+"/7 days logged"+(m.food.prot!=null?" · protein avg "+m.food.prot+" g":""):"–";
    else if(k==="recovery")v=m.rec&&m.rec.n?(m.rec.sleep!=null?"sleep "+m.rec.sleep+" h":"")+(m.rec.energy!=null?" · energy "+m.rec.energy+"/5":""):"No check-ins this week";
    else if(k==="injury")v=m.mod?"Training modified":"Training normally";
@@ -18981,6 +18994,30 @@ document.addEventListener("click",function(ev){var t=ev.target;if(!t.closest)ret
 document.addEventListener("change",function(ev){var t=ev.target;if(t&&t.matches&&t.matches("[data-pd170kit]")){var k=t.dataset.pd170kit,o=P().pdkit170=P().pdkit170||{};if(t.checked)o[k]=1;else delete o[k];try{profChanged()}catch(x){}}});
 setInterval(paint,2500);setTimeout(paint,1100);
 window.FH170={paint:paint};
+})();
+
+/* FighterBase v222: coach view of a member's week plan, only with the member's consent.
+   New sharing choice "Your week plan" (fh54, off unless the club asks and the member says yes). Publishes, for this week and next, per day:
+   [sessions planned, sessions done, rest day]. Never what the sessions are, never notes. Shown in the member's profile for the owner/coach. */
+var K171=K171||false;
+(function(){
+if(K171)return;K171=true;
+function e2(s){return esc(String(s==null?"":s))}
+function asks(){try{return !!(FB54&&FB54.track&&FB54.track().plan)}catch(x){return false}}
+function dn(k){return new Date(k+"T12:00").toLocaleDateString("en-GB",{weekday:"short"})}
+function fm(k){return new Date(k+"T12:00").toLocaleDateString("en-GB",{day:"numeric",month:"short"})}
+function strip(w){var cells="";for(var i=0;i<7;i++){var k=addDays(w.w,i),d=w.d[i]||[0,0,0],st,sym,lab;
+  if(d[0]){if(d[1]>=d[0]){st="ok";sym="&#10003;";lab="Done"}else if(k<TODAY){st="no";sym="&#10007;";lab=d[1]?d[1]+" of "+d[0]:"Missed"}else if(k===TODAY){st="now";sym="&#9679;";lab=d[1]?d[1]+" of "+d[0]:"Today"}else{st="lt";sym="&#9675;";lab="Planned"}}
+  else if(d[2]){st="rs";sym="R";lab="Rest"}else{st="em";sym="&middot;";lab="&nbsp;"}
+  cells+='<div class="pdc '+st+'"><span class="pdd">'+e2(dn(k))+'</span><span class="pds" aria-hidden="true">'+sym+'</span><span class="pdl">'+lab+'</span></div>'}
+ var pl=0,dn2=0,due=0,dd=0;w.d.forEach(function(d,i){pl+=d[0];dn2+=d[1];if(addDays(w.w,i)<=TODAY){due+=d[0];dd+=d[1]}});
+ return '<div class="pd170" style="margin:6px 0 10px"><b class="small">Week of '+e2(fm(w.w))+'</b>'+(w.l?' <span class="muted small">· locked in</span>':'')+'<div class="pdr" style="margin-top:6px">'+cells+'</div><div class="muted small" style="margin-top:4px">'+(due?'Due so far '+due+', done '+dd+'. ':'')+pl+' planned this week.</div></div>'}
+function profile(m){if(!m||!(window.FHC&&FHC.isOwner&&FHC.isOwner()))return "";var wp=m.wp,nm=e2(String(m.name||"member").split(" ")[0]);
+ if(!wp||!wp.length)return asks()?'<div class="pm-sec"><span class="label">Week plan</span><p class="muted small" style="margin:0">Not shared by this member.</p></div>':"";
+ var cur=wp[0],hit=0,tot=0;cur.d.forEach(function(d,i){if(addDays(cur.w,i)<=TODAY){tot+=d[0];hit+=d[1]}});
+ var note=tot&&hit<tot?"Behind their own plan so far. A friendly check-in could help.":(tot?"On track with their own plan.":"");
+ return '<div class="pm-sec"><span class="label">Week plan (shared by '+nm+')</span>'+wp.map(strip).join("")+(note?'<p class="muted small" style="margin:0">'+note+' Their plan is a promise to themselves, so keep it kind.</p>':'')+'</div>'}
+window.FH171={profile:profile};
 })();
 
 /* FighterBase v44: always a way back, always a next step. */
