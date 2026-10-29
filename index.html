@@ -19159,6 +19159,33 @@ setInterval(chips,1500);
 window.FH174={chips:chips};
 })();
 
+/* FighterBase v228: Training load moves from Train to Progress (Charts view). It is analysis, not something you do in a session.
+   Train keeps: log a session, routines, recent sessions. The same elements are moved (ids unchanged), so the existing code still fills them. */
+var K175=K175||false;
+(function(){
+if(K175)return;K175=true;
+function move(){try{var lt=document.getElementById("loadTiles");if(!lt)return;var pan=lt.closest(".panel");if(!pan||pan.dataset.m175)return;var pr=document.getElementById("tab-progress");if(!pr)return;
+ var kids=[].slice.call(pan.children),cut=-1;kids.forEach(function(k,i){if(cut<0&&/recent sessions/i.test(k.textContent||"")&&/^H[1-4]$|^DIV$/.test(k.tagName)&&(k.querySelector("h2,h3")||/^H[23]$/.test(k.tagName))&&!k.contains(lt)&&k.textContent.length<60)cut=i});
+ var np=document.createElement("div");np.className="panel pv-charts";np.id="ld175";var upto=cut>0?cut:kids.length;
+ for(var i=0;i<upto;i++)np.appendChild(kids[i]);
+ if(!np.children.length)return;
+ pan.dataset.m175="1";var ref=document.getElementById("charts");if(ref&&ref.parentNode===pr)pr.insertBefore(np,ref);else pr.appendChild(np);
+ if(cut<0)pan.remove();
+ try{renderTrain()}catch(x){}}catch(x){}}
+/* tidy the Recent sessions rows on phones: name on its own line, then minutes and effort, then the note */
+var css=document.createElement("style");css.textContent="#sessList .item{display:grid;grid-template-columns:1fr auto;align-items:center;gap:2px 8px;padding:10px 0}#sessList .item .name{grid-column:1/-1;font-weight:700}#sessList .item .acts{display:contents}#sessList .item .macro{grid-column:1;font-size:.82rem;opacity:.8}#sessList .item .x{grid-column:2;grid-row:2;min-width:44px;min-height:44px}#sessList .item .note{grid-column:1/-1;font-size:.85rem;opacity:.75}";document.head.appendChild(css);
+/* Food logging lives in Food. The Check-in screen keeps the daily trackers only. */
+function moveFood(){try{var lg=document.getElementById("tab-log"),ml=document.getElementById("tab-meals");if(!lg||!ml||lg.dataset.f175)return;
+ var ps=[].slice.call(lg.children).filter(function(k){var h=k.querySelector("h2,h3");var t=h?h.textContent:"";return /each meal, by hand|eaten today/i.test(t)});
+ if(ps.length<2)return;lg.dataset.f175="1";var first=ml.querySelector("#mpPanel,.panel")||null;
+ ps.sort(function(a,b){return /eaten today/i.test(a.textContent.slice(0,60))?-1:1});var wrap=document.createElement("div");wrap.id="fl175";wrap.className="stack";ps.forEach(function(k){wrap.appendChild(k)});
+ var anchor=[].slice.call(ml.children).filter(function(k){return k.classList&&k.classList.contains("panel")})[0];if(anchor)ml.insertBefore(wrap,anchor);else ml.appendChild(wrap);
+ var note=document.createElement("div");note.className="panel";note.id="fn175";note.innerHTML='<p class="small muted" style="margin:0">Meals are logged in <b>Food</b>. This screen is for your daily check-in.</p><button class="btn ghost sm" type="button" data-goto="meals" style="margin-top:8px">Open Food</button>';lg.appendChild(note)}catch(x){}}
+setInterval(moveFood,1500);setTimeout(moveFood,900);
+setInterval(move,1500);setTimeout(move,800);
+window.FH175={move:move};
+})();
+
 /* FighterBase v44: always a way back, always a next step. */
 var N31=N31||false;
 (function(){
