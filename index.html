@@ -3517,7 +3517,7 @@ function renderPvReport(){const el=$("#pvReport");if(!el)return;const p=S.profil
     Object.keys(g.items||{}).forEach(id=>{const it=g.items[id];if(it&&it.t&&it.d){const sp=Math.max(1,diffDays(s0,it.d));h+=pvBar(`${fname(id)}: ${it.t}`,Math.max(0,diffDays(s0,TODAY))/sp*100,it.d>=TODAY?`${diffDays(TODAY,it.d)} days left`:"Date passed")}});
     const cps=pvAll(p,fin);if(cps.length){h+=`<h3 style="margin-top:14px">Checkpoints</h3>`+cps.map(c=>{const past=c.d<=TODAY,lw2=latestWeight();let tag=past?"Due":"Upcoming",cls="";if(past&&c.w!=null&&lw2&&g.startWeight){const lose=g.targetWeight<g.startWeight,ok=lose?lw2<=c.w+0.3:lw2>=c.w-0.3;tag=ok?"On track":"Behind";cls=ok?"ok":"warn"}return `<div class="goal-row ${cls==="warn"?"warn":""}"><b>${esc(c.l)}</b><span>${pvFmt(c.d)} · ${tag}</span></div>`}).join("")}
     h+=`</div>`}else h+=`<div class="panel"><b>Set a target date to see your progress here.</b><p class="small muted" style="margin:4px 0 8px">Add a goal and a timeframe and this page tracks you against it.</p><button class="btn ghost sm" type="button" data-goto="profile">Add a goal</button></div>`;
-  h+=`<div class="row"><button class="btn ghost" type="button" data-pv="charts">View charts</button><button class="btn ghost" type="button" data-pv="timeline">View timeline</button></div>`;
+  h+=`<div class="row"><button class="btn ghost" type="button" data-pv="timeline">View timeline</button></div>`;
   el.innerHTML=h}
 function renderPvTimeline(){const el=$("#pvTimeline");if(!el)return;const p=S.profile,g=gd(p),ev=goalEvents(p);let h="";
   if(ev.length){const fin=ev.reduce((a,b)=>b.d>a.d?b:a),s0=g.start||TODAY,span=Math.max(1,diffDays(s0,fin.d)),pos=d=>Math.max(0,Math.min(100,diffDays(s0,d)/span*100)),cps=pvAll(p,fin);
@@ -13287,7 +13287,7 @@ document.addEventListener("click",function(ev){var b=ev.target.closest&&ev.targe
  else if(a==="cf")run(async function(){await api("PATCH","event_entries?event_id=eq."+b.dataset.id+"&user_id=eq."+b.dataset.u,{confirmed:b.dataset.y==="1"},{Prefer:"return=minimal"});await loadEvents()});
 });
 /* ---------- entry points ---------- */
-function link(){var tab=document.getElementById("tab-profile");if(!tab||document.getElementById("l109link"))return;var d=document.createElement("div");d.id="l109link";d.className="panel";d.innerHTML='<p class="muted small" style="margin:0">Testing only: <button class="linkbtn" type="button" data-l109open>Live database test</button> (dev database, made-up accounts, separate from the demo).</p>';tab.appendChild(d)}
+function link(){var tab=document.getElementById("tab-profile");if(!tab||document.getElementById("l109link"))return;if((location.hash||"").indexOf("test")<0&&!(S.profile&&S.profile.tester)){var o=document.getElementById("l109link");if(o)o.remove();return}var d=document.createElement("div");d.id="l109link";d.className="panel";d.innerHTML='<p class="muted small" style="margin:0">Testing only: <button class="linkbtn" type="button" data-l109open>Live database test</button> (dev database, made-up accounts, separate from the demo).</p>';tab.appendChild(d)}
 document.addEventListener("click",function(e){if(e.target.closest&&e.target.closest("[data-l109open]"))open()});
 window.addEventListener("hashchange",function(){if(location.hash==="#live")open()});
 setInterval(link,3000);link();
@@ -19129,6 +19129,26 @@ document.addEventListener("click",function(e){var t=e.target;if(!t.closest)retur
  if(t.closest("[data-g173sim]")){var g=G();g.in=Date.now()-DWELL-1000;g.done=null;P().autoAtt=true;check();draw()}},true);
 setInterval(draw,2500);setTimeout(draw,1500);
 window.FH173={native:native,check:check,dwell:DWELL};
+})();
+
+/* FighterBase v226: slimmer screens.
+   - The "New here? guide" chip shows once per screen, ever (the guide stays in Guided tours). Was: every visit until dismissed.
+   - The motivational quote line sits on Today only. It no longer pushes content down on every other tab.
+   - One heading size on phones (was 32px on some panels, 15px on others).
+   - The Live database test link on Me only shows for testers (open the app with #test in the address, or profile.tester). */
+var K174=K174||false;
+(function(){
+if(K174)return;K174=true;
+function P(){return S.profile||{}}
+var css=document.createElement("style");css.textContent=[
+"#tab-progress>.q155,#tab-train>.q155,#tab-profile>.q155,#tab-club>.q155,#tab-log>.q155,#tab-meals>.q155,#tab-schedule>.q155,#qLog{display:none!important}",
+"@media(max-width:640px){section[id^=tab-] h2:not(.h155):not(.t155){font-size:24px!important;line-height:1.08!important}section[id^=tab-] .sec-h h3{font-size:17px}}"].join("");
+document.head.appendChild(css);
+/* once per screen: first time a chip shows, remember it; if it shows again, use the existing "Not now" (guide stays in the list) */
+function chips(){try{var seen=P().g174=P().g174||{},ch=document.querySelectorAll(".g158chip:not([data-g174])");
+ ch.forEach(function(c){c.dataset.g174="1";var id=c.dataset.gid;if(!id)return;if(seen[id]){var b=c.querySelector("[data-g158n]");if(b)b.click()}else{seen[id]=1;try{profChanged()}catch(x){}}})}catch(x){}}
+setInterval(chips,1500);
+window.FH174={chips:chips};
 })();
 
 /* FighterBase v44: always a way back, always a next step. */
