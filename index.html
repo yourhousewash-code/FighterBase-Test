@@ -3857,7 +3857,7 @@ function memberPanels(c){var up=upcoming(c,3),wos=(c.workouts||[]).slice().sort(
   if(up.length)h+='<div class="panel"><div class="sec-h"><h2>Classes</h2><span class="muted small">Tap if you are coming</span></div>'+up.map(function(x){return '<div class="cl-day">'+dayLabel(x[0])+'</div>'+x[1].map(function(cl){return classRow(c,x[0]+"_"+cl.id,cl)}).join("")}).join("")+'</div>';
   if(wos.length)h+='<div class="panel"><div class="sec-h"><h2>Club workouts</h2></div>'+wos.map(function(w){return '<details class="cl-wo2"><summary><b>'+esc(w.title)+'</b>'+(w.date?'<span class="muted small"> · '+new Date(w.date+"T00:00").toLocaleDateString("en-GB",{weekday:"short",day:"numeric",month:"short"})+'</span>':'')+'</summary><p style="white-space:pre-wrap;margin:8px 0 0">'+esc(w.text||"")+'</p></details>'}).join("")+'</div>';
   if(tg.length)h+='<div class="panel"><div class="sec-h"><h2>Club targets</h2></div><ul class="cl-list">'+tg.map(function(t){return '<li>'+esc(t.text)+'</li>'}).join("")+'</ul></div>';
-  h+='<div class="panel"><div class="sec-h"><h2>Attendance</h2></div><p style="margin:0"><b>'+conf+'</b> class'+(conf===1?"":"es")+' confirmed this month.</p><label class="toggle" style="margin-top:10px"><input type="checkbox" id="clubSkin" '+(S.profile.clubSkin!==false?"checked":"")+'><span><b>Show my club\'s look</b><br><span class="muted small">Your club\'s logo and colours on this screen. FighterBase stays visible.</span></span></label></div>';
+  h+='<div class="panel"><div class="sec-h"><h2>Attendance</h2></div><p style="margin:0"><b>'+conf+'</b> class'+(conf===1?"":"es")+' counted this month.</p><p class="muted small" style="margin:4px 0 0">A class counts once you have checked in and the club has confirmed it.</p></div><div class="panel"><div class="sec-h"><h2>Club look</h2></div><label class="toggle"><input type="checkbox" id="clubSkin" '+(S.profile.clubSkin!==false?"checked":"")+'><span><b>Show my club\'s look</b><br><span class="muted small">Your club\'s logo and colours on this screen. FighterBase stays visible.</span></span></label></div>';
   return h}
 function ownerPanels(c){if(!S.canEdit)return "";var b=lookDraft||c.brand||{},col=hexOk(b.color)?b.color:"#C81E3A";
   var h='<div class="panel owner"><div class="sec-h"><h2>Coach: club look</h2><span class="muted small">What your members see</span></div>'+
@@ -4751,7 +4751,9 @@ function ensureData(){var p=document.getElementById("pmData");if(p)return p;p=do
 function panelBy(h){var r=null;tab.querySelectorAll(":scope > .panel").forEach(function(p){var e=p.querySelector("h2");if(e&&e.textContent.trim().indexOf(h)===0)r=p});return r}
 function tag(){var m={"About you":"about","Your diet":"diet","Fight camp and quitting":"camp","Your targets":"targets","Make it yours":"mine","Check-in times":"remind","Coach and data":"share"};
  Object.keys(m).forEach(function(h){var p=panelBy(h);if(p)p.dataset.pv=m[h]});
- var t=document.getElementById("pTracksBox");if(t)t.dataset.pv="mine";var pl=document.getElementById("pPlanBox");if(pl)pl.dataset.pv="plan";
+ var t=document.getElementById("pTracksBox");if(t)t.dataset.pv="mine";
+ /* v229: loose cards go inside the page they belong to, so Me is a short menu */
+ ({wkSet:"remind",fb124s:"remind",ringSet:"about",fb122:"about",kcalSet:"targets",acctRole:"plan"}) && Object.keys({wkSet:1,fb124s:1,ringSet:1,fb122:1,kcalSet:1,acctRole:1}).forEach(function(id){var el=document.getElementById(id),to={wkSet:"remind",fb124s:"remind",ringSet:"about",fb122:"about",kcalSet:"targets",acctRole:"plan"}[id];if(el&&el.parentNode===tab&&!el.dataset.pv)el.dataset.pv=to});var pl=document.getElementById("pPlanBox");if(pl)pl.dataset.pv="plan";
  var tp=document.getElementById("trophies");if(tp&&tp.parentNode===tab)tp.remove();
  ensureData().dataset.pv="data";var rs=document.getElementById("rsBox");if(rs)rs.dataset.pv="data";
  var rd=document.getElementById("redoSetup");if(rd&&rd.closest(".row"))rd.closest(".row").style.display="none"}
@@ -19184,6 +19186,32 @@ function moveFood(){try{var lg=document.getElementById("tab-log"),ml=document.ge
 setInterval(moveFood,1500);setTimeout(moveFood,900);
 setInterval(move,1500);setTimeout(move,800);
 window.FH175={move:move};
+})();
+
+/* FighterBase v229: the member's Club tab becomes three small pages under the club header: Classes (check in, classes, workouts, targets, attendance),
+   Membership (payment), About the club (what the club sees, automatic attendance, feed, affiliated clubs, settings). It was one 3,500 px scroll. */
+var K176=K176||false;
+(function(){
+if(K176)return;K176=true;
+function P(){return S.profile||{}}
+var V=[["classes","Classes"],["membership","Membership"],["about","About the club"]];
+function cur(){var c=P().cv176;return c==="membership"||c==="about"?c:"classes"}
+function kind(k){if(k.id==="cv176")return "";if(k.classList.contains("cb106"))return "";if(k.id==="geoWrap")return "classes";
+ var h=k.querySelector("h2,h3,.label"),t=((h||{}).textContent||"").trim().toLowerCase();
+ if(/^(classes|club workouts|club targets|attendance|your attendance|club team goal)/.test(t))return "classes";
+ if(/^club membership/.test(t))return "membership";return "about"}
+function classify(){var cb=document.getElementById("clubBody");if(!cb)return;[].slice.call(cb.children).forEach(function(k){var kd=kind(k);if(kd&&k.dataset.v176!==kd)k.dataset.v176=kd})}
+var obs=null,obsEl=null;
+function run(){try{var tab=document.getElementById("tab-club"),cb=document.getElementById("clubBody");if(!tab||!cb||document.body.classList.contains("hubview")||!(P().clubId)){var o=document.getElementById("cv176");if(o)o.remove();return}
+ var ctl=document.getElementById("cv176");
+ if(!ctl){ctl=document.createElement("div");ctl.id="cv176";ctl.className="seg-ctl pv-ctl";ctl.innerHTML=V.map(function(v){return '<button type="button" data-cv176="'+v[0]+'">'+v[1]+'</button>'}).join("");tab.insertBefore(ctl,cb)}
+ var c=cur();ctl.querySelectorAll("button").forEach(function(b){b.setAttribute("aria-pressed",b.dataset.cv176===c?"true":"false");b.classList.toggle("on",b.dataset.cv176===c)});
+ tab.dataset.cv=c;classify();
+ if(obsEl!==cb){if(obs)obs.disconnect();obs=new MutationObserver(classify);obs.observe(cb,{childList:true});obsEl=cb}}catch(x){}}
+var css=document.createElement("style");css.textContent="#tab-club[data-cv=classes] #clubBody>[data-v176=membership],#tab-club[data-cv=classes] #clubBody>[data-v176=about],#tab-club[data-cv=membership] #clubBody>[data-v176=classes],#tab-club[data-cv=membership] #clubBody>[data-v176=about],#tab-club[data-cv=about] #clubBody>[data-v176=classes],#tab-club[data-cv=about] #clubBody>[data-v176=membership]{display:none!important}#cv176 button.on{background:var(--text,#fff);color:var(--bg,#111)}#cv176{margin:4px 0}";document.head.appendChild(css);
+document.addEventListener("click",function(e){var b=e.target.closest&&e.target.closest("[data-cv176]");if(!b)return;P().cv176=b.dataset.cv176;try{profChanged()}catch(x){}run();window.scrollTo(0,0)},true);
+setInterval(run,1200);setTimeout(run,700);
+window.FH176={run:run};
 })();
 
 /* FighterBase v44: always a way back, always a next step. */
