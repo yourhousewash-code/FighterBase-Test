@@ -2787,7 +2787,7 @@ function renderClub(){const el=$("#clubBody");if(!el)return;const c=clubState.cl
 }
 function lbRow(m,i,val,unit,sub){const you=m.uid===S.uid;return `<div class="lb-row ${you?"you":""} ${i<3?"top"+(i+1):""}"><span class="lb-pos">${i+1}</span><div class="lb-name"><b>${esc(m.name||"Member")}${m.ring?` <span class="ring-tag">“${esc(m.ring)}”</span>`:""}${you?" (you)":""}${m.demo?' <span class="tag">demo</span>':""}</b><span>${esc((m.sports||[]).join(" · "))}${sub?" · "+sub:""}</span></div><span class="lb-val"><b>${val}</b> ${unit}</span></div>`}
 function drawQR(){const box=$("#qrBox");const c=clubState.club;if(!box||!c||c.checkinDate!==TODAY||!c.checkinCode)return;box.innerHTML="";
-  if(window.QRCode){try{new QRCode(box,{text:`FIGHTERHUB:${c.id}:${c.checkinCode}`,width:120,height:120,colorDark:"#0B0C0F",colorLight:"#F2F1EC"})}catch(e){}}}
+  if(window.QRCode){try{new QRCode(box,{text:`FIGHTERBASE:${c.id}:${c.checkinCode}`,width:120,height:120,colorDark:"#0B0C0F",colorLight:"#F2F1EC"})}catch(e){}}}
 function bindClubJoin(){const jb=$("#joinBtn");if(jb)jb.onclick=async()=>{const code=($("#joinCode").value||"").trim().toUpperCase();if(!code||!db)return;$("#joinMsg").textContent="Looking up…";
     try{const s=await db.collection("clubs").where("code","==",code).limit(1).get();if(s.empty){$("#joinMsg").textContent="No club with that code. Check with your coach.";return}
       const d=s.docs[0];S.profile.clubId=d.id;S.profile.leagueOptIn=false;profChanged();toast(`Welcome to ${d.data().name}`,"The team goal and club feed are off until you choose to join");pushClubEvent("joined the club");subscribeClub()}catch(e){$("#joinMsg").textContent="Couldn't join. Sign in and try again."}};
