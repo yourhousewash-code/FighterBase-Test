@@ -19366,6 +19366,46 @@ var css=document.createElement("style");css.textContent=
 document.head.appendChild(css);
 return {view:view,sync:sync}})();
 
+/* FighterBase v231: free voice typing. A small microphone appears on a text box when you tap it; speak and the words are typed in.
+   Uses the phone or browser's own speech-to-text (no FighterBase AI, no cost). Hidden where the browser has none.
+   The browser may send the audio to its maker (Google or Apple) to turn it into text, so the first tap says so.
+   Skipped for passwords, codes, emails, phone and card style boxes. Stored: profile.dictSeen (notice shown). */
+var FH178=(function(){
+var SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+if(!SR)return {on:false};
+var btn,pop,cur=null,rec=null,live=false,base="",final="";
+var SKIP=/pass|pin\b|otp|card|iban|sort|account|email|mail|tel|phone|code|token|key|url|search-club|date/i;
+function ok(el){if(!el||!el.tagName)return false;var t=el.tagName;if(t!=="TEXTAREA"&&t!=="INPUT")return false;if(t==="INPUT"){var ty=(el.type||"text").toLowerCase();if(ty!=="text"&&ty!=="search")return false}
+ if(el.readOnly||el.disabled||el.hidden||el.dataset.nodict!=null)return false;if(SKIP.test((el.id||"")+" "+(el.name||"")+" "+(el.getAttribute("autocomplete")||"")+" "+(el.getAttribute("inputmode")||"")))return false;
+ return !!el.closest("section[id^=tab-],.sheet,.panel,dialog,[role=dialog]")}
+function mk(){if(btn)return;btn=document.createElement("button");btn.type="button";btn.id="dict178";btn.setAttribute("aria-label","Speak instead of typing");btn.hidden=true;
+ btn.innerHTML='<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg>';
+ btn.addEventListener("mousedown",function(e){e.preventDefault()});btn.addEventListener("touchstart",function(e){e.preventDefault()},{passive:false});btn.addEventListener("click",tap);
+ pop=document.createElement("div");pop.id="dictp178";pop.hidden=true;pop.setAttribute("role","dialog");pop.innerHTML='<p>Your phone or browser turns your voice into text. It may send the audio to its maker (Google or Apple) to do that. FighterBase does not keep it.</p><button type="button" class="btn gold sm" id="dictok178">OK, start</button> <button type="button" class="linkbtn" id="dictno178">Not now</button>';
+ document.body.appendChild(btn);document.body.appendChild(pop);
+ pop.addEventListener("mousedown",function(e){e.preventDefault()});
+ pop.querySelector("#dictok178").addEventListener("click",function(){try{S.profile.dictSeen=1;profChanged()}catch(e){}pop.hidden=true;start()});
+ pop.querySelector("#dictno178").addEventListener("click",function(){pop.hidden=true})}
+function place(){if(!cur||!btn)return;var r=cur.getBoundingClientRect(),vh=window.innerHeight;if(r.bottom<60||r.top>vh-70||!r.width){btn.hidden=true;pop.hidden=true;return}
+ btn.hidden=false;var x=Math.min(r.right-40,window.innerWidth-44),y=r.top+Math.max(4,Math.min(r.height-36,(r.height-36)/2));btn.style.left=x+"px";btn.style.top=y+"px";
+ if(!pop.hidden){pop.style.left=Math.max(8,Math.min(window.innerWidth-292,r.left))+"px";pop.style.top=Math.min(vh-170,r.bottom+6)+"px"}}
+function setVal(v){cur.value=v;cur.dispatchEvent(new Event("input",{bubbles:true}))}
+function stop(){live=false;if(rec){try{rec.stop()}catch(e){}}if(btn)btn.classList.remove("on")}
+function start(){if(!cur)return;try{rec=new SR()}catch(e){return}rec.lang=(navigator.language&&/^en/i.test(navigator.language))?navigator.language:"en-GB";rec.interimResults=true;rec.continuous=false;
+ var el=cur;base=el.value||"";final="";live=true;btn.classList.add("on");btn.setAttribute("aria-label","Stop listening");
+ rec.onresult=function(ev){var t="",f="";for(var i=0;i<ev.results.length;i++){if(ev.results[i].isFinal)f+=ev.results[i][0].transcript;else t+=ev.results[i][0].transcript}
+  var said=(f+t).trim();if(!said)return;var sep=base&&!/\s$/.test(base)?" ":"";if(!base)said=said.charAt(0).toUpperCase()+said.slice(1);setVal(base+sep+said)};
+ rec.onerror=function(ev){live=false;btn.classList.remove("on");if(ev&&(ev.error==="not-allowed"||ev.error==="service-not-allowed"))try{toast("Microphone is blocked","Allow it in your browser or phone settings")}catch(e){}else if(ev&&ev.error==="no-speech")try{toast("Did not hear anything")}catch(e){}};
+ rec.onend=function(){live=false;if(btn){btn.classList.remove("on");btn.setAttribute("aria-label","Speak instead of typing")}};
+ try{rec.start()}catch(e){live=false;btn.classList.remove("on")}}
+function tap(){if(!cur)return;if(live){stop();return}var seen=false;try{seen=!!(S.profile&&S.profile.dictSeen)}catch(e){}if(!seen){pop.hidden=false;place();return}start()}
+document.addEventListener("focusin",function(e){var t=e.target;if(ok(t)){mk();cur=t;pop.hidden=true;place()}else if(t!==btn&&btn){if(live)stop();cur=null;btn.hidden=true;pop.hidden=true}});
+document.addEventListener("focusout",function(e){setTimeout(function(){if(!btn)return;var a=document.activeElement;if(a===cur||a===btn)return;if(!pop.hidden&&pop.contains(a))return;if(live)stop();if(!pop.hidden)return;btn.hidden=true;cur=null},250)});
+window.addEventListener("scroll",place,true);window.addEventListener("resize",place);setInterval(function(){if(cur&&btn&&!btn.hidden)place()},600);
+var css=document.createElement("style");css.textContent="#dict178{position:fixed;z-index:60;width:36px;height:36px;border-radius:50%;border:1px solid var(--line);background:rgba(20,20,26,.92);color:inherit;display:flex;align-items:center;justify-content:center;padding:0;cursor:pointer}#dict178[hidden],#dictp178[hidden]{display:none}#dict178.on{background:#E0344B;border-color:#E0344B;color:#fff;animation:d178 1.1s infinite}@keyframes d178{50%{box-shadow:0 0 0 7px rgba(224,52,75,.25)}}@media(prefers-reduced-motion:reduce){#dict178.on{animation:none}}#dictp178{position:fixed;z-index:61;width:284px;max-width:calc(100vw - 16px);box-sizing:border-box;background:#17171d;border:1px solid var(--line);border-radius:14px;padding:12px 14px;font-size:13px;line-height:1.4}#dictp178 p{margin:0 0 8px}";
+document.head.appendChild(css);
+return {on:true}})();
+
 /* FighterBase v44: always a way back, always a next step. */
 var N31=N31||false;
 (function(){
