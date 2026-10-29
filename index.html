@@ -18935,6 +18935,54 @@ setInterval(paint,2500);setTimeout(paint,1200);
 window.FH169={data:data,paint:paint};
 })();
 
+/* FighterBase v221: Plan v done, day by day, and an evening-before heads-up.
+   Today panel #pd170: Monday to Sunday strip from the member's own week plan (fh162): tick = did it, cross = missed, dot = still to come, R = rest day.
+   From 5pm it shows "Tomorrow" with what is planned and a "kit ready" tick. Shown inside the app only (nothing is sent). Private to the member.
+   Profile keys: pdkit170{date:1}, pdoff170 (turn the Tomorrow heads-up off). */
+var P170=P170||false;
+(function(){
+if(P170)return;P170=true;
+function e(s){return esc(String(s==null?"":s))}
+function P(){return S.profile||{}}
+function dn(k){return new Date(k+"T12:00").toLocaleDateString("en-GB",{weekday:"short"})}
+function dl(k){return new Date(k+"T12:00").toLocaleDateString("en-GB",{weekday:"long"})}
+function html(){
+ if(!window.FH162)return "";
+ var wk=mondayOf(TODAY),t=FH162.tally(wk),w=(P().wahead||{})[wk]||{rest:{}};
+ if(!t.n){return '<section id="pd170" class="nm167 pd170"><div class="sec-h"><h3>Your week plan</h3></div><p class="small muted" style="margin:0 0 10px">Say which days you will train. Then you can see plan against what you did.</p><button type="button" class="btn gold sm" data-pd170open>Plan my week</button></section>'}
+ var cells="",i;
+ for(i=0;i<7;i++){var k=addDays(wk,i),its=t.all.filter(function(q){return q.k===k}),st,sym,lab;
+  if(its.length){var y=its.filter(function(q){return q.s==="yes"}).length,m=its.filter(function(q){return q.s==="no"}).length;
+   if(y===its.length){st="ok";sym="&#10003;";lab="Done"}else if(m&&k<TODAY){st="no";sym="&#10007;";lab=y?y+" of "+its.length:"Missed"}else if(k===TODAY){st="now";sym="&#9679;";lab=y?y+" of "+its.length:"Today"}else{st="lt";sym="&#9675;";lab="Planned"}}
+  else if(w.rest&&w.rest[k]){st="rs";sym="R";lab="Rest"}else{st="em";sym="&middot;";lab="&nbsp;"}
+  cells+='<div class="pdc '+st+'"><span class="pdd">'+e(dn(k))+'</span><span class="pds" aria-hidden="true">'+sym+'</span><span class="pdl">'+lab+'</span></div>'}
+ var due=t.all.filter(function(q){return q.k<=TODAY}),done=due.filter(function(q){return q.s==="yes"}).length;
+ var line=due.length?'Planned so far: '+due.length+'. Done: '+done+'.':'Nothing due yet this week.';
+ var tom=addDays(TODAY,1),tw=mondayOf(tom),tt=FH162.tally(tw).all.filter(function(q){return q.k===tom}),tb="";
+ if(new Date().getHours()>=17&&!P().pdoff170&&tt.length){var kit=(P().pdkit170||{})[tom];
+  tb='<div class="pdt"><b>Tomorrow, '+e(dl(tom))+'</b><ul>'+tt.map(function(q){return '<li>'+e(q.title)+(q.time?' <span class="muted">'+e(q.time)+'</span>':'')+'</li>'}).join("")+'</ul>'+
+  '<label class="pdk"><input type="checkbox" data-pd170kit="'+tom+'"'+(kit?' checked':'')+'> Kit and food ready</label><button type="button" class="linkbtn" data-pd170off>Turn this off</button></div>'}
+ return '<section id="pd170" class="nm167 pd170"><div class="sec-h"><h3>Plan against what you did</h3><button type="button" class="linkbtn" data-pd170open>Edit plan</button></div><div class="pdr">'+cells+'</div><p class="small muted" style="margin:8px 0 0">'+line+'</p>'+tb+'</section>'}
+function paint(){try{var tab=document.getElementById("tab-today");if(!tab||tab.hidden||!P().onboarded||document.body.classList.contains("hubview"))return;
+ var ex=document.getElementById("pd170");if(ex&&ex.contains(document.activeElement))return;
+ var h=html();if(!h){if(ex)ex.remove();return}if(ex&&ex.dataset.sig===h)return;
+ var d=document.createElement("div");d.innerHTML=h;var n=d.firstChild;n.dataset.sig=h;if(ex)ex.replaceWith(n);else tab.appendChild(n)}catch(x){}}
+var css=document.createElement("style");css.textContent=[
+"#tab-today>.pd170{grid-column:1/-1;order:-16;column-span:all}",
+".pd170 .pdr{display:grid;grid-template-columns:repeat(7,1fr);gap:6px}",
+".pd170 .pdc{display:flex;flex-direction:column;align-items:center;gap:4px;padding:8px 2px;border:1px solid var(--line,#35383E);border-radius:12px;background:var(--surface2,#23262B);min-width:0}",
+".pd170 .pdd{font-size:12px;color:var(--muted,#B6B7BD);font-weight:700}.pd170 .pds{font-size:18px;line-height:1;font-weight:800}.pd170 .pdl{font-size:11px;color:var(--muted,#B6B7BD);white-space:nowrap}",
+".pd170 .ok .pds{color:#3FB950}.pd170 .no .pds{color:#F85149}.pd170 .now{border-color:var(--gold,#D4AF37)}.pd170 .lt .pds,.pd170 .rs .pds{color:var(--muted,#B6B7BD)}.pd170 .ok{border-color:#2E7D3E}.pd170 .no{border-color:#8A2E2A}",
+".pd170 .pdt{margin-top:12px;padding-top:12px;border-top:1px solid var(--line,#35383E)}.pd170 .pdt ul{margin:6px 0;padding-left:18px}",
+".pd170 .pdk{display:flex;gap:10px;align-items:center;min-height:44px}.pd170 .pdk input{width:22px;height:22px}"].join("");document.head.appendChild(css);
+document.addEventListener("click",function(ev){var t=ev.target;if(!t.closest)return;
+ if(t.closest("[data-pd170open]")){try{FH162.open()}catch(x){}return}
+ if(t.closest("[data-pd170off]")){P().pdoff170=1;try{profChanged()}catch(x){}toast("Tomorrow heads-up off");paint()}},true);
+document.addEventListener("change",function(ev){var t=ev.target;if(t&&t.matches&&t.matches("[data-pd170kit]")){var k=t.dataset.pd170kit,o=P().pdkit170=P().pdkit170||{};if(t.checked)o[k]=1;else delete o[k];try{profChanged()}catch(x){}}});
+setInterval(paint,2500);setTimeout(paint,1100);
+window.FH170={paint:paint};
+})();
+
 /* FighterBase v44: always a way back, always a next step. */
 var N31=N31||false;
 (function(){
