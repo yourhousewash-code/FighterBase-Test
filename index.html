@@ -19244,6 +19244,9 @@ function clone(o){return JSON.parse(JSON.stringify(o))}
 function pat(){var p=P().mpPat;if(!p||!p.weeks){p={mode:1,anchor:mon(kd(new Date())),weeks:[blank()]};P().mpPat=p}return p}
 function mode(){return pat().mode||1}
 function wlabel(i){var m=mode();return m===2?"Week "+"AB"[i]:"Week "+(i+1)}
+function tkey(w,d,s){return w+"."+d+"."+s}
+function tm(w,d,s){var t=pat().tm;return (t&&t[tkey(w,d,s)])||""}
+function setTm(w,d,s,v){var p=pat();p.tm=p.tm||{};if(v)p.tm[tkey(w,d,s)]=v;else delete p.tm[tkey(w,d,s)]}
 function week(i){var p=pat();while(p.weeks.length<=i)p.weeks.push(clone(p.weeks[0]||blank()));return p.weeks[i]}
 function rec(id){return FH62.lib().filter(function(r){return r.id===id})[0]}
 function kindOf(slotKey){return SL.filter(function(s){return s[0]===slotKey})[0][2]}
@@ -19271,7 +19274,7 @@ function modeBar(){var m=mode();return '<div class="p177-seg" role="group" aria-
 function weekBar(){var m=mode();if(m<2)return "";var a="";for(var i=0;i<m;i++)a+='<button type="button" class="mp-w'+(i===ST.wk?" on":"")+'" data-p177="wk" data-v="'+i+'">'+wlabel(i)+'</button>';return '<div class="mp-wk" style="margin:8px 0">'+a+'</div>'}
 function slotRow(di,s,d){var r=d[s[0]]&&rec(d[s[0]]);
  if(!r)return '<div class="mp-meal p177-r"><span class="nu-slot">'+s[1]+'</span><button type="button" class="linkbtn p177-add" data-p177="pick" data-d="'+di+'" data-s="'+s[0]+'">+ Add</button><span></span></div>';
- return '<div class="mp-meal p177-r"><span class="nu-slot">'+s[1]+'</span><div class="mp-main"><button class="linkbtn mp-name" type="button" data-nur="'+esc(r.id)+'">'+esc(r.name)+'</button><span class="muted small">'+(r.kcal?r.kcal+' kcal':'')+(r.protein!=null&&r.kcal?' · ':'')+(r.protein!=null?r.protein+'g protein':'')+'</span></div><div class="mp-act"><button type="button" class="mp-i" data-p177="pick" data-d="'+di+'" data-s="'+s[0]+'" title="Change">Change</button><button type="button" class="mp-i bad" data-p177="rm" data-d="'+di+'" data-s="'+s[0]+'" title="Take out" aria-label="Take out">&times;</button></div></div>'}
+ var ct=tm(ST.wk,di,s[0]);return '<div class="mp-meal p177-r"><span class="nu-slot">'+s[1]+(ct?' · '+esc(ct):'')+'</span><div class="mp-main"><button class="linkbtn mp-name" type="button" data-nur="'+esc(r.id)+'">'+esc(r.name)+'</button><span class="muted small">'+(r.kcal?r.kcal+' kcal':'')+(r.protein!=null&&r.kcal?' · ':'')+(r.protein!=null?r.protein+'g protein':'')+'</span></div><div class="mp-act"><button type="button" class="mp-i" data-p177="pick" data-d="'+di+'" data-s="'+s[0]+'" title="Change">Change</button><button type="button" class="mp-i bad" data-p177="rm" data-d="'+di+'" data-s="'+s[0]+'" title="Take out" aria-label="Take out">&times;</button></div></div>'}
 function dayCard(di){var d=week(ST.wk)[di],kc=dayKcal(d),today=((new Date().getDay()+6)%7)===di&&(mode()===1||ST.wk===curWeekIdx());
  return '<div class="panel mp-day'+(today?" today":"")+'"><div class="mp-dh"><b>'+DF[di]+(today?' · today':'')+'</b><span class="muted small">'+(kc?'about '+kc+' kcal':'nothing planned')+'</span></div>'+SL.map(function(s){return slotRow(di,s,d)}).join("")+
   '<div class="row" style="gap:8px;margin-top:6px"><button type="button" class="mp-i" data-p177="cpday" data-d="'+di+'">Copy this day</button>'+(Object.keys(d).length?'<button type="button" class="mp-i" data-p177="clday" data-d="'+di+'">Clear</button>':'')+'</div></div>'}
@@ -19286,7 +19289,7 @@ function sheetPick(){var sh=ST.sheet,kind=kindOf(sh.s),q=(ST.q||"").toLowerCase(
   '<label class="small">Or search what is already here<input type="search" id="p177q" placeholder="chicken, oats, shake..." value="'+esc(ST.q||"")+'" data-p177in="q"></label>'+
   (mine.length?'<span class="label">My meals</span>'+mine.map(row).join(""):'')+(ideas.length?'<span class="label">Ideas for your eating style</span>'+ideas.map(row).join(""):'<p class="muted small" style="margin:0">Nothing found. Try New meal or snack.</p>')+'</div>'}
 function sheetNew(){var nb=ST.nb;
- var rows=nb.rows.map(function(r,i){return '<div class="p177-ing"><input type="text" list="p177foods" placeholder="Food, for example chicken breast" value="'+esc(r.f)+'" data-p177in="f" data-i="'+i+'" aria-label="Food"><input type="number" min="0" inputmode="numeric" placeholder="grams" value="'+esc(r.g)+'" data-p177in="g" data-i="'+i+'" aria-label="Grams"><button type="button" class="mp-i bad" data-p177="ingdel" data-v="'+i+'" aria-label="Remove">&times;</button></div>'}).join("");
+ var rows=nb.rows.map(function(r,i){return '<div class="p177-ing"><input type="text" list="p177foods" placeholder="Food, for example chicken breast" value="'+esc(r.f)+'" data-p177in="f" data-i="'+i+'" aria-label="Food"><input type="number" min="0" inputmode="numeric" data-dictnum placeholder="grams" value="'+esc(r.g)+'" data-p177in="g" data-i="'+i+'" aria-label="Grams"><button type="button" class="mp-i bad" data-p177="ingdel" data-v="'+i+'" aria-label="Remove">&times;</button></div>'}).join("");
  return '<div class="panel mp-b p177-sheet"><div class="mp-dh"><b>New meal or snack</b><button type="button" class="linkbtn" data-p177="cancel">Cancel</button></div>'+
   '<label class="small">Name<input type="text" id="p177name" placeholder="for example Chicken, pasta and broccoli" value="'+esc(nb.name)+'" data-p177in="name"></label>'+
   '<label class="small">What is it<select data-p177in="type">'+TYPES.map(function(t){return '<option value="'+t[0]+'"'+(nb.type===t[0]?" selected":"")+'>'+t[1]+'</option>'}).join("")+'</select></label>'+
@@ -19298,6 +19301,7 @@ function sheetAssign(){var a=ST.as,r=rec(a.rid),m=mode();if(!r){ST.sheet=null;re
  return '<div class="panel mp-b p177-sheet"><div class="mp-dh"><b>Put &ldquo;'+esc(r.name)+'&rdquo; in my plan</b><button type="button" class="linkbtn" data-p177="cancel">Not now</button></div>'+
   '<span class="label">Which days</span>'+chips(a.days,"tgd",DN)+'<div class="row" style="gap:8px"><button type="button" class="mp-i" data-p177="alldays">Every day</button><button type="button" class="mp-i" data-p177="weekdays">Weekdays</button><button type="button" class="mp-i" data-p177="wkend">Weekend</button></div>'+
   '<label class="small">At what time<select data-p177in="aslot">'+SL.map(function(s){return '<option value="'+s[0]+'"'+(a.slot===s[0]?" selected":"")+'>'+s[1]+'</option>'}).join("")+'</select></label>'+
+  '<label class="small">Clock time (optional)<input type="time" data-p177in="atime" value="'+esc(a.time||"")+'"></label>'+
   (m>1?'<span class="label">Which weeks</span>'+chips(wsel,"tgw",Array.apply(0,Array(m)).map(function(_,i){return wlabel(i)})):'')+
   '<div class="row"><button class="btn gold" type="button" data-p177="assign">Put it in my plan</button></div></div>'}
 function sheetCopy(){var c=ST.cp;if(c.kind==="day")return '<div class="panel mp-b p177-sheet"><div class="mp-dh"><b>Copy '+DF[c.from]+' to</b><button type="button" class="linkbtn" data-p177="cancel">Cancel</button></div>'+chips(c.to,"tgc",DN)+'<p class="muted small" style="margin:0">Days you tick are replaced with '+DF[c.from]+'.</p><div class="row"><button class="btn gold" type="button" data-p177="docp">Copy</button></div></div>';
@@ -19306,10 +19310,13 @@ function sheetTpl(){var t=P().mpTpl||[];return '<div class="panel mp-b p177-shee
  '<label class="small">Save this week as<input type="text" id="p177tn" placeholder="for example Cutting week" value="'+esc(ST.tplName)+'" data-p177in="tn"></label><div class="row"><button class="btn gold sm" type="button" data-p177="tplsave">Save this week</button></div>'+
  (t.length?t.map(function(x){return '<div class="mp-meal p177-r"><div class="mp-main" style="grid-column:1/3"><span class="mp-name">'+esc(x.name)+'</span></div><div class="mp-act"><button type="button" class="mp-i on" data-p177="tpluse" data-v="'+esc(x.id)+'">Use for '+wlabel(ST.wk)+'</button><button type="button" class="mp-i bad" data-p177="tpldel" data-v="'+esc(x.id)+'" aria-label="Remove">&times;</button></div></div>'}).join(""):'<p class="muted small" style="margin:0">Nothing saved yet. Save a week you like and use it again any time.</p>')+'</div>'}
 function sheetHtml(){var s=ST.sheet;return s==="new"?sheetNew():s==="assign"?sheetAssign():s==="copy"?sheetCopy():s==="tpl"?sheetTpl():(s&&s.s?sheetPick():"")}
+function overview(){var m=mode();if(m<2)return "";var h='<div class="panel p177-ov"><b>'+(m===4?"Your month at a glance":"Your two weeks")+'</b><div class="p177-og" style="grid-template-columns:70px repeat(7,1fr)"><span></span>'+DN.map(function(d){return '<i>'+d.charAt(0)+'</i>'}).join("");
+ for(var w=0;w<m;w++){h+='<button type="button" class="linkbtn p177-ol'+(w===ST.wk?" on":"")+'" data-p177="wk" data-v="'+w+'">'+wlabel(w)+'</button>';for(var d=0;d<7;d++){var n=Object.keys(week(w)[d]).length;h+='<span class="p177-oc n'+Math.min(n,4)+'" title="'+n+' meals">'+(n||"")+'</span>'}}
+ return h+'</div><p class="muted small" style="margin:0">Numbers show meals planned each day. Tap a week to edit it.</p></div>'}
 function view(){var o=P().mealPlan;if(stale())sync();var m=mode(),ready=o&&o.src!=="mine";
  var h='<div class="panel mp-b"><h3 style="margin:0">My meal plan</h3><p class="muted small" style="margin:0">Set your meals once and they repeat. Pick how you plan, then add meals to each day.</p>'+modeBar()+
   (ready?'<p class="small" style="margin:0;color:#E8DFC8">You are using a ready-made plan right now. Adding meals here switches to your own plan.</p>':'')+
-  '<div class="row" style="gap:8px"><button class="btn gold" type="button" data-p177="new">+ New meal or snack</button><button class="btn ghost" type="button" data-p177="tpl">Saved weeks</button></div></div>'+weekBar()+sheetHtml();
+  '<div class="row" style="gap:8px"><button class="btn gold" type="button" data-p177="new">+ New meal or snack</button><button class="btn ghost" type="button" data-p177="tpl">Saved weeks</button></div></div>'+overview()+weekBar()+sheetHtml();
  if(isEmpty()&&!ST.sheet)h+='<div class="panel"><p style="margin:0"><b>Start with one meal.</b> Tap New meal or snack, add the foods and grams, then tick the days it is for. Or tap + Add on any day below.</p></div>';
  for(var i=0;i<7;i++)h+=dayCard(i);
  h+='<div class="row" style="gap:8px;margin-top:10px;flex-wrap:wrap">'+(m>1?'<button type="button" class="btn ghost sm" data-p177="cpweek">Copy '+wlabel(ST.wk)+' to another week</button>':'')+'<button type="button" class="btn ghost sm" data-p177="clweek">Clear '+(m>1?wlabel(ST.wk):"this week")+'</button><button type="button" class="btn ghost sm" data-mptab="shop">Shopping list</button></div>'+
@@ -19325,7 +19332,7 @@ function saveNew(){var nb=ST.nb,nm=(nb.name||"").trim(),rows=nb.rows.filter(func
  var a=(P().myRecipes||[]).slice();a.push(r);P().myRecipes=a;save();var f=nb.from;ST.nb=null;toAssign(r.id,f?f.d:null,f?f.s:keyOfType(nb.type))}
 function assign(){var a=ST.as,days=[];a.days.forEach(function(v,i){if(v)days.push(i)});if(!days.length){toast("Tick at least one day");return}
  var ws=mode()>1?a.weeks.slice():[0];if(!ws.length){toast("Tick at least one week");return}
- ws.forEach(function(w){days.forEach(function(d){week(w)[d][a.slot]=a.rid})});ST.sheet=null;ST.as=null;changed();toast("Added to your plan")}
+ ws.forEach(function(w){days.forEach(function(d){week(w)[d][a.slot]=a.rid;setTm(w,d,a.slot,a.time||"")})});ST.sheet=null;ST.as=null;changed();toast("Added to your plan")}
 function doCopy(){var c=ST.cp,p=pat();
  if(c.kind==="day"){var src=week(ST.wk)[c.from];c.to.forEach(function(v,i){if(v&&i!==c.from)week(ST.wk)[i]=clone(src)})}
  else{var s=week(ST.wk);c.to.forEach(function(v,i){if(v&&i!==ST.wk)p.weeks[i]=clone(s)})}
@@ -19336,7 +19343,7 @@ document.addEventListener("click",function(e){var t=e.target;if(!t.closest||!t.c
  else if(a==="pick"){ST.sheet={d:d,s:b.dataset.s};ST.q="";draw()}
  else if(a==="new")openNew();
  else if(a==="use")toAssign(v,ST.sheet&&ST.sheet.s?ST.sheet.d:null,ST.sheet&&ST.sheet.s?ST.sheet.s:null);
- else if(a==="rm"){delete week(ST.wk)[d][b.dataset.s];changed()}
+ else if(a==="rm"){delete week(ST.wk)[d][b.dataset.s];setTm(ST.wk,d,b.dataset.s,"");changed()}
  else if(a==="cancel"){ST.sheet=null;ST.nb=null;ST.as=null;ST.cp=null;draw()}
  else if(a==="ingadd"){ST.nb.rows.push({f:"",g:""});draw()}
  else if(a==="ingdel"){ST.nb.rows.splice(+v,1);if(!ST.nb.rows.length)ST.nb.rows.push({f:"",g:""});draw()}
@@ -19362,13 +19369,13 @@ document.addEventListener("input",function(e){var t=e.target;if(!t.closest||!t.c
  if(k==="name"&&ST.nb)ST.nb.name=t.value;else if((k==="f"||k==="g")&&ST.nb){ST.nb.rows[i][k]=t.value;var el=document.getElementById("p177tot");if(el)el.innerHTML=totLine(ST.nb.rows)}
  else if(k==="tn")ST.tplName=t.value;
  else if(k==="q"){ST.q=t.value;var pos=t.selectionStart;draw();var q=document.getElementById("p177q");if(q){q.focus();try{q.setSelectionRange(pos,pos)}catch(er){}}}});
-document.addEventListener("change",function(e){var t=e.target;if(!t.closest||!t.closest("#tab-nutrition")||!t.dataset)return;var k=t.dataset.p177in;if(k==="type"&&ST.nb)ST.nb.type=t.value;if(k==="aslot"&&ST.as)ST.as.slot=t.value});
+document.addEventListener("change",function(e){var t=e.target;if(!t.closest||!t.closest("#tab-nutrition")||!t.dataset)return;var k=t.dataset.p177in;if(k==="type"&&ST.nb)ST.nb.type=t.value;if(k==="aslot"&&ST.as)ST.as.slot=t.value;if(k==="atime"&&ST.as)ST.as.time=t.value});
 var css=document.createElement("style");css.textContent=
  ".p177-seg{display:grid;grid-template-columns:repeat(3,1fr);border:1px solid var(--line);border-radius:999px;overflow:hidden}.p177-sg{all:unset;cursor:pointer;padding:10px 6px;font-size:14px;font-weight:700;text-align:center}.p177-sg.on{background:#A9172F;color:#fff}"+
  ".p177-chips{display:flex;gap:6px;flex-wrap:wrap}.p177-c{all:unset;cursor:pointer;min-width:44px;box-sizing:border-box;text-align:center;padding:9px 10px;border-radius:12px;border:1px solid var(--line);font-size:14px;font-weight:700}.p177-c.on{background:rgba(255,106,61,.25);border-color:#A9172F}"+
  ".p177-ing{display:grid;grid-template-columns:1fr 90px auto;gap:8px;align-items:center}.p177-ing input{background:rgba(255,255,255,.04);border:1px solid var(--line);border-radius:10px;color:inherit;padding:9px 12px;font:inherit;font-size:14px;width:100%;box-sizing:border-box}"+
  ".p177-sheet{border-color:#A9172F}.p177-sheet input[type=search],.p177-sheet input[type=text],.p177-sheet select{background:rgba(255,255,255,.04);border:1px solid var(--line);border-radius:10px;color:inherit;padding:9px 12px;font:inherit;font-size:14px;width:100%;box-sizing:border-box}"+
- ".p177-add{font-weight:700}.p177-r{grid-template-columns:110px 1fr auto}@media(max-width:560px){.p177-r{grid-template-columns:100px 1fr auto}.p177-r .mp-act{justify-content:flex-end}}";
+ ".p177-og{display:grid;gap:4px;align-items:center;margin:8px 0;text-align:center}.p177-og i{font-style:normal;font-size:11px;color:var(--muted,#9aa)}.p177-ol{text-align:left;font-size:13px;min-height:32px}.p177-ol.on{font-weight:800;color:#A9172F}.p177-oc{height:26px;border-radius:7px;border:1px solid var(--line);font-size:12px;line-height:24px}.p177-oc.n1{background:rgba(255,106,61,.12)}.p177-oc.n2{background:rgba(255,106,61,.22)}.p177-oc.n3{background:rgba(255,106,61,.34)}.p177-oc.n4{background:rgba(255,106,61,.5)}.p177-add{font-weight:700}.p177-r{grid-template-columns:110px 1fr auto}@media(max-width:560px){.p177-r{grid-template-columns:100px 1fr auto}.p177-r .mp-act{justify-content:flex-end}}";
 document.head.appendChild(css);
 return {view:view,sync:sync}})();
 
@@ -19380,8 +19387,10 @@ var FH178=(function(){
 var SR=window.SpeechRecognition||window.webkitSpeechRecognition;
 if(!SR)return {on:false};
 var btn,pop,cur=null,rec=null,live=false,base="",final="";
-var SKIP=/pass|pin\b|otp|card|iban|sort|account|email|mail|tel|phone|code|token|key|url|search-club|date/i;
-function ok(el){if(!el||!el.tagName)return false;var t=el.tagName;if(t!=="TEXTAREA"&&t!=="INPUT")return false;if(t==="INPUT"){var ty=(el.type||"text").toLowerCase();if(ty!=="text"&&ty!=="search")return false}
+var SKIP=/pass|pin\b|otp|card|iban|sort|account|email|mail|tel|phone|code|token|key|url|search-club|date|decimal|numeric/i;
+var W={zero:0,one:1,two:2,three:3,four:4,five:5,six:6,seven:7,eight:8,nine:9,ten:10,eleven:11,twelve:12,thirteen:13,fourteen:14,fifteen:15,sixteen:16,seventeen:17,eighteen:18,nineteen:19,twenty:20,thirty:30,forty:40,fifty:50,sixty:60,seventy:70,eighty:80,ninety:90};
+function num(t){t=String(t).toLowerCase().replace(/,/g,"");var m=t.match(/\d+(\.\d+)?/);if(m)return m[0];var tot=0,cur=0,any=false;t.split(/[\s-]+/).forEach(function(w){if(w==="and"||w==="point")return;if(W[w]!=null){cur+=W[w];any=true}else if(w==="hundred"){cur=(cur||1)*100;any=true}else if(w==="thousand"){tot+=(cur||1)*1000;cur=0;any=true}});return any?String(tot+cur):""}
+function ok(el){if(!el||!el.tagName)return false;var t=el.tagName;if(t!=="TEXTAREA"&&t!=="INPUT")return false;if(t==="INPUT"){var ty=(el.type||"text").toLowerCase();if(ty!=="text"&&ty!=="search"&&!(ty==="number"&&el.dataset.dictnum!=null))return false}
  if(el.readOnly||el.disabled||el.hidden||el.dataset.nodict!=null)return false;if(SKIP.test((el.id||"")+" "+(el.name||"")+" "+(el.getAttribute("autocomplete")||"")+" "+(el.getAttribute("inputmode")||"")))return false;
  return !!el.closest("section[id^=tab-],.sheet,.panel,dialog,[role=dialog]")}
 function mk(){if(btn)return;btn=document.createElement("button");btn.type="button";btn.id="dict178";btn.setAttribute("aria-label","Speak instead of typing");btn.hidden=true;
@@ -19400,7 +19409,7 @@ function stop(){live=false;if(rec){try{rec.stop()}catch(e){}}if(btn)btn.classLis
 function start(){if(!cur)return;try{rec=new SR()}catch(e){return}rec.lang=(navigator.language&&/^en/i.test(navigator.language))?navigator.language:"en-GB";rec.interimResults=true;rec.continuous=false;
  var el=cur;base=el.value||"";final="";live=true;btn.classList.add("on");btn.setAttribute("aria-label","Stop listening");
  rec.onresult=function(ev){var t="",f="";for(var i=0;i<ev.results.length;i++){if(ev.results[i].isFinal)f+=ev.results[i][0].transcript;else t+=ev.results[i][0].transcript}
-  var said=(f+t).trim();if(!said)return;var sep=base&&!/\s$/.test(base)?" ":"";if(!base)said=said.charAt(0).toUpperCase()+said.slice(1);setVal(base+sep+said)};
+  var said=(f+t).trim();if(!said)return;if(el.dataset.dictnum!=null){var nv=num(said);if(nv!=="")setVal(nv);return}var sep=base&&!/\s$/.test(base)?" ":"";if(!base)said=said.charAt(0).toUpperCase()+said.slice(1);setVal(base+sep+said)};
  rec.onerror=function(ev){live=false;btn.classList.remove("on");if(ev&&(ev.error==="not-allowed"||ev.error==="service-not-allowed"))try{toast("Microphone is blocked","Allow it in your browser or phone settings")}catch(e){}else if(ev&&ev.error==="no-speech")try{toast("Did not hear anything")}catch(e){}};
  rec.onend=function(){live=false;if(btn){btn.classList.remove("on");btn.setAttribute("aria-label","Speak instead of typing")}};
  try{rec.start()}catch(e){live=false;btn.classList.remove("on")}}
@@ -19446,6 +19455,30 @@ document.addEventListener("click",function(e){var b=e.target.closest&&e.target.c
 var css=document.createElement("style");css.textContent="#tab-today>.in179{grid-column:1/-1;order:-21;column-span:all}.in179{display:flex;flex-direction:column;gap:10px;padding:14px;border:1px solid #A9172F;border-radius:16px;background:rgba(255,106,61,.08);margin:6px 0}.in179h{display:flex;gap:12px;align-items:center}.in179h img{border-radius:10px;flex:none}.in179h div{display:flex;flex-direction:column;gap:2px;min-width:0}.in179s{margin:0;padding-left:20px;font-size:14px;line-height:1.5}.in179 .linkbtn{align-self:flex-start;min-height:36px}";
 document.head.appendChild(css);setInterval(paint,2500);setTimeout(paint,1200);
 return {show:function(){P().instNo=0;P().instDone=0;paint()},want:want}})();
+
+/* FighterBase v234: club owner tidy-ups. Schedule: only the next event shows (others fold under "More events"), finished classes and
+   past personal-training times fold away. Nothing is deleted, it is only tucked behind a tap. */
+var FH180=(function(){
+var OPEN={ev:false,past:false};
+function mk(cls,txt,key){var b=document.createElement("button");b.type="button";b.className="linkbtn tc180 "+cls;b.textContent=txt;b.dataset.tc180=key;return b}
+function events(){var p=document.getElementById("ev94mem");if(!p)return;var ev=[].slice.call(p.querySelectorAll(":scope>.ev94m"));if(ev.length<2){return}
+ ev.forEach(function(e,i){e.classList.toggle("tc180h",i>0&&!OPEN.ev)});var b=p.querySelector(".tc180[data-tc180=ev]");
+ if(!b){b=mk("tcev","","ev");p.appendChild(b)}b.textContent=OPEN.ev?"Show fewer events":"More events ("+(ev.length-1)+")"}
+function past(){var L=document.querySelector("#scheduleBody .sc-list");if(!L)return;var rows=[].slice.call(L.querySelectorAll(":scope>.sc-r.past"));var b=L.querySelector(".tc180[data-tc180=past]");
+ if(!rows.length){if(b)b.remove();return}
+ rows.forEach(function(r){r.classList.toggle("tc180h",!OPEN.past)});
+ if(!b){b=mk("tcpast","","past");L.insertBefore(b,L.firstChild)}b.textContent=OPEN.past?"Hide finished classes":rows.length+" finished earlier today"}
+function pt(){var C=document.querySelectorAll("#scheduleBody .pt-p .chips");C.forEach(function(c){var now=Date.now(),yr=new Date().getFullYear();var chips=[].slice.call(c.querySelectorAll(":scope>.chip"));var hid=0,shown=0;
+  chips.forEach(function(ch){var m=/(\d{1,2}) ([A-Za-z]{3}) (\d{1,2}):(\d{2})/.exec(ch.textContent);var gone=false;if(m){var d=new Date(m[1]+" "+m[2]+" "+yr+" "+m[3]+":"+m[4]);if(!isNaN(d)&&d.getTime()<now)gone=true}
+   ch.classList.toggle("tc180p",gone);if(gone)hid++;else{shown++;ch.classList.toggle("tc180h",shown>6&&!c.dataset.more)}});
+  var extra=chips.filter(function(x){return x.classList.contains("tc180h")}).length;var b=c.parentNode.querySelector(".tc180[data-tc180=pt]");
+  if(extra>0||c.dataset.more){if(!b){b=mk("tcpt","","pt");c.insertAdjacentElement("afterend",b)}b.textContent=c.dataset.more?"Show fewer times":"More times"}else if(b)b.remove()})}
+function run(){try{var t=document.getElementById("tab-schedule");if(!t||t.hidden)return;events();past();pt()}catch(e){}}
+document.addEventListener("click",function(e){var b=e.target.closest&&e.target.closest("[data-tc180]");if(!b)return;var k=b.dataset.tc180;
+ if(k==="ev")OPEN.ev=!OPEN.ev;else if(k==="past")OPEN.past=!OPEN.past;else if(k==="pt"){var c=b.previousElementSibling;if(c){if(c.dataset.more)delete c.dataset.more;else c.dataset.more="1"}}run()});
+var css=document.createElement("style");css.textContent=".tc180h,.tc180p{display:none!important}.tc180{align-self:flex-start;min-height:40px;margin:4px 0}";document.head.appendChild(css);
+setInterval(run,1200);setTimeout(run,600);
+return {run:run}})();
 
 /* FighterBase v44: always a way back, always a next step. */
 var N31=N31||false;
