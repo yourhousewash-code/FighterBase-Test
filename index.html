@@ -2723,7 +2723,7 @@ document.addEventListener("click",e=>{const p=e.target.closest("[data-path]");if
   const m=e.target.closest("[data-mod]");if(m){const h={...(S.profile.hide||{})};h[m.dataset.mod]=!h[m.dataset.mod];S.profile.hide=h;profChanged();renderModules();renderCheckin()}});
 document.addEventListener("change",e=>{if(e.target.id==="fightTools"){S.profile.fightTools=e.target.checked;profChanged();renderCheckin()}});
 
-/* ---------- Club hub ---------- */
+/* ---------- Club side ---------- */
 const clubState={club:null,members:[],props:[],tab:"week",unsubs:[],allClubs:[],allLeague:[],interclubs:[]};
 const CHALLENGE_METRICS={sessions:["Most sessions","sessions"],checkins:["Most club check-ins","check-ins"],wins:["Most target days","target days"],water:["Hydration days","days on target"]};
 function weekStartKey(){const d=new Date();const day=(d.getDay()+6)%7;d.setDate(d.getDate()-day);return dayKey(d)}
@@ -5220,7 +5220,7 @@ window.FHM37={reveal:reveal,count:countUp};
 try{lens();var cur0=document.querySelector("section.stack:not([hidden])");if(cur0)reveal(cur0.id.slice(4))}catch(e){}
 })();
 
-/* FighterBase v50: one login, two views. Members link to a club with consent; owners switch to a Club hub. */
+/* FighterBase v50: one login, two views. Members link to a club with consent; owners switch to the club side. */
 var C38=C38||false;
 (function(){
 if(C38)return;C38=true;
@@ -5259,17 +5259,17 @@ function myClubPanel(){var body=$("#clubBody");if(!body)return;var old=$("#myClu
  var nx=next?'<p style="margin:0"><b>Next class:</b> '+esc(dayLabel(next[0]))+' '+esc((window.FH106&&FH106.range(next[1][0].time,next[1][0].mins))||next[1][0].time)+' · '+esc((next[1][0].title||next[1][0].name||"Class"))+((window.FH106&&FH106.coach(c,next[1][0]))?' with '+esc(FH106.coach(c,next[1][0])):'')+'</p>':'<p class="muted small" style="margin:0">No classes on the timetable yet.</p>';
  el.innerHTML='<div class="sec-h"><h2>My club</h2><span class="badge">'+esc(c.name)+'</span></div>'+nx+
   '<p class="muted small" style="margin:8px 0 0">Your club sees: your check-ins'+(window.FB54?FB54.CATS.filter(function(x){return FB54.allowed(x[0])}).map(function(x){return ', '+x[1].toLowerCase()}).join(''):'')+'. Never your meals, notes or chats.</p>'+
-  '<div class="row"><button class="btn ghost sm" type="button" data-goto="clubsee">What my club can see</button><button class="btn ghost sm" type="button" data-myleave>Leave club</button>'+(isOwner()?'<button class="btn gold sm" type="button" data-hubgo>Open Club hub</button>':"")+'</div>';
+  '<div class="row"><button class="btn ghost sm" type="button" data-goto="clubsee">What my club can see</button><button class="btn ghost sm" type="button" data-myleave>Leave club</button>'+(isOwner()?'<button class="btn gold sm" type="button" data-hubgo>Open club side</button>':"")+'</div>';
  body.insertBefore(el,body.firstChild)}
 var rc=renderClub;renderClub=function(){var r=rc.apply(this,arguments);try{myClubPanel();check();bar()}catch(e){}return r};
-/* ---------- owner: Club hub view ---------- */
+/* ---------- owner: Club side view ---------- */
 var tabs=document.getElementById("tab-today").parentNode;
 function mkTab(id){var s=document.getElementById("tab-"+id);if(!s){s=document.createElement("section");s.id="tab-"+id;s.className="stack";s.hidden=true;s.innerHTML='<div id="'+id+'Body" class="stack"></div>';tabs.appendChild(s)}return s}
-mkTab("hubover");mkTab("hubmem");TABNAME.hubover="Club hub";TABNAME.hubmem="Members";
-var nav=document.createElement("nav");nav.className="bottom hubnav";nav.setAttribute("aria-label","Club hub");
+mkTab("hubover");mkTab("hubmem");TABNAME.hubover="Club side";TABNAME.hubmem="Members";
+var nav=document.createElement("nav");nav.className="bottom hubnav";nav.setAttribute("aria-label","Club side");
 nav.innerHTML='<div class="inner"><button type="button" data-hub="hubover"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 11l9-8 9 8v10a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/></svg><span>Overview</span></button><button type="button" data-hub="hubmem"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="8" r="3.2"/><path d="M3 20c0-3.3 2.7-6 6-6s6 2.7 6 6M16 5.5a3 3 0 0 1 0 5.8M18 14.5c2 .6 3.5 2.6 3.5 5.5"/></svg><span>Members</span></button><button type="button" data-hub="club"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="17" rx="2"/><path d="M8 2v4M16 2v4M3 10h18"/></svg><span>Tools</span></button><button type="button" data-hub="profile"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 3.6-7 8-7s8 3 8 7"/></svg><span>Me</span></button><button type="button" data-hub="member"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 6l-6 6 6 6"/></svg><span>Member</span></button></div>';
 document.body.appendChild(nav);
-var vc=document.createElement("div");vc.className="seg-ctl";vc.id="viewCtl";vc.hidden=true;vc.innerHTML='<button type="button" data-view="member">Member</button><button type="button" data-view="club">Club hub</button>';
+var vc=document.createElement("div");vc.className="seg-ctl";vc.id="viewCtl";vc.hidden=true;vc.innerHTML='<button type="button" data-view="member">Member</button><button type="button" data-view="club">Club side</button>';
 var mb=document.querySelector(".modebar");if(mb)mb.insertBefore(vc,mb.firstChild);
 function bar(){var show=isOwner();vc.hidden=!show;var hub=show&&(S.profile.viewMode==="club");vc.querySelectorAll("button").forEach(function(b){b.setAttribute("aria-pressed",String((b.dataset.view==="club")===hub))})}
 function curTab(){var s=document.querySelector("section[id^=tab-]:not([hidden])");return s?s.id.slice(4):"today"}
@@ -5293,7 +5293,7 @@ function drawOver(){var c=club(),el=$("#hubBodyOver")||document.getElementById("
  var ms=members(),act=ms.filter(function(m){return statusOf(m).s==="Active"}).length,lap=ms.filter(function(m){var s=statusOf(m).s;return s==="Lapsed"}),
  cls=[];try{cls=classesOn(c,TODAY)}catch(e){}
  var code=c.code||"",link=(location.href.split("#")[0])+"#join="+encodeURIComponent(code);
- var h='<div class="panel plate"><div class="sec-h"><h2>'+esc(c.name)+'</h2><span class="badge">Club hub</span></div><div class="sgrid c3"><div class="stile"><b class="num">'+ms.length+'</b><span>Members</span></div><div class="stile"><b class="num">'+act+'</b><span>Active</span><small class="muted">in the last 7 days</small></div><div class="stile"><b class="num">'+lap.length+'</b><span>Not seen</span><small class="muted">3+ weeks since a check-in</small></div></div></div>';
+ var h='<div class="panel plate"><div class="sec-h"><h2>'+esc(c.name)+'</h2><span class="badge">Club side</span></div><div class="sgrid c3"><div class="stile"><b class="num">'+ms.length+'</b><span>Members</span></div><div class="stile"><b class="num">'+act+'</b><span>Active</span><small class="muted">in the last 7 days</small></div><div class="stile"><b class="num">'+lap.length+'</b><span>Not seen</span><small class="muted">3+ weeks since a check-in</small></div></div></div>';
  h+='<div class="panel"><div class="sec-h"><h3>Invite members</h3></div><p class="muted small" style="margin:0">Members join with your club code or this link, then choose what to share.</p><div class="row"><span class="chip" style="cursor:default;font-weight:800;letter-spacing:.14em">'+esc(code)+'</span><button class="btn sm" type="button" data-hubcopy="'+esc(link)+'">Copy invite link</button></div></div>';
  h+='<div class="panel"><div class="sec-h"><h3>Today</h3><span class="muted small">'+new Date().toLocaleDateString("en-GB",{weekday:"long",day:"numeric",month:"long"})+'</span></div>'+
   (cls.length?cls.map(function(cl){var key=TODAY+"_"+cl.id,n=0;try{n=rsvpUids(c,key).length}catch(e){}return '<div class="item"><div class="info"><b>'+esc(cl.time)+' · '+esc((cl.title||cl.name||"Class"))+'</b><span class="muted small">'+n+' coming'+(+cl.cap>0?' of '+cl.cap:'')+'</span></div></div>'}).join(""):'<p class="muted small" style="margin:0">No classes today.</p>')+
@@ -5466,9 +5466,9 @@ function page(){var el=document.getElementById("clubpageBody");if(!el)return;var
  var h='<div class="cp-hero" style="--pc:'+k+'">'+logo(c,"cp-logo")+'<div class="cp-tx"><h2>'+esc(c.name)+'</h2>'+(b.tagline?'<p>'+esc(b.tagline)+'</p>':'')+'<div class="cp-sp">'+sp.map(function(x){return '<span>'+esc(SHORT[x]||x)+'</span>'}).join("")+(c.city?'<span class="cp-city">'+esc(c.city)+'</span>':'')+'</div></div></div>'+
   '<div class="cp-act">'+'<button class="btn gold" type="button" data-cpgo="cpClasses">Book a class</button>'+(chk?'<button class="btn" type="button" data-glocate>Check in here</button>':'')+((c.pay&&c.pay.plans||[]).length?'<button class="btn ghost" type="button" data-cpgo="cpPay">Membership</button>':'')+(site?'<a class="btn ghost" href="'+esc(site)+'" target="_blank" rel="noopener noreferrer">Website ↗</a>':'')+(isOwner()?'<button class="btn ghost" type="button" data-cpedit>Edit club page</button>':'')+'</div>'+'<p class="small" id="geoMsg" style="margin:-4px 2px 0;color:var(--muted)"></p>';
  var up=[];try{up=upcoming(c,7)}catch(e){}
- h+='<div class="panel" id="cpClasses"><div class="sec-h"><h3>Timetable and booking</h3><span class="muted small">Next 7 days</span></div>'+(up.length?up.map(function(x){return '<div class="cl-day">'+dayLabel(x[0])+'</div>'+x[1].map(function(cl){return classRow(c,x[0]+"_"+cl.id,cl)}).join("")}).join(""):'<p class="muted small" style="margin:0">'+(isOwner()?'No classes yet. Add them under Club hub > Tools.':'No classes on the timetable yet.')+'</p>')+'</div>';
+ h+='<div class="panel" id="cpClasses"><div class="sec-h"><h3>Timetable and booking</h3><span class="muted small">Next 7 days</span></div>'+(up.length?up.map(function(x){return '<div class="cl-day">'+dayLabel(x[0])+'</div>'+x[1].map(function(cl){return classRow(c,x[0]+"_"+cl.id,cl)}).join("")}).join(""):'<p class="muted small" style="margin:0">'+(isOwner()?'No classes yet. Add them under Club side > Tools.':'No classes on the timetable yet.')+'</p>')+'</div>';
  var pay="";try{pay=pyMemberPanel(c)}catch(e){}
- if(pay)h+='<div id="cpPay">'+pay+'</div>';else if(isOwner())h+='<div class="panel" id="cpPay"><div class="sec-h"><h3>Membership</h3></div><p class="muted small" style="margin:0">Add membership plans under Club hub > Tools and members can sign up and pay here.</p></div>';
+ if(pay)h+='<div id="cpPay">'+pay+'</div>';else if(isOwner())h+='<div class="panel" id="cpPay"><div class="sec-h"><h3>Membership</h3></div><p class="muted small" style="margin:0">Add membership plans under Club side > Tools and members can sign up and pay here.</p></div>';
  var ps=(c.posts||[]).slice(-3).reverse();
  if(ps.length)h+='<div class="panel"><div class="sec-h"><h3>Club news</h3></div>'+ps.map(function(p){return '<div class="item"><div class="info"><b>'+esc(p.text)+'</b><span class="muted small">'+esc(p.by||"")+(p.date?" · "+esc(p.date):"")+'</span></div></div>'}).join("")+'</div>';
  var lines=[];
@@ -5580,7 +5580,7 @@ document.addEventListener("click",function(e){var t=e.target;if(!t.closest)retur
 /* ---------- settings panel ---------- */
 function acct(){var host=document.getElementById("tab-profile");if(!host||!S.profile)return;var r=role()||"member";var el=document.getElementById("acctRole");
  var hasClub=!!S.profile.clubId;
- var h='<div class="sec-h"><h2>Account type</h2><span class="badge">'+(r==="club"?"Club":"Member")+'</span></div><p class="muted small" style="margin:0">'+(r==="club"?"You run a club. Switch between your club hub and your own training at the top of the app.":"You train and link to a club. Club tools are only for club accounts.")+'</p><div class="row"><button class="btn'+(r==="member"?" gold":" ghost")+'" type="button" data-role="member">Member</button><button class="btn'+(r==="club"?" gold":" ghost")+'" type="button" data-role="club">Club</button></div>'+
+ var h='<div class="sec-h"><h2>Account type</h2><span class="badge">'+(r==="club"?"Club":"Member")+'</span></div><p class="muted small" style="margin:0">'+(r==="club"?"You run a club. Switch between the club side and your own training at the top of the app.":"You train and link to a club. Club tools are only for club accounts.")+'</p><div class="row"><button class="btn'+(r==="member"?" gold":" ghost")+'" type="button" data-role="member">Member</button><button class="btn'+(r==="club"?" gold":" ghost")+'" type="button" data-role="club">Club</button></div>'+
   (r==="club"?'<div class="row">'+(hasClub?'<button class="btn ghost sm" type="button" data-rscopy>Copy club sign-in link</button>':'<button class="btn gold sm" type="button" data-rsopen>Set up my club</button>')+'</div><p class="small muted" style="margin:0">Club sign-in link opens straight to the club account.</p>':'');
  h+='<div class="fb-demo-row" style="border-top:1px solid var(--line);padding-top:12px;display:flex;flex-direction:column;gap:6px"><span class="label">Preview demo accounts</span><p class="small muted" style="margin:0">See the app with six months of made-up history. Your own data is not touched.</p><div class="row"><button class="btn ghost sm" type="button" data-demogo2="member">As a member</button><button class="btn ghost sm" type="button" data-demogo2="club">As a club owner</button></div><div class="row"><button class="btn ghost sm" type="button" data-demogo2="steve">As Steve (Warrior Spirit)</button><button class="btn ghost sm" type="button" data-demogo2="jay">As Jay (Warrior Spirit coach)</button></div></div>';
  if(!el){el=document.createElement("div");el.id="acctRole";el.className="panel";host.insertBefore(el,host.firstChild)}
@@ -5749,7 +5749,7 @@ var css=document.createElement("style");css.textContent=[
 window.FHQ={all:ALL,card:card};
 })();
 
-/* FighterBase v56: nutrition as self-planning tools (no personal advice) + the Specialist Hub (paid access to verified, qualified practitioners). Prototype: interest and applications only, no live bookings. */
+/* FighterBase v56: nutrition as self-planning tools (no personal advice) + Specialists (paid access to verified, qualified practitioners). Prototype: interest and applications only, no live bookings. */
 var SP44=SP44||false;
 (function(){
 if(SP44)return;SP44=true;
@@ -5757,26 +5757,26 @@ var $=function(s){return document.querySelector(s)};
 var tabs=document.getElementById("tab-today").parentNode;
 var sec=document.getElementById("tab-specialists");
 if(!sec){sec=document.createElement("section");sec.id="tab-specialists";sec.className="stack";sec.hidden=true;sec.innerHTML='<div id="specialistsBody" class="stack"></div>';tabs.appendChild(sec)}
-TABNAME.specialists="Specialist Hub";
+TABNAME.specialists="Specialists";
 /* nutrition gate: plan-your-own framing */
 function gate(){var g=document.getElementById("tab-nutoff");if(!g||g.dataset.v==="2")return;g.dataset.v="2";
  g.innerHTML='<div class="panel plate"><div class="sec-h"><h2>Plan your own nutrition</h2><span class="badge">Tools</span></div><p class="muted" style="margin:0">Meal planner, food database, macro and calorie calculators, portion measures, meal prep and shopping lists, and tracking. You plan it, FighterBase does the maths. These are tools, not personal diet advice.</p><div class="row"><button class="btn gold" type="button" data-nutonbtn>Turn on nutrition tools</button><button class="btn ghost" type="button" data-goto="today">Not now</button></div></div>'+
- '<div class="panel sp-cta"><div class="sec-h"><h3>Want a plan made for you?</h3></div><p class="muted small" style="margin:0">Book a qualified nutrition specialist in the Specialist Hub. Paid, one-to-one, and their plan can drop straight into your app.</p><div class="row"><button class="btn" type="button" data-goto="specialists">Open Specialist Hub</button></div></div>'}
+ '<div class="panel sp-cta"><div class="sec-h"><h3>Want a plan made for you?</h3></div><p class="muted small" style="margin:0">Book a qualified nutrition specialist. Paid, one-to-one, and their plan can drop straight into your app.</p><div class="row"><button class="btn" type="button" data-goto="specialists">See specialists</button></div></div>'}
 /* banner on nutrition pages */
 function banner(t){if(["meals","foods","shop"].indexOf(t)<0)return;var s=document.getElementById("tab-"+t);if(!s||s.querySelector(".sp-ban"))return;var b=document.createElement("div");b.className="sp-ban";b.innerHTML='<span>Planning tools, not personal advice.</span> <button class="linkbtn" type="button" data-goto="specialists">Talk to a specialist ›</button>';s.insertBefore(b,s.firstChild)}
 var CATS=[["Nutrition","Weight-making plans, fuelling for training, meal prep, supplements reviewed by a professional","Opening first"],["Strength and conditioning","Programmes built around your fight or grading","Later"],["Physio and injury","Rehab and return-to-training plans","Later"],["Sport psychology","Nerves, focus and fight-week mindset","Later"]];
 function page(){var el=document.getElementById("specialistsBody");if(!el)return;var p=S.profile||{},on=!!p.specNotify,ap=p.specApply;
- var h='<div class="sp-hero"><span class="label" style="color:var(--gold)">Specialist Hub</span><h2>Expert help, when you want it.</h2><p class="muted" style="margin:0">One-to-one with verified, qualified professionals. They see only what you choose to share, and their plan can go straight into your FighterBase.</p><div class="row"><button class="btn gold" type="button" data-spnotify>'+(on?"✓ We'll tell you when it opens":"Tell me when it opens")+'</button></div></div>';
+ var h='<div class="sp-hero"><span class="label" style="color:var(--gold)">Specialists</span><h2>Expert help, when you want it.</h2><p class="muted" style="margin:0">One-to-one with verified, qualified professionals. They see only what you choose to share, and their plan can go straight into your FighterBase.</p><div class="row"><button class="btn gold" type="button" data-spnotify>'+(on?"✓ We'll tell you when it opens":"Tell me when it opens")+'</button></div></div>';
  h+='<div class="sp-grid">'+CATS.map(function(c,i){return '<div class="sp-cat'+(i===0?" on":"")+'"><b>'+esc(c[0])+'</b><span>'+esc(c[1])+'</span><em>'+esc(c[2])+'</em></div>'}).join("")+'</div>';
  h+='<div class="panel"><div class="sec-h"><h3>How it works</h3></div><ol class="sp-steps"><li><b>Choose</b> a specialist by sport, speciality and price.</li><li><b>Book</b> a video call or message plan and pay securely in the app.</li><li><b>Share</b> only what you pick: weight trend, training load, food log.</li><li><b>Get your plan</b> in FighterBase, with check-ins from your specialist.</li></ol></div>';
  h+='<div class="panel"><div class="sec-h"><h3>Who can join</h3></div><p class="muted small" style="margin:0">Only checked professionals: HCPC-registered dietitians and Registered Nutritionists (AfN), including SENr sport and exercise specialists. We check registration and insurance before anyone is listed.</p>'+
   '<div class="sp-ex"><div class="sp-av">EX</div><div><b>Example listing</b><span class="muted small">Not a real practitioner. Shows what a profile will look like.</span><span class="small">Registered Nutritionist (AfN) · Muay Thai, MMA · Weight-making · Video or message</span><span class="small" style="color:var(--gold)">Price set by the specialist</span></div></div></div>';
- h+='<div class="panel"><div class="sec-h"><h3>Are you a qualified practitioner?</h3></div>'+(ap?'<p style="margin:0">Thanks '+esc(ap.name||"")+', your interest is saved ('+esc(ap.q)+'). We will be in touch when the Specialist Hub opens.</p>':
+ h+='<div class="panel"><div class="sec-h"><h3>Are you a qualified practitioner?</h3></div>'+(ap?'<p style="margin:0">Thanks '+esc(ap.name||"")+', your interest is saved ('+esc(ap.q)+'). We will be in touch when specialist bookings open.</p>':
   '<p class="muted small" style="margin:0">Register interest to be one of the first specialists listed.</p><div class="grid2"><div class="field"><label class="label" for="spName">Name</label><input type="text" id="spName" maxlength="60"></div><div class="field"><label class="label" for="spQ">Qualification</label><select id="spQ"><option>Registered Dietitian (HCPC)</option><option>Registered Nutritionist (AfN)</option><option>SENr Sport and Exercise Nutritionist</option><option>Other (we will check)</option></select></div></div><div class="field"><label class="label" for="spReg">Registration number</label><input type="text" id="spReg" maxlength="30"></div><div class="row"><button class="btn" type="button" data-spapply>Register interest</button></div>')+'</div>';
  h+='<p class="small muted" style="margin:0 4px">Prototype: no bookings or payments yet. When live, specialists set their own prices and FighterBase takes a booking fee.</p>';
  el.innerHTML=h}
 document.addEventListener("click",function(e){var t=e.target;if(!t.closest)return;
- if(t.closest("[data-spnotify]")){S.profile.specNotify=!S.profile.specNotify;profChanged();toast(S.profile.specNotify?"You're on the list":"Removed from the list",S.profile.specNotify?"We'll tell you when the Specialist Hub opens.":"");page();return}
+ if(t.closest("[data-spnotify]")){S.profile.specNotify=!S.profile.specNotify;profChanged();toast(S.profile.specNotify?"You're on the list":"Removed from the list",S.profile.specNotify?"We'll tell you when specialist bookings open.":"");page();return}
  if(t.closest("[data-spapply]")){var n=($("#spName").value||"").trim(),r=($("#spReg").value||"").trim();if(!n||!r){toast("Add your name and registration number");return}S.profile.specApply={name:n,q:$("#spQ").value,reg:r,at:TODAY};profChanged();toast("Interest saved","We'll check your registration before listing you.");page();return}});
 var st=showTab;showTab=function(t){var r=st.apply(this,arguments);try{gate();banner(t);if(t==="specialists")page()}catch(e){}return r};
 try{gate()}catch(e){}
@@ -5856,15 +5856,15 @@ function allowed(x){if(!document.getElementById("tab-"+x))return false;if(x==="c
 function ico(k){return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">'+IC[k]+'</svg>'}
 function structure(hub){if(hub){var items=[];document.querySelectorAll("nav.hubnav [data-hub]").forEach(function(b){items.push([b.dataset.hub,(b.querySelector("span")||b).textContent.trim(),b.querySelector("svg")?b.querySelector("svg").outerHTML:""])});
   if(window.FH150&&FH150.sections)return FH150.sections(items,esc);
-  return '<nav class="sd-nav"><div class="sd-sec"><span class="sd-h">Club hub</span>'+items.map(function(x){return '<button type="button" class="sd-i" data-sdhub="'+x[0]+'">'+x[2]+'<span>'+esc(x[1])+'</span></button>'}).join("")+'</div></nav>'}
+  return '<nav class="sd-nav"><div class="sd-sec"><span class="sd-h">Club side</span>'+items.map(function(x){return '<button type="button" class="sd-i" data-sdhub="'+x[0]+'">'+x[2]+'<span>'+esc(x[1])+'</span></button>'}).join("")+'</div></nav>'}
  var h='<nav class="sd-nav">';SECT.forEach(function(sc){var it=sc[2].filter(allowed);if(!it.length)return;h+='<div class="sd-sec"><span class="sd-h">'+ico(sc[1])+sc[0]+'</span>'+it.map(function(x){return '<button type="button" class="sd-i" data-sdtab="'+x+'"><span>'+esc(LBL[x]||name(x))+'</span></button>'}).join("")+'</div>'});return h+'</nav>'}
 function draw(){if(!mq.matches){document.body.classList.remove("fb-desk");return}
  document.body.classList.add("fb-desk");var t=curTab(),hub=document.body.classList.contains("hubview");
  var own=false;try{own=window.FHC&&FHC.isOwner()}catch(e){}
- var h=brandHTML()+structure(hub)+'<div class="sd-foot">'+(S.profile&&S.profile.name?'<span class="sd-me">'+esc(S.profile.name)+'</span>':'<span></span>')+(own?'<button type="button" class="sd-sw" data-sdview="'+(hub?"member":"club")+'">'+(hub?"Member view":"Club hub")+'</button>':'')+'</div>';
+ var h=brandHTML()+structure(hub)+'<div class="sd-foot">'+(S.profile&&S.profile.name?'<span class="sd-me">'+esc(S.profile.name)+'</span>':'<span></span>')+(own?'<button type="button" class="sd-sw" data-sdview="'+(hub?"member":"club")+'">'+(hub?"Member view":"Club side")+'</button>':'')+'</div>';
  if(side.dataset.sig!==h){side.innerHTML=h;side.dataset.sig=h}
  side.querySelectorAll("[data-sdtab],[data-sdhub]").forEach(function(b){var k=b.dataset.sdtab||b.dataset.sdhub,on=k===((b.dataset.sdhub&&window.FH150&&FH150.rep)?FH150.rep(t):t);if(b.classList.contains("on")!==on)b.classList.toggle("on",on);if(on)b.setAttribute("aria-current","page");else b.removeAttribute("aria-current")});
- var ti=document.getElementById("fbTitle"),hd=document.querySelector("header.top");if(hd){if(!ti){ti=document.createElement("div");ti.id="fbTitle";hd.insertBefore(ti,hd.firstChild)}var sec="";SECT.forEach(function(sc){if(sc[2].indexOf(t)>=0&&!sec)sec=sc[0]});var html='<span class="label">'+esc(hub?"Club hub":(t==="today"?"FighterBase":sec))+'</span><h2>'+esc(name(t))+'</h2>';if(ti.innerHTML!==html)ti.innerHTML=html}}
+ var ti=document.getElementById("fbTitle"),hd=document.querySelector("header.top");if(hd){if(!ti){ti=document.createElement("div");ti.id="fbTitle";hd.insertBefore(ti,hd.firstChild)}var sec="";SECT.forEach(function(sc){if(sc[2].indexOf(t)>=0&&!sec)sec=sc[0]});var html='<span class="label">'+esc(hub?"Club side":(t==="today"?"FighterBase":sec))+'</span><h2>'+esc(name(t))+'</h2>';if(ti.innerHTML!==html)ti.innerHTML=html}}
 side.addEventListener("click",function(e){var b=e.target.closest("button,[data-sdhome]");if(!b)return;
  if(b.dataset.sdtab){showTab(b.dataset.sdtab);scrollTo(0,0);return}
  if(b.dataset.sdhub){var h=document.querySelector('nav.hubnav [data-hub="'+b.dataset.sdhub+'"]');if(h)h.click();scrollTo(0,0);return}
@@ -6350,7 +6350,7 @@ function goalsPage(){var el=$("#goals2Body");if(!el)return;var g=E.eg(),p=P(),t=
   (b.on?'<div class="chips">'+[["lose","Lose weight"],["gain","Gain weight"],["maintain","Maintain"]].map(function(x){return '<button type="button" class="chip" data-gdir="'+x[0]+'" aria-pressed="'+(b.dir===x[0])+'">'+x[1]+'</button>'}).join("")+'</div>'+
   '<div class="grid2"><div class="field"><label class="label" for="gStartW">Starting weight (kg)</label><input type="number" step="0.1" id="gStartW" value="'+(b.startW||"")+'"></div><div class="field"><label class="label" for="gTarget">Target (kg)</label><input type="number" step="0.1" id="gTarget" value="'+(b.target||"")+'"></div><div class="field"><label class="label" for="gBy">By (optional)</label><input type="date" id="gBy" value="'+esc(b.by||"")+'"></div><div class="field"><label class="label" for="gRhythm">Weigh-in rhythm</label><select id="gRhythm">'+[["daily","Daily"],["weekly","Weekly"],["fortnightly","Fortnightly"],["monthly","Monthly"]].map(function(x){return '<option value="'+x[0]+'"'+(b.rhythm===x[0]?" selected":"")+'>'+x[1]+'</option>'}).join("")+'</select></div></div>'+
   '<p class="muted small" style="margin:0" id="gBodyMsg">'+bodyMsg(b)+'</p><button class="btn ghost sm" type="button" data-gbodysave>Save body goal</button>':'<p class="muted small" style="margin:0">Leave it off if weight isn\'t your thing. Making weight for a fight lives under Next fight.</p>')+'</div>';
- var dg=g.diet||{};h+='<div class="panel"><div class="sec-h"><h3>Food and water goals</h3><button class="linkbtn" type="button" data-explain="diet">How it counts</button></div><label class="toggle"><input type="checkbox" data-gdiet'+(dg.on?" checked":"")+'><span>I want to track food goals</span></label>'+(dg.on?'<div class="grid2"><div class="field"><label class="label" for="gDd">Log my food on (days a week)</label><input type="number" id="gDd" min="0" max="7" value="'+(dg.days||"")+'" placeholder="e.g. 6"></div><div class="field"><label class="label" for="gDp">Protein a day (g, optional)</label><input type="number" id="gDp" min="0" max="400" value="'+(dg.protein||"")+'"></div><div class="field"><label class="label" for="gDw">Water a day (L, optional)</label><input type="number" step="0.25" id="gDw" min="0" max="8" value="'+(dg.water||"")+'"></div></div><button class="btn ghost sm" type="button" data-gdietsave>Save food goals</button><p class="muted small" style="margin:0">Your own targets. Want them set by a professional? Use the Specialist Hub.</p>':'<p class="muted small" style="margin:0">Logging days, protein and water targets, tracked from your food diary.</p>')+'</div>';
+ var dg=g.diet||{};h+='<div class="panel"><div class="sec-h"><h3>Food and water goals</h3><button class="linkbtn" type="button" data-explain="diet">How it counts</button></div><label class="toggle"><input type="checkbox" data-gdiet'+(dg.on?" checked":"")+'><span>I want to track food goals</span></label>'+(dg.on?'<div class="grid2"><div class="field"><label class="label" for="gDd">Log my food on (days a week)</label><input type="number" id="gDd" min="0" max="7" value="'+(dg.days||"")+'" placeholder="e.g. 6"></div><div class="field"><label class="label" for="gDp">Protein a day (g, optional)</label><input type="number" id="gDp" min="0" max="400" value="'+(dg.protein||"")+'"></div><div class="field"><label class="label" for="gDw">Water a day (L, optional)</label><input type="number" step="0.25" id="gDw" min="0" max="8" value="'+(dg.water||"")+'"></div></div><button class="btn ghost sm" type="button" data-gdietsave>Save food goals</button><p class="muted small" style="margin:0">Your own targets. Want them set by a professional? See Specialists.</p>':'<p class="muted small" style="margin:0">Logging days, protein and water targets, tracked from your food diary.</p>')+'</div>';
 h+='<div class="panel"><div class="sec-h"><h3>Grading</h3><button class="linkbtn" type="button" data-explain="grading">Since last grading</button></div><label class="toggle"><input type="checkbox" data-ggr'+(gr.on?" checked":"")+'><span>I\'m working toward a grading</span></label>'+
   (gr.on?'<div class="grid2"><div class="field"><label class="label" for="gBelt">Aiming for</label><input type="text" id="gBelt" maxlength="40" value="'+esc(gr.belt||"")+'" placeholder="e.g. Blue belt, 3rd stripe"></div><div class="field"><label class="label" for="gGrBy">Roughly when (optional)</label><input type="month" id="gGrBy" value="'+esc(gr.by||"")+'"></div></div><button class="btn ghost sm" type="button" data-ggrsave>Save</button>':'')+
   '<details class="fb-det"><summary>Record a past grading</summary><div class="grid2"><input type="date" id="gPastD" max="'+TODAY+'"><input type="text" id="gPastB" maxlength="40" placeholder="e.g. Blue belt"></div><button class="btn ghost sm" type="button" data-gpast>Add grading</button>'+(g.grades.length?'<p class="muted small">'+g.grades.map(function(x){return esc(x.belt)+" · "+fmtD(x.date)}).join(" · ")+'</p>':'')+'</details></div>';
@@ -6815,7 +6815,7 @@ function page(){var el=$("#diaryBody");if(!el)return;var list=meals(view),t=tota
  SLOTS.forEach(function(s){var a=bySlot[s[0]];if(!a)return;h+='<div class="panel fd-slot"><span class="label">'+s[1]+'</span>'+a.map(function(p){var x=p[0];return '<div class="fd-item">'+thumb(x)+'<div class="fd-it"><b>'+esc(x.name||"Meal")+'</b><span class="muted small">'+esc(x.t||"")+(x.kcal!=null&&x.kcal!==""?' · '+r0(x.kcal)+' kcal · P'+r0(x.protein)+' C'+r0(x.carbs)+' F'+r0(x.fat)+(x.est?' <em class="fd-est">estimate</em>':''):' · no numbers')+(x.src==="barcode"&&x.via?' · '+esc(x.via):'')+'</span></div>'+((!x.kcal&&x.ph&&pro()&&ai())?'<button class="btn ghost sm" type="button" data-fdest="'+p[1]+'">Estimate</button>':'')+(x.reg||regs().some(function(r){return r.name===x.name})?'':'<button class="x" type="button" data-fdtoreg="'+p[1]+'" aria-label="Save as a regular meal" title="Save as a regular meal">☆</button>')+'<button class="x" type="button" data-fddel="'+p[1]+'" aria-label="Remove">×</button></div>'}).join("")+'</div>'});
  /* week */
  var W=week(),days=W.filter(function(d){return d.m.length}).length,ph=[];W.forEach(function(d){d.m.forEach(function(x){if(x.ph)ph.push(phs(x.ph))})});
- h+='<div class="panel"><div class="sec-h"><h3>This week</h3><span class="muted small">'+days+' of 7 days logged</span></div><div class="fd-week">'+W.map(function(d){var tt=totals(d.m);return '<button type="button" class="fd-wd'+(d.k===view?" on":"")+'" data-fdgo="'+d.k+'"><span>'+fmtD(d.k).split(" ")[0]+'</span><b>'+d.m.length+'</b><em>'+(tt.est?r0(tt.protein)+"g P":(d.m.length?"photos":"–"))+'</em></button>'}).join("")+'</div>'+(ph.length?'<div class="fd-grid">'+ph.slice(-12).reverse().map(function(u){return '<img src="'+u+'" alt="">'}).join("")+'</div>':'')+'<p class="muted small" style="margin:0">Your food is never shared with your club. Want a plan made for you? The Specialist Hub has qualified practitioners.</p></div>';
+ h+='<div class="panel"><div class="sec-h"><h3>This week</h3><span class="muted small">'+days+' of 7 days logged</span></div><div class="fd-week">'+W.map(function(d){var tt=totals(d.m);return '<button type="button" class="fd-wd'+(d.k===view?" on":"")+'" data-fdgo="'+d.k+'"><span>'+fmtD(d.k).split(" ")[0]+'</span><b>'+d.m.length+'</b><em>'+(tt.est?r0(tt.protein)+"g P":(d.m.length?"photos":"–"))+'</em></button>'}).join("")+'</div>'+(ph.length?'<div class="fd-grid">'+ph.slice(-12).reverse().map(function(u){return '<img src="'+u+'" alt="">'}).join("")+'</div>':'')+'<p class="muted small" style="margin:0">Your food is never shared with your club. Want a plan made for you? See Specialists for qualified practitioners.</p></div>';
  h+=workoutHTML();
  el.innerHTML=h}
 function draftHTML(){var d=draft,pm=[.5,.75,1,1.25,1.5,2];
@@ -7058,7 +7058,7 @@ document.addEventListener("click",function(e){var t=e.target;if(!t.closest)retur
 /* ---------- hub header with club branding, invite + QR ---------- */
 function hubTop(){var host=document.getElementById("huboverBody"),c=club();if(!host||!c||!isOwner())return;var w=document.getElementById("hbTop"),code=c.code||"",link=(location.href.split("#")[0])+"#join="+encodeURIComponent(code);
  var ms=members(),wk0=0,wk1=0,ws=addDays(TODAY,-dowOf(TODAY));ms.forEach(function(m){ckDates(m).forEach(function(d){if(d>=ws)wk0++;else if(d>=addDays(ws,-7))wk1++})});var nw=ms.filter(function(m){return facts(m).isNew}).length;
- var html='<div class="hb-hero" style="--cc:'+colr(c)+'">'+logo(c,"hb-logo")+'<div class="hb-tx"><span class="label">Club hub</span><h2>'+esc(c.name)+'</h2><span class="muted small">'+esc(((c.brand||{}).tagline)||"")+'</span></div><button class="btn ghost sm" type="button" data-hbbrand>Brand your club</button></div>'+
+ var html='<div class="hb-hero" style="--cc:'+colr(c)+'">'+logo(c,"hb-logo")+'<div class="hb-tx"><span class="label">Club side</span><h2>'+esc(c.name)+'</h2><span class="muted small">'+esc(((c.brand||{}).tagline)||"")+'</span></div><button class="btn ghost sm" type="button" data-hbbrand>Brand your club</button></div>'+
   (window.FH76?FH76.tiles():'<div class="sgrid c4"><div class="stile"><span>Check-ins this week</span><b class="num">'+wk0+'</b><small class="muted">'+(wk1?(wk0>=wk1?"▲ ":"▼ ")+"last week "+wk1:"")+'</small></div><div class="stile"><span>Members in the app</span><b class="num">'+ms.length+'</b><small class="muted">'+nw+' new in 90 days</small></div><div class="stile"><span>Not seen 14+ days</span><b class="num">'+ms.filter(function(m){var x=facts(m);return x.days==null||x.days>=14}).length+'</b><small class="muted"><button class="linkbtn" type="button" data-hub="hubmem" data-pmf="away">See who</button></small></div><div class="stile"><span>Waiting for you</span><b class="num">'+(window.FHCI?FHCI.reqs().length:0)+'</b><small class="muted">requests</small></div></div>')+
   '<div class="hb-inv"><div><span class="label">Link members to your club</span><p class="muted small" style="margin:2px 0 6px">Share the link or code, or print the QR poster for the gym wall. Members join, then choose what to share.</p><div class="row"><span class="chip" style="cursor:default;font-weight:800;letter-spacing:.14em">'+esc(code)+'</span><button class="btn sm" type="button" data-hubcopy="'+esc(link)+'">Copy invite link</button><button class="btn ghost sm" type="button" data-hbposter>QR poster</button></div></div><div id="hbQR" class="hb-qr" aria-label="QR code to join"></div></div>';
  if(!w){w=document.createElement("div");w.id="hbTop";w.className="panel plate";host.insertBefore(w,host.firstChild)}
@@ -7469,7 +7469,7 @@ window.FH57={acct:acct,roster:roster,page:page,readFile:readFile,rowToMember:row
    Each sport has its own competition types (Muay Thai: fights and interclubs; BJJ: competition matches and superfights; MMA: amateur, pro, interclubs)
    and its own ways a fight ends (TKO, KO, decision, submission...).
    Members log entries in "My competition record" (top of Fight film). Entries go to the club (league doc `fr`) and only count once the club confirms them (club `frc`).
-   Shown as a strip near the top of the member's profile in the club hub, a tag on the members list, and a Record chip on the member's own Home. */
+   Shown as a strip near the top of the member's profile on the club side, a tag on the members list, and a Record chip on the member's own Home. */
 var P58=P58||false;
 (function(){
 if(P58)return;P58=true;
@@ -8373,7 +8373,7 @@ function homeView(){var d=cur(),pat=BYID[P().dietPattern],rs=lib().filter(functi
 function dietsView(){var d=mine();
  return head('<h2 style="margin:6px 0 0">Eating styles</h2><p class="muted" style="margin:4px 0 0">Tap one to read what it is, what people eat and avoid, and how they train on it. Follow as many as you like. Recipes and foods then fit all of them (for example vegetarian and gluten-free).</p>',"home")+
   DGROUPS.map(function(g){var L=FB_DIETS.filter(function(x){return x.group===g});return '<div class="panel"><div class="sec-h"><h3 style="color:'+GCOL[g]+'">'+esc(g)+'</h3>'+(g==="Eating patterns"?'<span class="muted small">combine with any style</span>':'')+'</div><div class="nu-grid">'+L.map(function(x){var on=x.pattern?P().dietPattern===x.id:mineAll().indexOf(x.id)>=0;return '<button type="button" class="nu-card'+(on?" on":"")+'" style="--gc:'+GCOL[g]+'" data-nud="'+x.id+'"><b>'+esc(x.name)+'</b><span>'+esc(x.line)+'</span>'+(on?'<em>'+(x.pattern?"Added":"Following")+'</em>':'')+'</button>'}).join("")+'</div></div>'}).join("")+
-  '<p class="small muted" style="margin:0 4px">Medical diets (coeliac disease, low-FODMAP, kidney or diabetes plans) should be set with a registered dietitian. <button class="linkbtn" type="button" data-goto="specialists">Find one in the Specialist Hub</button></p>'}
+  '<p class="small muted" style="margin:0 4px">Medical diets (coeliac disease, low-FODMAP, kidney or diabetes plans) should be set with a registered dietitian. <button class="linkbtn" type="button" data-goto="specialists">Find a specialist</button></p>'}
 function detailBody(x,compact){var isMine=x.pattern?P().dietPattern===x.id:mineAll().indexOf(x.id)>=0,n=lib().filter(function(r){return fits(r,x.id,false)}).length;
  return '<div class="panel nu-det" style="--gc:'+GCOL[x.group]+'">'+(compact?'<div class="sec-h"><h3>About '+esc(x.name)+'</h3>'+badge(x)+'</div>':'')+'<p style="margin:0">'+esc(x.about)+'</p>'+
   (x.why&&x.why.length?'<div class="nu-why">'+x.why.map(function(w){return '<span>'+esc(w)+'</span>'}).join("")+'</div>':'')+
@@ -8456,7 +8456,7 @@ try{if(window.FHL&&FHL.groups)FHL.groups()}catch(e){}
 })();
 
 /* FighterBase v71: club team. The owner invites coaches with a coach link or code; the coach's request appears for the owner to approve.
-   Coaches get the club hub; the owner chooses whether each coach can see Accounts. The owner can hand ownership to a coach (e.g. Steve to Jay).
+   Coaches get the club side; the owner chooses whether each coach can see Accounts. The owner can hand ownership to a coach (e.g. Steve to Jay).
    Club doc: coaches[], coachPerm{uid:{acc}}, coachCode, coachDecl{uid:at}. Member side: league doc coachReq {club,code,at}. */
 var P64=P64||false;
 (function(){
@@ -8488,20 +8488,20 @@ async function request(cd){cd=String(cd||"").trim().toUpperCase();if(!cd||!db||!
   var c=d.data();if((c.coaches||[]).indexOf(S.uid)>=0){toast("You're already a coach at "+c.name);return}
   if(P().clubId!==d.id){P().clubId=d.id;P().leagueOptIn=false;try{subscribeClub()}catch(e){}}
   P().coachReq={club:d.id,code:cd,at:new Date().toISOString()};try{profChanged()}catch(e){}try{scheduleLeague()}catch(e){}try{if(window.FBE&&FBE.sync)FBE.sync()}catch(e){}
-  toast("Request sent to "+c.name,"The owner approves you, then the club hub appears.")}catch(e){toast("Couldn't check that link","Sign in and try again.")}}
+  toast("Request sent to "+c.name,"The owner approves you, then the club side appears.")}catch(e){toast("Couldn't check that link","Sign in and try again.")}}
 var triedC={};function hashC(){var m=(location.hash||"").match(/^#coach=(.+)$/);if(!m||!S.uid||!(P().onboarded||P().role==="club"))return;var cd=decodeURIComponent(m[1]);if(triedC[cd])return;triedC[cd]=1;request(cd)}
 window.addEventListener("hashchange",function(){triedC={};hashC()});
 /* publish the request with the member's league doc */
 (function(){var t=0,iv=setInterval(function(){if(window.FB54&&FB54.extend&&!FB54.extend.p64){var ex=FB54.extend;FB54.extend=function(o){o=ex(o);o.coachReq=P().coachReq||null;return o};FB54.extend.p64=true;clearInterval(iv)}if(++t>40)clearInterval(iv)},250)})();
 /* tell a new coach once */
-var told={};function welcome(){var c=club();if(!c||!isCoach(c)||told[c.id])return;var k="coachSeen_"+c.id;if(P()[k])return;told[c.id]=1;P()[k]=TD;try{profChanged()}catch(e){}toast("You're a coach at "+c.name,"Switch to Club hub from the top bar.");try{FHC.apply()}catch(e){}}
+var told={};function welcome(){var c=club();if(!c||!isCoach(c)||told[c.id])return;var k="coachSeen_"+c.id;if(P()[k])return;told[c.id]=1;P()[k]=TD;try{profChanged()}catch(e){}toast("You're a coach at "+c.name,"Switch to the club side from the top bar.");try{FHC.apply()}catch(e){}}
 /* Accounts for coaches only when allowed */
 function gate(){var c=club();document.body.classList.toggle("fb-noacc",!!(c&&isCoach(c)&&!canAcc(c)))}
 var st=showTab;showTab=function(t){if(t==="hubacc"&&!canAcc()){var c=club();if(c&&isCoach(c)){toast("Accounts is for the owner","Ask the owner to give you access.");t="hubover"}}var r=st.apply(this,[t].concat([].slice.call(arguments,1)));try{if(t==="hubover")setTimeout(panel,60)}catch(e){}return r};
 document.addEventListener("click",function(e){var t=e.target;if(!t.closest)return;var b,c=club();if(!c)return;
  if(t.closest("[data-tmnew]")){if(!isRealOwner(c))return;upd({coachCode:code()}).then(function(){toast("Coach link ready","Copy it and send it to your coach.");var w=document.getElementById("tmPanel");if(w)w.dataset.sig="";panel()});return}
  if(t.closest("[data-tmcopy]")){var l=link(c);try{navigator.clipboard.writeText(l).then(function(){toast("Coach link copied")},function(){toast("Coach link",l)})}catch(er){toast("Coach link",l)}return}
- if(b=t.closest("[data-tmok]")){if(!isRealOwner(c))return;var u=b.dataset.tmok,co=(c.coaches||[]).filter(function(x){return x!==u}).concat([u]),nm=Object.assign({},c.coachNames||{});nm[u]=b.dataset.n||"Coach";var pm=Object.assign({},c.coachPerm||{});pm[u]=pm[u]||{acc:false};upd({coaches:co,coachNames:nm,coachPerm:pm}).then(function(){toast((b.dataset.n||"Coach")+" is now a coach","They can open the club hub.");var w=document.getElementById("tmPanel");if(w)w.dataset.sig="";panel()});return}
+ if(b=t.closest("[data-tmok]")){if(!isRealOwner(c))return;var u=b.dataset.tmok,co=(c.coaches||[]).filter(function(x){return x!==u}).concat([u]),nm=Object.assign({},c.coachNames||{});nm[u]=b.dataset.n||"Coach";var pm=Object.assign({},c.coachPerm||{});pm[u]=pm[u]||{acc:false};upd({coaches:co,coachNames:nm,coachPerm:pm}).then(function(){toast((b.dataset.n||"Coach")+" is now a coach","They can open the club side.");var w=document.getElementById("tmPanel");if(w)w.dataset.sig="";panel()});return}
  if(b=t.closest("[data-tmno]")){if(!isRealOwner(c))return;var dc=Object.assign({},c.coachDecl||{});dc[b.dataset.tmno]=new Date().toISOString();upd({coachDecl:dc}).then(function(){var w=document.getElementById("tmPanel");if(w)w.dataset.sig="";panel()});return}
  if(b=t.closest("[data-tmrm]")){if(!isRealOwner(c))return;var u2=b.dataset.tmrm;if(!confirmTwice(b))return;upd({coaches:(c.coaches||[]).filter(function(x){return x!==u2})}).then(function(){toast("Coach removed");var w=document.getElementById("tmPanel");if(w)w.dataset.sig="";panel()});return}
  if(b=t.closest("[data-tmown]")){if(!isRealOwner(c))return;var u3=b.dataset.tmown;if(!confirmTwice(b,"Tap again to hand over ownership"))return;var old=c.ownerUid,co2=(c.coaches||[]).filter(function(x){return x!==u3});if(old&&old!==u3&&co2.indexOf(old)<0)co2.push(old);var pm2=Object.assign({},c.coachPerm||{});if(old)pm2[old]={acc:true};
@@ -8510,7 +8510,7 @@ document.addEventListener("change",function(e){var t=e.target;if(!t.dataset||!t.
 var armed={};function confirmTwice(b,msg){var k=b.outerHTML;if(armed[k]&&Date.now()-armed[k]<4000){armed[k]=0;return true}armed[k]=Date.now();toast(msg||"Tap again to confirm");return false}
 /* member side: "Coach here?" on the club page */
 function coachEntry(){var b=document.getElementById("clubpageBody"),c=club();if(!b||!c||isRealOwner(c)||isCoach(c)||document.getElementById("tmAsk"))return;var r=P().coachReq,pend=r&&r.club===c.id;
- var d=document.createElement("div");d.id="tmAsk";d.className="panel";d.innerHTML='<div class="sec-h"><h3>Coach here?</h3></div>'+(pend?'<p class="muted small" style="margin:0">Your request is with the owner. The club hub appears once they approve it.</p>':'<p class="muted small" style="margin:0 0 8px">Enter the coach code the owner gave you.</p><div class="row"><input type="text" id="tmCode" maxlength="10" placeholder="e.g. CAB12CD" style="max-width:180px;text-transform:uppercase"><button class="btn sm" type="button" data-tmask>Send request</button></div>');b.appendChild(d)}
+ var d=document.createElement("div");d.id="tmAsk";d.className="panel";d.innerHTML='<div class="sec-h"><h3>Coach here?</h3></div>'+(pend?'<p class="muted small" style="margin:0">Your request is with the owner. The club side appears once they approve it.</p>':'<p class="muted small" style="margin:0 0 8px">Enter the coach code the owner gave you.</p><div class="row"><input type="text" id="tmCode" maxlength="10" placeholder="e.g. CAB12CD" style="max-width:180px;text-transform:uppercase"><button class="btn sm" type="button" data-tmask>Send request</button></div>');b.appendChild(d)}
 document.addEventListener("click",function(e){if(e.target.closest&&e.target.closest("[data-tmask]")){var v=(document.getElementById("tmCode")||{}).value;request(v).then(function(){var x=document.getElementById("tmAsk");if(x)x.remove()})}});
 setInterval(function(){try{hashC();welcome();gate();coachEntry();var o=document.getElementById("tab-hubover");if(o&&!o.hidden)panel()}catch(e){}},1500);
 var css=document.createElement("style");css.textContent=
@@ -8556,7 +8556,7 @@ function body(){var c=club()||{},k=STEPS[step][0],h="";
   '<div class="chips"><span class="muted small">Quick add:</span>'+[["Unlimited",55,"month"],["Student",39,"month"],["Pay as you go",8,"session"],["Kids",30,"month"]].map(function(x){return '<button type="button" class="chip" data-swqp="'+esc(JSON.stringify(x))+'">'+x[0]+' £'+x[1]+'</button>'}).join("")+'</div>'}
  if(k==="mem"){var n=(c.roster||[]).length;h='<h2>Your members</h2><p class="ob-sub">Bring in your list from Excel, Google Sheets or a CSV, including people who never use the app. It sets up your Accounts and debtors list.</p>'+
   '<div class="sw-big"><b>'+n+'</b><span>on your list</span></div><div class="row"><button class="btn" type="button" data-swimp>Import from Excel or CSV</button><button class="btn ghost" type="button" data-swacc>Open Accounts</button></div>'+(n?'':'<button class="linkbtn" type="button" data-swskip="members">Skip for now</button>')}
- if(k==="coach"){var co=(c.coaches||[]).length;h='<h2>Coaches</h2><p class="ob-sub">Give your coaches the club hub: members, insights, notifications. You choose whether they see Accounts.</p>'+
+ if(k==="coach"){var co=(c.coaches||[]).length;h='<h2>Coaches</h2><p class="ob-sub">Give your coaches the club side: members, insights, notifications. You choose whether they see Accounts.</p>'+
   '<div class="sw-big"><b>'+co+'</b><span>coach'+(co===1?"":"es")+'</span></div>'+(c.coachCode?'<p class="small" style="margin:0">Coach code <code class="tm-code">'+esc(c.coachCode)+'</code></p><div class="row"><button class="btn" type="button" data-tmcopy>Copy coach link</button></div><p class="ob-sub small">They open the link in FighterBase and you approve them on Overview.</p>':'<div class="row"><button class="btn" type="button" data-tmnew>Create a coach link</button></div>')+(co?'':'<button class="linkbtn" type="button" data-swskip="coaches">Just me for now</button>')}
  if(k==="inv"){var l=location.href.split("#")[0]+"#join="+encodeURIComponent(c.code||"");h='<h2>Invite your members</h2><p class="ob-sub">Members join with your code or link and choose what you can see. Put the poster up by the mats.</p>'+
   '<div class="sw-big"><b>'+esc(c.code||"–")+'</b><span>club code</span></div><div class="row"><button class="btn gold" type="button" data-swposter data-hbposter>Print QR poster</button><button class="btn" type="button" data-swcopy>Copy invite link</button></div><p class="ob-sub small" style="word-break:break-all">'+esc(l)+'</p>'}
@@ -10277,7 +10277,7 @@ function historyHTML(){var L=mine().filter(function(a){return a.cat!=="coach"}),
   '<div class="row" style="align-items:center;margin:6px 0"><label class="label" for="msN" style="margin:0">Celebrate</label><select id="msN" data-msnotif>'+[["imp","Important ones only"],["norm","Important and normal"],["all","Everything"],["off","Don\'t celebrate, just keep a history"]].map(function(o){return '<option value="'+o[0]+'"'+(level()===o[0]?" selected":"")+'>'+o[1]+'</option>'}).join("")+'</select></div>'+
   '<div class="ms-tl">'+L.map(function(a){return '<div class="ms-it imp'+a.imp+'"><span class="ms-d">'+esc(fmt(a.at))+'</span><div><b>'+esc(a.title)+'</b><span class="muted small">'+esc(CAT[a.cat]+(a.club?" · "+((c&&c.name)||"club"):"")+(a.note?" · "+a.note:"")+(a.def.goal&&a.detail?" · "+a.detail:""))+'</span></div>'+(a.share&&(a.imp>=3||a.club)?'<button class="linkbtn" type="button" data-msshare="'+esc(a.key)+'">Share card</button>':'')+'</div>'}).join("")+(joined?'<div class="ms-it"><span class="ms-d">'+esc(fmt(joined))+'</span><div><b>Started your FighterBase record</b></div></div>':'')+'</div>'+
   (T.length?'<div class="ms-coach"><span class="label">Coaching path</span><p class="muted small" style="margin:0">Separate from your training milestones. Only things your club has approved count here.</p>'+T.map(function(a){return '<div class="ms-it"><span class="ms-d">'+esc(fmt(a.at))+'</span><div><b>'+esc(a.title)+'</b></div></div>'}).join("")+'</div>':'')}
-function shareHTML(a){var c=club();return '<div class="gr-tour" role="dialog" aria-modal="true" aria-label="Share card preview"><div class="gr-tc"><span class="gr-step">Share card preview</span><div class="ms-card" style="--cc:'+(window.FH53&&c?FH53.colr(c):"#A9172F")+'"><div class="ms-ck">'+(c&&window.FH53?FH53.logo(c,"tp-logo"):'')+'<span>'+esc(c?c.name:"FighterBase")+'</span></div><b>'+esc(a.title)+'</b><span>'+esc(S.profile.name||"")+' · '+esc(fmtL(a.at))+'</span><em>FighterBase · Train. Grow. Win.</em></div><p class="small">Nothing about weight, food, recovery or health is ever added to a card. You choose if and where it goes.</p><div class="row" style="justify-content:space-between"><button class="linkbtn" type="button" data-msshx>Close</button><button class="btn sm" type="button" data-mscopy="'+esc(a.key)+'">Copy caption</button></div><p class="muted small" style="margin:0">Posting straight to social media will come with the Club Marketing Hub.</p></div></div>'}
+function shareHTML(a){var c=club();return '<div class="gr-tour" role="dialog" aria-modal="true" aria-label="Share card preview"><div class="gr-tc"><span class="gr-step">Share card preview</span><div class="ms-card" style="--cc:'+(window.FH53&&c?FH53.colr(c):"#A9172F")+'"><div class="ms-ck">'+(c&&window.FH53?FH53.logo(c,"tp-logo"):'')+'<span>'+esc(c?c.name:"FighterBase")+'</span></div><b>'+esc(a.title)+'</b><span>'+esc(S.profile.name||"")+' · '+esc(fmtL(a.at))+'</span><em>FighterBase · Train. Grow. Win.</em></div><p class="small">Nothing about weight, food, recovery or health is ever added to a card. You choose if and where it goes.</p><div class="row" style="justify-content:space-between"><button class="linkbtn" type="button" data-msshx>Close</button><button class="btn sm" type="button" data-mscopy="'+esc(a.key)+'">Copy caption</button></div><p class="muted small" style="margin:0">Posting straight to social media will come later in the club Marketing tab.</p></div></div>'}
 /* ---------- coach side ---------- */
 function ack(u,key){var c=club()||{};return (c.msAck||{})[u+"|"+key]||null}
 function actionsFor(m,a){var o=[["congrats","Congratulate"],["comment","Add comment"]];var id=a.def.id||"";
@@ -10646,7 +10646,7 @@ var STEPS=[
  ["a","a2","Members list","Import from Excel or add by hand, including people not in the app.",5,["pay","more"],function(c){return (c.roster||[]).length>0},{sw:4}],
  ["a","a3","Memberships and what they cover","Plan types (unlimited, classes a week, pay as you go) and which sports each covers.",5,["pay","sched","more"],function(c){return plans().length>0&&((c.pay||{}).plans||[]).some(function(p){return p.kind})},{hub:"hubplans"}],
  ["a","a4","How members pay","Cash, bank transfer, card in person now. Online card payments come with the real build.",2,["pay"],function(c){return !!(c.payCfg76&&(c.payCfg76.methods||[]).length)},{inline:"pay"}],
- ["a","a5","Coaches and roles","Give coaches the club hub and choose what they can see.",3,["all"],function(c){return (c.coaches||[]).length>0||!!((c.setup||{}).skip||{}).coaches},{sw:5}],
+ ["a","a5","Coaches and roles","Give coaches the club side and choose what they can see.",3,["all"],function(c){return (c.coaches||[]).length>0||!!((c.setup||{}).skip||{}).coaches},{sw:5}],
  ["a","a6","Invite your members","Share the link, code or the QR poster for the gym wall.",2,["all"],function(c){return !!(c.setup||{}).invited||(clubState.members||[]).length>1},{sw:6}],
  ["a","a7","Socials and WhatsApp","Your social accounts and WhatsApp groups, so you can share straight from FighterBase.",3,["more"],function(c){return !!((c.wa76&&(c.wa76.groups||[]).length)||(c.soc76&&(c.soc76.ig||c.soc76.fb||c.soc76.tt)))},{inline:"soc"}],
  ["a","a8","What you're told about","Pick which member updates notify you: weigh-ins, workouts, tests, food.",2,["more"],function(c){return !!c.nt76},{inline:"nt"}],
@@ -10680,7 +10680,7 @@ function inline(k){var c=club()||{};
  if(k==="pay"){var M=(c.payCfg76||{}).methods||[];return '<div class="pg76i"><div class="chips">'+[["cash","Cash"],["bank","Bank transfer"],["card","Card in person"],["dd","Direct Debit (GoCardless etc.)"],["online","Online card (coming with the real build)"]].map(function(x){return '<button type="button" class="chip" data-pymeth="'+x[0]+'" aria-pressed="'+(M.indexOf(x[0])>=0)+'">'+x[1]+'</button>'}).join("")+'</div><p class="muted small" style="margin:4px 0 0">FighterBase records payments in Accounts. Online card payments will go straight to your own Stripe account: we never hold club money.</p><div class="row"><button class="btn gold sm" type="button" data-pysave>Save</button><button class="btn ghost sm" type="button" data-hub="hubacc">Open Accounts</button></div></div>'}
  if(k==="soc"){var s=c.soc76||{},w=c.wa76||{},G=w.groups||[];return '<div class="pg76i"><div class="grid2"><div class="field"><label class="label" for="soIg">Instagram</label><input id="soIg" type="text" maxlength="40" value="'+esc(s.ig||"")+'" placeholder="@yourclub"></div><div class="field"><label class="label" for="soFb">Facebook page</label><input id="soFb" type="text" maxlength="80" value="'+esc(s.fb||"")+'"></div><div class="field"><label class="label" for="soTt">TikTok</label><input id="soTt" type="text" maxlength="40" value="'+esc(s.tt||"")+'"></div><div class="field"><label class="label" for="soWp">Club WhatsApp number (for members)</label><input id="soWp" type="tel" maxlength="20" value="'+esc(w.phone||"")+'" placeholder="07..."></div></div>'+
   '<span class="label">WhatsApp groups</span>'+(G.length?'<div class="chips">'+G.map(function(g,i){return '<span class="chip" style="cursor:default">'+esc(g.n)+' <button class="linkbtn" type="button" data-wagdel="'+i+'" aria-label="Remove '+esc(g.n)+'">✕</button></span>'}).join("")+'</div>':'')+'<div class="row" style="align-items:flex-end"><div class="field" style="flex:1;min-width:140px"><label class="label" for="waGn">Group name</label><input id="waGn" type="text" maxlength="40" placeholder="e.g. Iron Temple members"></div><button class="btn ghost sm" type="button" data-wagadd>Add group</button></div>'+
-  '<p class="muted small" style="margin:4px 0 0">Posting to Instagram, Facebook and TikTok from FighterBase comes with the Marketing hub. WhatsApp works now: share buttons open WhatsApp with the message ready.</p><div class="row"><button class="btn gold sm" type="button" data-sosave>Save</button></div></div>'}
+  '<p class="muted small" style="margin:4px 0 0">Posting to Instagram, Facebook and TikTok from FighterBase will come in the Marketing tab. WhatsApp works now: share buttons open WhatsApp with the message ready.</p><div class="row"><button class="btn gold sm" type="button" data-sosave>Save</button></div></div>'}
  if(k==="nt"){var n=c.nt76||{weight:1,tests:1,workouts:1,food:0,recovery:0,fights:1};return '<div class="pg76i"><div class="chips">'+[["weight","Weigh-ins and weight"],["workouts","Workouts done"],["tests","Fitness tests"],["food","Food diary"],["recovery","Sleep and recovery"],["fights","Fights and interclubs"]].map(function(x){return '<button type="button" class="chip" data-ntk="'+x[0]+'" aria-pressed="'+(!!n[x[0]])+'">'+x[1]+'</button>'}).join("")+'</div><p class="muted small" style="margin:4px 0 0">Only from members who have chosen to share that with you.</p><div class="row"><button class="btn gold sm" type="button" data-ntsave>Save</button></div></div>'}
  if(k==="rv"){var r=c.rvCfg76||{every:"quarter",mode:"face"};return '<div class="pg76i"><div class="field"><span class="label">How often</span><div class="chips">'+[["month","Monthly"],["6w","Every 6 weeks"],["quarter","Quarterly"]].map(function(x){return '<button type="button" class="chip" data-rvce="'+x[0]+'" aria-pressed="'+(r.every===x[0])+'">'+x[1]+'</button>'}).join("")+'</div></div><div class="field"><span class="label">Usually</span><div class="chips">'+[["face","Face to face"],["app","In-app questionnaire"]].map(function(x){return '<button type="button" class="chip" data-rvcm="'+x[0]+'" aria-pressed="'+(r.mode===x[0])+'">'+x[1]+'</button>'}).join("")+'</div></div><p class="muted small" style="margin:0">Reviews are agreed by both sides: you suggest a time, the member agrees (or the other way round). If one is missed you can rebook or send the questionnaire.</p><div class="row"><button class="btn gold sm" type="button" data-rvcsave>Save</button><button class="btn ghost sm" type="button" data-ccbulk>Set reviews for everyone</button></div></div>'}
  if(k==="wk"){var wc=nextWc(),okd=(c.schedOK76||{})[wc];return '<div class="pg76i"><p class="small" style="margin:0">Each week, check next week\'s classes (cover, cancellations, workouts) and confirm. FighterBase reminds you in your To do list.</p><div class="row"><button class="btn sm" type="button" data-hub="hubclasses">Check w/c '+fmtS(wc)+'</button><button class="btn gold sm" type="button" data-sch76="'+wc+'">'+(okd?"Confirmed ✓ · Share again":"Confirm and share")+'</button></div></div>'}
@@ -11311,7 +11311,7 @@ var css=document.createElement("style");css.textContent="#mg80{margin-bottom:12p
 window.FH80={render:render,data:data};
 })();
 
-/* FighterBase v87: Community tab in the club hub (owners and authorised coaches).
+/* FighterBase v87: Community tab on the club side (owners and authorised coaches).
    - Public workout library shared between clubs: publish your own workouts and class plans, browse other clubs', copy any into your own library (credited, editable).
    - Coaches' tips board.
    - Clubs open to interclubs (directory from club settings) = first step toward the events portal.
@@ -12135,7 +12135,7 @@ window.FH87={weekLines:weekLines,build:build,G:G,achieved:achieved};
 setTimeout(function(){watch();homeCard();modeSwitch()},1400);
 })();
 
-/* FighterBase v94: Club Marketing Hub (prototype). A "Marketing" tab in the club hub.
+/* FighterBase v94: Club Marketing tab (prototype). A "Marketing" tab on the club side.
    Post maker with templates that fill from club data (timetable, classes, coaches, prices), branded image cards drawn in the club's
    colours and logo, captions with hashtags, ideas for this week, a content calendar (schedule queue) and a "connect your socials" placeholder.
    Nothing is posted anywhere in the prototype: images are downloaded and captions copied by the club. Live posting through Metricool is stage D.
@@ -12416,7 +12416,7 @@ window.FH93={suggest:suggest,camp:camp};
 })();
 
 /* FighterBase v99: Events portal (prototype).
-   Coach: "Events" tab in the club hub. Create interclubs, shows, seminars, grading days, open days and socials; see who has entered, confirm entrants (waitlist beyond the cap),
+   Coach: "Events" tab on the club side. Create interclubs, shows, seminars, grading days, open days and socials; see who has entered, confirm entrants (waitlist beyond the cap),
    share to the members by WhatsApp, and optionally open an event to other clubs (shared board). Other clubs can register interest.
    Member: "Club events" card at the top of Schedule with Enter / Withdraw.
    Club doc: events94[{id,title,type,date,time,place,sports,desc,cap,fee,pub,cancel,ok{uid:true},by,at}]. Member (league doc): evEnt{eventId:timestamp}.
@@ -12656,7 +12656,7 @@ window.FH98={queue:queue,why:why};
 })();
 
 /* FighterBase v104: Kids version, clickable sketch (planning aid, NOT a working product).
-   Coach hub tab "Kids (sketch)" with four views: Parent (family dashboard, consent centre), Junior (a child's home), Coach register (class list, attendance, grading recommendation), Safeguarding (lead, concern route, DBS record, rules).
+   Club side tab "Kids (sketch)" with four views: Parent (family dashboard, consent centre), Junior (a child's home), Coach register (class list, attendance, grading recommendation), Safeguarding (lead, concern route, DBS record, rules).
    Made-up children and parents only. Nothing is saved, sent or stored anywhere; state lives in memory and resets on reload. For showing the safeguarding lead, clubs and professionals before any build.
    Rules from the Kids Version Plan: parent holds the account; no food, weight, supplements, fight camps, film, wearables or AI for juniors; no adult-child private messaging; high-privacy defaults. Sign-off rows 4, 40, 66, 71, 91. */
 var P99=P99||false;
@@ -13764,7 +13764,7 @@ window.FH114={apply:apply,current:function(){return CUR},themes:TH};
 /* FighterBase v136: what leads Home, and which side you are on.
    1. A booked fight or interclub goes at the very top with a live countdown. Source: the fight you set (Goals) or an interclub or show you entered on your club's events.
    2. Members who have not linked a gym are shown why they should, with a way to enter a code or find a club.
-   3. The Fighter side and the Club Hub look different on purpose (header strip, card shape, accent placement) while sharing one colour theme. */
+   3. The Fighter side and the Club side look different on purpose (header strip, card shape, accent placement) while sharing one colour theme. */
 var K115=K115||false;
 (function(){
 if(K115)return;K115=true;
@@ -13812,11 +13812,11 @@ function linkCard(){var el=document.getElementById("fb115b"),home=document.getEl
  if(el.dataset.sig!==h){el.innerHTML=h;el.dataset.sig=h}}
 document.addEventListener("click",function(ev){var b=ev.target.closest&&ev.target.closest("[data-lk115hide]");if(b){P().hideLinkPromo=true;try{profChanged()}catch(x){}linkCard()}},true);
 
-/* ---------- Fighter side and Club Hub side ---------- */
+/* ---------- Fighter side and Club side ---------- */
 function sideStrip(){var hd=document.querySelector("header.top");if(!hd)return;var el=document.getElementById("fbSide115");
  if(!el){el=document.createElement("div");el.id="fbSide115";hd.appendChild(el)}
  var hub=document.body.classList.contains("hubview"),c=club(),nm=(P().name||"").split(" ")[0];
- var h=hub?'<span class="sd-ic"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 11l9-8 9 8v10a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/></svg></span><b>Club hub</b><span>'+e(c?c.name:"Your club")+'</span><i>Running the gym</i>'
+ var h=hub?'<span class="sd-ic"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 11l9-8 9 8v10a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/></svg></span><b>Club side</b><span>'+e(c?c.name:"Your club")+'</span><i>Running the gym</i>'
   :'<span class="sd-ic"><svg viewBox="0 0 48 48" width="16" height="16" fill="none" stroke="currentColor" stroke-width="4"><path d="M11 27 24 6 37 27"/><path d="M16 33 24 21.5 32 33"/></svg></span><b>Fighter</b><span>'+e(nm||"Me")+'</span><i>My training</i>';
  if(el.dataset.sig!==h){el.innerHTML=h;el.dataset.sig=h}el.className=hub?"sd-club":"sd-me"}
 var css=document.createElement("style");
@@ -14466,14 +14466,14 @@ var MEMBER=[
 ];
 var COACH=[
 ["Getting your club set up","How do I invite my members?","Share your club code or the Find a club link. Members choose to link, and they choose what they share with you."],
-["Getting your club set up","How do I set up classes and the timetable?","Open the Classes tab in the club hub. Add a class with its day, time, level and teacher. Members see it straight away."],
+["Getting your club set up","How do I set up classes and the timetable?","Open the Classes tab on the club side. Add a class with its day, time, level and teacher. Members see it straight away."],
 ["Getting your club set up","How do I add another coach or a manager?","Only the manager can do this. Open Team and permissions in the club overview. Roles are Manager, Admin manager, and coaches (Teacher, Trainer, Mentor)."],
 ["Roles and permissions","What can an admin manager do?","Help with scheduling, payments and agreements. They cannot change roles or unlink a member. Only the manager can do those."],
 ["Roles and permissions","Can any coach offer personal training?","Only coaches the manager has approved. Agreements say how PT income is split: a set amount to the club, a percentage, or a monthly fee."],
 ["Your members and their data","What can I see about a member?","Only what they share with you. If they turn sharing off, it disappears from your screen. Camp reports reach you only while the member has camp sharing on."],
 ["Your members and their data","How do I unlink a member?","Only the manager can. Unlinking ends sharing at once and closes any camp, corner or PT bookings that depend on the link."],
 ["Your members and their data","Members under 18","Under-18s have extra protections and are left out of camp sharing for now. Talk to a parent or guardian, and follow your safeguarding policy."],
-["Fight camps and coaching","How do weekly camp reports work?","Open the Camp inbox in the club hub. Read the report, reply, and send typed suggestions (a class, a PT, or a chat). The fighter accepts or declines each one."],
+["Fight camps and coaching","How do weekly camp reports work?","Open the Camp inbox on the club side. Read the report, reply, and send typed suggestions (a class, a PT, or a chat). The fighter accepts or declines each one."],
 ["Fight camps and coaching","How do I set the corner team and fight plan?","Add corner people from the fighter's fight camp and offer a plan. The fighter accepts, or proposes changes, and you agree. It records expectations, not a contract."],
 ["Payments","How do PT statements work?","The monthly statement counts only sessions the member confirmed or checked in for. Paying out through FighterBase is added later, after a payment review."],
 ["Payments","Do you take a cut of my members' fees?","No fees are being taken in this test version. Pricing will be confirmed before launch."],
@@ -14491,7 +14491,7 @@ function close(){ST.open=false;ov().style.display="none"}
 function listHtml(){var l=faqs(),h="",g="";if(!l.length)return '<p class="muted small">No answers match that. Try fewer words, or message us below.</p>';
  l.forEach(function(f){if(f[0]!==g){g=f[0];h+='<h4 style="margin:14px 0 6px">'+e(g)+'</h4>'}h+='<details class="f123d" style="border-bottom:1px solid rgba(255,255,255,.1);padding:8px 0"><summary style="cursor:pointer;font-weight:600">'+e(f[1])+'</summary><p style="margin:8px 0 0" class="small">'+e(f[2])+'</p></details>'});return h}
 function drawList(only){var el=document.getElementById("f123list");if(el)el.innerHTML=listHtml();if(!only)return}
-function topics(){return staff()?["Using the club hub","Roles and permissions","A member's problem","Payments and agreements","Something is not working","Other"]:["Using the app","My data and sharing","My membership or payments","Fight camp","Something is not working","Other"]}
+function topics(){return staff()?["Using the club side","Roles and permissions","A member's problem","Payments and agreements","Something is not working","Other"]:["Using the app","My data and sharing","My membership or payments","Fight camp","Something is not working","Other"]}
 function draw(){var o=ov();if(!ST.open)return;var p=P(),msgs=(p.supportMsgs||[]).slice().reverse();
  var h='<div style="max-width:560px;margin:0 auto" class="stack"><div class="row" style="justify-content:space-between"><h2 style="margin:0">Help and support</h2><button class="btn ghost sm" type="button" data-f123="close">Close</button></div>'+
  '<p class="muted small" style="margin:0">'+(staff()?"For coaches and club managers.":"For members.")+' Search the answers first. Most questions are covered.</p>'+
@@ -16855,7 +16855,7 @@ goals2:["Goals","Pick what you are working towards and the app builds your weekl
 devices:["Devices","Connect a watch, or add readings by hand. Completely optional."],
 profile:["Settings","Your details, targets, reminders, what you see and what you share. Changes save as you go."],
 diary:["Food diary","Everything you ate each day, with water. Use the arrows to move between days."],
-specialists:["Specialist Hub","Where qualified practitioners will join. Register interest and we will tell you when it opens."],
+specialists:["Specialists","Where qualified practitioners will join. Register interest and we will tell you when it opens."],
 hubover:["Club Overview","What needs you today. Work from the top. The rest is below."],
 hubsetup:["Set up","Pick what to set up first and the guide walks you through it. Skip anything for later."],
 hubclasses:["Classes","Build and edit your timetable. Classes appear on members' timetables straight away."],
@@ -17172,7 +17172,7 @@ window.FH149={run:go,open:open,cfg:CFG};
 })();
 
 /* FighterBase v182: tidier menus.
-   Coach hub: 20 menu items become six groups (Run the club, People, Money, Grow, Set up) and five screens fold under a sibling screen with a small tab strip
+   Club side: 20 menu items become six groups (Run the club, People, Money, Grow, Set up) and five screens fold under a sibling screen with a small tab strip
    (Classes + Workouts + Milestones, Accounts + Memberships, Insights + Analysis + Growth). Every screen still exists and every link to it still works.
    Member: Weight cut moves from Log to Fuel; Charts and Challenges are no longer listed twice; Invite sits beside Crews. */
 var H150=H150||false;
@@ -17308,7 +17308,7 @@ var EXTRA=[
 [/^(turn off|turn on)$/i,"Switch this on or off. You can change it back any time."],
 [/^visit/i,"Open the club page."],
 [/^(join|join club)$/i,"Join this club with its code. The club sees only what you choose to share."],
-[/^coach view|^club hub$/i,"Switch to the club side: members, classes, money and growth."],
+[/^coach view|^club (hub|side)$/i,"Switch to the club side: members, classes, money and growth."],
 [/^member view$/i,"Switch back to what a member sees."],
 [/^exit demo$/i,"Leave the demo. Nothing you tried was saved."]
 ];
@@ -17891,7 +17891,7 @@ var GD=[
  ["you choose","You choose","Switch each item on or off. Share all or share none.",0],
  ["never shared","Never shared","These stay private to you, always."],
  ["preview: what your coach sees","Preview","See exactly what your coach would see right now."]]},
-{id:"specialists",tab:"specialists",t:"Specialist Hub",m:1,why:"Expert help, later.",s:[
+{id:"specialists",tab:"specialists",t:"Specialists",m:1,why:"Expert help, later.",s:[
  ["expert help","What this will be","Qualified practitioners will join here. Nothing is live yet."],
  ["register interest","Register interest","We will tell you when it opens. No payment, nothing shared.",0]]},
 /* ---------------- coach ---------------- */
@@ -18078,7 +18078,7 @@ function apply(){try{var F=window.FH32FULL;if(!F)return;
  F.progress=["engine","progress","goals2","growth","film","challenges","partners"];
  F.more=["profile","mygym","clubpage","club","clubsee","devices","learn","supps","invite","specialists","coach"];
  F.club=[];
- var N={today:"Today",log:"Check-in",train:"Sessions",workouts:"Workouts",schedule:"Classes",mylib:"My training",skills:"Skills",diary:"Food diary",meals:"Meals",shop:"Shopping",foods:"Foods",nutrition:"Eating style",cut:"Weight cut",engine:"My progress",progress:"Charts",goals2:"Goals",growth:"Growth",film:"Fights and film",challenges:"Challenges",partners:"Crews",profile:"Settings",mygym:"My gym",clubpage:"Club page",club:"Attendance",clubsee:"What my club sees",devices:"Devices",learn:"Learn and guides",supps:"Supplements",invite:"Invite",specialists:"Specialist Hub"};
+ var N={today:"Today",log:"Check-in",train:"Sessions",workouts:"Workouts",schedule:"Classes",mylib:"My training",skills:"Skills",diary:"Food diary",meals:"Meals",shop:"Shopping",foods:"Foods",nutrition:"Eating style",cut:"Weight cut",engine:"My progress",progress:"Charts",goals2:"Goals",growth:"Growth",film:"Fights and film",challenges:"Challenges",partners:"Crews",profile:"Settings",mygym:"My gym",clubpage:"Club page",club:"Attendance",clubsee:"What my club sees",devices:"Devices",learn:"Learn and guides",supps:"Supplements",invite:"Invite",specialists:"Specialists"};
  Object.keys(N).forEach(function(k){TABNAME[k]=N[k]});
  try{TABNAME.clubpage=(S.profile&&S.profile.clubId)?"Club page":"Find a club"}catch(x){}
  try{FHL.groups()}catch(x){}}catch(x){console.error(x)}}
@@ -18430,7 +18430,7 @@ window.FH162={open:openSheet,plan:plan,tally:tally,items:items,close:close};
    Each class card shows its picture; tapping it opens a class detail sheet (picture, time, teacher, level, who is coming, plan, I'm coming).
    Club owners can change any class picture: upload their own (resized to 800 px), pick another from the FighterBase set, or go back to automatic.
    Pictures are per class name, stored on the club (clubs/<id>.classPhotos). Kids classes never get an adult photo. Credit line says the set is illustrative.
-   Windows: FH163.src / banner / thumb / link / detail / change. Club hub: a "Class photos" panel on Classes and workouts. */
+   Windows: FH163.src / banner / thumb / link / detail / change. Club side: a "Class photos" panel on Classes and workouts. */
 var H163=H163||false;
 (function(){
 if(H163)return;H163=true;
@@ -18511,7 +18511,7 @@ document.addEventListener("click",function(ev){var t=ev.target;if(!t.closest)ret
 document.addEventListener("change",function(ev){var t=ev.target;if(!t||t.id!=="ph163f"||!t.files||!t.files[0])return;var ti=document.getElementById("fb163c").dataset.title,f=t.files[0];
  if(!/^image\//.test(f.type)){toast("That is not a picture","Choose a JPG, PNG or WebP photo.");return}
  shrink(f,function(d){if(!d){toast("Couldn't read that photo","Try a different one.");return}setPhoto(ti,d).then(function(ok){if(ok){toast("Your photo is in",ti);closeChange()}})})},true);
-/* ----- club hub panel ----- */
+/* ----- club side panel ----- */
 function draw(){try{var tab=document.getElementById("tab-hubclasses");if(!tab||tab.hidden||!owner()){var o=document.getElementById("fb163p");if(o&&(!tab||tab.hidden))o.remove();return}
  var heads=[].slice.call(tab.querySelectorAll("h2")).filter(function(h){return /^weekly timetable/i.test(h.textContent)}),anchor=heads[0]&&heads[0].closest(".panel");if(!anchor)return;
  var c=club(),seen={},rows=[];(c.timetable||[]).forEach(function(x){var k=nk(x.title);if(seen[k]||x.kids)return;seen[k]=1;rows.push(x)});
