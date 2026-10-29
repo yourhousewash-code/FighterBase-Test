@@ -1568,14 +1568,15 @@ var uid=null;try{uid=localStorage.getItem("fb_local_uid")}catch(e){}
 if(!uid){uid="local-"+Math.random().toString(36).slice(2,10);try{localStorage.setItem("fb_local_uid",uid)}catch(e){}}
 var L=window.FH_LIB||{};["foods","meals","supps"].forEach(function(k){if(L[k])store["library/"+k]={items:L[k]}});
 function persist(){clearTimeout(t);t=setTimeout(function(){try{var o={};Object.keys(store).forEach(function(k){if(k.indexOf("library/")!==0)o[k]=store[k]});localStorage.setItem(KEY,JSON.stringify(o))}catch(e){}},300)}
-function notify(){persist();setTimeout(function(){subs.slice().forEach(function(f){try{f()}catch(e){}})},0)}
+var hook=null;window.__FB_LOCAL_HOOK=function(f){hook=f};
+function notify(p){persist();if(p&&hook){try{hook(p)}catch(e){}}setTimeout(function(){subs.slice().forEach(function(f){try{f()}catch(e){}})},0)}
 function snapDoc(p){return {id:p.split("/").pop(),exists:p in store,data:function(){return clone(store[p])},metadata:{}}}
 function docRef(p){
  return {id:p.split("/").pop(),path:p,
   get:function(){return Promise.resolve(snapDoc(p))},
-  set:function(d,o){store[p]=(o&&o.merge)?Object.assign({},store[p]||{},clone(d)):clone(d);notify();return Promise.resolve()},
-  update:function(d){var o=Object.assign({},store[p]||{});Object.keys(d).forEach(function(k){var v=clone(d[k]);if(k.indexOf('.')<0){o[k]=v;return}var a=k.split('.'),c=o,i;for(i=0;i<a.length-1;i++){c[a[i]]=(c[a[i]]&&typeof c[a[i]]==='object')?Object.assign({},c[a[i]]):{};c=c[a[i]]}c[a[a.length-1]]=v});store[p]=o;notify();return Promise.resolve()},
-  delete:function(){delete store[p];notify();return Promise.resolve()},
+  set:function(d,o){store[p]=(o&&o.merge)?Object.assign({},store[p]||{},clone(d)):clone(d);notify(p);return Promise.resolve()},
+  update:function(d){var o=Object.assign({},store[p]||{});Object.keys(d).forEach(function(k){var v=clone(d[k]);if(k.indexOf('.')<0){o[k]=v;return}var a=k.split('.'),c=o,i;for(i=0;i<a.length-1;i++){c[a[i]]=(c[a[i]]&&typeof c[a[i]]==='object')?Object.assign({},c[a[i]]):{};c=c[a[i]]}c[a[a.length-1]]=v});store[p]=o;notify(p);return Promise.resolve()},
+  delete:function(){delete store[p];notify(p);return Promise.resolve()},
   onSnapshot:function(n){var f=function(){n(snapDoc(p))};subs.push(f);setTimeout(f,0);return function(){var i=subs.indexOf(f);if(i>=0)subs.splice(i,1)}},
   collection:function(c){return colRef(p+"/"+c)}}}
 function colRef(p,q){q=q||{};
@@ -19479,6 +19480,87 @@ document.addEventListener("click",function(e){var b=e.target.closest&&e.target.c
 var css=document.createElement("style");css.textContent=".tc180h,.tc180p{display:none!important}.tc180{align-self:flex-start;min-height:40px;margin:4px 0}";document.head.appendChild(css);
 setInterval(run,1200);setTimeout(run,600);
 return {run:run}})();
+
+/* FighterBase v235: real accounts for the hosted test site. Email + password (typed by the member), backed up to the FighterBase-Dev
+   database so data follows the member between phones. Local first: the app keeps working offline from the phone's own storage.
+   Cloud store: table member_private (own rows only, enforced by the database). One row per document: kind = path with the member's
+   local id replaced by {u}. After a change, the document is uploaded after about 3 seconds. On sign-in the cloud copy wins for any
+   document that is not waiting to upload; the phone's earlier copy is kept as a backup in this browser. Only active when the app is
+   opened as its own website (local mode). Test database only; made-up data. */
+var FH181=(function(){
+if(!window.__FB_LOCAL||!window.__FB_DEMO||!window.__FB_DEMO.store)return {on:false};
+var URL_="https://xwuqyzjdyfypyglkvpnp.supabase.co",KEY="sb_publishable_UE7Dwez6cWHaU0jRwxYQJg_lYFkD-6g",D=window.__FB_DEMO,store=D.store,uid=D.uid;
+var SK="fb_acct_v1",DK="fb_acct_dirty_v1",ses=null,dirty={},msg="",err="",busy=false,last=null,applying=false,timer=null,up=false;
+try{ses=JSON.parse(localStorage.getItem(SK)||"null")}catch(e){}try{dirty=JSON.parse(localStorage.getItem(DK)||"{}")||{}}catch(e){dirty={}}
+function esc(s){return String(s==null?"":s).replace(/[&<>"']/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]})}
+function sv(){try{if(ses)localStorage.setItem(SK,JSON.stringify(ses));else localStorage.removeItem(SK)}catch(e){}}
+function sd(){try{localStorage.setItem(DK,JSON.stringify(dirty))}catch(e){}}
+function jwtSub(t){try{return JSON.parse(atob(t.split(".")[1].replace(/-/g,"+").replace(/_/g,"/"))).sub}catch(e){return null}}
+function hdr(a){var h={apikey:KEY,"Content-Type":"application/json"};if(a&&ses&&ses.tok)h.Authorization="Bearer "+ses.tok;return h}
+function fail(r,j){var m=(j&&(j.message||j.msg||j.error_description||j.hint||j.error))||("Request failed ("+r.status+")");return new Error(m)}
+async function auth(path,body){var r=await fetch(URL_+"/auth/v1/"+path,{method:"POST",headers:hdr(false),body:JSON.stringify(body)});var j={};try{j=await r.json()}catch(e){}if(!r.ok)throw fail(r,j);return j}
+function setSes(j){if(j&&j.access_token){ses={tok:j.access_token,ref:j.refresh_token,uid:jwtSub(j.access_token),email:(j.user&&j.user.email)||(ses&&ses.email)||""};sv()}}
+async function refresh(){if(!ses||!ses.ref)return false;try{setSes(await auth("token?grant_type=refresh_token",{refresh_token:ses.ref}));return true}catch(e){if(/invalid|expired|not found/i.test(e.message)){ses=null;sv()}return false}}
+async function api(method,path,body,extra){var go=function(){return fetch(URL_+"/rest/v1/"+path,{method:method,headers:Object.assign(hdr(true),extra||{}),body:body==null?undefined:JSON.stringify(body)})};
+ var r=await go();if(r.status===401&&await refresh())r=await go();var t=await r.text(),j=null;try{j=t?JSON.parse(t):null}catch(e){}if(!r.ok)throw fail(r,j);return j}
+/* ---- documents <-> rows ---- */
+function kindOf(p){if(p.indexOf("library/")===0||p.indexOf(uid)<0)return null;return p.split(uid).join("{u}")}
+function pathOf(k){return k.split("{u}").join(uid)}
+function mine(){return Object.keys(store).filter(function(p){return kindOf(p)})}
+function mark(p){if(!ses||applying||!kindOf(p))return;dirty[p]=1;sd();clearTimeout(timer);timer=setTimeout(push,3000);paint()}
+if(window.__FB_LOCAL_HOOK)window.__FB_LOCAL_HOOK(mark);
+async function push(){if(!ses||up)return;var ps=Object.keys(dirty);if(!ps.length)return;up=true;
+ try{var rows=[],dels=[];ps.forEach(function(p){var k=kindOf(p);if(!k)return;if(p in store)rows.push({user_id:ses.uid,kind:k,data:store[p]});else dels.push(k)});
+  for(var i=0;i<rows.length;i+=15)await api("POST","member_private?on_conflict=user_id,kind",rows.slice(i,i+15),{Prefer:"resolution=merge-duplicates,return=minimal"});
+  for(var j=0;j<dels.length;j++)await api("DELETE","member_private?user_id=eq."+ses.uid+"&kind=eq."+encodeURIComponent(dels[j]),null,{Prefer:"return=minimal"});
+  ps.forEach(function(p){delete dirty[p]});sd();last=Date.now();err=""}
+ catch(e){err="Not backed up yet: "+e.message}
+ up=false;paint()}
+function backupLocal(){try{var o={};mine().forEach(function(p){o[p]=store[p]});localStorage.setItem("fb_local_backup",JSON.stringify({at:Date.now(),docs:o}))}catch(e){}}
+async function pull(first){if(!ses)return;try{var rows=await api("GET","member_private?select=kind,data");var cloud={};(rows||[]).forEach(function(r){cloud[r.kind]=r.data});
+  if(first&&Object.keys(cloud).length)backupLocal();
+  var changed=0;applying=true;
+  Object.keys(cloud).forEach(function(k){var p=pathOf(k);if(dirty[p])return;if(JSON.stringify(store[p])!==JSON.stringify(cloud[k])){D.db.doc(p).set(cloud[k]);changed++}});
+  applying=false;
+  mine().forEach(function(p){var k=kindOf(p);if(!(k in cloud))dirty[p]=1});sd();await push();last=Date.now();
+  if(changed&&!sessionStorage.getItem("fb181r")){sessionStorage.setItem("fb181r","1");setTimeout(function(){location.reload()},400)}
+  else sessionStorage.removeItem("fb181r")}
+ catch(e){applying=false;err="Could not reach the database: "+e.message}paint()}
+/* ---- account actions ---- */
+async function sign(kind){var em=(document.getElementById("a181e")||{}).value||"",pw=(document.getElementById("a181p")||{}).value||"";em=em.trim();
+ if(!em||pw.length<8){err="Enter your email and a password of at least 8 characters.";msg="";paint();return}
+ busy=true;err="";msg="";paint();
+ try{if(kind==="up"){var j=await auth("signup?redirect_to="+encodeURIComponent(location.origin+"/"),{email:em,password:pw});
+   if(j&&j.access_token){setSes(j);msg="Account created.";await pull(true)}else{msg="Check your email and tap the confirm link, then come back here and sign in."}}
+  else{var s=await auth("token?grant_type=password",{email:em,password:pw});setSes(s);msg="Signed in.";await pull(true)}}
+ catch(e){err=/confirm/i.test(e.message)?"Please confirm your email first (check your inbox), then sign in.":e.message}
+ busy=false;paint()}
+async function reset(){var em=((document.getElementById("a181e")||{}).value||"").trim();if(!em){err="Type your email first.";paint();return}
+ try{await auth("recover?redirect_to="+encodeURIComponent(location.origin+"/"),{email:em});msg="If that email has an account, a reset link is on its way.";err=""}catch(e){err=e.message}paint()}
+function out(){ses=null;sv();msg="Signed out. Your data stays on this phone.";err="";paint()}
+/* ---- screen ---- */
+function html(){var h='<div id="acct181" class="cs-box" style="margin-bottom:14px"><b>Account and backup</b>';
+ if(ses){h+='<p class="small" style="margin:6px 0">Signed in as <b>'+esc(ses.email)+'</b>.</p><p class="muted small" style="margin:0 0 8px">'+(Object.keys(dirty).length?"Backing up...":last?"Backed up "+new Date(last).toLocaleTimeString("en-GB",{hour:"2-digit",minute:"2-digit"})+". Your data follows you to any phone you sign in on.":"Your data is backed up when it changes.")+'</p>'+
+  '<div class="row" style="gap:8px;flex-wrap:wrap"><button class="btn gold sm" type="button" data-a181="sync">Back up and refresh now</button><button class="btn ghost sm" type="button" data-a181="out">Sign out</button></div>'}
+ else h+='<p class="muted small" style="margin:4px 0 8px">Without an account your data lives only on this phone. With one it is backed up and follows you to a new phone. Test version: use made-up details.</p>'+
+  '<label class="small" style="display:flex;flex-direction:column;gap:4px">Email<input type="email" id="a181e" autocomplete="email" inputmode="email" style="background:rgba(255,255,255,.04);border:1px solid var(--line);border-radius:10px;color:inherit;padding:9px 12px;font:inherit;font-size:14px"></label>'+
+  '<label class="small" style="display:flex;flex-direction:column;gap:4px;margin-top:8px">Password (8 or more characters)<input type="password" id="a181p" autocomplete="current-password" style="background:rgba(255,255,255,.04);border:1px solid var(--line);border-radius:10px;color:inherit;padding:9px 12px;font:inherit;font-size:14px"></label>'+
+  '<div class="row" style="gap:8px;flex-wrap:wrap;margin-top:10px"><button class="btn gold sm" type="button" data-a181="in"'+(busy?" disabled":"")+'>Sign in</button><button class="btn ghost sm" type="button" data-a181="up"'+(busy?" disabled":"")+'>Create account</button><button class="linkbtn" type="button" data-a181="reset">Forgot password</button></div>';
+ return h+(msg?'<p class="small" style="margin:8px 0 0;color:#3FC57E">'+esc(msg)+'</p>':'')+(err?'<p class="small" style="margin:8px 0 0;color:#A9172F">'+esc(err)+'</p>':'')+'</div>'}
+var lastH="";function paint(){var p=document.getElementById("pmData");if(!p)return;var x=document.getElementById("acct181"),h=html();
+ if(x&&h===lastH)return;
+ var fa=document.activeElement&&document.activeElement.id;
+ var e=document.getElementById("a181e"),pw=document.getElementById("a181p"),ev=e?e.value:"",pv=pw?pw.value:"";
+ var d=document.createElement("div");d.innerHTML=h;lastH=h;if(x)x.replaceWith(d.firstChild);else p.insertBefore(d.firstChild,p.firstChild);
+ var e2=document.getElementById("a181e"),p2=document.getElementById("a181p");if(e2&&ev)e2.value=ev;if(p2&&pv)p2.value=pv;if(fa==="a181e"&&e2)e2.focus();if(fa==="a181p"&&p2)p2.focus()}
+document.addEventListener("click",function(e){var b=e.target.closest&&e.target.closest("[data-a181]");if(!b)return;var a=b.dataset.a181;
+ if(a==="in"||a==="up")sign(a);else if(a==="out")out();else if(a==="reset")reset();else if(a==="sync")pull(false)});
+/* ---- alerts: let the member's alert address reach the server once signed in (needs db/push_v224.sql loaded) ---- */
+window.FH172UP=function(st){if(!ses)return;try{if(st&&st.on&&st.sub&&st.sub.endpoint){var k=st.sub.keys||{};api("POST","rpc/save_push_subscription",{p_endpoint:st.sub.endpoint,p_p256dh:k.p256dh,p_auth:k.auth,p_from:(st.q||[22,7])[0],p_to:(st.q||[22,7])[1],p_morning:st.m!==false,p_tz:(Intl.DateTimeFormat().resolvedOptions().timeZone||"Europe/London")}).catch(function(){})}
+ else api("POST","rpc/delete_push_subscription",{}).catch(function(){})}catch(e){}};
+setInterval(paint,2000);setTimeout(function(){if(ses)pull(false)},1500);
+document.addEventListener("visibilitychange",function(){if(!document.hidden&&ses&&!Object.keys(dirty).length)pull(false)});
+return {on:true,state:function(){return {signedIn:!!ses,dirty:Object.keys(dirty).length}}}})();
 
 /* FighterBase v44: always a way back, always a next step. */
 var N31=N31||false;
