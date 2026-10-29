@@ -5427,7 +5427,7 @@ async function auto(){try{var c=club();if(!inClub()||!hasGeo(c)||done()||dismiss
  var go=function(){if(m.length===1)arrive(m[0].id,m[0].time+" "+(m[0].title||m[0].name||"Class"),"geo");else if(m.length>1)pick("Which class are you here for?","geo");else arrive(null,"Club visit","geo")};
  if(window.FH142&&FH142.hold(m.length===1?m[0].id:"",m.length===1?m[0].time+" "+(m[0].title||m[0].name||"Class"):"Club visit",null,go))return;
  go()}catch(e){}}
-window.FH39={confirmClass:function(cid,label){arrive(cid,label,"confirm")}};
+window.FH39={confirmClass:function(cid,label){arrive(cid,label,"confirm")},geo:function(cid,label){arrive(cid,label,"geo")},matches:function(){var c=club();return c?windowMatches(c):[]},booked:function(){var c=club();return c?windowMatches(c).filter(function(x){return (S.profile.rsvp||{})[TODAY+"_"+x.id]}):[]}};
 /* ---------- wiring ---------- */
 var rc=renderClub;renderClub=function(){var r=rc.apply(this,arguments);try{draw();ownerPanel()}catch(e){}return r};
 var rt=renderClubToday;renderClubToday=function(){var r=rt.apply(this,arguments);try{draw()}catch(e){}return r};
@@ -19071,6 +19071,64 @@ function act(){var m=/[#&]fbact=(\w+)/.exec(location.hash);if(!m)return;var map=
  var t=setInterval(function(){var b=document.querySelector(sel);if(b){clearInterval(t);b.click();history.replaceState(null,"",location.href.replace(/[#&]fbact=\w+/,""))}else if(++n>30){clearInterval(t)}},500)}
 setTimeout(act,1500);window.addEventListener("hashchange",act);
 window.FH172={state:st,why:why,enable:enable,disable:disable};
+})();
+
+/* FighterBase v225: automatic attendance, the event side (what the phone app feeds in) and the member's visit log.
+   The phone app (Capacitor geofence plugin) calls FH173.native({kind:"enter"|"exit", at:ms}). Matching against the club place happens on the phone;
+   only the enter and exit events reach this code. No coordinates are stored or sent.
+   Rules (Steve 11 Oct): stay inside for more than 10 minutes before a visit counts; booked class = recorded as source "geo"; no booking = held as unconfirmed,
+   the member is asked, the club is told name, status, arrival and leave times (never a map position). Leaving early (under 10 minutes) logs nothing.
+   One visit counts once (fh39 arrive de-dupes). Member can see detected visits and remove them. Profile: geo173{in,done}. Uses det142 for unbooked visits. */
+var K173=K173||false;
+(function(){
+if(K173)return;K173=true;
+var DWELL=10*60000,timer=null;
+function e2(s){return esc(String(s==null?"":s))}
+function P(){return S.profile||{}}
+function club(){try{return clubState&&clubState.club}catch(x){return null}}
+function G(){return P().geo173=P().geo173||{in:null,done:null}}
+function fmtT(t){return t?new Date(t).toLocaleTimeString("en-GB",{hour:"2-digit",minute:"2-digit"}):"-"}
+function fmtD(k){return new Date(k+"T12:00").toLocaleDateString("en-GB",{weekday:"short",day:"numeric",month:"short"})}
+function save(){try{profChanged()}catch(x){}try{scheduleLeague()}catch(x){}}
+function enter(at){var g=G();if(!P().autoAtt)return;if(g.in&&at-g.in<12*3600000)return;g.in=at;g.done=null;save();clearTimeout(timer);timer=setTimeout(check,DWELL+500)}
+function exit(at){var g=G();if(!g.in)return;var stay=at-g.in;
+ if(stay>=DWELL){check(true)}
+ (P().det142||[]).forEach(function(d){if(d.d===TODAY&&d.arr&&!d.dep&&d.st!=="dismissed")d.dep=at});
+ g.in=null;g.done=null;save();clearTimeout(timer)}
+/* called by the timer, by app resume, and on exit: logs the visit once if the dwell has passed */
+function check(force){var g=G();if(!g.in||g.done||!P().autoAtt)return;if(Date.now()-g.in<DWELL&&!force)return;if(!P().clubId||!club())return;
+ g.done=Date.now();save();
+ var bk=[],m=[];try{bk=FH39.booked();m=FH39.matches()}catch(x){}
+ var lab=function(c){return (c.time?c.time+" ":"")+(c.title||c.name||"Class")};
+ if(bk.length){FH39.geo(bk[0].id,lab(bk[0]));return}
+ var go=function(){if(m.length===1)FH39.geo(m[0].id,lab(m[0]));else FH39.geo(null,"Club visit")};
+ if(window.FH142&&FH142.hold(m.length===1?m[0].id:"",m.length===1?lab(m[0]):"Club visit",null,go))return;
+ go()}
+function native(ev){if(!ev||!ev.kind)return;var at=+ev.at||Date.now();if(ev.kind==="enter")enter(at);else if(ev.kind==="exit")exit(at)}
+document.addEventListener("visibilitychange",function(){if(!document.hidden)try{check()}catch(x){}});
+setInterval(function(){try{check()}catch(x){}},60000);
+/* ---------- member panel in the Club tab ---------- */
+function visits(){return (P().det142||[]).filter(function(d){return d.st!=="dismissed"}).slice(-8).reverse()}
+function demo(){try{return !!sessionStorage.getItem("fbDemo")}catch(x){return false}}
+function html(){var c=club(),p=P();if(!c||!p.clubId||document.body.classList.contains("hubview"))return "";
+ var v=visits(),st={unconfirmed:"Waiting for you to confirm",confirmed:"Confirmed"};
+ return '<div class="panel" id="g173c"><div class="sec-h"><h3>Your detected visits</h3></div>'+
+  (v.length?v.map(function(d){return '<div class="row" style="align-items:center;justify-content:space-between;gap:8px;margin:4px 0"><span class="small"><b>'+e2(fmtD(d.d))+'</b> · '+e2(d.lab||"Club visit")+' · '+e2(fmtT(d.arr))+(d.dep?" to "+e2(fmtT(d.dep)):"")+'<br><span class="muted">'+e2(st[d.st]||d.st)+'</span></span><button class="btn ghost sm" type="button" data-g173rm="'+e2(d.id)+'">Remove</button></div>'}).join(""):'<p class="muted small" style="margin:0">Nothing detected yet. Visits appear here when automatic attendance notices you at your club.</p>')+
+  '<details style="margin-top:10px"><summary class="small"><b>Keep it working in the background</b></summary><div class="small muted" style="margin-top:6px">'+
+  '<p style="margin:0 0 6px"><b>Android:</b> when asked for location choose "Allow all the time". In Settings, Apps, FighterBase, Battery, choose "Unrestricted" (Samsung: Never sleeping apps). If your phone stops it after a restart, open FighterBase once.</p>'+
+  '<p style="margin:0 0 6px"><b>iPhone:</b> allow location "While using", then choose "Always" when it asks later. Leave Precise Location on.</p>'+
+  '<p style="margin:0">It can be late or miss a visit if your phone is saving battery or has no signal. Your weekly check-in fills any gap. You can switch it off any time.</p></div></details>'+
+  (demo()?'<div class="row" style="margin-top:10px"><button class="btn ghost sm" type="button" data-g173sim>Preview: pretend I arrived and stayed 10 minutes</button></div>':'')+'</div>'}
+function draw(){var host=document.getElementById("clubBody");var o=document.getElementById("g173c");
+ if(!host||document.body.classList.contains("hubview")||!P().autoAtt){if(o)o.remove();return}
+ var h=html();if(!h){if(o)o.remove();return}if(o&&o.dataset.sig===h)return;
+ var d=document.createElement("div");d.innerHTML=h;var n=d.firstChild;n.dataset.sig=h;if(o){o.replaceWith(n);return}
+ var w=document.getElementById("m142w");if(w&&w.parentNode===host)host.insertBefore(n,w.nextSibling);else host.insertBefore(n,host.firstChild)}
+document.addEventListener("click",function(e){var t=e.target;if(!t.closest)return;var b;
+ if(b=t.closest("[data-g173rm]")){var id=b.dataset.g173rm,d=(P().det142||[]).filter(function(x){return x.id===id})[0];if(d){d.st="dismissed";d.dep=d.dep||Date.now();save();toast("Removed","Counted attendance can be corrected in your weekly check-in.")}draw();return}
+ if(t.closest("[data-g173sim]")){var g=G();g.in=Date.now()-DWELL-1000;g.done=null;P().autoAtt=true;check();draw()}},true);
+setInterval(draw,2500);setTimeout(draw,1500);
+window.FH173={native:native,check:check,dwell:DWELL};
 })();
 
 /* FighterBase v44: always a way back, always a next step. */
