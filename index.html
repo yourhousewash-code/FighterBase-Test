@@ -15427,7 +15427,7 @@ function P(){return S.profile||{}}
 function esc(s){return String(s==null?"":s).replace(/[&<>"']/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]})}
 function save(){try{profChanged()}catch(e){}}
 function draw(){try{FH62.page()}catch(e){console.error(e)}}
-var TAB="plan",WK=0,PEOPLE=null,MSG="";
+var TAB="build",WK=0,PEOPLE=null,MSG="";
 var SLOTS=[["breakfast","Breakfast","breakfast"],["am","Morning snack","snack"],["lunch","Lunch","lunch"],["pre","Before training","pre"],["dinner","Dinner","dinner"],["post","After training","post"]];
 var NUT={"Iron":/beef|lamb|liver|spinach|lentil|chickpea|bean|tofu|kale|mince|steak|venison|dark chocolate|pumpkin seed/i,
  "Vitamin C":/orange|pepper|tomato|broccoli|berr|kiwi|lemon|potato|cabbage|mango|pineapple|strawberr|citrus|chilli/i,
@@ -15517,7 +15517,7 @@ function planPdf(p,ppl){var doc=FBPDF.create({title:"Meal plan",footer:FOOT}),nm
    doc.h3(dayLabel(k)+(tk?"   about "+tk+" kcal, "+tp+" g protein":""));if(rows.length)doc.table([["Meal","What"]].concat(rows),[.24,.76],true);if(d.x&&d.x.length)doc.p("Extras for vitamins and minerals: "+d.x.join(", ")+".",{size:9,color:[.4,.4,.45]})})}
  doc.newPage();doc.h1("About this plan");doc.p("Built from the eating style you follow, foods you dislike, and what you rated each week. It is general guidance, not a prescription.");doc.banner("Not medical advice. If you have a medical condition, are pregnant, are under 18 or are cutting weight for a fight, check with your doctor or a registered dietitian first.");return doc.build()}
 /* ---- views ---- */
-function tabs(){return '<div class="mp-tabs">'+[["plan","Meal plan"],["shop","Shopping list"],["week","Weekly check-in"],["mine","My recipes"]].map(function(t){return '<button type="button" class="mp-tab'+(TAB===t[0]?" on":"")+'" data-mptab="'+t[0]+'">'+t[1]+'</button>'}).join("")+'</div>'}
+function tabs(){return '<div class="mp-tabs">'+[["build","My plan"],["plan","Ready-made plan"],["shop","Shopping list"],["week","Weekly check-in"],["mine","My recipes"]].map(function(t){return '<button type="button" class="mp-tab'+(TAB===t[0]?" on":"")+'" data-mptab="'+t[0]+'">'+t[1]+'</button>'}).join("")+'</div>'}
 function head(){var d=FH62.BYID[FH62.mine()];return '<div class="nu-top"><button class="linkbtn nu-bk" type="button" data-nuv="home">&lsaquo; Nutrition</button></div><h2 style="margin:6px 0 0">Meal plan and shopping</h2><p class="muted" style="margin:4px 0 8px">Built from <b>'+esc(FH62.names?FH62.names():d.name)+'</b>'+(disWords().length?', leaving out '+esc(disWords().join(", ")):'')+'. Change your style in Nutrition any time and make a fresh plan.</p>'+tabs()+(MSG?'<p class="nu-on" style="margin:6px 0 0">'+esc(MSG)+'</p>':'')}
 function disc(){return '<p class="small muted mp-disc">General guidance from your own choices, not medical advice. Check with your doctor or a registered dietitian if you have a medical condition, are pregnant, are under 18 or are cutting weight for a fight. Draft until a dietitian signs it off.</p>'}
 function builder(){var fd=P().fightDate,td=kd(new Date()),left=0;if(fd){left=Math.round((new Date(fd+"T12:00:00")-new Date(td+"T12:00:00"))/864e5)}
@@ -15562,7 +15562,7 @@ function mineView(){var my=P().myRecipes||[];var h='<div class="panel mp-b"><h3 
   '<p class="small muted" style="margin:0">Not sure of the numbers? Leave them blank. We guess which foods it contains from the ingredients, so it only shows up for styles that allow it.</p><div class="row"><button class="btn gold" type="button" data-mpaddr="1">Save recipe</button></div></div>';
  if(my.length)h+='<div class="panel"><b>My recipes ('+my.length+')</b>'+my.map(function(r){return '<div class="mp-meal"><div class="mp-main"><button class="linkbtn mp-name" type="button" data-nur="'+esc(r.id)+'">'+esc(r.name)+'</button><span class="muted small">'+esc((SLOTS.filter(function(s){return s[2]===r.slot})[0]||["","Meal"])[1])+(r.kcal?' · '+r.kcal+' kcal':'')+'</span></div><div class="mp-act"><button type="button" class="mp-i bad" data-mpdelr="'+esc(r.id)+'">Remove</button></div></div>'}).join("")+'</div>';
  return h+disc()}
-function view(){var body=TAB==="shop"?shopView():TAB==="week"?weekView():TAB==="mine"?mineView():planView();return head()+body}
+function view(){var body=TAB==="build"&&window.FH177?FH177.view():TAB==="shop"?shopView():TAB==="week"?weekView():TAB==="mine"?mineView():planView();return head()+body}
 /* ---- actions ---- */
 function makePlan(){var st=(document.getElementById("mpStart")||{}).value||kd(new Date()),sel=(document.getElementById("mpLen")||{}).value||"28",n=+sel;
  if(sel==="custom"){var e=(document.getElementById("mpEnd")||{}).value;n=e?Math.round((new Date(e+"T12:00:00")-new Date(st+"T12:00:00"))/864e5)+1:28}
@@ -19213,6 +19213,158 @@ document.addEventListener("click",function(e){var b=e.target.closest&&e.target.c
 setInterval(run,1200);setTimeout(run,700);
 window.FH176={run:run};
 })();
+
+/* FighterBase v230: simple meal planner. Build your own meals, tick the days and mealtime, repeat every week,
+   Week A / Week B or a 4-week month, copy a day or a week, save a week as a template.
+   Data: profile.mpPat {mode:1|2|4, anchor:Monday, weeks:[[7 day objects {slot:recipeId}]]}, profile.mpTpl [{id,name,d}].
+   It writes into profile.mealPlan (same shape the shopping list, Today and the week ahead already read) so everything else keeps working.
+   New meals are saved in profile.myRecipes. General guidance, not medical advice. */
+var FH177=(function(){
+if(typeof FH62==="undefined"||typeof FBPLAN==="undefined"||!FBPLAN.plan)return {view:function(){return ""}};
+function P(){return S.profile||{}}
+function esc(s){return String(s==null?"":s).replace(/[&<>"']/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]})}
+function save(){try{profChanged()}catch(e){}}
+function draw(){try{FH62.page()}catch(e){console.error(e)}}
+function kd(d){return dayKey(d)}
+function ad(k,n){var d=new Date(k+"T12:00:00");d.setDate(d.getDate()+n);return kd(d)}
+function dif(a,b){return Math.round((new Date(b+"T12:00:00")-new Date(a+"T12:00:00"))/864e5)}
+function mon(k){var d=new Date(k+"T12:00:00");return ad(k,-((d.getDay()+6)%7))}
+var SL=[["breakfast","Breakfast","breakfast"],["am","Morning snack","snack"],["lunch","Lunch","lunch"],["pre","Before training","pre"],["dinner","Dinner","dinner"],["post","After training","post"]];
+var DN=["Mon","Tue","Wed","Thu","Fri","Sat","Sun"],DF=["Monday","Tuesday","Wednesday","Thursday","Friday","Saturday","Sunday"];
+var TYPES=[["breakfast","Breakfast"],["snack","Snack or shake"],["lunch","Lunch"],["pre","Before training"],["dinner","Dinner"],["post","After training"]];
+var ST={wk:0,sheet:null,nb:null,as:null,cp:null,tplName:""};
+function blank(){var a=[];for(var i=0;i<7;i++)a.push({});return a}
+function clone(o){return JSON.parse(JSON.stringify(o))}
+function pat(){var p=P().mpPat;if(!p||!p.weeks){p={mode:1,anchor:mon(kd(new Date())),weeks:[blank()]};P().mpPat=p}return p}
+function mode(){return pat().mode||1}
+function wlabel(i){var m=mode();return m===2?"Week "+"AB"[i]:"Week "+(i+1)}
+function week(i){var p=pat();while(p.weeks.length<=i)p.weeks.push(clone(p.weeks[0]||blank()));return p.weeks[i]}
+function rec(id){return FH62.lib().filter(function(r){return r.id===id})[0]}
+function kindOf(slotKey){return SL.filter(function(s){return s[0]===slotKey})[0][2]}
+function keyOfType(t){return t==="snack"?"am":t}
+function isEmpty(){var p=pat(),e=true;p.weeks.slice(0,p.mode||1).forEach(function(w){w.forEach(function(d){if(Object.keys(d).length)e=false})});return e}
+/* ---- write the pattern into the real plan the rest of the app reads ---- */
+function sync(){var p=pat(),m=p.mode||1,t=kd(new Date()),mn=mon(t),old=P().mealPlan,min=ad(mn,-28),
+ st=(old&&old.src==="mine"&&old.start>=min)?old.start:(p.anchor>min?p.anchor:min),days=dif(st,ad(mn,55))+1,map={};
+ for(var i=0;i<days;i++){var k=ad(st,i);
+  var wd=(new Date(k+"T12:00:00").getDay()+6)%7;
+  if(k<mn){if(old&&old.map&&old.map[k])map[k]=old.map[k];else if(k>=p.anchor)map[k]=Object.assign({},week(((Math.round(dif(p.anchor,mon(k))/7)%m)+m)%m)[wd],{x:[]});else map[k]={x:[]};continue}
+  var wi=((Math.round(dif(p.anchor,mon(k))/7)%m)+m)%m;map[k]=Object.assign({},week(wi)[wd],{x:[]})}
+ P().mealPlan={start:st,days:days,made:Date.now(),map:map,src:"mine",madeDay:t};save()}
+function changed(){sync();draw()}
+function stale(){var o=P().mealPlan;return o&&o.src==="mine"&&o.madeDay!==kd(new Date())}
+/* ---- foods and numbers for the builder ---- */
+function allFoods(){var a=(S.foods&&S.foods.length)?S.foods:((window.FH_LIB&&window.FH_LIB.foods)||[]);return a.concat(S.customFoods||[])}
+function foodList(){return allFoods().map(function(f){return f.name})}
+function foodBy(n){n=String(n||"").trim().toLowerCase();if(!n)return null;var a=allFoods();for(var i=0;i<a.length;i++)if(String(a[i].name).toLowerCase()===n)return a[i];return null}
+function totals(rows){var t={kcal:0,p:0,c:0,f:0,hit:0,miss:0};rows.forEach(function(r){var g=+r.g||0;if(!r.f||!g)return;var f=foodBy(r.f);if(!f||!f.per100){t.miss++;return}t.hit++;var q=f.per100,k=g/100;t.kcal+=(q.kcal||0)*k;t.p+=(q.p||q.protein||0)*k;t.c+=(q.c||q.carbs||0)*k;t.f+=(q.f||q.fat||0)*k});return t}
+function totLine(rows){var t=totals(rows);if(!t.hit)return '<span class="muted small">Numbers appear here when you pick foods from the list.</span>';return '<b>'+Math.round(t.kcal)+' kcal</b> · '+Math.round(t.p)+'g protein · '+Math.round(t.c)+'g carbs · '+Math.round(t.f)+'g fat'+(t.miss?' <span class="muted small">(some foods have no numbers, so this is partial)</span>':'')}
+/* ---- views ---- */
+function dayKcal(d){var k=0;SL.forEach(function(s){var r=d[s[0]]&&rec(d[s[0]]);if(r)k+=+r.kcal||0});return k}
+function modeBar(){var m=mode();return '<div class="p177-seg" role="group" aria-label="Plan over">'+[[1,"Every week"],[2,"Week A / B"],[4,"4 weeks"]].map(function(x){return '<button type="button" class="p177-sg'+(m===x[0]?" on":"")+'" data-p177="mode" data-v="'+x[0]+'">'+x[1]+'</button>'}).join("")+'</div>'}
+function weekBar(){var m=mode();if(m<2)return "";var a="";for(var i=0;i<m;i++)a+='<button type="button" class="mp-w'+(i===ST.wk?" on":"")+'" data-p177="wk" data-v="'+i+'">'+wlabel(i)+'</button>';return '<div class="mp-wk" style="margin:8px 0">'+a+'</div>'}
+function slotRow(di,s,d){var r=d[s[0]]&&rec(d[s[0]]);
+ if(!r)return '<div class="mp-meal p177-r"><span class="nu-slot">'+s[1]+'</span><button type="button" class="linkbtn p177-add" data-p177="pick" data-d="'+di+'" data-s="'+s[0]+'">+ Add</button><span></span></div>';
+ return '<div class="mp-meal p177-r"><span class="nu-slot">'+s[1]+'</span><div class="mp-main"><button class="linkbtn mp-name" type="button" data-nur="'+esc(r.id)+'">'+esc(r.name)+'</button><span class="muted small">'+(r.kcal?r.kcal+' kcal':'')+(r.protein!=null&&r.kcal?' · ':'')+(r.protein!=null?r.protein+'g protein':'')+'</span></div><div class="mp-act"><button type="button" class="mp-i" data-p177="pick" data-d="'+di+'" data-s="'+s[0]+'" title="Change">Change</button><button type="button" class="mp-i bad" data-p177="rm" data-d="'+di+'" data-s="'+s[0]+'" title="Take out" aria-label="Take out">&times;</button></div></div>'}
+function dayCard(di){var d=week(ST.wk)[di],kc=dayKcal(d),today=((new Date().getDay()+6)%7)===di&&(mode()===1||ST.wk===curWeekIdx());
+ return '<div class="panel mp-day'+(today?" today":"")+'"><div class="mp-dh"><b>'+DF[di]+(today?' · today':'')+'</b><span class="muted small">'+(kc?'about '+kc+' kcal':'nothing planned')+'</span></div>'+SL.map(function(s){return slotRow(di,s,d)}).join("")+
+  '<div class="row" style="gap:8px;margin-top:6px"><button type="button" class="mp-i" data-p177="cpday" data-d="'+di+'">Copy this day</button>'+(Object.keys(d).length?'<button type="button" class="mp-i" data-p177="clday" data-d="'+di+'">Clear</button>':'')+'</div></div>'}
+function curWeekIdx(){var p=pat(),m=mode();return ((Math.round(dif(p.anchor,mon(kd(new Date())))/7)%m)+m)%m}
+function chips(sel,attr,labels){return '<div class="p177-chips">'+labels.map(function(l,i){return '<button type="button" class="p177-c'+(sel[i]?" on":"")+'" data-p177="'+attr+'" data-v="'+i+'" aria-pressed="'+(sel[i]?"true":"false")+'">'+l+'</button>'}).join("")+'</div>'}
+function sheetPick(){var sh=ST.sheet,kind=kindOf(sh.s),q=(ST.q||"").toLowerCase(),my=(P().myRecipes||[]),id=FH62.mine(),lib=FH62.lib().filter(function(r){return r.slot&&FH62.fits(r,id)});
+ function ok(r){return !q||(r.name+" "+(r.ingredients||"")).toLowerCase().indexOf(q)>=0}
+ var mine=my.filter(ok).sort(function(a,b){return (b.slot===kind)-(a.slot===kind)}),ideas=lib.filter(function(r){return !r.mine&&ok(r)&&(q||r.slot===kind)}).slice(0,q?40:12);
+ function row(r){return '<div class="mp-meal p177-r"><div class="mp-main" style="grid-column:1/3"><span class="mp-name">'+esc(r.name)+'</span><span class="muted small">'+(r.kcal?r.kcal+' kcal':'')+(r.protein!=null&&r.kcal?' · '+r.protein+'g protein':'')+'</span></div><div class="mp-act"><button type="button" class="mp-i on" data-p177="use" data-v="'+esc(r.id)+'">Use</button></div></div>'}
+ return '<div class="panel mp-b p177-sheet"><div class="mp-dh"><b>'+DF[sh.d]+' · '+SL.filter(function(s){return s[0]===sh.s})[0][1]+'</b><button type="button" class="linkbtn" data-p177="cancel">Cancel</button></div>'+
+  '<button class="btn gold" type="button" data-p177="new">+ New meal or snack</button>'+
+  '<label class="small">Or search what is already here<input type="search" id="p177q" placeholder="chicken, oats, shake..." value="'+esc(ST.q||"")+'" data-p177in="q"></label>'+
+  (mine.length?'<span class="label">My meals</span>'+mine.map(row).join(""):'')+(ideas.length?'<span class="label">Ideas for your eating style</span>'+ideas.map(row).join(""):'<p class="muted small" style="margin:0">Nothing found. Try New meal or snack.</p>')+'</div>'}
+function sheetNew(){var nb=ST.nb;
+ var rows=nb.rows.map(function(r,i){return '<div class="p177-ing"><input type="text" list="p177foods" placeholder="Food, for example chicken breast" value="'+esc(r.f)+'" data-p177in="f" data-i="'+i+'" aria-label="Food"><input type="number" min="0" inputmode="numeric" placeholder="grams" value="'+esc(r.g)+'" data-p177in="g" data-i="'+i+'" aria-label="Grams"><button type="button" class="mp-i bad" data-p177="ingdel" data-v="'+i+'" aria-label="Remove">&times;</button></div>'}).join("");
+ return '<div class="panel mp-b p177-sheet"><div class="mp-dh"><b>New meal or snack</b><button type="button" class="linkbtn" data-p177="cancel">Cancel</button></div>'+
+  '<label class="small">Name<input type="text" id="p177name" placeholder="for example Chicken, pasta and broccoli" value="'+esc(nb.name)+'" data-p177in="name"></label>'+
+  '<label class="small">What is it<select data-p177in="type">'+TYPES.map(function(t){return '<option value="'+t[0]+'"'+(nb.type===t[0]?" selected":"")+'>'+t[1]+'</option>'}).join("")+'</select></label>'+
+  '<span class="label">What is in it, and how much</span>'+rows+'<datalist id="p177foods">'+foodList().map(function(n){return '<option value="'+esc(n)+'">'}).join("")+'</datalist>'+
+  '<div class="row"><button type="button" class="btn ghost sm" data-p177="ingadd">+ Add another food</button></div><div id="p177tot" class="panel" style="margin:0">'+totLine(nb.rows)+'</div>'+
+  '<div class="row"><button class="btn gold" type="button" data-p177="savenew">Save and choose days</button></div></div>'}
+function sheetAssign(){var a=ST.as,r=rec(a.rid),m=mode();if(!r){ST.sheet=null;return ""}
+ var wsel=[];for(var i=0;i<m;i++)wsel.push(a.weeks.indexOf(i)>=0);
+ return '<div class="panel mp-b p177-sheet"><div class="mp-dh"><b>Put &ldquo;'+esc(r.name)+'&rdquo; in my plan</b><button type="button" class="linkbtn" data-p177="cancel">Not now</button></div>'+
+  '<span class="label">Which days</span>'+chips(a.days,"tgd",DN)+'<div class="row" style="gap:8px"><button type="button" class="mp-i" data-p177="alldays">Every day</button><button type="button" class="mp-i" data-p177="weekdays">Weekdays</button><button type="button" class="mp-i" data-p177="wkend">Weekend</button></div>'+
+  '<label class="small">At what time<select data-p177in="aslot">'+SL.map(function(s){return '<option value="'+s[0]+'"'+(a.slot===s[0]?" selected":"")+'>'+s[1]+'</option>'}).join("")+'</select></label>'+
+  (m>1?'<span class="label">Which weeks</span>'+chips(wsel,"tgw",Array.apply(0,Array(m)).map(function(_,i){return wlabel(i)})):'')+
+  '<div class="row"><button class="btn gold" type="button" data-p177="assign">Put it in my plan</button></div></div>'}
+function sheetCopy(){var c=ST.cp;if(c.kind==="day")return '<div class="panel mp-b p177-sheet"><div class="mp-dh"><b>Copy '+DF[c.from]+' to</b><button type="button" class="linkbtn" data-p177="cancel">Cancel</button></div>'+chips(c.to,"tgc",DN)+'<p class="muted small" style="margin:0">Days you tick are replaced with '+DF[c.from]+'.</p><div class="row"><button class="btn gold" type="button" data-p177="docp">Copy</button></div></div>';
+ var m=mode(),l=[];for(var i=0;i<m;i++)l.push(wlabel(i));return '<div class="panel mp-b p177-sheet"><div class="mp-dh"><b>Copy '+wlabel(ST.wk)+' to</b><button type="button" class="linkbtn" data-p177="cancel">Cancel</button></div>'+chips(c.to,"tgc",l)+'<p class="muted small" style="margin:0">Weeks you tick are replaced.</p><div class="row"><button class="btn gold" type="button" data-p177="docp">Copy</button></div></div>'}
+function sheetTpl(){var t=P().mpTpl||[];return '<div class="panel mp-b p177-sheet"><div class="mp-dh"><b>My saved weeks</b><button type="button" class="linkbtn" data-p177="cancel">Close</button></div>'+
+ '<label class="small">Save this week as<input type="text" id="p177tn" placeholder="for example Cutting week" value="'+esc(ST.tplName)+'" data-p177in="tn"></label><div class="row"><button class="btn gold sm" type="button" data-p177="tplsave">Save this week</button></div>'+
+ (t.length?t.map(function(x){return '<div class="mp-meal p177-r"><div class="mp-main" style="grid-column:1/3"><span class="mp-name">'+esc(x.name)+'</span></div><div class="mp-act"><button type="button" class="mp-i on" data-p177="tpluse" data-v="'+esc(x.id)+'">Use for '+wlabel(ST.wk)+'</button><button type="button" class="mp-i bad" data-p177="tpldel" data-v="'+esc(x.id)+'" aria-label="Remove">&times;</button></div></div>'}).join(""):'<p class="muted small" style="margin:0">Nothing saved yet. Save a week you like and use it again any time.</p>')+'</div>'}
+function sheetHtml(){var s=ST.sheet;return s==="new"?sheetNew():s==="assign"?sheetAssign():s==="copy"?sheetCopy():s==="tpl"?sheetTpl():(s&&s.s?sheetPick():"")}
+function view(){var o=P().mealPlan;if(stale())sync();var m=mode(),ready=o&&o.src!=="mine";
+ var h='<div class="panel mp-b"><h3 style="margin:0">My meal plan</h3><p class="muted small" style="margin:0">Set your meals once and they repeat. Pick how you plan, then add meals to each day.</p>'+modeBar()+
+  (ready?'<p class="small" style="margin:0;color:#E8DFC8">You are using a ready-made plan right now. Adding meals here switches to your own plan.</p>':'')+
+  '<div class="row" style="gap:8px"><button class="btn gold" type="button" data-p177="new">+ New meal or snack</button><button class="btn ghost" type="button" data-p177="tpl">Saved weeks</button></div></div>'+weekBar()+sheetHtml();
+ if(isEmpty()&&!ST.sheet)h+='<div class="panel"><p style="margin:0"><b>Start with one meal.</b> Tap New meal or snack, add the foods and grams, then tick the days it is for. Or tap + Add on any day below.</p></div>';
+ for(var i=0;i<7;i++)h+=dayCard(i);
+ h+='<div class="row" style="gap:8px;margin-top:10px;flex-wrap:wrap">'+(m>1?'<button type="button" class="btn ghost sm" data-p177="cpweek">Copy '+wlabel(ST.wk)+' to another week</button>':'')+'<button type="button" class="btn ghost sm" data-p177="clweek">Clear '+(m>1?wlabel(ST.wk):"this week")+'</button><button type="button" class="btn ghost sm" data-mptab="shop">Shopping list</button></div>'+
+  '<p class="small muted mp-disc">Your planned meals show on Today and feed the shopping list. General guidance from your own choices, not medical advice.</p>';
+ return h}
+/* ---- actions ---- */
+function tgl(arr,i){arr[i]=!arr[i]}
+function openNew(){ST.nb={name:"",type:ST.sheet&&ST.sheet.s?(kindOf(ST.sheet.s)):"dinner",rows:[{f:"",g:""},{f:"",g:""},{f:"",g:""}],from:ST.sheet&&ST.sheet.s?ST.sheet:null};ST.sheet="new";draw()}
+function toAssign(rid,d,s){var days=[false,false,false,false,false,false,false];if(d!=null)days[d]=true;var wk=mode()>1?[ST.wk]:[0];ST.as={rid:rid,days:days,slot:s||keyOfType(((rec(rid)||{}).slot)||"dinner"),weeks:wk};ST.sheet="assign";draw()}
+function saveNew(){var nb=ST.nb,nm=(nb.name||"").trim(),rows=nb.rows.filter(function(r){return String(r.f).trim()&&+r.g>0});
+ if(!nm){toast("Give the meal a name");return}if(!rows.length){toast("Add at least one food with its grams");return}
+ var ing=rows.map(function(r){return (+r.g)+" g "+String(r.f).trim()}).join(", "),t=totals(rows),r={id:"mine-"+Date.now().toString(36),name:nm,slot:nb.type,contains:FBPLAN.tagsFor(nm+" "+ing),kcal:t.hit?Math.round(t.kcal):null,protein:t.hit?Math.round(t.p):null,carbs:t.hit?Math.round(t.c):null,fat:t.hit?Math.round(t.f):null,ingredients:ing,method:[],mine:true};
+ var a=(P().myRecipes||[]).slice();a.push(r);P().myRecipes=a;save();var f=nb.from;ST.nb=null;toAssign(r.id,f?f.d:null,f?f.s:keyOfType(nb.type))}
+function assign(){var a=ST.as,days=[];a.days.forEach(function(v,i){if(v)days.push(i)});if(!days.length){toast("Tick at least one day");return}
+ var ws=mode()>1?a.weeks.slice():[0];if(!ws.length){toast("Tick at least one week");return}
+ ws.forEach(function(w){days.forEach(function(d){week(w)[d][a.slot]=a.rid})});ST.sheet=null;ST.as=null;changed();toast("Added to your plan")}
+function doCopy(){var c=ST.cp,p=pat();
+ if(c.kind==="day"){var src=week(ST.wk)[c.from];c.to.forEach(function(v,i){if(v&&i!==c.from)week(ST.wk)[i]=clone(src)})}
+ else{var s=week(ST.wk);c.to.forEach(function(v,i){if(v&&i!==ST.wk)p.weeks[i]=clone(s)})}
+ ST.sheet=null;ST.cp=null;changed();toast("Copied")}
+document.addEventListener("click",function(e){var t=e.target;if(!t.closest||!t.closest("#tab-nutrition"))return;var b=t.closest("[data-p177]");if(!b)return;e.preventDefault();var a=b.dataset.p177,v=b.dataset.v,d=b.dataset.d!=null?+b.dataset.d:null,p=pat(),i;
+ if(a==="mode"){var n=+v;p.mode=n;for(i=0;i<n;i++)week(i);ST.wk=0;ST.sheet=null;changed();if(n>1&&isEmpty()===false)toast(n===2?"Week B starts as a copy of Week A":"Weeks 2 to 4 start as copies of Week 1","Change what is different")}
+ else if(a==="wk"){ST.wk=+v;ST.sheet=null;draw()}
+ else if(a==="pick"){ST.sheet={d:d,s:b.dataset.s};ST.q="";draw()}
+ else if(a==="new")openNew();
+ else if(a==="use")toAssign(v,ST.sheet&&ST.sheet.s?ST.sheet.d:null,ST.sheet&&ST.sheet.s?ST.sheet.s:null);
+ else if(a==="rm"){delete week(ST.wk)[d][b.dataset.s];changed()}
+ else if(a==="cancel"){ST.sheet=null;ST.nb=null;ST.as=null;ST.cp=null;draw()}
+ else if(a==="ingadd"){ST.nb.rows.push({f:"",g:""});draw()}
+ else if(a==="ingdel"){ST.nb.rows.splice(+v,1);if(!ST.nb.rows.length)ST.nb.rows.push({f:"",g:""});draw()}
+ else if(a==="savenew")saveNew();
+ else if(a==="tgd"){tgl(ST.as.days,+v);draw()}
+ else if(a==="alldays"){ST.as.days=[true,true,true,true,true,true,true];draw()}
+ else if(a==="weekdays"){ST.as.days=[true,true,true,true,true,false,false];draw()}
+ else if(a==="wkend"){ST.as.days=[false,false,false,false,false,true,true];draw()}
+ else if(a==="tgw"){var k=ST.as.weeks.indexOf(+v);if(k>=0)ST.as.weeks.splice(k,1);else ST.as.weeks.push(+v);draw()}
+ else if(a==="assign")assign();
+ else if(a==="cpday"){ST.cp={kind:"day",from:d,to:[false,false,false,false,false,false,false]};ST.sheet="copy";draw()}
+ else if(a==="cpweek"){var z=[];for(i=0;i<mode();i++)z.push(false);ST.cp={kind:"week",to:z};ST.sheet="copy";draw()}
+ else if(a==="tgc"){ST.cp.to[+v]=!ST.cp.to[+v];draw()}
+ else if(a==="docp")doCopy();
+ else if(a==="clday"){p.weeks[ST.wk][d]={};changed()}
+ else if(a==="clweek"){p.weeks[ST.wk]=blank();changed()}
+ else if(a==="tpl"){ST.sheet="tpl";draw()}
+ else if(a==="tplsave"){var nm=(ST.tplName||"").trim()||("Week saved "+new Date().toLocaleDateString("en-GB",{day:"numeric",month:"short"})),tp=(P().mpTpl||[]).slice();tp.push({id:"t"+Date.now().toString(36),name:nm,d:clone(week(ST.wk))});P().mpTpl=tp;ST.tplName="";save();draw();toast("Week kept for later")}
+ else if(a==="tpluse"){var f=(P().mpTpl||[]).filter(function(x){return x.id===v})[0];if(f){p.weeks[ST.wk]=clone(f.d);ST.sheet=null;changed();toast("Week added to your plan")}}
+ else if(a==="tpldel"){P().mpTpl=(P().mpTpl||[]).filter(function(x){return x.id!==v});save();draw()}
+},true);
+document.addEventListener("input",function(e){var t=e.target;if(!t.closest||!t.closest("#tab-nutrition")||!t.dataset||!t.dataset.p177in)return;var k=t.dataset.p177in,i=+t.dataset.i;
+ if(k==="name"&&ST.nb)ST.nb.name=t.value;else if((k==="f"||k==="g")&&ST.nb){ST.nb.rows[i][k]=t.value;var el=document.getElementById("p177tot");if(el)el.innerHTML=totLine(ST.nb.rows)}
+ else if(k==="tn")ST.tplName=t.value;
+ else if(k==="q"){ST.q=t.value;var pos=t.selectionStart;draw();var q=document.getElementById("p177q");if(q){q.focus();try{q.setSelectionRange(pos,pos)}catch(er){}}}});
+document.addEventListener("change",function(e){var t=e.target;if(!t.closest||!t.closest("#tab-nutrition")||!t.dataset)return;var k=t.dataset.p177in;if(k==="type"&&ST.nb)ST.nb.type=t.value;if(k==="aslot"&&ST.as)ST.as.slot=t.value});
+var css=document.createElement("style");css.textContent=
+ ".p177-seg{display:grid;grid-template-columns:repeat(3,1fr);border:1px solid var(--line);border-radius:999px;overflow:hidden}.p177-sg{all:unset;cursor:pointer;padding:10px 6px;font-size:14px;font-weight:700;text-align:center}.p177-sg.on{background:#A9172F;color:#fff}"+
+ ".p177-chips{display:flex;gap:6px;flex-wrap:wrap}.p177-c{all:unset;cursor:pointer;min-width:44px;box-sizing:border-box;text-align:center;padding:9px 10px;border-radius:12px;border:1px solid var(--line);font-size:14px;font-weight:700}.p177-c.on{background:rgba(255,106,61,.25);border-color:#A9172F}"+
+ ".p177-ing{display:grid;grid-template-columns:1fr 90px auto;gap:8px;align-items:center}.p177-ing input{background:rgba(255,255,255,.04);border:1px solid var(--line);border-radius:10px;color:inherit;padding:9px 12px;font:inherit;font-size:14px;width:100%;box-sizing:border-box}"+
+ ".p177-sheet{border-color:#A9172F}.p177-sheet input[type=search],.p177-sheet input[type=text],.p177-sheet select{background:rgba(255,255,255,.04);border:1px solid var(--line);border-radius:10px;color:inherit;padding:9px 12px;font:inherit;font-size:14px;width:100%;box-sizing:border-box}"+
+ ".p177-add{font-weight:700}.p177-r{grid-template-columns:110px 1fr auto}@media(max-width:560px){.p177-r{grid-template-columns:100px 1fr auto}.p177-r .mp-act{justify-content:flex-end}}";
+document.head.appendChild(css);
+return {view:view,sync:sync}})();
 
 /* FighterBase v44: always a way back, always a next step. */
 var N31=N31||false;
