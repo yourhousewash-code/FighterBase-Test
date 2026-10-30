@@ -17603,6 +17603,7 @@ function first(){var n=(P().name||"").trim().split(/\s+/)[0];return n}
 function greet(){var h=new Date().getHours();return h<12?"Good morning":h<18?"Good afternoon":"Good evening"}
 function nextClass(){var c=club();if(!c||!inClub())return null;var now=new Date(),hm=("0"+now.getHours()).slice(-2)+":"+("0"+now.getMinutes()).slice(-2);
  try{for(var i=0;i<7;i++){var k=addDays(TODAY,i),cl=classesOn(c,k).filter(function(x){return !x.kids||S.canEdit}).filter(function(x){return i>0||x.time>=hm})[0];if(cl)return {d:k,cl:cl,today:i===0}}}catch(x){}return null}
+function myBooked249(){try{var c=club();if(!c||!inClub())return null;var now=new Date(),hm=("0"+now.getHours()).slice(-2)+":"+("0"+now.getMinutes()).slice(-2),rs=P().rsvp||{};for(var i=0;i<14;i++){var k=addDays(TODAY,i),cl=classesOn(c,k).filter(function(x){return rs[k+"_"+x.id]&&(i>0||x.time>=hm)})[0];if(cl)return {d:k,cl:cl}}}catch(x){}return null}
 function dayName(k){var t=new Date(k+"T12:00");return t.toLocaleDateString("en-GB",{weekday:"long"})}
 function lastSess(){try{var m=logMap();for(var i=0;i<=90;i++){var k=addDays(TODAY,-i),l=m[k],ss=l&&l.sessions;if(ss&&ss.length){return {k:k,i:i,s:ss[ss.length-1],n:ss.length}}}}catch(x){}return null}
 function ago(i){return i===0?"Today":i===1?"Yesterday":i+" days ago"}
@@ -17655,7 +17656,7 @@ var css=document.createElement("style");css.textContent=
 "body:not(.fb-desk):not(.hubview) #subnav{padding-block:4px}body:not(.fb-desk):not(.hubview) #subnav button{min-height:38px;padding:6px 14px;font-size:13px}"+
 "body.b155:not(.fb-desk):not(.hubview) #fb155back{display:inline-flex;align-items:center;justify-content:center;width:44px;height:44px;flex:none;margin-left:-8px;border:0;background:transparent;color:inherit;font-size:26px;line-height:1;cursor:pointer}"+
 "}";
-document.head.appendChild(css);
+css.textContent+=".two249{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px}.two249 .cc249{margin:0;min-width:0}";document.head.appendChild(css);
 function drawHero(){try{var tb=document.getElementById("tab-today"),el=document.getElementById("fb155");if(!tb)return;
  if(!memberView()){if(el)el.remove();return}
  var dh=null;try{if(window.FH161&&FH161.on())dh=FH161.html()}catch(x){console.error(x)}
@@ -17663,8 +17664,8 @@ function drawHero(){try{var tb=document.getElementById("tab-today"),el=document.
  var w=week(),n=nextClass(),sg=sugg(w),sk=stage(),nm=first(),h="";
  h+='<div><p class="h155">'+e(greet())+(nm?", "+e(nm):"")+'</p></div><p class="q155">'+e(pick(sk,0))+'</p>';
  var mu=msgUnread();if(mu)h+='<div class="m155 hi"><div><p class="k155">'+(mu.kind==="coach"?"From your coach":"From your club")+'</p><p style="font-weight:700">'+e(mu.t)+'</p><p class="muted small" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+e(mu.b||"")+'</p></div><button type="button" class="btn ghost sm" data-f155inbox>Read</button></div>';
- if(n){h+='<div class="c155">'+(window.FH163?FH163.banner(n.cl.title||n.cl.name,n.cl.sport,n.cl.kids):"")+'<p class="k155">Next class</p><p class="t155">'+e(n.cl.title||n.cl.name||"Class")+'</p><p class="muted small" style="margin:0">'+(n.today?"Today":e(dayName(n.d)))+" "+e(n.cl.time)+" · "+e(club().name)+'</p><div class="row155"><button type="button" class="btn" data-goto="clubpage">Class and check-in</button></div></div>'}
- else if(inClub()){h+='<div class="c155"><p class="k155">Next class</p><p class="t155">Nothing coming up</p><p class="muted small" style="margin:0">Check your club timetable for the week.</p><button type="button" class="btn ghost" data-goto="clubpage">Open club page</button></div>'}
+ if(inClub()){var bk=myBooked249(),cell=function(lab,o,empty){return '<div class="c155 cc249"><p class="k155">'+lab+'</p>'+(o?'<p class="t155" style="font-size:20px">'+e(o.cl.title||o.cl.name||"Class")+'</p><p class="muted small" style="margin:0">'+(o.d===TODAY?"Today":e(dayName(o.d)))+" "+e(o.cl.time)+'</p>':'<p class="t155" style="font-size:18px">'+empty[0]+'</p><p class="muted small" style="margin:0">'+empty[1]+'</p>')+'</div>'};
+  h+='<div class="two249">'+cell("Next class at the club",n,["Nothing coming up","Check the timetable."])+cell("Your next booked class",bk,["None booked","Tap I'm coming on a class."])+'</div><div class="row155" style="margin:-4px 0 12px"><button type="button" class="btn" data-goto="clubpage">Class and check-in</button></div>'}
  var ls=lastSess(),mn=myNext();
  if(ls){var sp=(ls.s.sport&&ls.s.sport!=="General"?ls.s.sport+" · ":"")+(ls.s.type||"Session");h+='<div class="c155"><p class="k155">Last session</p><p class="t155" style="font-size:20px">'+e(sp)+'</p><p class="muted small" style="margin:0">'+e(ago(ls.i))+(ls.s.mins?" · "+(+ls.s.mins)+" min":"")+(ls.s.rpe?" · effort "+(+ls.s.rpe)+"/10":"")+'</p></div>'}
  else h+='<div class="c155"><p class="k155">Last session</p><p class="t155" style="font-size:20px">None logged yet</p><p class="muted small" style="margin:0">Your first one starts the record.</p><button type="button" class="btn ghost" data-goto="train">Log a session</button></div>';
