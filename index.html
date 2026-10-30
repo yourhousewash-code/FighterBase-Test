@@ -6477,7 +6477,7 @@ function engPage(){var el=$("#engineBody");if(!el)return;var p=P(),st=E.streaks(
  if(PV.view==="over"){var W=E.weeks(12);
   h+='<div class="panel"><div class="sec-h"><h3>Sessions per week</h3><button class="linkbtn" type="button" data-explain="wk">How it counts</button></div>'+bars(W)+'<p class="muted small" style="margin:0">Gold = plan hit. Striped = paused week (injury or break). The current week is lighter until it\'s done.</p></div>';
   var ms=E.milestones(),got=ms.filter(function(m){return m.got}).sort(function(a,b){return (b.date||"").localeCompare(a.date||"")}),up=ms.filter(function(m){return !m.got}).slice(0,3);
-  h+='<div class="panel"><div class="sec-h"><h3>Milestones</h3><button class="linkbtn" type="button" data-explain="mile">About</button></div><div class="fb-ms">'+got.slice(0,8).map(function(m){return '<div class="fb-mi got"><span>★</span><b>'+esc(m.label)+'</b><em>'+(m.date?fmtD(m.date):"")+'</em></div>'}).join("")+'</div><span class="label" style="margin-top:6px">Coming up (not counted yet)</span><div class="fb-ms">'+up.map(function(m){return '<div class="fb-mi"><span>○</span><b>'+esc(m.label)+'</b><em>'+(m.need?m.need+" to go":"")+'</em></div>'}).join("")+'</div></div>';
+  var msH='<div class="panel"><div class="sec-h"><h3>Milestones</h3><button class="linkbtn" type="button" data-explain="mile">About</button></div><div class="fb-ms">'+got.slice(0,8).map(function(m){return '<div class="fb-mi got"><span>★</span><b>'+esc(m.label)+'</b><em>'+(m.date?fmtD(m.date):"")+'</em></div>'}).join("")+'</div><span class="label" style="margin-top:6px">Coming up (not counted yet)</span><div class="fb-ms">'+up.map(function(m){return '<div class="fb-mi"><span>○</span><b>'+esc(m.label)+'</b><em>'+(m.need?m.need+" to go":"")+'</em></div>'}).join("")+'</div></div>';h+=(window.FH185?FH185.panel(msH):msH);
   var sg=E.sinceGrading(),fr=E.fights(),cw=fr.filter(function(x){return x.conf&&x.f.res==="W"}).length,cl=fr.filter(function(x){return x.conf&&x.f.res==="L"}).length,cd=fr.filter(function(x){return x.conf&&x.f.res==="D"}).length;
   h+='<div class="grid2 fb-g2"><div class="panel" data-explain="grading"><span class="label">Since last grading</span><b class="fb-big">'+(sg?sg.sessions+" sessions · "+sg.hours+" h":"—")+'</b><span class="muted small">'+(sg?esc(sg.g.belt)+" · "+fmtD(sg.g.date):"No grading recorded")+'</span></div><div class="panel"><span class="label">Club-confirmed record</span><b class="fb-big">'+cw+'-'+cl+'-'+cd+'</b><span class="muted small">'+(fr.length?fr.length+" fights in your own log":"No fights logged")+' · <button class="linkbtn" type="button" data-goto="film">Fight film</button></span></div></div>'}
  else{var keys=PV.keys||defKeys();
@@ -7770,7 +7770,8 @@ function fresh(){var p=P(),g=p.eg||{},ch=(p.compHist||{});return {stance:p.stanc
  foodQ:g.diet&&g.diet.on?true:null,prot:(g.diet&&g.diet.protein)||"",diet:p.diet||"none",diets:(p.diets&&p.diets.length?p.diets.slice():(p.diet&&p.diet!=="none"?[p.diet]:[])),preset:null,ck:p.ckMode||"weekly",
  skQ:(p.sk||[]).length?true:null,skills:(p.sk||[]).filter(function(s){return s.focus}).map(function(s){return s.name}),
  head:g.headline||null,exp:p.exp||null,injQ:(p.inj||[]).some(function(i){return !i.end})?true:null,injAreas:[],injNote:"",allergies:(p.allergies||[]).slice(),avoid:(p.avoidWords||[]).join(", "),tgt:!!(p.height&&p.age),height:p.height||"",age:p.age||"",sex:p.sex||"",wu:p.weightUnit||"kg",adult:!!p.adultOk,gymQ:p.clubId?true:null,code:"",club:null,clubId:p.clubId||null,cons:null,msg:""}}
-function steps(){var s=["name","sport","other","exp"];if(A.sports.some(function(x){return STRIKE.indexOf(x)>=0}))s.push("stance");s.push("adult","quick");YNQ().forEach(function(q){s.push("yn_"+q[0])});s.push("train");if(window.FBS)s.push("pack");s.push("help");if(A.help.length)s.push("helpn");if(A.rec)s.push("rec");if(A.fightQ)s.push("fight");if(A.grQ&&graded())s.push("grading");if(A.skQ)s.push("skills");if(A.wtQ)s.push("weight");if(A.foodQ)s.push("food");if(A.injQ)s.push("inj");s.push("check");if(heads().length>1)s.push("head");s.push("gym");if(A.gymQ&&A.club)s.push("share");s.push("done");return s}
+var MS0=[["s1","Log my first session","A small, quick win"],["s10","Reach 10 sessions","Where habits start to stick"],["w4","4 consistent weeks in a row","Turning up week after week"],["m12","A full year of training","The long game"]];
+function steps(){var s=["name","sport","other","exp"];if(A.sports.some(function(x){return STRIKE.indexOf(x)>=0}))s.push("stance");s.push("adult","quick");YNQ().forEach(function(q){s.push("yn_"+q[0])});s.push("train");if(window.FBS)s.push("pack");s.push("help");if(A.help.length)s.push("helpn");if(A.rec)s.push("rec");if(A.fightQ)s.push("fight");if(A.grQ&&graded())s.push("grading");if(A.skQ)s.push("skills");if(A.wtQ)s.push("weight");if(A.foodQ)s.push("food");if(A.injQ)s.push("inj");s.push("check");if(heads().length>1)s.push("head");s.push("mile");s.push("gym");if(A.gymQ&&A.club)s.push("share");s.push("done");return s}
 function heads(){var h=["train"];if(A.fightQ)h.push("fight");if(A.wtQ)h.push("weight");if(A.grQ&&graded())h.push("grading");if(A.skQ&&A.skills.length)h.push("skill");if(A.foodQ)h.push("diet");return h}
 function main(){return A.sports[0]||"Muay Thai"}
 function kinds(){return window.FH58?FH58.kindsFor(main()):[["fight","Fight","Fights",true],["interclub","Interclub","Interclubs",false]]}
@@ -7791,7 +7792,7 @@ function recPreset(){return A.exp==="comp"?"fighter":(A.exp==="3y"||A.exp==="exp
 function applyPreset(id){var d=PRE.filter(function(x){return x[0]===id})[0];if(!d)return;A.preset=id;if(!d[3]){YNQ().forEach(function(q){A[q[0]]=null});return}
  A.tmode="count";A.tn=d[3].tn;A.ck=d[3].ck;YNQ().forEach(function(q){A[q[0]]=d[3].yes.indexOf(q[0])>=0})}
 function dietNames(){if(!A.diets||!A.diets.length||typeof FB_DIETS==="undefined")return "";return A.diets.map(function(i){return (FB_DIETS.filter(function(d){return d.id===i})[0]||{}).name||""}).filter(Boolean).join(" + ")+" · "}
-var SEC=[["you","About you",["name","sport","other","exp","stance","adult"],"#C81E3A"],["setup","Your set-up",["quick","yesno"],"#E8DFC8"],["train","Training",["train","pack","help","helpn"],"#C81E3A"],["fight","Fighting",["rec","fight","grading","skills"],"#E5484D"],["body","Body and fuel",["weight","food","inj"],"#3FC57E"],["goals","Check-ins and goals",["check","head"],"#4DA3FF"],["gym","Your gym",["gym","share"],"#E8DFC8"]];
+var SEC=[["you","About you",["name","sport","other","exp","stance","adult"],"#C81E3A"],["setup","Your set-up",["quick","yesno"],"#E8DFC8"],["train","Training",["train","pack","help","helpn"],"#C81E3A"],["fight","Fighting",["rec","fight","grading","skills"],"#E5484D"],["body","Body and fuel",["weight","food","inj"],"#3FC57E"],["goals","Check-ins and goals",["check","head","mile"],"#4DA3FF"],["gym","Your gym",["gym","share"],"#E8DFC8"]];
 function secOf(id){if(id&&id.indexOf("yn_")===0)id="yesno";for(var i=0;i<SEC.length;i++)if(SEC[i][2].indexOf(id)>=0)return SEC[i];return null}
 function secFirst(sid){var st=steps();for(var i=0;i<st.length;i++){var c=secOf(st[i]);if(c&&c[0]===sid)return i}return -1}
 function activeSecs(){var st=steps();return SEC.filter(function(c){return st.some(function(x){return c[2].indexOf(x)>=0})})}
@@ -7811,7 +7812,7 @@ var WHY={you:["Why we ask","Your sport and how long you've trained decide the dr
  head:["Why pick one","Your Home leads with what matters most right now, so the first thing you see each day is what you care about."],
  gym:["Why link your gym","Linking lets your coach see attendance and help with your goals, and counts your sessions automatically. You choose what they see."],
  share:["Why you choose","Sharing is opt-in for each type of data and can be switched off at any time."]};
-var BG={name:"hero",sport:"hero",other:"train-f",exp:"hero",stance:"hero",adult:"hero",you:"hero",quick:"hero-f",yesno:"hero-f",train:"train-f",rec:"onboard",fight:"onboard",grading:"onboard",skills:"train-f",weight:"hero-f",food:"hero",inj:"train-f",check:"onboard",head:"hero",gym:"onboard",share:"onboard",done:"hero-f"};
+var BG={name:"hero",sport:"hero",other:"train-f",exp:"hero",stance:"hero",adult:"hero",you:"hero",quick:"hero-f",yesno:"hero-f",train:"train-f",rec:"onboard",fight:"onboard",grading:"onboard",skills:"train-f",weight:"hero-f",food:"hero",inj:"train-f",check:"onboard",head:"hero",gym:"onboard",share:"onboard",done:"hero-f",mile:"hero-f"};
 function bgFor(s){if(s.indexOf("yn_")===0)s="yesno";var I=window.FH_IMAGES||{};return I[BG[s]]||I.hero||""}
 function secSummary(c){var out="";switch(c[0]){case "you":out=A.sports.join(" + ");break;case "setup":var pp=PRE.filter(function(x){return x[0]===A.preset})[0];out=pp?pp[1]:"Custom";break;case "train":out=A.tmode==="days"?A.tdays.length+" days":A.tn+" a week";break;
  case "fight":var o=[];if(A.rec)o.push((+A.w||0)+"-"+(+A.l||0));if(A.fightQ&&A.fdate)o.push(new Date(A.fdate+"T12:00").toLocaleDateString("en-GB",{day:"numeric",month:"short"}));if(A.grQ&&A.belt)o.push(A.belt);if(A.skQ&&A.skills.length)o.push(A.skills.length+" skill"+(A.skills.length>1?"s":""));out=o.join(", ")||"Skipped";break;
@@ -7864,6 +7865,8 @@ function body(){var s=steps()[step],h="";
   '<label class="ob-tog"><input type="checkbox" id="obTgt"'+(A.tgt?" checked":"")+'><span><b>Give me daily calorie and protein targets</b><small>A rough starting estimate from your height, age, sex, weight and training, not medical advice. Change it any time in Me. Skip it if you just want the diary.</small></span></label>'+
   (A.tgt?'<div class="ob-rec">'+num("obHt",A.height,"e.g. 178","Height (cm)",110)+num("obAge",A.age,"e.g. 30","Age",90)+'<div class="field"><span class="label">Sex</span><div class="chips">'+[["male","Male"],["female","Female"]].map(function(x){return '<button type="button" class="chip" data-obsex="'+x[0]+'" aria-pressed="'+(A.sex===x[0])+'">'+x[1]+'</button>'}).join("")+'</div></div></div>':'<div class="ob-rec">'+num("obProt",A.prot,"optional","Daily protein target (g)",170)+'</div>'):'');
  if(s==="inj")h='<h2>Your injury</h2><p class="ob-sub">Your plan works around it, and your gym only sees "training modified", never the details.</p><div class="field"><span class="label">Where? <em class="ob-multi">Pick all that apply</em></span><div class="chips">'+["Knee","Shoulder","Back","Hand or wrist","Ankle","Neck","Ribs","Other"].map(function(x){return '<button type="button" class="chip" data-obinj="'+x+'" aria-pressed="'+(A.injAreas.indexOf(x)>=0)+'">'+x+'</button>'}).join("")+'</div></div><div class="field"><label class="label" for="obInjN">Anything to note? (optional)</label><input type="text" id="obInjN" maxlength="120" value="'+esc(A.injNote)+'" placeholder="e.g. No kicking with the left for 2 weeks"></div><p class="ob-sub small">This isn\'t medical advice. If it\'s new or getting worse, see a physio or GP.</p>';
+
+ if(s==="mile")h='<h2>Set your first milestone</h2><p class="ob-sub">Something to aim for. Pick one or two, or skip. They grow with you in Progress.</p><div class="ob-list cmp">'+MS0.map(function(x){return '<button type="button" class="ob-c wide'+((A.ms||[]).indexOf(x[0])>=0?" on":"")+'" data-obms="'+x[0]+'"><b>'+esc(x[1])+'</b><span>'+esc(x[2])+'</span></button>'}).join("")+'</div><div class="field"><label class="label" for="obMsOwn">Or in your own words (optional)</label><input id="obMsOwn" maxlength="60" value="'+esc(A.msOwn||"")+'" placeholder="e.g. First amateur fight, get my blue belt"></div>';
  if(s==="check")h='<h2>How do you want to check in?</h2><p class="ob-sub">Nobody wants 20 questions a day. Training comes from check-ins and your watch.</p><div class="ob-list cmp">'+[["weekly","Weekly","30 seconds once a week: how the week went, eating, water, sleep.","Recommended"],["quick","Daily, quick","The same four taps every day. About 10 seconds.",""],["daily","Daily, detailed","The full daily log: sleep hours, energy, soreness, water and more.",""],["light","Only when I want","No reminders. Log whenever you like.",""]].map(function(x){return '<button type="button" class="ob-c wide'+(A.ck===x[0]?" on":"")+'" data-obck="'+x[0]+'">'+(x[3]?'<span class="ob-rec-tag">'+x[3]+'</span>':'')+'<b>'+x[1]+'</b><span>'+x[2]+'</span></button>'}).join("")+'</div>';
  if(s==="skills"){var L=[];A.sports.forEach(function(sp){(SK[sp]||[]).forEach(function(x){if(L.indexOf(x)<0)L.push(x)})});if(!L.length)L=SK["Muay Thai"];A.skills.forEach(function(x){if(L.indexOf(x)<0)L.push(x)});
   h='<h2>Techniques to work on</h2><p class="ob-sub">Choose up to three things you are working on right now. After a session we will ask one quick question for each: "what worked today?". Your answers build a simple log so you can see yourself improving.</p><p class="ob-sub small">Only you see it, unless you choose to share it with your coach.</p>'+yn("skQ","Yes","Skip for now")+
@@ -7894,7 +7897,7 @@ function render(){try{if(A&&!(S.profile&&S.profile.onboarded))localStorage.setIt
  el.hidden=false;document.body.style.overflow="hidden";var ns=el.querySelector(".ob-secs"),cu=el.querySelector(".ob-sec.cur");if(ns){ns.scrollLeft=px;if(cu){try{var l=cu.offsetLeft-12;if(l<ns.scrollLeft||l+cu.offsetWidth>ns.scrollLeft+ns.clientWidth)ns.scrollLeft=Math.max(0,l)}catch(e){}}}
  var f=el.querySelector(".ob-body input[type=text]:not([value]),.ob-body #obName");if(f&&st[step]==="name"&&!A.name)setTimeout(function(){try{f.focus()}catch(e){}},50)}
 function grab(){var g=function(id){var e=document.getElementById(id);return e?e.value:null},v;
- if((v=g("obName"))!=null)A.name=v.trim();if((v=g("obHelpN"))!=null)A.helpNote=v.trim().slice(0,120);var hs=document.getElementById("obHelpS");if(hs)A.helpShare=hs.checked;if((v=g("obAv"))!=null)A.avoid=v;if((v=g("obHt"))!=null)A.height=v;if((v=g("obAge"))!=null)A.age=v;if((v=g("obInjN"))!=null)A.injNote=v;var tg=document.getElementById("obTgt");if(tg)A.tgt=tg.checked;var hp=document.getElementById("obHidePr");if(hp)A.hidePr=hp.checked;var ad=document.getElementById("obAdult");if(ad)A.adult=ad.checked;if((v=g("obIc"))!=null)A.ic=v;if((v=g("obW"))!=null)A.w=v;if((v=g("obL"))!=null)A.l=v;if((v=g("obD"))!=null)A.d=v;if((v=g("obFin"))!=null)A.fin=v;
+ if((v=g("obName"))!=null)A.name=v.trim();if((v=g("obMsOwn"))!=null)A.msOwn=v.trim().slice(0,60);if((v=g("obHelpN"))!=null)A.helpNote=v.trim().slice(0,120);var hs=document.getElementById("obHelpS");if(hs)A.helpShare=hs.checked;if((v=g("obAv"))!=null)A.avoid=v;if((v=g("obHt"))!=null)A.height=v;if((v=g("obAge"))!=null)A.age=v;if((v=g("obInjN"))!=null)A.injNote=v;var tg=document.getElementById("obTgt");if(tg)A.tgt=tg.checked;var hp=document.getElementById("obHidePr");if(hp)A.hidePr=hp.checked;var ad=document.getElementById("obAdult");if(ad)A.adult=ad.checked;if((v=g("obIc"))!=null)A.ic=v;if((v=g("obW"))!=null)A.w=v;if((v=g("obL"))!=null)A.l=v;if((v=g("obD"))!=null)A.d=v;if((v=g("obFin"))!=null)A.fin=v;
  if((v=g("obFty"))!=null)A.ftypeO=v.trim();if((v=g("obFru"))!=null)A.frulesO=v.trim();if((v=g("obFlim"))!=null)A.flimit=v;if((v=g("obFrn"))!=null&&v!=="")A.frounds=v;if((v=g("obFrl"))!=null&&v!=="")A.flen=v;if((v=g("obFd"))!=null)A.fdate=v;if((v=g("obFe"))!=null)A.fevent=v;if((v=g("obWn"))!=null)A.wnow=v;if((v=g("obWt"))!=null)A.wtar=v;if((v=g("obBelt"))!=null)A.belt=v.trim();if((v=g("obGby"))!=null)A.gby=v;if((v=g("obProt"))!=null)A.prot=v;if((v=g("obCode"))!=null)A.code=v.trim().toUpperCase()}
 async function find(){grab();if(!A.code){A.msg="Type your club code first.";render();return}A.msg="Looking…";render();
  try{var s=await db.collection("clubs").where("code","==",A.code).limit(1).get();if(s.empty){A.msg="No gym with that code. Check it with your coach.";render();return}var d=s.docs[0];A.club=Object.assign({id:d.id},d.data());A.clubId=d.id;A.cons=null;A.msg="";render()}
@@ -7927,7 +7930,7 @@ function finish(){var p=P(),sp=A.sports.slice(),g=p.eg?JSON.parse(JSON.stringify
  p.compHist={has:A.rec,ic:A.ic,w:A.w,l:A.l,d:A.d,fin:A.fin};p.hidePractice=!!A.hidePr&&(+A.w||0)+(+A.l||0)+(+A.d||0)>0;
  /* gym */
  var joined=false;if(A.gymQ&&A.club&&A.clubId){if(p.clubId!==A.clubId)joined=true;p.clubId=A.clubId;p.leagueOptIn=false}
- try{localStorage.removeItem("fb_obdraft_v1")}catch(e){}delete p.obDraft;p.onboarded=true;p.roadSkip=true;p.created=p.created||TD;p.obV=2;S.profile=p;
+ try{localStorage.removeItem("fb_obdraft_v1")}catch(e){}delete p.obDraft;try{if(window.FH185){S.profile=p;(A.ms||[]).forEach(function(k){var d={s1:{type:"sess",n:1},s10:{type:"sess",n:10},w4:{type:"weeks",n:4},m12:{type:"months",n:12}}[k];if(d)FH185.adopt(d)});if(A.msOwn)FH185.adopt({type:"manual",title:A.msOwn})}}catch(e){}p.onboarded=true;p.roadSkip=true;p.created=p.created||TD;p.obV=2;S.profile=p;
  if(p.clubId&&A.cons&&window.FB54)try{FB54.apply(A.cons)}catch(e){}
  var nm=A.name,cl=A.club;close();try{profChanged()}catch(e){}try{window.FBN&&FBN.sync()}catch(e){}["renderProfile","renderTargets","renderLib","renderCheckin"].forEach(function(f){try{if(typeof window[f]==="function")window[f]()}catch(e){}});
  if(joined){try{pushClubEvent("joined the club")}catch(e){}try{subscribeClub()}catch(e){}}
@@ -7947,7 +7950,7 @@ document.addEventListener("click",function(e){var t=e.target;if(!t.closest||!A)r
  if(b=t.closest("[data-obot]")){grab();var ot=b.dataset.obot,oi=A.other.indexOf(ot);if(oi>=0)A.other.splice(oi,1);else A.other.push(ot);render();return}
  if(b=t.closest("[data-obsp]")){grab();var s=b.dataset.obsp,i=A.sports.indexOf(s);if(i>=0)A.sports.splice(i,1);else{A.sports.push(s);A.nomart=false}render();return}
  if(t.closest("[data-obnm]")){grab();A.nomart=!A.nomart;if(A.nomart)A.sports=[];render();return}
- if(b=t.closest("[data-obpmore]")){A.preMore=true;render();return}if(b=t.closest("[data-obpk]")){var pk=b.dataset.obpk;if(A.pack[pk])delete A.pack[pk];else A.pack[pk]=1;render();return}
+ if(b=t.closest("[data-obms]")){A.ms=A.ms||[];var mi=A.ms.indexOf(b.dataset.obms);if(mi>=0)A.ms.splice(mi,1);else A.ms.push(b.dataset.obms);grab();render();return}if(b=t.closest("[data-obpmore]")){A.preMore=true;render();return}if(b=t.closest("[data-obpk]")){var pk=b.dataset.obpk;if(A.pack[pk])delete A.pack[pk];else A.pack[pk]=1;render();return}
  if(b=t.closest("[data-obhelp]")){var hv=b.dataset.obhelp,hi=A.help.indexOf(hv);if(hi>=0)A.help.splice(hi,1);else A.help.push(hv);grab();render();return}
  if(b=t.closest("[data-obtm]")){A.tmode=b.dataset.obtm;render();return}
  if(b=t.closest("[data-obtn]")){A.tn=+b.dataset.obtn;render();return}
@@ -13465,7 +13468,7 @@ var TOUR=[
  ["Today","Your day at a glance: your next class, your last session, your week and any note from your coach. Check-in is next to it."],
  ["Train","Log a session, build or follow a workout, see classes and what you have been taught. This is the button you will use most."],
  ["Food","Your food diary, meals and shopping list. Optional: only track what is useful to you."],
- ["Progress","Your training record, charts, goals, fights and crews. Come here to see how far you have come."],
+ ["Progress","Your training record, charts, goals, fights and crews, plus milestones that grow with you. Come here to see how far you have come."],
  ["Me","Your settings, your gym, what your club sees, and Learn and guides. Redo the sign-up questions here any time."]];
 var TS=-1,TL=[];
 function tourList(){var bt=document.querySelectorAll("nav.bottom .inner > button");return TOUR.map(function(t,i){return {t:t,b:bt[i]}}).filter(function(x){return x.b&&x.b.offsetParent&&x.b.getBoundingClientRect().width>4})}
@@ -19890,6 +19893,100 @@ document.head.appendChild(css);
 var st0=showTab;showTab=function(t){var r=st0.apply(this,arguments);try{if(t==="learn")card()}catch(x){}return r};
 setInterval(function(){try{var t=document.getElementById("tab-learn");if(t&&!t.hidden)card()}catch(x){}},3000);
 return {open:open,close:close,all:function(){return D.slice()},count:function(){return D.length}}})();
+
+/* FighterBase v248: My milestones. Grows with the fighter. Replaces the plain milestone list in Progress.
+   - Starts at sign-up ("Set your first milestone", optional) and sits in Progress from day one.
+   - Suggestions come from where the member is now (next session count, next run of consistent weeks, a year of training, their own body, grading or fight goal)
+     and move up a rung every time one is reached. Members can also set their own: a number of sessions, consistent weeks, months of training,
+     a target weight, or anything else they will tick off themselves, each with an optional date. Long-term ones are welcome.
+   - History: every reached milestone keeps its date, theirs and the automatic ones, so they can look back at the journey.
+   - Reaching one shows a small celebration with the next rung ready to add. No points, no badges.
+   Profile: myms[{id,title,type,n,by,dir,s0,created,done}], msCel[ids already celebrated]. Types: sess, weeks, months, weight, manual. */
+var FH185=(function(){
+function P(){return (typeof S!=="undefined"&&S.profile)||{}}
+function e(s){return esc(String(s==null?"":s))}
+function r1(x){return Math.round(x*10)/10}
+function lbU(){return P().weightUnit==="lb"}
+function wu(x){return lbU()?r1(x*2.20462):r1(x)}
+function wun(){return lbU()?"lb":"kg"}
+function fmtD(k){return k?new Date(k+"T12:00").toLocaleDateString("en-GB",{day:"numeric",month:"short",year:"numeric"}):""}
+function young(){var a=+P().age;return a>0&&a<18}
+function list(){var p=P();return p.myms=p.myms||[]}
+function save(){try{profChanged()}catch(x){}}
+function sessDates(){var m={},o=[];try{m=logMap()||{}}catch(x){}Object.keys(m).sort().forEach(function(k){if(k>TODAY)return;var n=0;try{n=(FBE.sessOf(m[k])||[]).length}catch(x){n=(m[k].sessions||[]).length}for(var i=0;i<n;i++)o.push(k)});return o}
+function ctx(){var sd=sessDates(),st={cur:0,best:0};try{st=FBE.streaks()}catch(x){}var w=null;try{w=FBE.weight()}catch(x){}var first=sd[0]||P().created||null;
+ return {n:sd.length,dates:sd,wk:st,w:w,first:first,mo:first?Math.floor(diffDays(first,TODAY)/30.4):0}}
+function ev(m,c){c=c||ctx();var r={done:!!m.done,at:m.done||null,have:0,need:0,pct:0,txt:""};
+ if(m.type==="sess"){r.have=c.n;r.need=Math.max(0,m.n-c.n);r.pct=Math.min(100,Math.round(c.n/m.n*100));r.txt=r.need?r.need+" session"+(r.need===1?"":"s")+" to go":"";if(c.n>=m.n){r.done=true;r.at=r.at||c.dates[m.n-1]||TODAY}}
+ else if(m.type==="weeks"){var h=Math.max(c.wk.cur||0,0);r.have=h;r.need=Math.max(0,m.n-h);r.pct=Math.min(100,Math.round(h/m.n*100));r.txt=r.need?r.need+" more consistent week"+(r.need===1?"":"s")+" in a row":"";if((c.wk.cur||0)>=m.n){r.done=true;r.at=r.at||TODAY}}
+ else if(m.type==="months"){r.have=c.mo;r.need=Math.max(0,m.n-c.mo);r.pct=Math.min(100,Math.round(c.mo/m.n*100));r.txt=r.need?r.need+" month"+(r.need===1?"":"s")+" to go":"";if(c.first&&c.mo>=m.n){r.done=true;r.at=r.at||addDays(c.first,Math.round(m.n*30.4))}}
+ else if(m.type==="weight"){var now=c.w&&c.w.now!=null?+c.w.now:null;if(now!=null){var s0=+m.s0||now,tot=Math.abs(s0-m.n)||1,gone=m.dir==="up"?now-s0:s0-now;r.pct=Math.max(0,Math.min(100,Math.round(gone/tot*100)));var left=m.dir==="up"?m.n-now:now-m.n;r.need=Math.max(0,r1(left));r.txt=r.need>0?wu(r.need)+" "+wun()+" to go":"";if(left<=0){r.done=true;r.at=r.at||TODAY}}}
+ else{r.txt=m.by?"Aim: "+fmtD(m.by):""}
+ return r}
+/* ---------- suggestions: where the fighter is now decides what is offered ---------- */
+var SESS=[1,5,10,25,50,100,150,250,400,500,750,1000],WKS=[2,4,8,12,26,52],MOS=[1,3,6,12,24,36,60];
+function title(type,n){if(type==="sess")return n===1?"Log my first session":"Reach "+n+" sessions";if(type==="weeks")return n+" consistent weeks in a row";if(type==="months")return n===12?"A full year of training":n===24?"Two years of training":n%12===0&&n>12?(n/12)+" years of training":n+" month"+(n===1?"":"s")+" of training";return ""}
+function has(type,n){return list().some(function(m){return m.type===type&&m.n===n})}
+function suggestions(){var c=ctx(),o=[],g={};try{g=FBE.eg()||{}}catch(x){}
+ var ns=SESS.filter(function(x){return x>c.n&&!has("sess",x)});if(ns[0])o.push({type:"sess",n:ns[0],why:"Your next step up"});
+ var nw=WKS.filter(function(x){return x>(c.wk.cur||0)&&!has("weeks",x)});if(nw[0])o.push({type:"weeks",n:nw[0],why:"Turning up week after week"});
+ var nm=MOS.filter(function(x){return x>c.mo&&!has("months",x)});if(nm[0]&&c.n>=3)o.push({type:"months",n:nm[0],why:"The long game"});
+ var b=g.body||{};if(b.on&&+b.target>0&&!young()&&!list().some(function(m){return m.type==="weight"&&!m.done}))o.push({type:"weight",n:+b.target,dir:(+b.startW&&+b.target>+b.startW)||b.dir==="gain"?"up":"down",why:"Your body goal",by:b.by||null});
+ if(g.grading&&g.grading.on&&!list().some(function(m){return m.title==="Pass my next grading"}))o.push({type:"manual",title:"Pass my next grading",by:g.grading.by||null,why:"Your grading goal"});
+ if(g.fight&&g.fight.date&&g.fight.date>=TODAY&&!list().some(function(m){return m.title==="Fight on "+fmtD(g.fight.date)}))o.push({type:"manual",title:"Fight on "+fmtD(g.fight.date),by:g.fight.date,why:"Your fight"});
+ if(c.n>=ns.length&&ns[1]&&o.length<4)o.push({type:"sess",n:ns[1],why:"A bigger one"});
+ return o.slice(0,4)}
+function sTitle(s){return s.title||title(s.type,s.n)||(s.type==="weight"?"Reach "+wu(s.n)+" "+wun():"")}
+function weightTitle(n){return "Reach "+wu(n)+" "+wun()}
+function adopt(s){var c=ctx(),m={id:"ms"+Date.now().toString(36)+Math.floor(Math.random()*99),type:s.type,n:s.n||0,title:s.title||(s.type==="weight"?weightTitle(s.n):title(s.type,s.n)),by:s.by||null,created:TODAY};
+ if(s.type==="weight"){m.dir=s.dir||"down";m.s0=c.w&&c.w.now!=null?+c.w.now:(+P().weight||null)}
+ list().push(m);save();return m}
+function remove(id){var p=P();p.myms=list().filter(function(m){return m.id!==id});save()}
+/* ---------- the Progress panel ---------- */
+var FORM=null,SHOWH=false;
+function reached(c){var mine=list().filter(function(m){return ev(m,c).done}).map(function(m){var r=ev(m,c);return {t:m.title,at:r.at||m.done||TODAY,mine:true}});
+ var auto=[];try{FBE.milestones().forEach(function(x){if(x.got&&x.date&&x.kind!=="comeback")auto.push({t:x.label,at:x.date,mine:false})})}catch(x){}
+ var seen={};return mine.concat(auto).filter(function(x){var k=x.t+"|"+x.at;if(seen[k])return false;seen[k]=1;return true}).sort(function(a,b){return b.at.localeCompare(a.at)})}
+function bar(p){return '<div class="m185-bar"><i style="width:'+p+'%"></i></div>'}
+function itemHTML(m,c){var r=ev(m,c);return '<div class="m185-it"><div class="m185-hd"><b>'+e(m.title)+'</b><span class="m185-act"><button class="linkbtn" type="button" data-m185rm="'+e(m.id)+'" aria-label="Remove milestone">Remove</button></span></div>'+
+ (m.type==="manual"?'<div class="row" style="align-items:center;gap:8px"><span class="muted small">'+e(r.txt||"Tick it off when it happens")+'</span><button class="btn ghost sm" type="button" data-m185done="'+e(m.id)+'">Mark done</button></div>':bar(r.pct)+'<div class="muted small">'+e(r.txt||"")+(m.by&&m.type!=="manual"?(r.txt?" · ":"")+"by "+e(fmtD(m.by)):"")+'</div>')+'</div>'}
+function formHTML(){var f=FORM;return '<div class="m185-form"><div class="field"><label class="label" for="m185t">What do you want to achieve?</label><input type="text" id="m185t" maxlength="60" value="'+e(f.title||"")+'" placeholder="e.g. First amateur fight, run a 10k, get my blue belt"></div>'+
+  '<div class="field"><span class="label">How will we know?</span><div class="chips">'+[["manual","I will tick it off"],["sess","Number of sessions"],["weeks","Consistent weeks"],["months","Months of training"]].concat(young()?[]:[["weight","Target weight"]]).map(function(x){return '<button type="button" class="chip" data-m185ty="'+x[0]+'" aria-pressed="'+(f.type===x[0])+'">'+x[1]+'</button>'}).join("")+'</div></div>'+
+  (f.type&&f.type!=="manual"?'<div class="field"><label class="label" for="m185n">'+(f.type==="weight"?"Target ("+wun()+")":"How many?")+'</label><input type="number" inputmode="decimal" id="m185n" value="'+e(f.n||"")+'" style="max-width:130px"></div>':'')+
+  '<div class="field"><label class="label" for="m185d">By when? (optional, long term is fine)</label><input type="date" id="m185d" value="'+e(f.by||"")+'" min="'+TODAY+'"></div>'+
+  '<div class="row" style="justify-content:space-between"><button class="linkbtn" type="button" data-m185x>Cancel</button><button class="btn gold sm" type="button" data-m185add>Add milestone</button></div></div>'}
+function panel(old){var c=ctx(),L=list().filter(function(m){return !ev(m,c).done}),S2=suggestions().filter(function(s){return !FORM||true}),R=reached(c),h='<div class="panel m185"><div class="sec-h"><h3>My milestones</h3><button class="linkbtn" type="button" data-explain="mile">About</button></div>';
+ h+='<p class="muted small" style="margin:0">Milestones that grow with you. Pick ours or set your own, short or long term. Every one you reach is kept here.</p>';
+ if(L.length)h+='<span class="label">On the way</span>'+L.map(function(m){return itemHTML(m,c)}).join("");
+ else h+='<div class="m185-empty"><b>'+(R.length?"Nothing set right now":"Set your first milestone")+'</b><span class="muted small">'+(R.length?"Pick the next one below.":"One small thing to aim for is enough to start.")+'</span></div>';
+ if(S2.length)h+='<span class="label">Suggested for you</span><div class="m185-sg">'+S2.map(function(s,i){return '<button type="button" class="m185-s" data-m185sg="'+i+'"><b>'+e(sTitle(s))+'</b><span>'+e(s.why)+(s.by?" · by "+e(fmtD(s.by)):"")+'</span><em>+ Add</em></button>'}).join("")+'</div>';
+ h+=FORM?formHTML():'<div class="row"><button class="btn ghost sm" type="button" data-m185new>Set my own milestone</button></div>';
+ if(R.length){h+='<span class="label">Reached ('+R.length+')</span><div class="fb-ms">'+R.slice(0,SHOWH?200:4).map(function(x){return '<div class="fb-mi got"><span>★</span><b>'+e(x.t)+(x.mine?' <small class="muted">· yours</small>':'')+'</b><em>'+e(fmtD(x.at))+'</em></div>'}).join("")+'</div>'+(R.length>4?'<button class="linkbtn" type="button" data-m185hist>'+(SHOWH?"Show less":"Show my full history")+'</button>':'')}
+ return h+'</div>'}
+/* ---------- celebration and the next rung ---------- */
+var CEL=null;
+function check(){try{if(!P().onboarded)return;var c=ctx(),p=P(),seen=p.msCel=p.msCel||[],ch=false;list().forEach(function(m){var r=ev(m,c);if(r.done&&!m.done){m.done=r.at||TODAY;ch=true}if(m.done&&seen.indexOf(m.id)<0&&!CEL&&!document.querySelector(".gr-tour")){seen.push(m.id);ch=true;CEL=m;draw()}});if(ch)save()}catch(x){console.warn("m185",x)}}
+function celDraw(){var el=document.getElementById("m185cel");if(!CEL){if(el)el.remove();return}if(!el){el=document.createElement("div");el.id="m185cel";document.body.appendChild(el)}
+ var nx=suggestions()[0];el.innerHTML='<div class="gr-tour" role="dialog" aria-modal="true" aria-label="Milestone reached"><div class="gr-tc"><div class="gr-ti"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l3 7 7 .6-5.3 4.7 1.7 7.2L12 17.8 5.6 21.5l1.7-7.2L2 9.6 9 9z"/></svg></div><span class="gr-st">Milestone reached</span><h2>'+e(CEL.title)+'</h2><p>You set it and you did it. That is the work showing up.</p>'+(nx?'<div class="row" style="justify-content:center"><button class="btn gold" type="button" data-m185next>Add next: '+e(sTitle(nx))+'</button></div>':'')+'<div class="row" style="justify-content:center"><button class="linkbtn" type="button" data-m185cl>Close</button></div></div></div>'}
+function draw(){celDraw();try{var el=document.getElementById("engineBody");if(el&&typeof FHB49!=="undefined")FHB49.engPage()}catch(x){}}
+document.addEventListener("click",function(ev){var t=ev.target;if(!t.closest)return;var b;
+ if(b=t.closest("[data-m185sg]")){var s=suggestions()[+b.dataset.m185sg];if(s){adopt(s);toast("Milestone added",sTitle(s))}draw();return}
+ if(t.closest("[data-m185new]")){FORM={type:"manual",title:"",n:"",by:""};draw();return}
+ if(t.closest("[data-m185x]")){FORM=null;draw();return}
+ if(b=t.closest("[data-m185ty]")){var tt=document.getElementById("m185t");FORM.title=tt?tt.value:FORM.title;FORM.type=b.dataset.m185ty;draw();return}
+ if(t.closest("[data-m185add]")){var f=FORM,ti=(document.getElementById("m185t")||{}).value||"",n=+((document.getElementById("m185n")||{}).value)||0,by=(document.getElementById("m185d")||{}).value||"";ti=ti.trim();
+  if(f.type!=="manual"&&!(n>0)){toast("Add a number first");return}if(f.type==="manual"&&!ti){toast("Say what you want to achieve");return}if(f.type==="weight"&&lbU())n=Math.round(n/2.20462*10)/10;
+  var s0={type:f.type,n:n,by:by||null,title:ti||undefined,dir:undefined};if(f.type==="weight"){var nw=ctx().w;s0.dir=nw&&nw.now!=null&&n>+nw.now?"up":"down"}
+  var m=adopt(s0);if(ti)m.title=ti;save();FORM=null;draw();toast("Milestone added",m.title);return}
+ if(b=t.closest("[data-m185done]")){var id=b.dataset.m185done,m2=list().filter(function(x){return x.id===id})[0];if(m2){m2.done=TODAY;save();check();draw()}return}
+ if(b=t.closest("[data-m185rm]")){remove(b.dataset.m185rm);draw();return}
+ if(t.closest("[data-m185hist]")){SHOWH=!SHOWH;draw();return}
+ if(t.closest("[data-m185next]")){var nx=suggestions()[0];if(nx){adopt(nx);toast("Milestone added",sTitle(nx))}CEL=null;draw();return}
+ if(t.closest("[data-m185cl]")){CEL=null;draw();return}});
+var css=document.createElement("style");css.textContent=".m185{display:flex;flex-direction:column;gap:10px}.m185-it{padding:10px 12px;border-radius:12px;border:1px solid var(--line,rgba(255,255,255,.14));background:rgba(255,255,255,.03);display:flex;flex-direction:column;gap:6px}.m185-hd{display:flex;justify-content:space-between;align-items:flex-start;gap:8px}.m185-bar{height:6px;border-radius:9px;background:rgba(255,255,255,.1);overflow:hidden}.m185-bar i{display:block;height:100%;background:#E8DFC8;border-radius:9px}.m185-empty{display:flex;flex-direction:column;gap:2px;padding:10px 12px;border-radius:12px;border:1px dashed rgba(232,223,200,.5)}.m185-sg{display:flex;flex-direction:column;gap:8px}.m185-s{all:unset;box-sizing:border-box;cursor:pointer;display:flex;flex-direction:column;gap:2px;padding:10px 12px;border-radius:12px;border:1px solid rgba(255,255,255,.14);background:rgba(255,255,255,.03)}.m185-s b{font-size:15px}.m185-s span{font-size:12px;color:var(--muted,#9AA0AA)}.m185-s em{font-style:normal;font-size:12px;color:#E8DFC8;font-weight:700}.m185-form{display:flex;flex-direction:column;gap:8px;padding:10px 12px;border-radius:12px;border:1px solid rgba(255,255,255,.14)}";
+document.head.appendChild(css);
+setInterval(check,3000);
+return {panel:panel,suggestions:suggestions,adopt:adopt,sTitle:sTitle,check:check,ev:ev,ctx:ctx}})();
 
 /* FighterBase v44: always a way back, always a next step. */
 var N31=N31||false;
