@@ -19749,6 +19749,53 @@ var st=showTab;showTab=function(t){var r=st.apply(this,arguments);try{if(t==="to
 setInterval(function(){try{var t=document.getElementById("tab-today");if(t&&!t.hidden)draw()}catch(x){}},4000);
 return {draw:draw,html:html}})();
 
+/* FighterBase v245: Quick log on Home. Type or speak one line and it is understood on this phone, with no AI and no cost:
+   "30 minute run", "10k run 55 min", "boxing 1 hour", "weighed 82.4", "chicken and rice 650 kcal 45g protein".
+   It always shows what it understood and waits for Confirm before anything is saved. Voice uses the free mic button (fh178).
+   Food entries are marked as estimates. Nothing is sent anywhere. Later, the paid AI add-on can read the same line more cleverly. */
+var FH183=(function(){
+var SP=[["Run",/\b(run|ran|running|jog|jogged|jogging|10k|5k|parkrun|roadwork)\b/],["Ride",/\b(ride|rode|cycle|cycled|cycling|bike|biked|spin)\b/],["Swim",/\b(swim|swam|swimming)\b/],["Walk",/\b(walk|walked|walking|hike|hiked|hiking)\b/],["Boxing",/\b(box|boxing|pads|bag work)\b/],["Muay Thai",/\b(muay thai|thai boxing|kickboxing)\b/],["Brazilian Jiu-Jitsu",/\b(bjj|jiu.?jitsu|grappling|rolling|no.?gi)\b/],["MMA",/\b(mma|mixed martial)\b/],["Wrestling",/\b(wrestl\w*)\b/],["Sparring",/\b(spar|sparred|sparring)\b/],["Strength",/\b(weights?|lift|lifted|lifting|gym|strength|squat|deadlift|bench)\b/],["Yoga",/\b(yoga|mobility|stretch\w*)\b/],["HIIT",/\b(hiit|crossfit|circuits?|conditioning)\b/]];
+var P=function(){return (typeof S!=="undefined"&&S.profile)||{}};
+function e(s){return esc(String(s==null?"":s))}
+function mins(t){var m=t.match(/(\d+(?:\.\d+)?)\s*(hours?|hrs?|h)\b/);var a=0,f=false;if(m){a+=Math.round(parseFloat(m[1])*60);f=true}var n=t.match(/(\d+)\s*(minutes?|mins?|m)\b/);if(n){a+=+n[1];f=true}if(!f&&/half an hour/.test(t)){a=30;f=true}if(!f&&/\ban hour\b/.test(t)){a=60;f=true}return f?a:null}
+function parse(raw){var t=String(raw||"").toLowerCase().replace(/,/g," ").replace(/\s+/g," ").trim();if(!t)return null;
+ var wm=t.match(/\b(?:weigh(?:ed|t)?|weight|scales?)\b\D{0,12}(\d{2,3}(?:\.\d)?)\s*(kg|kilos?|lb|lbs|pounds?)?/);
+ if(wm){var v=+wm[1],lbs=/lb|pound/.test(wm[2]||"")||(P().weightUnit==="lb"&&!/kg|kilo/.test(wm[2]||""));if(lbs)v=Math.round(v/2.20462*10)/10;if(v>=30&&v<=250)return {k:"weight",kg:v,say:"Weigh-in: "+v+" kg"}}
+ var kc=t.match(/(\d{2,4})\s*(?:kcal|calories|cals?)\b/);
+ if(kc){var pr=t.match(/(\d{1,3})\s*g?\s*(?:of\s*)?protein/),name=t.replace(kc[0],"").replace(/\d+\s*g?\s*(?:of\s*)?protein/,"").replace(/\b(i|had|ate|for|lunch|dinner|breakfast|snack|with|a|the|about|around)\b/g," ").replace(/\s+/g," ").trim();name=(name||"Meal").replace(/^./,function(c){return c.toUpperCase()});
+  return {k:"food",name:name,kcal:+kc[1],protein:pr?+pr[1]:null,say:"Food: "+name+", "+kc[1]+" kcal"+(pr?", "+pr[1]+" g protein":"")}}
+ var type=null;SP.some(function(x){if(x[1].test(t)){type=x[0];return true}});
+ if(type){var mm=mins(t),dist=t.match(/(\d+(?:\.\d+)?)\s*(k|km|miles?|mi)\b/),guess=false;if(mm==null){mm=/10k/.test(t)?60:/5k|parkrun/.test(t)?30:60;guess=true}
+  var note=dist?(dist[1]+(/^k/.test(dist[2])?" km":" "+dist[2])):"";return {k:"session",type:type,mins:mm,note:note,say:"Session: "+type+", "+mm+" min"+(guess?" (a guess, change it if wrong)":"")+(note?", "+note:""),guess:guess}}
+ return {k:"none",say:"Not sure what that is. Try \"30 minute run\", \"weighed 82.4\" or \"chicken and rice 650 kcal\"."}}
+var pend=null,msg="";
+function html(){var h='<div class="q183-top"><span class="label">Quick log</span><h2>Say it or type it</h2></div><div class="field" style="margin:0"><textarea id="q183t" rows="2" maxlength="160" placeholder="e.g. 30 minute run, weighed 82.4, chicken and rice 650 kcal" aria-label="Quick log"></textarea></div>';
+ if(pend&&pend.k!=="none")h+='<div class="q183-pv"><b>'+e(pend.say)+'</b>'+(pend.k==="session"?'<div class="row" style="margin-top:6px;align-items:center;gap:8px"><label class="small" for="q183m">Minutes</label><input type="number" id="q183m" min="5" max="400" value="'+pend.mins+'" style="max-width:90px"></div>':'')+'<div class="row" style="justify-content:space-between;margin-top:8px"><button class="linkbtn" type="button" data-q183x>Cancel</button><button class="btn gold sm" type="button" data-q183ok>Confirm</button></div></div>';
+ else if(pend)h+='<p class="muted small" style="margin:0">'+e(pend.say)+'</p>';
+ else h+='<div class="row"><button class="btn sm" type="button" data-q183go>Understand it</button></div>';
+ if(msg)h+='<p class="small" style="margin:0;color:#3FC57E">'+e(msg)+'</p>';
+ return h+'<p class="muted small" style="margin:0">Worked out on your phone, nothing sent anywhere. It always asks before saving.</p>'}
+function draw(force){var home=document.getElementById("tab-today");if(!home)return;var el=document.getElementById("fb183");
+ if(!el){el=document.createElement("div");el.id="fb183";el.className="fb-card q183 f149keep";var a=document.getElementById("fb182")||document.getElementById("fb139");if(a&&a.parentNode===home)home.insertBefore(el,a.nextSibling);else home.insertBefore(el,home.firstChild)}
+ var ta=document.getElementById("q183t"),fa=document.activeElement===ta;if(fa&&!force)return;var v=ta?ta.value:"";var h=html();if(el.dataset.sig===h&&!force)return;el.innerHTML=h;el.dataset.sig=h;var t2=document.getElementById("q183t");if(t2&&v)t2.value=v}
+function young(){return false}
+async function confirm(){if(!pend)return;var p=pend,ok=false;
+ try{if(p.k==="weight"){ok=await editDay(TODAY,function(d){d.weight=p.kg});try{P().weight=p.kg;profChanged()}catch(x){}}
+  else if(p.k==="food"){var en={id:"q"+Date.now().toString(36),name:p.name,slot:(function(){var h=new Date().getHours();return h<11?"breakfast":h<15?"lunch":h<17?"snack":h<22?"dinner":"snack"})(),t:(function(){var d=new Date();return String(d.getHours()).padStart(2,"0")+":"+String(d.getMinutes()).padStart(2,"0")})(),est:true,src:"quicklog",kcal:p.kcal};if(p.protein!=null)en.protein=p.protein;ok=await editDay(TODAY,function(d){d.eaten=(d.eaten||[]).concat([en])})}
+  else if(p.k==="session"){var m=Math.max(5,Math.min(400,+((document.getElementById("q183m")||{}).value)||p.mins));cur.sessions=(cur.sessions||[]).concat([{sport:p.type,type:p.type,mins:m,rpe:6,club:false,notes:p.note||"Quick log",t:(function(){var d=new Date();return String(d.getHours()).padStart(2,"0")+":"+String(d.getMinutes()).padStart(2,"0")})(),src:"quicklog"}]);cur.trained=true;markDirty();ok=true}}
+ catch(x){console.error(x)}
+ pend=null;msg=ok?"Saved: "+p.say.replace(/ \(a guess.*?\)/,""):"Could not save that. Try the Log page.";var ta=document.getElementById("q183t");if(ta)ta.value="";draw(true);try{toast(ok?"Logged":"Not saved")}catch(x){}}
+document.addEventListener("click",function(ev){var t=ev.target;if(!t.closest)return;
+ if(t.closest("[data-q183go]")){msg="";pend=parse((document.getElementById("q183t")||{}).value);if(!pend)msg="Type or say something first.";draw(true);return}
+ if(t.closest("[data-q183x]")){pend=null;draw(true);return}
+ if(t.closest("[data-q183ok]")){confirm();return}});
+document.addEventListener("keydown",function(ev){if(ev.key==="Enter"&&!ev.shiftKey&&ev.target&&ev.target.id==="q183t"){ev.preventDefault();msg="";pend=parse(ev.target.value);draw(true)}});
+var css=document.createElement("style");css.textContent=".q183{display:flex;flex-direction:column;gap:10px;border-left:4px solid #E8DFC8}.q183-top h2{margin:2px 0 0;font:900 24px var(--display,'Big Shoulders Display',sans-serif);text-transform:uppercase}.q183 textarea{width:100%;box-sizing:border-box;resize:none;font-size:16px;padding:10px 12px;border-radius:12px;border:1px solid var(--line,rgba(255,255,255,.18));background:rgba(255,255,255,.05);color:inherit;font-family:inherit}.q183-pv{padding:10px 12px;border-radius:12px;border:1px solid rgba(232,223,200,.5);background:rgba(232,223,200,.08)}";
+document.head.appendChild(css);
+var st=showTab;showTab=function(t){var r=st.apply(this,arguments);try{if(t==="today")draw()}catch(x){}return r};
+setInterval(function(){try{var t=document.getElementById("tab-today");if(t&&!t.hidden)draw()}catch(x){}},4000);
+return {parse:parse,draw:draw}})();
+
 /* FighterBase v44: always a way back, always a next step. */
 var N31=N31||false;
 (function(){
