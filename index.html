@@ -17608,6 +17608,13 @@ function lastSess(){try{var m=logMap();for(var i=0;i<=90;i++){var k=addDays(TODA
 function ago(i){return i===0?"Today":i===1?"Yesterday":i+" days ago"}
 function n30(){var n=0;try{var m=logMap();for(var i=0;i<30;i++){var l=m[addDays(TODAY,-i)];if(l&&l.sessions)n+=l.sessions.length}}catch(x){}return n}
 function myNext(){try{var u=window.FH100&&FH100.upcoming();return u&&u[0]||null}catch(x){return null}}
+function ptOffer249(){try{var c=club();if(!c)return"";var now=new Date(),td=TODAY,hm=("0"+now.getHours()).slice(-2)+":"+("0"+now.getMinutes()).slice(-2),req=(S.profile&&S.profile.ptReq)||[],mine=req.map(function(r){return r.slot});
+ var open=(c.ptSlots||[]).filter(function(x){return x.status!=="booked"&&(x.d>td||(x.d===td&&x.time>hm))&&!((x.decl||{})[S.uid])}).sort(function(a,b){return (a.d+a.time).localeCompare(b.d+b.time)});
+ var asked=open.filter(function(x){return mine.indexOf(x.id)>=0});if(asked.length)return '<p class="muted small" style="margin:-6px 4px 12px">PT requested for '+e(dayName(asked[0].d)+" "+asked[0].time)+'. You will be told when it is confirmed.</p>';
+ var pick=[];open.forEach(function(x){if(pick.length<2&&!pick.some(function(y){return y.d===x.d}))pick.push(x)});if(pick.length<2)open.forEach(function(x){if(pick.length<2&&pick.indexOf(x)<0)pick.push(x)});if(!pick.length)return"";
+ var tn=function(x){var t=(c.teachers||[]).filter(function(q){return q.id===x.tid})[0];return t?t.name:""};
+ return '<div class="m155" style="margin-top:-6px;flex-wrap:wrap;gap:8px"><p class="k155" style="width:100%">Next free PT slots</p>'+pick.map(function(x){return '<button type="button" class="btn ghost sm" data-ptreq="'+e(x.id)+'">'+e((x.d===td?"Today":dayName(x.d)+" "+new Date(x.d+"T12:00").toLocaleDateString("en-GB",{day:"numeric",month:"short"}))+" "+x.time+(tn(x)?" · "+tn(x):""))+'</button>'}).join("")+'</div>'}catch(er){return""}}
+window.FH155PT=ptOffer249;
 function ptInfo(){try{var c=club();if(!c||!inClub())return null;var all=c.ptSlots||[],mine=all.filter(function(x){return x.uid===S.uid&&x.status==="booked"}),now=new Date(),hm=("0"+now.getHours()).slice(-2)+":"+("0"+now.getMinutes()).slice(-2);
  var nx=mine.filter(function(x){return x.d>TODAY||(x.d===TODAY&&(x.time||"")>=hm)}).sort(function(a,b){return (a.d+a.time).localeCompare(b.d+b.time)})[0]||null;
  var ps=mine.filter(function(x){return x.d<TODAY||(x.d===TODAY&&!nx)}).sort(function(a,b){return b.d.localeCompare(a.d)})[0]||null;
@@ -17672,7 +17679,7 @@ function drawHero(){try{var tb=document.getElementById("tab-today"),el=document.
  tiles=tiles.slice(0,3);
  h+='<div class="g155">'+tiles.join("")+'</div>';
  var pt=ptInfo();if(pt){if(pt.next){h+='<div class="m155"><div><p class="k155">Next PT</p><p style="font-weight:700">'+e(pt.tname(pt.next))+' · '+(pt.next.d===TODAY?"Today":e(dayName(pt.next.d)+" "+new Date(pt.next.d+"T12:00").toLocaleDateString("en-GB",{day:"numeric",month:"short"})))+' '+e(pt.next.time||"")+'</p></div></div>'}
-  else if(pt.offered){var wk=pt.last?Math.floor(diffDays(pt.last.d,TODAY)/7):null;if(wk==null||wk>=8)h+='<div class="m155"><div><p class="k155">Catch-up PT</p><p style="font-weight:700">'+(wk==null?"Try a PT session":"Time for a catch-up PT?")+'</p><p class="muted small">'+(wk==null?"One hour to work on your goals.":"It has been "+wk+" weeks. Review where you are and set your next goals.")+'</p></div><button type="button" class="btn ghost sm" data-goto="schedule">Book</button></div>'}}
+  else if(pt.offered){var wk=pt.last?Math.floor(diffDays(pt.last.d,TODAY)/7):null;if(wk==null||wk>=8)h+='<div class="m155"><div><p class="k155">Catch-up PT</p><p style="font-weight:700">'+(wk==null?"Try a PT session":"Time for a catch-up PT?")+'</p><p class="muted small">'+(wk==null?"One hour to work on your goals.":"It has been "+wk+" weeks. Review where you are and set your next goals.")+'</p></div><button type="button" class="btn ghost sm" data-goto="schedule">Book</button></div>'+ptOffer249()}}
  h+='<div class="c155 r155">'+ring(w.sessions||0,w.target)+'<div><p class="t155" style="font-size:22px">This week</p><p class="muted small">'+((+w.target)?"Hit your target, and a missed session never wipes your week.":"Set a weekly plan and it shows here.")+'</p></div></div>';
  var fmOn=false;try{fmOn=!!(window.FH156&&FH156.state())}catch(x){}
  if(!fmOn)h+='<div class="c155"><p class="k155">Suggested next</p><p class="t155" style="font-size:20px">'+e(sg.h)+'</p><p class="muted small" style="margin:0">'+e(sg.s)+'</p><button type="button" class="btn ghost" data-goto="'+e(sg.g)+'">'+e(sg.b)+'</button></div>';
