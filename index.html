@@ -19997,6 +19997,39 @@ document.head.appendChild(css);
 setInterval(check,3000);
 return {panel:panel,suggestions:suggestions,adopt:adopt,sTitle:sTitle,check:check,ev:ev,ctx:ctx}})();
 
+/* FighterBase v251: "Anything you want to work on today?" Home card and weekly review prompt.
+   Step 1: Sessions and logs / Nutrition / Set new goals. Step 2: what exactly, which opens the right place in the app.
+   Stored: profile.focusAsk {d, area, pick} for today only. */
+var FH186=(function(){
+var AREAS=[["sess","Sessions and logs","Log it, plan it, see it"],["nut","Nutrition","Eat to fit your training"],["goal","Set new goals","Weight, fight, grading, milestones"]];
+var OPTS={
+ sess:[["Log a session",function(){go("log")}],["Say it in Quick log",function(){quick()}],["Plan my week",function(){plan()}],["See how my training is going",function(){go("progress")}]],
+ nut:[["Log what I have eaten",function(){quick()}],["Plan my meals",function(){go("meals")}],["Pick an eating style",function(){go("nutrition")}],["Check my calories and protein",function(){go("nutrition")}]],
+ goal:[["A weight target",function(){goal("body")}],["My weekly training plan",function(){goal("train")}],["A fight coming up",function(){goal("fight")}],["A grading",function(){goal("grade")}],["A longer-term milestone",function(){go("progress")}],["Something else",function(){go("goals2")}]]};
+var step={};
+function P(){return S.profile||(S.profile={})}
+function go(t){try{showTab(t)}catch(e){}}
+function goal(k){go("goals2");setTimeout(function(){try{window.FH87focus&&FH87focus(k)}catch(e){}},400)}
+function quick(){go("today");setTimeout(function(){var t=document.getElementById("q183t");if(t){try{t.scrollIntoView({block:"center",behavior:"smooth"})}catch(e){}try{t.focus()}catch(e){}}},350)}
+function plan(){go("today");setTimeout(function(){var b=document.querySelector("[data-pd170open],[data-wa162open]");if(b)b.click()},350)}
+function today(){var f=P().focusAsk;return f&&f.d===TODAY?f:null}
+function esc2(x){return String(x).replace(/[&<>"]/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]})}
+function html(ctx){var f=today(),k=step[ctx],q=ctx==="wk"?"Anything you want to work on this week?":"Anything specific you want to work on today?";
+ if(k){var o=OPTS[k],nm=AREAS.filter(function(a){return a[0]===k})[0][1];return '<div class="f186"><p class="k155 f186k">'+esc2(nm)+'</p><p class="f186q">What exactly?</p><div class="f186g">'+o.map(function(x,i){return '<button type="button" class="btn ghost sm" data-f186o="'+k+'|'+i+'">'+esc2(x[0])+'</button>'}).join("")+'</div><button type="button" class="linkbtn" data-f186back="'+ctx+'">‹ Back</button></div>'}
+ if(f&&ctx==="home"){var nm2=(AREAS.filter(function(a){return a[0]===f.area})[0]||[])[1]||"";return '<div class="f186"><p class="k155 f186k">Today\'s focus</p><p class="f186q">'+esc2(f.pick||nm2)+'</p><button type="button" class="linkbtn" data-f186re="home">Change</button></div>'}
+ return '<div class="f186"><p class="f186q">'+q+'</p><div class="f186a">'+AREAS.map(function(a){return '<button type="button" class="f186b" data-f186a="'+a[0]+'|'+ctx+'"><b>'+a[1]+'</b><span>'+a[2]+'</span></button>'}).join("")+'</div></div>'}
+function draw(){try{var tb=document.getElementById("tab-today");if(tb){var el=document.getElementById("fb186");if(!el){el=document.createElement("div");el.id="fb186";el.className="fb-card f149keep";var a=document.getElementById("fb155");if(a&&a.parentNode===tb)tb.insertBefore(el,a.nextSibling);else{var g=tb.querySelector("h1,h2,.greet");tb.insertBefore(el,tb.children[1]||null)}}
+  var h=html("home");if(el.dataset.sig!==h){el.innerHTML=h;el.dataset.sig=h}}
+  document.querySelectorAll(".wk-card").forEach(function(c){var w=c.querySelector(".f186w");if(!w){w=document.createElement("div");w.className="f186w";var kk=c.querySelector(".fb-kick");if(kk)kk.insertAdjacentElement("afterend",w);else c.insertBefore(w,c.firstChild)}var h2=html("wk");if(w.dataset.sig!==h2){w.innerHTML=h2;w.dataset.sig=h2}})}catch(e){}}
+document.addEventListener("click",function(ev){var t=ev.target.closest&&ev.target.closest("[data-f186a],[data-f186o],[data-f186back],[data-f186re]");if(!t)return;
+ if(t.dataset.f186a){var p=t.dataset.f186a.split("|");step[p[1]]=p[0];draw();return}
+ if(t.dataset.f186back){delete step[t.dataset.f186back];draw();return}
+ if(t.dataset.f186re!=null){delete P().focusAsk;try{profChanged()}catch(e){}draw();return}
+ if(t.dataset.f186o){var q=t.dataset.f186o.split("|"),ctx=t.closest(".f186w")?"wk":"home",x=OPTS[q[0]][+q[1]];P().focusAsk={d:TODAY,area:q[0],pick:x[0]};try{profChanged()}catch(e){}delete step[ctx];draw();x[1]()}});
+var css=document.createElement("style");css.textContent=".f186q{margin:0 0 10px;font:800 20px/1.2 var(--cond);letter-spacing:.02em}.f186k{margin:0 0 4px}.f186a{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}.f186b{all:unset;box-sizing:border-box;cursor:pointer;display:flex;flex-direction:column;gap:4px;padding:12px 10px;border-radius:14px;border:1px solid var(--line);background:rgba(255,255,255,.04)}.f186b b{font:800 14px/1.15 var(--cond);letter-spacing:.04em;text-transform:uppercase}.f186b span{font-size:11px;line-height:1.3;color:var(--muted)}.f186b:active{border-color:#E0344B}.f186g{display:flex;flex-direction:column;gap:8px;margin-bottom:8px}.f186g .btn{justify-content:flex-start;text-align:left}.f186w{margin:6px 0 12px;padding:12px;border-radius:14px;border:1px solid var(--line)}@media(max-width:420px){.f186a{grid-template-columns:1fr}.f186b{flex-direction:row;align-items:center;justify-content:space-between}.f186b span{max-width:48%;text-align:right}}";document.head.appendChild(css);
+setInterval(draw,1500);setTimeout(draw,1200);
+return {html:html,draw:draw}})();
+
 /* FighterBase v44: always a way back, always a next step. */
 var N31=N31||false;
 (function(){
