@@ -16220,10 +16220,10 @@ function P(){return (typeof S!=="undefined"&&S.profile)||{}}
 function e(s){return esc(String(s==null?"":s))}
 function n0(x){return Math.round(x).toLocaleString("en-GB")}
 function r1(x){return Math.round(x*10)/10}
-function days(){var d=+P().homeChartDays;return d===7||d===14?d:30}
+function days(){var d=+P().homeChartDays;return d===7||d===14||d===30||d===90?d:90}
 function young(){var a=+P().age;return a>0&&a<18}
 function bodyHidden(){return young()||!!P().homeChartNoBody}
-function over(){var o=P().homeChartOver;return o||{s:true,k:false,t:true,m:false,z:false,w:false}}
+function over(){var o=P().homeChartOver;return o||{s:true,k:true,t:true,m:false,z:false,w:true}}
 function lab(k,o){return new Date(k+"T12:00").toLocaleDateString("en-GB",o||{weekday:"short",day:"numeric",month:"short"})}
 function day(k,m){var l=m[k],r={k:k,sleep:null,steps:null,kcal:null,sess:0,mins:0,w:null,score:null,hasTrack:false};if(!l)return r;
  var wr=l.wear||{},tr=l.tr||{},st=+wr.steps||+tr.steps||0;try{if(window.FH135&&FH135.steps(k))st=FH135.steps(k)}catch(x){}if(st>0)r.steps=Math.round(st);
@@ -16248,7 +16248,7 @@ function path(pts){var d="",open=false;pts.forEach(function(p){if(p[1]==null){op
 function areaPath(pts){var segs=[],cur=[];pts.forEach(function(p){if(p[1]==null){if(cur.length)segs.push(cur);cur=[]}else cur.push(p)});if(cur.length)segs.push(cur);var base=H-PB;
  return segs.map(function(s){return "M"+s[0][0].toFixed(1)+","+base+s.map(function(p){return "L"+p[0].toFixed(1)+","+p[1].toFixed(1)}).join("")+"L"+s[s.length-1][0].toFixed(1)+","+base+"Z"}).join("")}
 function norm(a,f){var v=vals(a,f);if(!v.length)return null;var mn=Math.min.apply(null,v),mx=Math.max.apply(null,v);if(mn===mx){mn-=1;mx+=1}return {mn:mn,mx:mx}}
-function svg(D,SEL){var n=D.length,o=over(),h='<svg class="h139-svg" viewBox="0 0 '+W+' '+H+'" role="img" aria-label="FB Activity Level over the last '+n+' days">';
+function svg(D,SEL){var n=D.length,o=over(),h='<svg class="h139-svg" viewBox="0 0 '+W+' '+H+'" role="img" aria-label="Activity level over the last '+n+' days">';
  h+='<defs><linearGradient id="h139g" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="'+COL.a+'" stop-opacity=".55"/><stop offset="1" stop-color="'+COL.a+'" stop-opacity=".04"/></linearGradient></defs>';
  [0,50,100].forEach(function(g){var y=Y(g,0,100);h+='<line x1="'+PL+'" x2="'+(W-PR)+'" y1="'+y+'" y2="'+y+'" class="h139-gl"/>'});
  var ap=D.map(function(d,i){return [X(i,n),d.score==null?null:Y(d.score,0,100)]});
@@ -16266,7 +16266,7 @@ function svg(D,SEL){var n=D.length,o=over(),h='<svg class="h139-svg" viewBox="0 
  D.forEach(function(d,i){var w=(W-PL-PR)/Math.max(1,n-1);h+='<rect x="'+(X(i,n)-w/2)+'" y="0" width="'+w+'" height="'+H+'" fill="transparent" data-h139d="'+i+'" style="cursor:pointer"/>'});
  return h+'</svg>'}
 function readout(d){if(!d)return '';var parts=[];parts.push('<b>'+e(d.k===TODAY?"Today":lab(d.k))+'</b>');
- parts.push('FB Activity Level '+(d.score==null?'<span class="muted">not enough logged</span>':'<b style="color:'+COL.a+'">'+d.score+'</b>/100'+(d.hasTrack?'':' <span class="muted small">(training only)</span>')));
+ parts.push('Activity level '+(d.score==null?'<span class="muted">not enough logged</span>':'<b style="color:'+COL.a+'">'+d.score+'</b>/100'+(d.hasTrack?'':' <span class="muted small">(training only)</span>')));
  parts.push('<span style="color:'+COL.s+'">Steps</span> '+(d.steps!=null?n0(d.steps):'<span class="muted">none</span>'));
 parts.push('<span style="color:'+COL.m+'">Active minutes</span> '+(d.mins>0?Math.round(d.mins):'<span class="muted">none</span>'));parts.push('<span style="color:'+COL.z+'">Sleep</span> '+(d.sleep!=null?r1(d.sleep)+' h':'<span class="muted">not logged</span>'));
  parts.push('<span style="color:'+COL.t+'">Sessions</span> '+(d.sess?d.sess+(d.mins?' · '+Math.round(d.mins)+' min':''):'<span class="muted">none logged</span>'));
@@ -16284,18 +16284,18 @@ function why(){if(bodyHidden())return '';var n=days(),cur=series(n,0),prev=serie
  var stc=avg(vals(cur,function(d){return d.steps})),stp=avg(vals(prev,function(d){return d.steps}));
  var ssc=cur.reduce(function(s,d){return s+d.sess},0),ssp=prev.reduce(function(s,d){return s+d.sess},0);
  var kc=vals(cur,function(d){return d.kcal}),kp=vals(prev,function(d){return d.kcal});
- var rows=[cmp("FB Activity Level",sc,sp,"",function(x){return Math.round(x)}),cmp("Steps a day",stc,stp,"",n0),cmp("Training sessions",ssc,ssp,"",function(x){return x})];
+ var rows=[cmp("Activity level",sc,sp,"",function(x){return Math.round(x)}),cmp("Steps a day",stc,stp,"",n0),cmp("Training sessions",ssc,ssp,"",function(x){return x})];
  var kcmp=null;if(kc.length>=3&&kp.length>=3)kcmp=cmp("Calories logged a day",avg(kc),avg(kp),"",n0);rows.push(kcmp);
  rows=rows.filter(Boolean);
- var up=[],dn=[];if(sc!=null&&sp!=null){var c=cmp("a",sc,sp,"",String);if(c&&c.dir)(c.dir>0?up:dn).push("your FB Activity Level")}
+ var up=[],dn=[];if(sc!=null&&sp!=null){var c=cmp("a",sc,sp,"",String);if(c&&c.dir)(c.dir>0?up:dn).push("your Activity level")}
  if(kcmp&&kcmp.dir)(kcmp.dir>0?"up":"dn")&&(kcmp.dir>0?up:dn).push("the calories you logged");
  var head,note;
  if(dir===0)head="Your weight is steady: "+r1(first)+" kg to "+r1(last)+" kg over "+n+" days.";
  else head="Your weight went "+(dir>0?"up":"down")+" "+Math.abs(dl)+" kg ("+r1(first)+" to "+r1(last)+" kg) over "+n+" days.";
  var story="";
- if(dir>0){var more=[],less=[];if(sc!=null&&sp!=null&&sc<sp*0.9)less.push("your FB Activity Level fell");if(kcmp&&kcmp.dir>0)more.push("you logged more calories");
+ if(dir>0){var more=[],less=[];if(sc!=null&&sp!=null&&sc<sp*0.9)less.push("your Activity level fell");if(kcmp&&kcmp.dir>0)more.push("you logged more calories");
   if(less.length||more.length)story="Compared with the "+n+" days before, "+less.concat(more).join(" and ")+". That can push weight up. ";else if(rows.length)story=(rows.some(function(r){return r.dir!==0})?"What you logged moved in ways that do not clearly explain it, so some of it may be water, salt, or what is still in your gut. ":"Nothing you logged changed much, so this may be water, salt, or what is still in your gut. ");}
- if(dir<0){var l2=[];if(sc!=null&&sp!=null&&sc>sp*1.1)l2.push("your FB Activity Level rose");if(kcmp&&kcmp.dir<0)l2.push("you logged fewer calories");
+ if(dir<0){var l2=[];if(sc!=null&&sp!=null&&sc>sp*1.1)l2.push("your Activity level rose");if(kcmp&&kcmp.dir<0)l2.push("you logged fewer calories");
   story=l2.length?"Compared with the "+n+" days before, "+l2.join(" and ")+". That can bring weight down. ":(rows.length?(rows.some(function(r){return r.dir!==0})?"What you logged moved in ways that do not clearly explain it, so some of it may be water or a lighter gut. ":"Nothing you logged changed much, so this may be water or a lighter gut. "):"")}
  var cover=kc.length<n*0.6?'Calories are only counted on the '+kc.length+' of '+n+' days you logged food, so treat that part as a guess. ':'';
  return '<div class="h139-why"><b>Why did my weight change?</b><p>'+e(head)+'</p>'+(story?'<p>'+e(story+cover)+'</p>':(cover?'<p class="muted small">'+e(cover)+'</p>':''))+
@@ -16305,17 +16305,17 @@ function why(){if(bodyHidden())return '';var n=days(),cur=series(n,0),prev=serie
 var SELI=null;
 function html(){var p=P();if(!p.onboarded)return '';var n=days(),D=series(n,0),o=over(),any=D.some(function(d){return d.score!=null||d.w!=null||d.kcal!=null});
  if(SELI==null||SELI>=D.length)SELI=D.length-1;
- var h='<div class="h139-top"><div><span class="fb-kick">'+(window.FH140&&FH140.on()?"Fight camp · ":"")+'Last '+n+' days</span><h2>Your progress</h2></div><div class="h139-rng">'+[7,14,30].map(function(x){return '<button type="button" class="h139-r'+(x===n?' on':'')+'" data-h139n="'+x+'">'+x+'</button>'}).join("")+'</div></div>';
+ var h='<div class="h139-top"><div><span class="fb-kick">'+(window.FH140&&FH140.on()?"Fight camp · ":"")+(n===90?'Last 3 months':'Last '+n+' days')+'</span><h2>Your progress</h2></div><div class="h139-rng">'+[7,30,90].map(function(x){return '<button type="button" class="h139-r'+(x===n?' on':'')+'" data-h139n="'+x+'">'+(x===90?'3m':x)+'</button>'}).join("")+'</div></div>';
  if(!any)return h+'<p class="muted small">Log a session, your steps or a check-in and your activity line appears here.</p>';
  var keys=["s","t","m","z"].concat(bodyHidden()?[]:["k","w"]);
- h+='<div class="h139-lg"><span class="h139-chip fixed" style="--c:'+COL.a+'"><i></i>FB Activity Level</span>'+keys.map(function(k){return '<button type="button" class="h139-chip'+(o[k]?' on':'')+'" style="--c:'+COL[k]+'" data-h139o="'+k+'" aria-pressed="'+!!o[k]+'"><i></i>'+NAME[k]+'</button>'}).join("")+'</div>';
+ h+='<div class="h139-lg"><span class="h139-chip fixed" style="--c:'+COL.a+'"><i></i>Activity level</span>'+keys.map(function(k){return '<button type="button" class="h139-chip'+(o[k]?' on':'')+'" style="--c:'+COL[k]+'" data-h139o="'+k+'" aria-pressed="'+!!o[k]+'"><i></i>'+NAME[k]+'</button>'}).join("")+'</div>';
  h+=svg(D,SELI)+readout(D[SELI]);
- h+='<details class="h139-how"><summary>How is the FB Activity Level worked out?</summary><p class="muted small">This is the FighterBase own score, from 0 to 100, built from your steps and your training. Use it as a yardstick against your weight, cardio and how you perform. Up to 50 points from steps (10,000 steps is 50) plus up to 50 from training and logged activities (60 minutes is 50). With no steps it is training only. It is a relative picture of your own week, not a medical score. Days with nothing logged are gaps, not zero. Other lines are scaled to their own range, so tap a day to see the real numbers.</p></details>';
+ h+='<details class="h139-how"><summary>How is the Activity level worked out?</summary><p class="muted small">This is the FighterBase own score, from 0 to 100, built from your steps and your training. Use it as a yardstick against your weight, cardio and how you perform. Up to 50 points from steps (10,000 steps is 50) plus up to 50 from training and logged activities (60 minutes is 50). With no steps it is training only. It is a relative picture of your own week, not a medical score. Days with nothing logged are gaps, not zero. Other lines are scaled to their own range, so tap a day to see the real numbers.</p></details>';
  h+=why();
  h+='<div class="h139-ft">'+(window.FH140?FH140.control():'')+'<button class="linkbtn" type="button" data-h139body="1">'+(young()?'':(p.homeChartNoBody?'Show weight and calories':'Hide weight and calories'))+'</button></div>';
  return h}
 function draw(){var home=document.getElementById("tab-today");if(!home)return;var el=document.getElementById("fb139");
- if(!el){el=document.createElement("div");el.id="fb139";el.className="fb-card h139";home.insertBefore(el,home.firstChild)}
+ if(!el){el=document.createElement("div");el.id="fb139";el.className="fb-card h139 f149keep";home.insertBefore(el,home.firstChild)}
  try{var h=html();el.hidden=!h;if(el.dataset.sig!==h){el.innerHTML=h;el.dataset.sig=h}}catch(x){el.innerHTML="";console.warn("h139",x)}}
 function setP(f){try{f(P());profChanged()}catch(x){}el0();draw()}
 function el0(){var el=document.getElementById("fb139");if(el)el.dataset.sig=""}
@@ -16821,7 +16821,7 @@ window.FH145={tasks:tasks,fighters:fighters,panel:panel};
 
 /* FighterBase v179: coach view of a member's Home progress chart, only with the member's consent.
    New sharing choice "Progress chart" (fh54, off unless the club asks and the member says yes; never for under 18). It publishes 30 days of
-   [steps, active minutes, sessions, sleep, FB Activity Level] to the club record (m.ch). Weight (m.chw) is added only when the member also shares
+   [steps, active minutes, sessions, sleep, Activity level] to the club record (m.ch). Weight (m.chw) is added only when the member also shares
    Weight trend. Never calories or food. The coach sees it as a section in the member's profile. */
 var K146=K146||false;
 (function(){
@@ -16842,10 +16842,10 @@ function profile(m){if(!m||!(window.FHC&&FHC.isOwner&&FHC.isOwner()))return "";v
   sc=avg(last.map(function(d){return d[4]>=0?d[4]:0})),sp=avg(prev.map(function(d){return d[4]>=0?d[4]:0})),w=m.chw&&m.chw.filter(function(x){return x>0}).length>1?m.chw:null,ws=w?w.filter(function(x){return x>0}):[];
  var trend=(sc!=null&&sp!=null)?(sc-sp>=5?"up on the week before":sp-sc>=5?"down on the week before":"about the same as the week before"):"";
  return '<div class="pm-sec"><span class="label">Progress chart · last 30 days (shared by '+e2(String(m.name||"member").split(" ")[0])+')</span>'+svg(ch,w)+
-  '<p class="muted small" style="margin:0">Bars: active minutes. Red line: FB Activity Level (0 to 100, from steps and training)'+(w?'. Dashed line: weight, shared by the member':'')+'.</p>'+
+  '<p class="muted small" style="margin:0">Bars: active minutes. Red line: Activity level (0 to 100, from steps and training)'+(w?'. Dashed line: weight, shared by the member':'')+'.</p>'+
   '<div class="fb-row"><span>Sessions in 30 days</span><b>'+sess+'</b></div><div class="fb-row"><span>Active time in 30 days</span><b>'+(Math.round(mins/6)/10)+' h</b></div>'+
   '<div class="fb-row"><span>Steps a day (last 7 days)</span><b>'+r0(st)+'</b></div>'+(sl!=null?'<div class="fb-row"><span>Sleep (last 7 days)</span><b>'+(Math.round(sl*10)/10)+' h</b></div>':'')+
-  '<div class="fb-row"><span>FB Activity Level (last 7 days)</span><b>'+r0(sc)+(trend?' <span class="muted small">'+trend+'</span>':'')+'</b></div>'+
+  '<div class="fb-row"><span>Activity level (last 7 days)</span><b>'+r0(sc)+(trend?' <span class="muted small">'+trend+'</span>':'')+'</b></div>'+
   (ws.length>1?'<div class="fb-row"><span>Weight</span><b>'+ws[0]+' to '+ws[ws.length-1]+' kg</b></div>':'')+
   '<p class="muted small" style="margin:0">A pattern in what they logged, not a judgement. Ask them before drawing conclusions.</p></div>'}
 window.FH146={profile:profile};
@@ -20018,7 +20018,7 @@ function html(ctx){var f=today(),k=step[ctx],q=ctx==="wk"?"Anything you want to 
  if(k){var o=OPTS[k],nm=AREAS.filter(function(a){return a[0]===k})[0][1];return '<div class="f186"><p class="k155 f186k">'+esc2(nm)+'</p><p class="f186q">What exactly?</p><div class="f186g">'+o.map(function(x,i){return '<button type="button" class="btn ghost sm" data-f186o="'+k+'|'+i+'">'+esc2(x[0])+'</button>'}).join("")+'</div><button type="button" class="linkbtn" data-f186back="'+ctx+'">‹ Back</button></div>'}
  if(f&&ctx==="home"){var nm2=(AREAS.filter(function(a){return a[0]===f.area})[0]||[])[1]||"";return '<div class="f186"><p class="k155 f186k">Today\'s focus</p><p class="f186q">'+esc2(f.pick||nm2)+'</p><button type="button" class="linkbtn" data-f186re="home">Change</button></div>'}
  return '<div class="f186"><p class="f186q">'+q+'</p><div class="f186a">'+AREAS.map(function(a){return '<button type="button" class="f186b" data-f186a="'+a[0]+'|'+ctx+'"><b>'+a[1]+'</b><span>'+a[2]+'</span></button>'}).join("")+'</div></div>'}
-function draw(){try{var tb=document.getElementById("tab-today");if(tb){var el=document.getElementById("fb186");if(!el){el=document.createElement("div");el.id="fb186";el.className="fb-card f149keep";var a=document.getElementById("fb155");if(a&&a.parentNode===tb)tb.insertBefore(el,a.nextSibling);else{var g=tb.querySelector("h1,h2,.greet");tb.insertBefore(el,tb.children[1]||null)}}
+function draw(){try{var tb=document.getElementById("tab-today");if(tb){var el=document.getElementById("fb186");if(!el){el=document.createElement("div");el.id="fb186";el.className="fb-card f149keep";var a=document.getElementById("fb139")||document.getElementById("fb155");if(a&&a.parentNode===tb)tb.insertBefore(el,a.nextSibling);else{var g=tb.querySelector("h1,h2,.greet");tb.insertBefore(el,tb.children[1]||null)}}
   var h=html("home");if(el.dataset.sig!==h){el.innerHTML=h;el.dataset.sig=h}}
   document.querySelectorAll(".wk-card").forEach(function(c){var w=c.querySelector(".f186w");if(!w){w=document.createElement("div");w.className="f186w";var kk=c.querySelector(".fb-kick");if(kk)kk.insertAdjacentElement("afterend",w);else c.insertBefore(w,c.firstChild)}var h2=html("wk");if(w.dataset.sig!==h2){w.innerHTML=h2;w.dataset.sig=h2}})}catch(e){}}
 document.addEventListener("click",function(ev){var t=ev.target.closest&&ev.target.closest("[data-f186a],[data-f186o],[data-f186back],[data-f186re]");if(!t)return;
