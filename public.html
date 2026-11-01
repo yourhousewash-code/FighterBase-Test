@@ -1,0 +1,74 @@
+<!doctype html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="robots" content="noindex">
+<title>Club page</title>
+<meta name="description" content="Timetable, memberships, courses and a free first class.">
+<meta name="theme-color" content="#0A0B0D">
+<style>
+:root{color-scheme:dark;--bg:#0B0C0F;--card:#15171C;--line:#2A2E38;--fg:#ECE9E1;--muted:#9097A6;--acc:#C81E3A;--ok:#3FC57E}
+*{box-sizing:border-box}html,body{margin:0;background:var(--bg);color:var(--fg);font:16px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif}
+.wrap{max-width:720px;margin:0 auto;padding:16px 16px 48px}
+header{display:flex;gap:14px;align-items:center;padding:8px 0 16px}header img{width:56px;height:56px;border-radius:12px;background:#fff;object-fit:cover}
+h1{margin:0;font-size:26px;line-height:1.1;text-transform:uppercase;letter-spacing:.01em}h2{font-size:20px;margin:0 0 10px}h3{font-size:16px;margin:0}
+.tag{color:var(--muted);font-size:14px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px;margin:12px 0}
+.row{display:flex;justify-content:space-between;gap:12px;padding:8px 0;border-top:1px solid var(--line);align-items:flex-start}.row:first-of-type{border-top:0}
+.muted{color:var(--muted)}.small{font-size:14px}
+.btn{display:inline-block;background:var(--acc);color:#fff;border:0;border-radius:10px;padding:11px 18px;font:700 15px system-ui,sans-serif;text-transform:uppercase;letter-spacing:.08em;cursor:pointer;text-decoration:none}
+.btn.ghost{background:transparent;border:1px solid var(--line);color:var(--fg)}
+.field{display:flex;flex-direction:column;gap:5px;margin:10px 0}label{font-size:13px;color:var(--muted);text-transform:uppercase;letter-spacing:.1em;font-weight:700}
+input,select,textarea{background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:11px 12px;color:var(--fg);font:inherit;width:100%}
+.ok{color:var(--ok)}s{color:var(--muted)}.day{font-weight:700;margin-top:10px}
+.offer{display:inline-block;background:rgba(63,197,126,.14);color:var(--ok);border-radius:999px;padding:2px 9px;font-size:12px;font-weight:700;margin-left:6px}
+.note{font-size:13px;color:var(--muted);margin-top:8px}
+[hidden]{display:none!important}
+footer{color:var(--muted);font-size:12px;margin-top:24px}
+@media (prefers-color-scheme:light){:root{color-scheme:light;--bg:#F6F4EF;--card:#fff;--line:#DDD8CF;--fg:#151515;--muted:#5F6572}}
+</style>
+</head>
+<body>
+<div class="wrap" id="app"><p class="muted">Loading…</p></div>
+<script src="public-demo.js"></script>
+<script>
+(function(){
+var q={};location.search.slice(1).split("&").forEach(function(kv){if(!kv)return;var a=kv.split("=");q[decodeURIComponent(a[0])]=decodeURIComponent((a[1]||"").replace(/\+/g," "))});
+var code=(q.club||"DEMO").toUpperCase(),src=(q.src||"").toLowerCase().slice(0,20),focus=q.course||"";
+var D=null;try{D=JSON.parse(localStorage.getItem("fb_public_"+code)||"null")}catch(e){}
+if(!D&&window.FB_PUBLIC_DEMO&&(code==="DEMO"||String(FB_PUBLIC_DEMO.code).toUpperCase()===code))D=FB_PUBLIC_DEMO;
+var app=document.getElementById("app");
+function esc(s){return String(s==null?"":s).replace(/[&<>"']/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]})}
+function gbp(p){return "£"+(p/100).toFixed(2).replace(/\.00$/,"")}
+function fmt(k){return k?new Date(k+"T12:00").toLocaleDateString("en-GB",{weekday:"short",day:"numeric",month:"short"}):""}
+var DN=["Monday","Tuesday","Wednesday","Thursday","Friday","Saturday","Sunday"],PER={month:"a month",week:"a week",session:"a class",card:"per card",term:"up front"};
+if(!D){app.innerHTML='<div class="card"><h2>Club page not found</h2><p class="muted">This is the private FighterBase test site. Open the club side of the app first, then come back to this page.</p></div>';return}
+document.title=D.name;if(D.color)document.documentElement.style.setProperty("--acc",D.color);
+var h='<header>'+(D.logo?'<img src="'+esc(D.logo)+'" alt="">':'')+'<div><h1>'+esc(D.name)+'</h1><div class="tag">'+esc([D.city,D.tagline].filter(Boolean).join(" · "))+'</div></div></header>';
+/* courses first if a course is linked */
+function courseCard(c){var left=c.left,full=c.places&&left===0;return '<div class="card" id="c-'+esc(c.id)+'"><h3>'+esc(c.title)+'</h3><p class="small" style="margin:4px 0 0">Starts '+fmt(c.start)+' · '+(c.weeks||4)+' weeks · '+(c.price?gbp(c.price):"Free")+(c.places?' · <b>'+left+' place'+(left===1?"":"s")+' left</b>':'')+(c.ageMin||c.ageMax?' · ages '+(c.ageMin||"")+(c.ageMax?" to "+c.ageMax:"+"):'')+'</p>'+(c.incl?'<p class="small" style="margin:6px 0 0">'+esc(c.incl)+'</p>':'')+(c.sessions&&c.sessions.length?'<p class="small muted" style="margin:6px 0 0">First sessions: '+c.sessions.map(function(s){return fmt(s.d)+" "+s.time}).join(", ")+'</p>':'')+'<form data-course="'+esc(c.id)+'" style="margin-top:10px"><div class="field"><label>Your name</label><input name="name" required maxlength="60"></div><div class="field"><label>Phone or email</label><input name="contact" required maxlength="80"></div><div class="field"><label>Date of birth</label><input name="dob" type="date" required></div><div class="field" data-parent hidden><label>Parent or guardian name and phone (under 16)</label><input name="parent" maxlength="100"></div><button class="btn" type="submit">'+(full?"Join the waiting list":"Book your place")+'</button><p class="note">'+(c.price?"Pay "+gbp(c.price)+" at the club or by the link they send. ":"")+'Test site: no money moves and nothing is sent anywhere outside this test.</p></form></div>'}
+var courses=(D.courses||[]).slice();if(focus){courses.sort(function(a,b){return (a.id===focus?-1:0)-(b.id===focus?-1:0)})}
+if(courses.length)h+='<h2 style="margin-top:14px">Courses</h2>'+courses.map(courseCard).join("");
+/* trial form */
+if(D.trial&&D.trial.on){h+='<div class="card" id="trial"><h2>Try a free class</h2>'+(D.trial.note?'<p class="small muted">'+esc(D.trial.note)+'</p>':'')+'<form data-trial><div class="field"><label>Your name</label><input name="name" required maxlength="60"></div><div class="field"><label>Phone or email</label><input name="contact" required maxlength="80"></div><div class="field"><label>Date of birth</label><input name="dob" type="date" required></div><div class="field" data-parent hidden><label>Parent or guardian name and phone (under 16)</label><input name="parent" maxlength="100"></div><div class="field"><label>Which class</label><select name="cls">'+(D.timetable||[]).map(function(x){return '<option>'+esc(DN[x.dow]+" "+x.time+" "+x.title)+'</option>'}).join("")+'</select></div><div class="field"><label>Date you\'d like to come</label><input name="date" type="date"></div><div class="field"><label>How did you hear about us?</label><select name="how" required><option value="">Choose</option><option>Instagram</option><option>Facebook</option><option>Google</option><option>A friend</option><option>Walked past</option><option>Poster or flyer</option><option>Other</option></select></div><div class="field"><label>Anything we should know (optional)</label><input name="note" maxlength="160"></div><button class="btn" type="submit">Book my free class</button><p class="note">Test site: nothing is sent anywhere outside this test.</p></form></div>'}
+/* timetable */
+if((D.timetable||[]).length){h+='<div class="card"><h2>Timetable</h2>';for(var d=0;d<7;d++){var cl=D.timetable.filter(function(x){return x.dow===d}).sort(function(a,b){return a.time.localeCompare(b.time)});if(!cl.length)continue;h+='<div class="day">'+DN[d]+'</div>'+cl.map(function(x){return '<div class="row"><span>'+esc(x.time)+' · '+esc(x.title)+(x.kids?' <span class="muted small">(kids)</span>':'')+'</span><span class="muted small">'+(x.mins||60)+' min</span></div>'}).join("")}h+='</div>'}
+/* hours */
+if(D.hours){h+='<div class="card"><h2>Opening hours</h2>'+D.hours.map(function(x,i){return '<div class="row"><span>'+DN[i]+'</span><span>'+(x&&x.o?esc(x.o+" to "+x.c):"Closed")+'</span></div>'}).join("")+'</div>'}
+/* plans */
+if((D.plans||[]).length){h+='<div class="card"><h2>Memberships</h2>'+D.plans.map(function(p){var o=p.offer,terms=[];if(p.jf)terms.push("Joining fee "+gbp(p.jf)+" once");if(p.minM)terms.push("minimum "+p.minM+" months");if(p.notice)terms.push(p.notice+" days' notice");var what=p.kind==="pw"?p.pw+" classes a week":p.kind==="pm"?p.pm+" classes a month":p.kind==="card"?p.cn+" classes"+(p.cexp?", "+p.cexp+" days":""):p.kind==="payg"?"pay as you go":"unlimited";return '<div class="row"><span><b>'+esc(p.name)+'</b><br><span class="small muted">'+esc(what)+(p.sp&&p.sp.length?' · '+esc(p.sp.join(", ")):'')+(terms.length?'<br>'+esc(terms.join(", ")):'')+'</span></span><span style="text-align:right">'+(o?'<s>'+gbp(p.amt)+'</s> <b class="ok">'+gbp(o.amt)+'</b><br><span class="small muted">'+esc(o.name)+(o.end?' until '+fmt(o.end)+', then '+gbp(p.amt):'')+'</span>':'<b>'+gbp(p.amt)+'</b>')+' <span class="small muted">'+(PER[p.per]||p.per)+'</span></span></div>'}).join("")+'<p class="note">Prices include VAT where it applies. Full price, offer price and what you pay after are always shown before you join.</p></div>'}
+h+='<div class="card"><p class="small" style="margin:0">Already a member? <a class="btn ghost" href="'+esc(D.join)+(src?"&src="+encodeURIComponent(src):"")+'" style="margin-left:6px">Open the app</a></p></div>';
+h+='<footer>'+esc(D.name)+(D.phone?' · '+esc(D.phone):'')+(D.site?' · <a href="'+esc(D.site)+'" style="color:inherit">website</a>':'')+'. Private test page. Updated '+new Date(D.updated).toLocaleDateString("en-GB")+'.</footer>';
+app.innerHTML=h;
+/* under-16 shows the parent field */
+app.addEventListener("input",function(ev){var t=ev.target;if(t.name!=="dob")return;var f=t.closest("form"),p=f&&f.querySelector("[data-parent]");if(!p||!t.value)return;var age=(Date.now()-new Date(t.value+"T12:00"))/31557600000;p.hidden=!(age<16);if(age<16)p.querySelector("input").required=true});
+app.addEventListener("submit",function(ev){ev.preventDefault();var f=ev.target,g=function(n){var x=f.querySelector('[name="'+n+'"]');return x?x.value.trim():""};var dob=g("dob");var age=dob?(Date.now()-new Date(dob+"T12:00"))/31557600000:99;if(age<16&&!g("parent")){alert("Please add a parent or guardian's name and phone.");return}
+ var item={club:code,at:new Date().toISOString(),src:src,name:g("name").slice(0,60),contact:g("contact").slice(0,80),dob:dob,parent:g("parent").slice(0,100)};
+ if(f.hasAttribute("data-trial")){item.kind="trial";item.cls=g("cls");item.date=g("date");item.how=g("how");item.note=g("note")}else{item.kind="course";item.course=f.getAttribute("data-course")}
+ try{var L=JSON.parse(localStorage.getItem("fb_public_inbox")||"[]");L.push(item);localStorage.setItem("fb_public_inbox",JSON.stringify(L))}catch(e){}
+ f.innerHTML='<p class="ok"><b>Thanks, '+esc(item.name.split(" ")[0])+'.</b> '+(item.kind==="trial"?"The club will confirm your free class by phone or email.":"Your place is booked. The club will confirm and tell you how to pay.")+'</p><p class="note">On the real site you would also get an email. On this test site the club sees it next time they open their app on this device.</p>'});
+})();
+</script>
+</body>
+</html>
