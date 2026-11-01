@@ -3952,8 +3952,8 @@ try{clubPro()}catch(e){}
 /* FighterBase v19: plans, AI limits, usage meter, add-ons, club perk (prototype: no real payments) */
 var P19=false;
 var PLANS={free:{n:"Free",m:0,y:0,lim:{chat:5,review:1,scan:3}},
- plus:{n:"Plus",m:9.99,y:79.99,lim:{chat:60,review:8,scan:40}},
- pro:{n:"Pro",m:19.99,y:159.99,lim:{chat:200,review:20,scan:120}}};
+ plus:{n:"Plus",m:4.99,y:null,lim:{chat:60,review:8,scan:40}},
+ pro:{n:"Pro",m:9.99,y:null,lim:{chat:200,review:20,scan:120}}};
 var PL_RANK={free:0,plus:1,pro:2};
 var PL_KIND={chat:"coach chats",review:"weekly reviews",scan:"scans and photo logs"};
 var PL_BULLETS={free:["Daily plan, targets and food logging","Goals, countdown and Growth checks","Club, partners and challenges","Weight-cut safety limits and the simulator","Weight, energy and sessions-per-week charts, and a weekly summary"],
@@ -4005,7 +4005,7 @@ function plRender(){if(!P19)return;var el=document.getElementById("pPlanBox");
  var lock=document.getElementById("planChartLock");if(!lock){var tl=document.getElementById("tiles");if(tl&&tl.parentNode){lock=document.createElement("div");lock.id="planChartLock";lock.className="panel pv-charts plan-lock";lock.innerHTML='<div class="sec-h"><h2>More charts are in Plus</h2></div><p class="muted" style="margin:0 0 10px">Weight and energy charts, your Report and your Timeline are free. Plus adds the sleep, hydration, protein and calorie charts and the 12-week diet goals chart.</p><button class="btn" type="button" data-plopen data-plwhy="charts">See Plus</button>';tl.parentNode.insertBefore(lock,tl)}}}
 
 /* ---- plans sheet ---- */
-function plPrice(k){var p=PLANS[k];if(!p.m)return '<b>£0</b>';return plBill==="year"?'<b>£'+p.y.toFixed(2)+'</b><span class="small muted"> a year · about £'+(p.y/12).toFixed(2)+' a month</span>':'<b>£'+p.m.toFixed(2)+'</b><span class="small muted"> a month</span>'}
+function plPrice(k){var p=PLANS[k];if(!p.m)return '<b>£0</b>';return plBill==="year"&&p.y?'<b>£'+p.y.toFixed(2)+'</b><span class="small muted"> a year · about £'+(p.y/12).toFixed(2)+' a month</span>':'<b>£'+p.m.toFixed(2)+'</b><span class="small muted"> a month</span>'}
 function plSheetHtml(){var t=tierNow(),pl=ensurePlan()||{},msg="";
  if(plReason&&PL_KIND[plReason]){msg='<div class="notice"><b>You have used this month\'s '+PL_KIND[plReason]+' on '+PLANS[t].n+'.</b> Your allowance resets next month, or you can step up or add a top-up below.</div>'}
  else if(plReason==="cut"){msg='<div class="notice"><b>Saving and tracking a weight-cut plan is in Pro.</b> The simulator and the safety limits stay free.</div>'}
@@ -4015,7 +4015,7 @@ function plSheetHtml(){var t=tierNow(),pl=ensurePlan()||{},msg="";
    (cur?'':'<button class="btn'+(k==="free"?" ghost":"")+'" type="button" data-plpick="'+k+'">'+(k==="free"?"Switch to Free":"Try "+PLANS[k].n)+'</button>')+'</div>'}).join("");
  return '<div class="plsheet-in" role="dialog" aria-modal="true" aria-label="Plans"><div class="plsheet-top"><h2>Plans</h2><button class="btn ghost" type="button" data-plclose>Close</button></div>'+msg+
   '<p class="muted small" style="margin:0 0 10px">Every new account gets 14 days of Plus. Test mode: nothing is charged. Picking a plan switches it on so you can try it. Real billing will go through the App Store and Google Play later. Prices are working figures.</p>'+
-  '<div class="seg-ctl" id="plBillCtl"><button type="button" data-plbill="month" aria-pressed="'+(plBill==="month")+'">Monthly</button><button type="button" data-plbill="year" aria-pressed="'+(plBill==="year")+'">Yearly: save a third</button></div>'+
+  (PLANS.plus.y?'<div class="seg-ctl" id="plBillCtl"><button type="button" data-plbill="month" aria-pressed="'+(plBill==="month")+'">Monthly</button><button type="button" data-plbill="year" aria-pressed="'+(plBill==="year")+'">Yearly: save a third</button></div>':'<p class="muted small" style="margin:0">Monthly prices. Yearly prices to follow.</p>')+
   '<div class="plgrid">'+cards+'</div>'+
   '<div class="panel" style="margin-top:12px"><div class="sec-h"><h2>Add-ons</h2></div>'+
   '<div class="pladd"><div><b>Fight camp pass</b><p class="small muted" style="margin:2px 0 0">Pro for 12 weeks, one payment of £24.99, no renewal. '+(plCamp()?'Active until '+pl.campUntil+'.':'Made for a camp.')+'</p></div><button class="btn" type="button" data-pladd="camp">'+(plCamp()?'Add 12 more weeks':'Get pass')+'</button></div>'+
@@ -12304,12 +12304,13 @@ function draw(o,done){var c=club()||{},i=info(),col=colr(),cv=document.createEle
   var y=300+fs+20;g.fillStyle="#fff";hl.slice(0,2).forEach(function(l){g.fillText(l,80,y);y+=fs*.95});y+=20;
   g.font="600 46px 'Barlow Condensed',Arial Narrow,sans-serif";g.fillStyle="rgba(255,255,255,.92)";var lh=64;
   o.L.forEach(function(s){if(y>960)return;wrap(g,s,920).forEach(function(l){if(y>960)return;g.fillText(l,80,y);y+=lh})});
-  g.font="600 26px 'Barlow Condensed',Arial Narrow,sans-serif";g.fillStyle="rgba(255,255,255,.5)";g.fillText("POWERED BY FIGHTERBASE",80,1032);
+  g.font="600 26px 'Barlow Condensed',Arial Narrow,sans-serif";g.fillStyle="rgba(255,255,255,.5)";if((c.mkt90||{}).credit){g.fillText("POWERED BY FIGHTERBASE",80,1032)}
   done(cv.toDataURL("image/png"))}
  var lg=(c.brand||{}).logo;if(lg){var im=new Image();im.onload=function(){fin(im)};im.onerror=function(){fin(null)};im.src=lg}else fin(null)}
 /* ---------- queue ---------- */
 function Q(){return ((club()||{}).mkt90||{}).q||[]}
-function saveQ(q){return upd({mkt90:{q:q}})}
+function saveQ(q){return upd({mkt90:Object.assign({},(club()||{}).mkt90||{},{q:q})})}
+function setCredit(on){return upd({mkt90:Object.assign({},(club()||{}).mkt90||{},{credit:!!on})})}
 function nextFree(){for(var i=0;i<14;i++){var d=addDays(TODAY,i);if(!Q().some(function(p){return p.date===d}))return d}return TODAY}
 function ideas(){var out=[],q=Q(),want=[["timetable","Share this week's timetable"],["spot","Spotlight a class"],["wow","Workout of the week"],["begin","Invite beginners"],["price","Show your membership options"]],j=0;
  for(var i=0;i<7&&out.length<3;i++){var d=addDays(TODAY,i);if(q.some(function(p){return p.date===d}))continue;var w=want[j++%want.length];out.push({d:d,tpl:w[0],t:w[1]})}return out}
@@ -12327,7 +12328,7 @@ function page(){var el=document.getElementById("hubmktBody"),c=club();if(!el||!c
  '<div class="mk90g"><div class="mk90fm">'+x.t.f.map(function(f){return field(f,x.d)}).join("")+
  (lock?'<div class="mk90w"><b>Before you post a person</b><label class="mk90k"><input type="checkbox" data-mkok="1"'+(M.ok1?" checked":"")+'> They have said yes to being shown in a post.</label><label class="mk90k"><input type="checkbox" data-mkok="2"'+(M.ok2?" checked":"")+'> They are 18 or over, or a parent or guardian has agreed. The club is responsible for what it posts.</label></div>':'<p class="muted small" style="margin:8px 0 0">This post names no members. Keep photos and names to people who have agreed.</p>')+
  '<label class="mk90f"><span>Words for the post</span><textarea id="mk90cap" rows="6">'+esc(M.cap)+'</textarea></label><div class="row"><button class="btn ghost sm" type="button" data-mkcopy="1">Copy words</button>'+(M.capEdited?'<button class="linkbtn" type="button" data-mkreset="1">Write them again for me</button>':'')+'</div></div>'+
- '<div class="mk90pv"><div class="mk90im"><img id="mk90img" alt="Preview of the post picture: '+esc(x.o.h)+'" src="'+esc(M.img)+'"></div><div class="row"><button class="btn ghost sm" type="button" data-mkdl="1"'+(okAll?"":" disabled")+'>Download picture</button></div>'+
+ '<div class="mk90pv"><div class="mk90im"><img id="mk90img" alt="Preview of the post picture: '+esc(x.o.h)+'" src="'+esc(M.img)+'"></div><div class="row"><button class="btn ghost sm" type="button" data-mkdl="1"'+(okAll?"":" disabled")+'>Download picture</button></div><label class="mk90k" style="margin-top:6px"><input type="checkbox" data-mkcredit="1"'+((c.mkt90||{}).credit?" checked":"")+'> Add a small "Powered by FighterBase" line to the picture</label><p class="muted small" style="margin:2px 0 0">Off for now. Later, leaving it off will be part of the paid club tiers.</p>'+
  '<div class="mk90s"><span class="label">Where it will go</span><div class="mk90pl">'+PL.map(function(p){return '<button type="button" class="chip" aria-pressed="'+!!M.pl[p[0]]+'" data-mkpl="'+p[0]+'">'+p[1]+'</button>'}).join("")+'</div><div class="mk90dt"><label class="mk90f"><span>Date</span><input type="date" id="mk90date" value="'+esc(M.date)+'" min="'+TODAY+'"></label><label class="mk90f"><span>Time</span><input type="time" id="mk90time" value="'+esc(M.time)+'"></label></div><button class="btn" type="button" data-mkadd="1"'+(okAll?"":" disabled")+'>Add to calendar</button>'+(okAll?"":'<p class="muted small" style="margin:6px 0 0">Tick both boxes to continue.</p>')+'</div></div></div></div>'+
  '<div class="panel"><div class="sec-h"><h3>Content calendar</h3><span class="muted small">'+q.filter(function(p){return p.st!=="posted"}).length+' scheduled · '+q.filter(function(p){return p.st==="posted"}).length+' posted</span></div>'+calHTML(q)+'<p class="muted small" style="margin:8px 0 0">Until your accounts are connected, a scheduled post is a reminder: open it on the day, download the picture, copy the words, post, then tick Posted.</p></div>';
  if(el.dataset.sig!==h){var f=document.activeElement,keep=f&&el.contains(f)&&f.id?{id:f.id,s:f.selectionStart,e:f.selectionEnd}:null;el.innerHTML=h;el.dataset.sig=h;if(keep){var n=document.getElementById(keep.id);if(n){n.focus();try{n.setSelectionRange(keep.s,keep.e)}catch(e){}}}}
@@ -12354,6 +12355,7 @@ document.addEventListener("change",function(e){var t=e.target;if(!t||!t.closest|
 function dl(){draw(cur().o,function(u){try{var a=document.createElement("a");a.href=u;a.download=(String((club()||{}).name||"club").replace(/[^A-Za-z0-9]+/g,"-")+"-"+M.tpl+".png").toLowerCase();document.body.appendChild(a);a.click();a.remove();toast("Picture downloaded","If nothing saved, press and hold the picture")}catch(e){toast("Press and hold the picture to save it")}})}
 document.addEventListener("click",function(e){var t=e.target;if(!t.closest||!t.closest("#hubmktBody"))return;var b,c=club();if(!c||!isCoach())return;
  if(b=t.closest("[data-mktpl]")){setTpl(b.dataset.mktpl);rerender();return}
+ if(b=t.closest("[data-mkcredit]")){setCredit(b.checked).then(function(){rerender()});return}
  if(b=t.closest("[data-mkidea]")){var o=ideas()[+b.dataset.mkidea];if(o){setTpl(o.tpl);M.date=o.d;rerender();var pm=document.querySelector(".mk90t");if(pm)pm.scrollIntoView({behavior:"smooth",block:"start"})}return}
  if(b=t.closest("[data-mkpl]")){M.pl[b.dataset.mkpl]=!M.pl[b.dataset.mkpl];rerender();return}
  if(b=t.closest("[data-mkok]")){if(b.dataset.mkok==="1")M.ok1=b.checked;else M.ok2=b.checked;rerender();return}
