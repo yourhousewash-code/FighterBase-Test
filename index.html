@@ -14708,6 +14708,8 @@ var COACH=[
 ["Club documents","How do I know when something runs out?","Add the expiry date when you upload. Club documents and your Overview show anything due within 30 days, and earlier versions are kept when you upload a new one."],
 ["Pictures and posts","How do I change a picture everywhere?","Marketing, Pictures, Photo library, Replace picture. Every post, class and blog post using it updates. Say who is in it again before it's posted."],
 ["Pictures and posts","Does FighterBase post for us?","No. You copy the words and download or share the picture yourself."],
+["Pictures and posts","Can I make short videos?","Yes. Marketing, Video clip: choose a video from your phone, trim it to 60 seconds or less, add words, captions, your club name and an end card, then Make the video. It stays on your phone until you download or share it. Say who is in it first: the same consent rules as photos."],
+["Pictures and posts","Can I add music to a clip?","Only music you have the rights to use. Instagram and TikTok can mute or remove clips with copyrighted music, so adding a sound in their apps is often safer."],
 ["Your club's records","How do I keep a copy of our records?","Set up, Club documents, Keep a copy of your records, Download. It saves one file you can open in any browser to read or print. Take a copy each month (your Overview reminds you) and keep it somewhere safe and private. Safeguarding concerns and children's health details are only in the safeguarding lead's copy."]
 ];
 function e(s){return esc(String(s==null?"":s))}
@@ -17104,7 +17106,7 @@ hubcomp:["Fights","Members' fights and interclubs, with who is coming and the re
 hubins:["Insights","Plain summaries of how the club is doing, and who to check on."],
 hubana:["Analysis","Deeper numbers on attendance by class and workout."],
 hubgrow:["Growth","Ideas and numbers to bring in and keep members. Messages are drafts for you to approve."],
-hubmkt:["Marketing","Ready-made posts using your club details. You copy and post them yourself. Nothing is posted for you."],
+hubmkt:["Marketing","Ready-made posts using your club details, your own posts and short video clips. You copy and post them yourself. Nothing is posted for you."],
 hubcomm:["Community","Share and borrow workouts, tips and events with other clubs."],
 hubevt:["Events","Create seminars, shows and camps. Members can sign up and you can share them to other clubs."],
 hubkids:["Kids academy","Juniors, their families and the checks that keep them safe. Test data only for now."],
@@ -18232,7 +18234,8 @@ var GD=[
  ["^use$","Choose a photo","Pick one from your library. The editor opens under the preview.",0],
  ["edit photo","Edit the photo","Zoom, looks, text you can drag, two-photo layouts and shapes. Nothing changes a face or body."],
  ["css:.e203 .cc-box","Photo consent","If someone has no consent, it shows here: ask the parent in one tap, or crop them out. Blurring doesn't count as consent."],
- ["check my post","Check before you post","Checks the length, hashtags and photo consent."]]},
+ ["check my post","Check before you post","Checks the length, hashtags and photo consent."],
+ ["css:#c212","Video clips","Short clips for Reels and Stories: trim, captions, your club name and an end card. Same consent rules as photos."]]},
 {id:"c-mkt",tab:"hubmkt",t:"Marketing",m:1,why:"Ready-made posts.",s:[
  ["ideas for this week","Ideas for this week","Posts that suit what is happening at your club."],
  ["post maker","Make a post","Pick a type. It fills in your club details."],
@@ -22495,6 +22498,147 @@ document.addEventListener("click",function(ev){var t=ev.target.closest&&ev.targe
   F.upd({sg199:Object.assign({},C().sg199||{},{concerns:L,views:V}),cdel199:R().map(function(x){return x.id===r.id?Object.assign({},x,{reason:"(removed with the concern)",done:{by:S.uid,byName:me(),at:new Date().toISOString()}}):x})}).then(function(){toast("Concern deleted","A record with no names or text is kept");re()});return}},true);
 var css=document.createElement("style");css.textContent=".d211box{margin-top:6px;padding:8px 10px;border:1px dashed var(--warn,#F2994A);border-radius:10px}";document.head.appendChild(css);
 return {on:true,row:row,mod:mod,keep:keep};
+})();
+
+/* FighterBase v283: short video clips with captions (editing suite, the step after photos; handbook section 10 item 17).
+   Marketing, Content studio, "Video clip": pick a video from the phone or computer, trim it (up to 60 seconds), frame it for Reels and Stories (9:16),
+   square or portrait, zoom and drag, add a look, words on the video, timed captions, the club name and logo, an end card with the next step, keep or mute
+   the clip's own sound and add music the club has the rights to use. "Make the video" records it in the browser and gives a file to download or share.
+   Nothing is uploaded: the video stays on the device until the coach downloads or shares it.
+   People in the clip follow the photo rules: a junior needs consent for video and for social media; a parent's "no" or "do not photograph" blocks it
+   (zoom and drag them out and tick, or choose another clip); with no answer yet the coach may tick that the child is only in the background and can't be
+   recognised; the coach's name and the time are recorded. No AI, no face or body changes. Files: .mp4 where the browser can make one (Safari, newer
+   Chrome), otherwise .webm. */
+var FH212=(function(){
+var S192=window.FH192;if(!S192||!S192.on)return {on:false};
+function club(){return (typeof clubState!=="undefined"&&clubState.club)||{}}
+function e(s){return esc(String(s==null?"":s))}
+function isCoach(){try{return window.FHC&&FHC.isOwner()}catch(x){return false}}
+function col(){return (club().brand||{}).color||"#C81E3A"}
+function me(){return (typeof S!=="undefined"&&S.profile&&S.profile.name)||"Coach"}
+function clamp(v,a,b){return Math.max(a,Math.min(b,v))}
+function ts(t){t=Math.max(0,t||0);var m=Math.floor(t/60),s=Math.floor(t%60);return m+":"+(s<10?"0":"")+s}
+var SIZES=[["story","Reels and Stories 9:16",720,1280],["sq","Square 1:1",720,720],["pt","Portrait 4:5",720,900]];
+var LOOKS=[["none","Original",""],["fight","Fight night","contrast(1.3) saturate(1.2)"],["bw","Black and white","grayscale(1) contrast(1.2)"],["grit","Gym grit","contrast(1.45) saturate(.4)"],["vintage","Vintage","sepia(.35) saturate(.75) contrast(.95)"],["bright","Bright","brightness(1.15) saturate(1.1)"],["cool","Cool","saturate(.9) hue-rotate(-12deg)"],["warm","Warm","sepia(.18) saturate(1.12)"]];
+var V={url:null,name:"",dur:0,t0:0,t1:0,size:"story",zoom:1,px:0,py:0,look:"none",head:"",headPos:"top",caps:[],brand:true,end:true,endHead:"",endCta:"Book a free class",sound:true,vol:1,music:null,musicName:"",mvol:.6,people:[],noone:false,ok:{},making:false,prog:0,out:null,outType:"",open:false,force:false};
+var vid=null,aud=null,AC=null,srcV=null,srcA=null,gV=null,gA=null,dest=null,raf=0,logo=null,logoUrl="";
+/* ---------- consent (same rules as photos) ---------- */
+function key(x){return x.kid?"k:"+x.kid:"n:"+x.name}
+function st(x){if(x.kid){if(!(window.FH201&&FH201.on&&FH201.state))return "none";var a=FH201.state(x.kid,"video"),b=FH201.state(x.kid,"social"),order=["dnp","no","none","child","ok"];return order.indexOf(a)<order.indexOf(b)?a:b}return x.consent==="adult"?"ok":"none"}
+function cleared(x){var s=st(x),o=V.ok[key(x)];if(s==="ok")return true;if(!o)return false;if(s==="none"||s==="child")return o==="bg"||(o==="crop"&&V.zoom>1.05);return o==="crop"&&V.zoom>1.05}
+function canMake(){if(!V.url)return false;if(!V.noone&&!V.people.length)return false;return V.people.every(cleared)}
+function why(){if(!V.url)return "Choose a video first.";if(!V.noone&&!V.people.length)return "Say who is in the clip first (or tick that no one can be recognised).";var b=V.people.filter(function(x){return !cleared(x)});if(b.length)return "Photo and video consent needed for "+b.map(function(x){return x.name}).join(", ")+".";return ""}
+/* ---------- drawing ---------- */
+function size(){return SIZES.filter(function(s){return s[0]===V.size})[0]||SIZES[0]}
+function wrap(g,s,w){var ws=String(s).split(/\s+/),l="",o=[];ws.forEach(function(x){var t=l?l+" "+x:x;if(g.measureText(t).width>w&&l){o.push(l);l=x}else l=t});if(l)o.push(l);return o}
+function box(g,W,lines,fs,y,bg,fg){g.font="800 "+fs+"px 'Barlow Condensed','Arial Narrow',sans-serif";var lh=fs*1.15,wmax=0;lines.forEach(function(x){wmax=Math.max(wmax,g.measureText(x).width)});var bw=wmax+fs*1.1,bh=lh*lines.length+fs*.5;g.fillStyle=bg;g.fillRect((W-bw)/2,y,bw,bh);g.fillStyle=fg;g.textAlign="center";g.textBaseline="middle";lines.forEach(function(x,i){g.fillText(x,W/2,y+fs*.25+lh*(i+.5))});g.textAlign="left";return bh}
+function frame(g,W,H,t,endT){g.save();g.fillStyle="#0B0E13";g.fillRect(0,0,W,H);
+ if(endT==null&&vid&&vid.videoWidth){var r=Math.max(W/vid.videoWidth,H/vid.videoHeight)*V.zoom,w=vid.videoWidth*r,h=vid.videoHeight*r,mx=Math.max(0,(w-W)/2),my=Math.max(0,(h-H)/2);var L=LOOKS.filter(function(l){return l[0]===V.look})[0];try{g.filter=L&&L[2]?L[2]:"none"}catch(x){}g.drawImage(vid,W/2-V.px*mx-w/2,H/2-V.py*my-h/2,w,h);try{g.filter="none"}catch(x){}}
+ g.restore();var c=club(),cc=col();
+ if(endT!=null){g.fillStyle=cc;g.fillRect(0,0,W,H);var hd=String(V.endHead||V.head||c.name||"").toUpperCase(),fs=Math.round(W*.09);g.font="900 "+fs+"px 'Big Shoulders Display','Arial Narrow',sans-serif";g.fillStyle="#fff";g.textAlign="center";var hl=wrap(g,hd,W*.84).slice(0,3),y=H*.36;hl.forEach(function(l){g.fillText(l,W/2,y);y+=fs*1.02});
+  if(V.endCta){g.font="800 "+Math.round(W*.05)+"px 'Barlow Condensed','Arial Narrow',sans-serif";var ct=String(V.endCta).toUpperCase(),cw=g.measureText(ct).width+W*.12,chh=W*.11;g.fillStyle="#fff";g.fillRect((W-cw)/2,y+W*.03,cw,chh);g.fillStyle=cc;g.textBaseline="middle";g.fillText(ct,W/2,y+W*.03+chh/2+2);g.textBaseline="alphabetic"}
+  g.font="700 "+Math.round(W*.04)+"px 'Barlow Condensed','Arial Narrow',sans-serif";g.fillStyle="rgba(255,255,255,.9)";g.fillText(String(c.name||"").toUpperCase(),W/2,H-W*.12);g.textAlign="left";if(logo&&logo.complete&&logo.naturalWidth){var lw=W*.16,lr=lw/Math.max(logo.naturalWidth,logo.naturalHeight);g.drawImage(logo,(W-logo.naturalWidth*lr)/2,H*.12,logo.naturalWidth*lr,logo.naturalHeight*lr)}return}
+ if(V.head&&V.headPos!=="none"){var fs2=Math.round(W*.065);g.font="800 "+fs2+"px 'Barlow Condensed','Arial Narrow',sans-serif";var hl2=wrap(g,String(V.head).toUpperCase(),W*.8).slice(0,2);box(g,W,hl2,fs2,V.headPos==="top"?(V.brand?Math.max(H*.1,W*.05+W*.032*2.2+W*.035):H*.1):H*.62,"rgba(11,14,19,.82)","#fff")}
+ var cap=V.caps.filter(function(x){return t>=x.t&&t<x.t+(x.d||3)&&x.x})[0];if(cap){var fs3=Math.round(W*.05);g.font="800 "+fs3+"px 'Barlow Condensed','Arial Narrow',sans-serif";var cl=wrap(g,cap.x,W*.82).slice(0,3);box(g,W,cl,fs3,H*.8-(cl.length-1)*fs3*1.15,"rgba(255,255,255,.92)","#111")}
+ if(V.brand){var nm=String(c.name||"").toUpperCase(),fs4=Math.round(W*.032);g.font="700 "+fs4+"px 'Barlow Condensed','Arial Narrow',sans-serif";var nw=g.measureText(nm).width,lg=logo&&logo.complete&&logo.naturalWidth?fs4*1.8:0;g.fillStyle="rgba(11,14,19,.6)";g.fillRect(W-nw-lg-W*.09,W*.05,nw+lg+W*.06,fs4*2.2);g.fillStyle="#fff";g.textAlign="right";g.fillText(nm,W-W*.06,W*.05+fs4*1.45);g.textAlign="left";if(lg){var r2=lg/Math.max(logo.naturalWidth,logo.naturalHeight);g.drawImage(logo,W-W*.06-nw-lg-6,W*.05+fs4*.2,logo.naturalWidth*r2,logo.naturalHeight*r2)}}}
+/* one canvas kept across re-renders, so recording keeps capturing the same element */
+var CV=null;function cv(){if(!CV){CV=document.createElement("canvas");CV.id="c212cv"}return CV}
+function draw(endT){var c=cv();var s=size();if(c.width!==s[2]||c.height!==s[3]){c.width=s[2];c.height=s[3];c.style.aspectRatio=s[2]+"/"+s[3]}frame(c.getContext("2d"),s[2],s[3],vid?vid.currentTime:0,endT)}
+function loop(){cancelAnimationFrame(raf);(function f(){if(!vid)return;if(!V.making&&vid.currentTime>=V.t1){vid.currentTime=V.t0}draw();if(!vid.paused||V.making)raf=requestAnimationFrame(f)})()}
+/* ---------- sound ---------- */
+function graph(){if(AC)return;var A=window.AudioContext||window.webkitAudioContext;if(!A)return;AC=new A();dest=AC.createMediaStreamDestination();srcV=AC.createMediaElementSource(vid);gV=AC.createGain();srcV.connect(gV);gV.connect(AC.destination);gV.connect(dest);setGains()}
+function musicGraph(){if(!AC||!aud||srcA)return;srcA=AC.createMediaElementSource(aud);gA=AC.createGain();srcA.connect(gA);gA.connect(AC.destination);gA.connect(dest);setGains()}
+function setGains(){if(gV)gV.gain.value=V.sound?V.vol:0;if(gA)gA.gain.value=V.music?V.mvol:0}
+/* ---------- making the file ---------- */
+function mime(){var L=["video/mp4;codecs=avc1.42E01E,mp4a.40.2","video/mp4","video/webm;codecs=vp9,opus","video/webm;codecs=vp8,opus","video/webm"];if(!window.MediaRecorder)return "";for(var i=0;i<L.length;i++){try{if(MediaRecorder.isTypeSupported(L[i]))return L[i]}catch(x){}}return ""}
+function make(){if(V.making)return;var w=why();if(w){toast("Not ready yet",w);return}var c=cv();if(!c||!c.captureStream||!window.MediaRecorder){toast("This browser can't make videos","Try Chrome or Safari on a phone or computer");return}
+ graph();try{if(AC&&AC.state==="suspended")AC.resume()}catch(x){}musicGraph();
+ var stream=c.captureStream(30),tracks=stream.getVideoTracks().slice();if(dest)dest.stream.getAudioTracks().forEach(function(t){tracks.push(t)});
+ var mt=mime(),rec;try{rec=new MediaRecorder(new MediaStream(tracks),mt?{mimeType:mt,videoBitsPerSecond:4000000}:{videoBitsPerSecond:4000000})}catch(x){toast("Couldn't start recording");return}
+ var chunks=[];rec.ondataavailable=function(ev){if(ev.data&&ev.data.size)chunks.push(ev.data)};
+ rec.onstop=function(){V.making=false;vid.onseeked=function(){draw()};var type=(rec.mimeType||mt||"video/webm").split(";")[0];if(V.out)URL.revokeObjectURL(V.out);V.out=URL.createObjectURL(new Blob(chunks,{type:type}));V.outType=type;V.outCodec=rec.mimeType||mt||"";V.prog=100;try{vid.pause();if(aud)aud.pause()}catch(x){}vid.currentTime=V.t0;re();toast("Video ready","Download it or share it")};
+ V.making=true;V.prog=0;V.out&&URL.revokeObjectURL(V.out);V.out=null;re();
+ vid.currentTime=V.t0;var started=false;
+ vid.onseeked=function(){if(started||!V.making)return;started=true;rec.start(250);if(aud&&V.music){aud.currentTime=0;aud.play().catch(function(){})}vid.play().catch(function(){});loop();
+  var len=V.t1-V.t0,endDur=V.end?3:0,t00=performance.now();
+  (function watch(){if(!V.making)return;var el=(performance.now()-t00)/1000;V.prog=Math.min(99,Math.round(el/(len+endDur)*100));var pb=document.getElementById("c212prog");if(pb)pb.style.width=V.prog+"%";
+   if(vid.currentTime>=V.t1||vid.ended||el>len+0.5){vid.pause();if(endDur){var e0=performance.now();(function endLoop(){var k=(performance.now()-e0)/1000;draw(k);if(gA&&k>endDur-1)gA.gain.value=Math.max(0,V.mvol*(endDur-k));if(k<endDur){requestAnimationFrame(endLoop)}else{setTimeout(function(){rec.stop();setGains()},120)}})()}else{setTimeout(function(){rec.stop()},120)}return}
+   requestAnimationFrame(watch)})()}}
+/* ---------- panel ---------- */
+function kidsNote(){var kid=V.people.some(function(x){return x.kid});if(!kid)return "";var txt=V.head+" "+V.endHead+" "+V.caps.map(function(c){return c.x}).join(" ");if(!/(mon|tues|wednes|thurs|fri|satur|sun)days?\b|\b\d{1,2}[:.]\d{2}\b/i.test(txt))return "";return '<p class="small e203note">Note: a recognisable child next to a class day, time or place can help a stranger find them. Your call.</p>'}
+function opts(){var R=(club().roster||[]);return '<option value="">Add someone…</option>'+R.map(function(r){return '<option value="'+e(r.name)+'">'+e(r.name)+'</option>'}).join("")+(window.FH201&&FH201.on&&FH201.kidOptions?FH201.kidOptions():'')}
+function html(){var s=size(),len=V.t1-V.t0,sl=function(id,lab,min,max,step,v,txt){return '<label class="e203s"><span>'+lab+' <b id="c212'+id+'v">'+txt+'</b></span><input type="range" min="'+min+'" max="'+max+'" step="'+step+'" value="'+v+'" data-c212r="'+id+'"></label>'};
+ var h='<div class="sec-h"><h3>Video clip</h3><button type="button" class="btn ghost sm" data-c212open>'+(V.open?"Close":"Make a video clip")+'</button></div>';
+ if(!V.open)return h+'<p class="muted small" style="margin:0">Short clips for Reels, TikTok and Stories: trim, captions, your club name, an end card and music you have the rights to use. Your video stays on this device until you download it.</p>';
+ h+='<div class="c212g"><div><label class="btn ghost sm" style="cursor:pointer">'+(V.url?"Choose another video":"Choose a video")+'<input type="file" accept="video/*" hidden data-c212file></label>'+(V.name?' <span class="small muted">'+e(V.name)+' · '+ts(V.dur)+'</span>':'')+
+  (V.url?'<div class="chips" style="margin-top:8px">'+SIZES.map(function(z){return '<button type="button" class="chip" data-c212size="'+z[0]+'" aria-pressed="'+(V.size===z[0])+'">'+z[1]+'</button>'}).join("")+'</div>'+
+   sl("t0","Start",0,Math.max(0,V.dur-0.5),0.1,V.t0,ts(V.t0))+sl("t1","End",0.5,V.dur,0.1,V.t1,ts(V.t1)+" ("+Math.round(len)+"s)")+(V.dur>60?'<p class="muted small" style="margin:0">Clips are up to 60 seconds: move Start and End to choose the part you want.</p>':'')+
+   sl("zoom","Zoom",100,300,1,Math.round(V.zoom*100),Math.round(V.zoom*100)+"%")+'<p class="muted small" style="margin:0 0 6px">Drag the picture to move it once zoomed in.</p>'+
+   '<span class="label">Look</span><div class="chips">'+LOOKS.map(function(l){return '<button type="button" class="chip" data-c212look="'+l[0]+'" aria-pressed="'+(V.look===l[0])+'">'+l[1]+'</button>'}).join("")+'</div>'+
+   '<label class="e203s" style="margin-top:8px"><span>Words on the video</span><input type="text" data-c212f="head" maxlength="60" value="'+e(V.head)+'" placeholder="e.g. Beginners start Monday"></label><div class="chips">'+[["top","At the top"],["bottom","Lower down"],["none","No words"]].map(function(x){return '<button type="button" class="chip" data-c212hp="'+x[0]+'" aria-pressed="'+(V.headPos===x[0])+'">'+x[1]+'</button>'}).join("")+'</div>'+
+   '<span class="label" style="margin-top:8px">Captions</span>'+V.caps.map(function(c,i){return '<div class="row" style="gap:6px;margin:4px 0;align-items:center"><span class="small" style="min-width:70px">'+ts(c.t)+' for '+(c.d||3)+'s</span><input type="text" data-c212cap="'+i+'" maxlength="80" value="'+e(c.x)+'" style="flex:1;min-width:120px" placeholder="What is said or happening"><button type="button" class="linkbtn" data-c212cnow="'+i+'">Move to now</button><button type="button" class="linkbtn" data-c212crm="'+i+'">Remove</button></div>'}).join("")+'<button type="button" class="btn ghost sm" data-c212cadd>Add a caption at '+ts(vid?vid.currentTime:0)+'</button>'+
+   '<label class="small" style="display:flex;gap:6px;margin-top:10px"><input type="checkbox" data-c212t="brand"'+(V.brand?" checked":"")+'> Club name and logo in the corner</label>'+
+   '<label class="small" style="display:flex;gap:6px;margin-top:4px"><input type="checkbox" data-c212t="end"'+(V.end?" checked":"")+'> End card (3 seconds) with the next step</label>'+(V.end?'<div class="row" style="gap:6px"><input type="text" data-c212f="endHead" maxlength="50" value="'+e(V.endHead)+'" placeholder="Headline (e.g. Your first class is free)" style="flex:1;min-width:140px"><input type="text" data-c212f="endCta" maxlength="24" value="'+e(V.endCta)+'" placeholder="Book a free class" style="max-width:160px"></div>':'')+
+   '<span class="label" style="margin-top:10px">Sound</span><label class="small" style="display:flex;gap:6px"><input type="checkbox" data-c212t="sound"'+(V.sound?" checked":"")+'> Keep the clip\'s own sound</label>'+(V.sound?sl("vol","Clip volume",0,100,1,Math.round(V.vol*100),Math.round(V.vol*100)+"%"):'')+
+   '<label class="btn ghost sm" style="cursor:pointer;margin-top:4px">'+(V.music?"Change music":"Add music")+'<input type="file" accept="audio/*" hidden data-c212music></label>'+(V.music?' <span class="small muted">'+e(V.musicName)+'</span> <button type="button" class="linkbtn" data-c212mrm>Remove</button>'+sl("mvol","Music volume",0,100,1,Math.round(V.mvol*100),Math.round(V.mvol*100)+"%"):'')+'<p class="muted small" style="margin:4px 0 0">Only use music you have the rights to. Instagram and TikTok can mute or remove clips with copyrighted music; adding music in their apps is often safer.</p>'+
+   '<span class="label" style="margin-top:10px">Who is in this clip?</span><label class="small" style="display:flex;gap:6px"><input type="checkbox" data-c212t="noone"'+(V.noone?" checked":"")+'> No one can be recognised (backs, kit, the gym)</label>'+
+   (V.noone?'':'<div class="row" style="gap:6px;margin-top:4px"><select data-c212add>'+opts()+'</select></div>'+V.people.map(function(x,i){var s2=st(x),o=V.ok[key(x)],ok=cleared(x);return '<div class="small e203pc"><b>'+e(x.name)+'</b>'+(x.kid?' (junior)':'')+': <span class="'+(ok?"e203g":"e203r")+'">'+(s2==="ok"?"consent recorded":s2==="none"?(ok?"background, confirmed by you":"no answer yet"):s2==="child"?"child's own answer not recorded":s2==="no"?(ok?"zoomed out of the picture":"said no to video or social media"):(ok?"zoomed out of the picture":"must not be photographed or filmed"))+'</span> <button type="button" class="linkbtn" data-c212prm="'+i+'">Remove</button>'+
+     (!x.kid&&s2!=="ok"?'<label style="display:flex;gap:6px;margin-top:4px"><input type="checkbox" data-c212adult="'+i+'"> '+e(x.name)+' is an adult and has agreed to be in it</label>':'')+
+     (x.kid&&(s2==="none"||s2==="child")&&window.FH209&&FH209.on?' '+FH209.btn(x.kid,null):'')+
+     ((s2==="none"||s2==="child")?'<label style="display:flex;gap:6px;margin-top:4px"><input type="checkbox" data-c212ok="'+e(key(x))+'|bg"'+(o==="bg"?" checked":"")+'> '+e(x.name)+' is only in the background and can\'t be recognised</label>':'')+
+     (s2!=="ok"?'<label style="display:flex;gap:6px;margin-top:4px"><input type="checkbox" data-c212ok="'+e(key(x))+'|crop"'+(o==="crop"?" checked":"")+(V.zoom>1.05?'':' disabled')+'> I have zoomed '+e(x.name)+' out of the picture for the whole clip'+(V.zoom>1.05?'':' <span class="muted">(zoom in first)</span>')+'</label>':'')+'</div>'}).join(""))+kidsNote():'')+
+  '</div><div class="c212pv">'+(V.url?'<div id="c212cvh"></div><div class="row" style="gap:6px;margin-top:6px"><button type="button" class="btn ghost sm" data-c212play>'+(vid&&!vid.paused&&!V.making?"Pause":"Play")+'</button><span class="small muted">'+ts(V.t0)+' to '+ts(V.t1)+'</span></div>'+
+   (V.making?'<div class="c212bar"><i id="c212prog" style="width:'+V.prog+'%"></i></div><p class="small muted" style="margin:4px 0 0">Making your video… it plays through once.</p>':'<div class="row" style="gap:6px;margin-top:8px"><button type="button" class="btn sm" data-c212make'+(canMake()?'':' aria-disabled="true"')+'>Make the video</button></div>'+(why()?'<p class="small" style="margin:4px 0 0;color:var(--warn,#F2994A)">'+e(why())+'</p>':''))+
+   (V.out?'<div class="cc-box" style="margin-top:8px"><b>Your video is ready</b><video src="'+e(V.out)+'" controls playsinline style="width:100%;max-height:300px;margin-top:6px;border-radius:8px"></video><div class="row" style="gap:6px;margin-top:6px"><a class="btn sm" href="'+e(V.out)+'" download="'+e(fname())+'">Download</a><button type="button" class="btn ghost sm" data-c212share>Share</button></div><p class="muted small" style="margin:4px 0 0">'+(V.outType==="video/mp4"&&!/vp8|vp9|av01/i.test(V.outCodec||"")?"An .mp4 file: works on Instagram, TikTok, Facebook and WhatsApp.":V.outType==="video/mp4"?"An .mp4 file, but this browser made it a kind iPhones and Instagram may not take. If it won't upload, make the clip in Safari or Google Chrome.":"A .webm file. Instagram and iPhones may not take it: make the clip in Safari or Google Chrome for an .mp4.")+' FighterBase never posts for you.</p></div>':''):'<p class="muted small">Choose a video to start. Clips from your phone camera work best.</p>')+'</div></div>'+
+  '<p class="muted small" style="margin:8px 0 0">Standard video edits only: nothing changes a face or body, and there is no AI editing.</p>';
+ return h}
+function fname(){return (String(club().name||"club").replace(/[^A-Za-z0-9]+/g,"-")+"-clip."+(V.outType==="video/mp4"?"mp4":"webm")).toLowerCase()}
+function mount(){var host=document.getElementById("hubmktBody"),s=document.getElementById("s192");if(!host||!s||!isCoach())return;var el=document.getElementById("c212");if(!el){el=document.createElement("div");el.id="c212";el.className="panel";el.style.gridColumn="1/-1"}if(s.nextSibling!==el)s.parentNode.insertBefore(el,s.nextSibling);
+ var ae=document.activeElement;if(!V.force&&ae&&el.contains(ae)&&/INPUT|TEXTAREA|SELECT/.test(ae.tagName)&&ae.type!=="range"&&ae.type!=="checkbox")return;V.force=false;var h=html();if(el.dataset.sig!==h){el.innerHTML=h;el.dataset.sig=h;var hold=el.querySelector("#c212cvh");if(hold)hold.appendChild(cv());if(V.url)setTimeout(function(){draw()},30)}}
+function re(){V.force=true;var el=document.getElementById("c212");if(el)el.dataset.sig="";mount()}
+/* ---------- events ---------- */
+function loadVideo(f){if(!f)return;if(V.url)URL.revokeObjectURL(V.url);if(!vid){vid=document.createElement("video");vid.playsInline=true;vid.setAttribute("playsinline","");vid.crossOrigin="anonymous";vid.preload="auto"}
+ V.url=URL.createObjectURL(f);V.name=f.name||"video";V.out=null;V.ok={};vid.src=V.url;vid.onloadedmetadata=function(){V.dur=vid.duration||0;V.t0=0;V.t1=Math.min(V.dur,60);V.zoom=1;V.px=0;V.py=0;vid.currentTime=0.01;re()};vid.onseeked=function(){draw()}}
+document.addEventListener("change",function(ev){var t=ev.target;if(!t||!t.closest||!t.closest("#c212"))return;var d=t.dataset;
+ if(d.c212file!=null&&t.files&&t.files[0]){loadVideo(t.files[0]);t.value="";return}
+ if(d.c212music!=null&&t.files&&t.files[0]){if(!aud){aud=document.createElement("audio");aud.preload="auto"}if(V.music)URL.revokeObjectURL(V.music);V.music=URL.createObjectURL(t.files[0]);V.musicName=t.files[0].name||"music";aud.src=V.music;aud.loop=true;t.value="";re();return}
+ if(d.c212t){V[d.c212t]=t.checked;if(d.c212t==="noone"&&t.checked)V.people=[];setGains();re();return}
+ if(d.c212add!=null&&t.value){var v=t.value;if(/^kid:/.test(v)){var k=window.FH195&&FH195.kid(v.slice(4));if(k&&!V.people.some(function(x){return x.kid===k.id}))V.people.push({name:k.first,kid:k.id})}else if(!V.people.some(function(x){return x.name===v}))V.people.push({name:v,consent:""});re();return}
+ if(d.c212adult!=null){var p=V.people[+d.c212adult];if(p){p.consent=t.checked?"adult":"";p.by=me();p.at=new Date().toISOString()}re();return}
+ if(d.c212ok){var q=d.c212ok.split("|");if(t.checked)V.ok[q[0]]=q[1];else delete V.ok[q[0]];V.okBy={by:me(),at:new Date().toISOString()};re();return}
+ if(d.c212cap!=null){var c=V.caps[+d.c212cap];if(c){c.x=t.value}draw();return}
+ if(d.c212r==='zoom'||d.c212r==='t0'||d.c212r==='t1'){re();return}
+ if(d.c212f){V[d.c212f]=t.value;draw();return}},true);
+document.addEventListener("input",function(ev){var t=ev.target;if(!t||!t.closest||!t.closest("#c212"))return;var d=t.dataset;
+ if(d.c212r){var k=d.c212r,v=+t.value,lab=document.getElementById("c212"+k+"v");
+  if(k==="t0"){V.t0=clamp(v,0,V.t1-0.5);if(vid)vid.currentTime=V.t0;if(lab)lab.textContent=ts(V.t0)}
+  else if(k==="t1"){V.t1=clamp(v,V.t0+0.5,Math.min(V.dur,V.t0+60));if(vid)vid.currentTime=Math.max(V.t0,V.t1-0.1);if(lab)lab.textContent=ts(V.t1)+" ("+Math.round(V.t1-V.t0)+"s)"}
+  else if(k==="zoom"){V.zoom=v/100;if(v<=100){V.px=0;V.py=0}if(lab)lab.textContent=v+"%";draw()}
+  else if(k==="vol"){V.vol=v/100;setGains();if(lab)lab.textContent=v+"%"}
+  else if(k==="mvol"){V.mvol=v/100;setGains();if(lab)lab.textContent=v+"%"}return}
+ if(d.c212cap!=null){var c=V.caps[+d.c212cap];if(c)c.x=t.value;draw();return}
+ if(d.c212f){V[d.c212f]=t.value;draw()}});
+document.addEventListener("click",function(ev){var t=ev.target.closest&&ev.target.closest("#c212 [data-c212open],#c212 [data-c212size],#c212 [data-c212look],#c212 [data-c212hp],#c212 [data-c212cadd],#c212 [data-c212cnow],#c212 [data-c212crm],#c212 [data-c212mrm],#c212 [data-c212prm],#c212 [data-c212play],#c212 [data-c212make],#c212 [data-c212share]");if(!t)return;var d=t.dataset;try{var a=document.activeElement;if(a&&a.blur&&/INPUT|TEXTAREA/.test(a.tagName))a.blur()}catch(x){}
+ if(d.c212open!=null){V.open=!V.open;re();return}
+ if(d.c212size){V.size=d.c212size;re();return}
+ if(d.c212look){V.look=d.c212look;re();return}
+ if(d.c212hp){V.headPos=d.c212hp;re();return}
+ if(d.c212cadd!=null){V.caps.push({t:Math.round((vid?vid.currentTime:V.t0)*10)/10,d:3,x:""});V.caps.sort(function(a,b){return a.t-b.t});re();return}
+ if(d.c212cnow!=null){var c=V.caps[+d.c212cnow];if(c&&vid)c.t=Math.round(vid.currentTime*10)/10;re();return}
+ if(d.c212crm!=null){V.caps.splice(+d.c212crm,1);re();return}
+ if(d.c212mrm!=null){if(aud)aud.pause();if(V.music)URL.revokeObjectURL(V.music);V.music=null;V.musicName="";setGains();re();return}
+ if(d.c212prm!=null){var p=V.people.splice(+d.c212prm,1)[0];if(p)delete V.ok[key(p)];re();return}
+ if(d.c212play!=null){if(!vid)return;graph();try{if(AC&&AC.state==="suspended")AC.resume()}catch(x){}musicGraph();if(vid.paused){if(vid.currentTime<V.t0||vid.currentTime>=V.t1)vid.currentTime=V.t0;vid.play().catch(function(){});if(aud&&V.music){aud.currentTime=0;aud.play().catch(function(){})}loop()}else{vid.pause();if(aud)aud.pause()}setTimeout(re,60);return}
+ if(d.c212make!=null){make();return}
+ if(d.c212share!=null){if(!V.out)return;fetch(V.out).then(function(r){return r.blob()}).then(function(b){var f=new File([b],fname(),{type:V.outType});if(navigator.canShare&&navigator.canShare({files:[f]})){navigator.share({files:[f],text:V.head||""}).catch(function(){})}else{toast("Sharing files isn't available here","Download it, then post it from your phone")}});return}},true);
+var drag=null;
+document.addEventListener("pointerdown",function(ev){var c=ev.target;if(!c||c.id!=="c212cv"||V.making)return;var r=c.getBoundingClientRect();drag={x:ev.clientX,y:ev.clientY,px:V.px,py:V.py,w:r.width,h:r.height};try{c.setPointerCapture(ev.pointerId)}catch(x){}ev.preventDefault()});
+document.addEventListener("pointermove",function(ev){if(!drag||V.zoom<=1.001)return;V.px=clamp(drag.px-(ev.clientX-drag.x)/drag.w*2,-1,1);V.py=clamp(drag.py-(ev.clientY-drag.y)/drag.h*2,-1,1);draw()});
+document.addEventListener("pointerup",function(){drag=null});
+var css=document.createElement("style");css.textContent=".c212g{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:18px;align-items:start;margin-top:8px}@media(max-width:760px){.c212g{grid-template-columns:1fr}.c212pv{order:-1}.c212pv canvas{max-width:240px;margin:0 auto}}.c212pv canvas{width:100%;max-width:360px;display:block;background:#0B0E13;border-radius:12px;border:1px solid var(--line,#35383E);touch-action:none;cursor:grab}.c212bar{height:8px;border-radius:99px;background:var(--line,#35383E);overflow:hidden;margin-top:8px;max-width:360px}.c212bar i{display:block;height:100%;background:var(--ok,#3FC57E)}";document.head.appendChild(css);
+function tick(){try{var s=document.getElementById("tab-hubmkt");if(s&&!s.hidden){mount();var lg=(club().brand||{}).logo||"";if(lg!==logoUrl){logoUrl=lg;logo=null;if(lg){logo=new Image();logo.src=lg}}}}catch(x){console.error(x)}}
+setInterval(tick,1500);setTimeout(tick,1500);
+return {on:true,V:V,make:make,draw:draw,mime:mime};
 })();
 
 /* FighterBase v44: always a way back, always a next step. */
