@@ -17707,6 +17707,8 @@ window.FH154={run:run};
 /* FighterBase v196: slim header, Today / Train / Fuel / Progress / Me tabs, and a "Today" block at the top of Home.
    Phones only for the header and tab changes (desktop keeps its sidebar). Each person sees one short motivating line matched to where they are:
    first weeks, fight camp, coming back after a gap, a good run, or steady training. Lines are our own wording, never attributed to anyone.
+   v279: matched to experience too (sign-up answer and fight record): fighters between fights, experienced members, early camp, camp, fight week and
+   the two weeks after a fight. Beginner lines only for people who said they are new (or who we know nothing about and have logged fewer than 6 sessions).
    Nothing here changes any saved data. */
 var T155=T155||false;
 (function(){
@@ -17722,8 +17724,22 @@ var Q={
  camp:["Trust the work you have already done. Today is one more brick.","Camp is a lot of ordinary days stacked up. Do today well.","Rest is part of the plan. Fresh legs win rounds.","You have put in the weeks. Now sharpen, sleep and stay calm.","Steady and sharp. That is how you walk in confident."],
  back:["Coming back is the hard part, and you are doing it.","One session restarts everything. Pick an easy one and go.","A gap is just a gap. You are back, and that is what counts.","Start lighter than you think. Momentum builds quickly.","Nobody keeps a perfect record. The best keep returning."],
  run:["Look at that run. Keep it simple and keep it going.","Consistency is quietly working on you. Keep turning up.","You are building something real. Protect your sleep and keep going.","Good weeks come from ordinary days. Have another one.","This is what progress looks like from the inside."],
- std:["Get a little better today. That is enough.","Technique first, speed second, power third.","A tough session you finish beats a perfect one you skip.","Train hard, recover well, repeat. It works.","The mat does not care how you feel. It rewards you for turning up."]};
-function stage(){try{var f=FBE.upcomingFight();if(f&&f.days<=84)return"camp";var st=FBE.streaks();if(st.inComeback)return"back";var W=FBE.allWeeks(),n=W.reduce(function(a,w){return a+(w.sessions||0)},0);if(n<6)return"neu";if(st.cur>=4)return"run"}catch(x){}return"std"}
+ std:["Get a little better today. That is enough.","Technique first, speed second, power third.","A tough session you finish beats a perfect one you skip.","Train hard, recover well, repeat. It works.","The mat does not care how you feel. It rewards you for turning up."],
+ /* v279 (Steve, 2 Nov 2026): lines matched to experience, so fighters and experienced members never get beginner lines */
+ fighter:["Between fights is where you get better. Pick one thing to fix this month.","Sharpen what won you rounds. Fix what cost you one.","No date yet? Train like the call could come next week.","Watch your last fight back once, then train the answer.","Spar to learn, not to win the gym.","Stay in shape between fights. The ready ones get the short-notice calls."],
+ vet:["You know the basics. Today, own the details.","Make one technique cleaner than it was last week.","Longevity is a skill. Train so you are still here in ten years.","Teach a newer member something today. You will understand it better.","Spend ten minutes on your weak side after class."],
+ campE:["Build the engine now. The sharpening comes later in camp.","Turn up, do the work, recover. Repeat that for the next few weeks.","Get the rounds in and trust the plan your coach set.","Early camp is about volume and good habits. Bank the work.","Look after the small knocks now so they do not become big ones."],
+ fweek:["The work is done. Stay calm, stay sharp, rest.","Fight week: less is more. Trust what you have built.","Picture the first round, then switch off and rest.","Follow your coach's plan to the letter this week.","Sleep, stay loose, keep it simple. You are ready."],
+ post:["Whatever the result, you stepped in. That takes something.","Rest properly before the next block. Recovery is part of the job.","Go over the fight with your coach, take the lessons, then let it go.","Heal up first. The next camp starts when your body says so."]};
+/* experience: the member's own answer in sign-up (exp) and their fight record come first; logged sessions only decide when we know nothing else */
+function level(){var p=P(),b=(p.bouts||[]).length;if(p.exp==="comp"||b>0)return"fighter";if(p.exp==="exp"||p.exp==="3y")return"vet";if(p.exp==="new"||p.exp==="1y")return"new";return""}
+var EXP155=[["new","New to it"],["1y","Under a year"],["3y","1 to 3 years"],["exp","3+ years"],["comp","I compete"]];
+function expAsk(){var p=P();if(p.exp||(p.bouts||[]).length||p.expAsk155==="no")return "";return '<div class="ask155"><p class="small" style="margin:0 0 6px">How long have you trained? It keeps these lines right for you.</p><div class="chips">'+EXP155.map(function(x){return '<button type="button" class="chip" data-exp155="'+x[0]+'">'+x[1]+'</button>'}).join("")+'<button type="button" class="linkbtn small" data-exp155="no">Not now</button></div></div>'}
+document.addEventListener("click",function(ev){var b=ev.target.closest&&ev.target.closest("[data-exp155]");if(!b||typeof S==="undefined"||!S.profile)return;var v=b.dataset.exp155;if(v==="no")S.profile.expAsk155="no";else S.profile.exp=v;try{if(typeof profChanged==="function")profChanged()}catch(x){}try{toast(v==="no"?"No problem":"Thanks","You can change it in Me, About you")}catch(x){}try{meExp()}catch(x){}document.querySelectorAll("#fb155").forEach(function(x){x.dataset.sig=""});try{tick()}catch(x){}});
+function meExp(){try{var tab=document.getElementById("tab-profile");if(!tab||!P().onboarded)return;var d=document.getElementById("exp155");if(!d){d=document.createElement("div");d.id="exp155";d.className="panel";d.dataset.pv="about";d.hidden=!(window.FHM&&FHM.state&&FHM.state()==="about");tab.appendChild(d)}
+ var cur=P().exp||"",h='<div class="sec-h"><h3>Your training experience</h3></div><p class="muted small" style="margin:0 0 6px">Used to match your daily lines and suggestions to where you are.</p><div class="chips">'+EXP155.map(function(x){return '<button type="button" class="chip" data-exp155="'+x[0]+'" aria-pressed="'+(cur===x[0])+'">'+x[1]+'</button>'}).join("")+'</div>';if(d.dataset.sig!==h){d.innerHTML=h;d.dataset.sig=h}}catch(x){}}
+function lastBoutDays(){try{var b=(P().bouts||[]).filter(function(x){return x.date&&x.date<=TODAY}).map(function(x){return x.date}).sort();return b.length?diffDays(b[b.length-1],TODAY):null}catch(x){return null}}
+function stage(){try{var f=FBE.upcomingFight();if(f&&f.days<=84)return f.days<=7?"fweek":f.days>28?"campE":"camp";var lb=lastBoutDays();if(lb!=null&&lb<=14)return"post";var st=FBE.streaks();if(st.inComeback)return"back";var L=level(),W=FBE.allWeeks(),n=W.reduce(function(a,w){return a+(w.sessions||0)},0);if(L==="new"&&n<40)return"neu";if(st.cur>=4)return L==="fighter"||L==="vet"?L:"run";if(L==="fighter"||L==="vet")return L}catch(x){}return"std"}
 function pick(k,salt){var a=Q[k]||Q.std,d=new Date(),doy=Math.floor((d-new Date(d.getFullYear(),0,0))/864e5);return a[(doy+(salt||0))%a.length]}
 function first(){var n=(P().name||"").trim().split(/\s+/)[0];return n}
 function greet(){var h=new Date().getHours();return h<12?"Good morning":h<18?"Good afternoon":"Good evening"}
@@ -17783,13 +17799,13 @@ var css=document.createElement("style");css.textContent=
 "body:not(.fb-desk):not(.hubview) #subnav{padding-block:4px}body:not(.fb-desk):not(.hubview) #subnav button{min-height:38px;padding:6px 14px;font-size:13px}"+
 "body.b155:not(.fb-desk):not(.hubview) #fb155back{display:inline-flex;align-items:center;justify-content:center;width:44px;height:44px;flex:none;margin-left:-8px;border:0;background:transparent;color:inherit;font-size:26px;line-height:1;cursor:pointer}"+
 "}";
-css.textContent+=".two249{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px}.two249 .cc249{margin:0;min-width:0}";document.head.appendChild(css);
+css.textContent+=".ask155{margin:-6px 0 14px;padding:10px 12px;border:1px dashed var(--line,#35383E);border-radius:12px}.two249{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px}.two249 .cc249{margin:0;min-width:0}";document.head.appendChild(css);
 function drawHero(){try{var tb=document.getElementById("tab-today"),el=document.getElementById("fb155");if(!tb)return;
  if(!memberView()){if(el)el.remove();return}
  var dh=null;try{if(window.FH161&&FH161.on())dh=FH161.html()}catch(x){console.error(x)}
  if(dh!=null){var el0=document.getElementById("fb155");if(!el0){el0=document.createElement("section");el0.id="fb155";tb.insertBefore(el0,tb.firstChild)}else if(tb.firstChild!==el0)tb.insertBefore(el0,tb.firstChild);dh="<!--d161-->"+dh;if(el0.dataset.sig!==dh){el0.innerHTML=dh;el0.dataset.sig=dh}el0.classList.add("d161");return}
  var w=week(),n=nextClass(),sg=sugg(w),sk=stage(),nm=first(),h="";
- h+='<div><p class="h155">'+e(greet())+(nm?", "+e(nm):"")+'</p></div><p class="q155">'+e(pick(sk,0))+'</p>';
+ h+='<div><p class="h155">'+e(greet())+(nm?", "+e(nm):"")+'</p></div><p class="q155">'+e(pick(sk,0))+'</p>'+expAsk();
  var mu=msgUnread();if(mu)h+='<div class="m155 hi"><div><p class="k155">'+(mu.kind==="coach"?"From your coach":"From your club")+'</p><p style="font-weight:700">'+e(mu.t)+'</p><p class="muted small" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+e(mu.b||"")+'</p></div><button type="button" class="btn ghost sm" data-f155inbox>Read</button></div>';
  if(inClub()){var bk=myBooked249(),cell=function(lab,o,empty){return '<div class="c155 cc249"><p class="k155">'+lab+'</p>'+(o?'<p class="t155" style="font-size:20px">'+e(o.cl.title||o.cl.name||"Class")+'</p><p class="muted small" style="margin:0">'+(o.d===TODAY?"Today":e(dayName(o.d)))+" "+e(o.cl.time)+'</p>':'<p class="t155" style="font-size:18px">'+empty[0]+'</p><p class="muted small" style="margin:0">'+empty[1]+'</p>')+'</div>'};
   h+='<div class="two249">'+cell("Next class at the club",n,["Nothing coming up","Check the timetable."])+cell("Your next booked class",bk,["None booked","Tap I'm coming on a class."])+'</div><div class="row155" style="margin:-4px 0 12px"><button type="button" class="btn" data-goto="clubpage">Class and check-in</button></div>'}
@@ -17799,7 +17815,7 @@ function drawHero(){try{var tb=document.getElementById("tab-today"),el=document.
  if(!n&&mn)h+='<div class="c155"><p class="k155">Next session (your plan)</p><p class="t155" style="font-size:20px">'+e(mn.title||"Session")+'</p><p class="muted small" style="margin:0">'+e(mn.date===TODAY?"Today":dayName(mn.date))+(mn.time?" "+e(mn.time):"")+(mn.mins?" · "+(+mn.mins)+" min":"")+'</p></div>';
  else if(!n&&!inClub())h+='<div class="c155"><p class="k155">Next session</p><p class="muted small" style="margin:0">Nothing planned. Plan one and it shows here.</p><button type="button" class="btn ghost" data-goto="train">Plan a session</button></div>';
  var st0=null,wt=null;try{st0=FBE.streaks();wt=FBE.weight()}catch(x){}
- var tiles=[],sl=sleepNow(),camp=(sk==="camp");tiles.push('<div class="s155"><b>'+n30()+'</b><span>sessions, 30 days</span></div>');
+ var tiles=[],sl=sleepNow(),camp=/^(camp|campE|fweek)$/.test(sk);tiles.push('<div class="s155"><b>'+n30()+'</b><span>sessions, 30 days</span></div>');
  if(sl!=null)tiles.push('<div class="s155"><b>'+sl+' h</b><span>sleep, last night</span></div>');
  if(camp&&wt&&wt.now!=null)tiles.push('<div class="s155"><b>'+(Math.round(wt.now*10)/10)+' kg</b><span>weight now</span></div>');
  if(st0&&st0.cur>0)tiles.push('<div class="s155"><b>'+st0.cur+(st0.cur===1?" wk":" wks")+'</b><span>streak</span></div>');
@@ -17828,13 +17844,13 @@ function fixNav(){try{var nb=document.querySelector("nav.bottom");if(!nb)return;
 function fixHeader(){try{var hd=document.querySelector("header.top");if(!hd)return;var cur=(document.querySelector("section[id^=tab-]:not([hidden])")||{id:"tab-today"}).id.slice(4);
  var show=cur!=="today"&&!!window.FHN;document.body.classList.toggle("b155",show);
  var bk=document.getElementById("fb155back");if(!bk){bk=document.createElement("button");bk.type="button";bk.id="fb155back";bk.setAttribute("aria-label","Go back");bk.textContent="‹";bk.addEventListener("click",function(){try{FHN.back()}catch(x){showTab("today")}});hd.insertBefore(bk,hd.firstChild)}}catch(x){}}
-function tick(){fixNav();fixHeader();drawHero();drawQuotes()}
+function tick(){fixNav();fixHeader();drawHero();drawQuotes();meExp()}
 document.addEventListener("click",function(ev){var t=ev.target;if(t.closest&&t.closest("[data-f155inbox]")){try{FH56.openInbox()}catch(x){}}});
 var st=showTab;showTab=function(){var r=st.apply(this,arguments);try{tick()}catch(x){}return r};
 setInterval(tick,1200);
 var nbEl=document.querySelector("nav.bottom");if(nbEl&&window.MutationObserver)new MutationObserver(function(){fixNav()}).observe(nbEl,{childList:true,subtree:true,attributes:true,attributeFilter:["data-group"]});
 tick();
-window.FH155={tick:tick,stage:stage};window.FH155X={club:club,inClub:inClub,nextClass:nextClass,lastSess:lastSess,ptInfo:ptInfo,week:week,ring:ring,sugg:sugg,stage:stage,pick:pick,msgUnread:msgUnread,dayName:dayName,ago:ago,first:first,greet:greet,myNext:myNext};
+window.FH155={tick:tick,stage:stage};window.FH155X={expAsk:expAsk,level:level,club:club,inClub:inClub,nextClass:nextClass,lastSess:lastSess,ptInfo:ptInfo,week:week,ring:ring,sugg:sugg,stage:stage,pick:pick,msgUnread:msgUnread,dayName:dayName,ago:ago,first:first,greet:greet,myNext:myNext};
 })();
 
 /* FighterBase v200: "Your first month". A gentle 12-step path for people new to their sport, shown on Today for the first weeks.
@@ -18445,7 +18461,7 @@ function ownUp(o){try{var now=new Date(),hm=("0"+now.getHours()).slice(-2)+":"+(
 function comingUp(){var x=X(),c=x.club(),o=[];if(!c||!x.inClub())return ownUp(o);var now=new Date(),hm=("0"+now.getHours()).slice(-2)+":"+("0"+now.getMinutes()).slice(-2);
  try{for(var i=0;i<=2;i++){var k=addDays(TODAY,i);classesOn(c,k).filter(function(q){return !q.kids||S.canEdit}).filter(function(q){return i>0||q.time>=hm}).forEach(function(q){var key=k+"_"+q.id,mine=false;try{var me=(clubState.members||[]).filter(function(m){return m.uid===S.uid})[0];mine=!!(me&&me.rsvp&&me.rsvp[key])}catch(z){}o.push({d:k,i:i,cl:q,mine:mine})})}}catch(z){}return ownUp(o)}
 function hero(){var x=X();if(!x)return null;var w=x.week(),n=x.nextClass(),nm=x.first(),sk=x.stage(),h="",mu=x.msgUnread();
- h+='<div class="hd161"><div><p class="h155">'+e(x.greet())+(nm?", "+e(nm):"")+'</p><p class="q155">'+e(x.pick(sk,0))+'</p></div></div>';
+ h+='<div class="hd161"><div><p class="h155">'+e(x.greet())+(nm?", "+e(nm):"")+'</p><p class="q155">'+e(x.pick(sk,0))+'</p>'+(x.expAsk?x.expAsk():'')+'</div></div>';
  if(mu)h+='<div class="m155 hi"><div><p class="k155">'+(mu.kind==="coach"?"From your coach":"From your club")+'</p><p style="font-weight:700">'+e(mu.t)+'</p><p class="muted small" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+e(mu.b||"")+'</p></div><button type="button" class="btn ghost sm" data-f155inbox>Read</button></div>';
  /* training group */
  var cu=comingUp(),first=cu[0]||null,more=cu.slice(first?1:0,first?5:4),ls=x.lastSess(),pt=x.ptInfo(),s30=strip30(),g='';
