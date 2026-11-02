@@ -14674,7 +14674,11 @@ var MEMBER=[
 ["Payments and membership","How do I pay my club?","Your club sets up how it takes payment. Paying through FighterBase is being added later, through a regulated payment provider. Until then, pay your club the way you do now."],
 ["Payments and membership","Can I cancel or change my membership?","Contact your club for your gym membership. For your FighterBase subscription, use Message us and we will help."],
 ["Problems","Something is not working","Try closing and reopening the app first. If it still fails, use Message us and tell us what you tapped and what you expected."],
-["Problems","I'm worried about someone's safety","If someone is in danger, call 999. For a concern about a child or vulnerable adult at your club, speak to the club's safeguarding lead. You can also use Message us to tell us about a problem with the app, but we are not an emergency service."]
+["Problems","I'm worried about someone's safety","If someone is in danger, call 999. For a concern about a child or vulnerable adult at your club, speak to the club's safeguarding lead. You can also use Message us to tell us about a problem with the app, but we are not an emergency service."],
+["Safety","How do I block or mute someone?","In a crew, tap Block or mute next to their name. For a partner, it's on their card. Mute hides their messages and cheers. Block also ends a partner link and stops their requests. They aren't told. Undo it in Me, Clear my data and privacy, Safety and complaints."],
+["Safety","How do I report something?","Tap Report next to the message. It goes to FighterBase's moderators, and you can block the person at the same time."],
+["Parents","How do I choose where photos of my child are used?","Open Me, Family, then Change next to Photos for your child. Tick each use you're happy with. Nothing is used unless you tick it, and you can change it any time. If the club asks, the request also appears on your Today page."],
+["Parents","Can my child join in without photo consent?","Yes. Saying no to photos never stops a child taking part."]
 ];
 var COACH=[
 ["Getting your club set up","How do I invite my members?","Share your club code or the Find a club link. Members choose to link, and they choose what they share with you."],
@@ -14689,7 +14693,18 @@ var COACH=[
 ["Fight camps and coaching","How do I set the corner team and fight plan?","Add corner people from the fighter's fight camp and offer a plan. The fighter accepts, or proposes changes, and you agree. It records expectations, not a contract."],
 ["Payments","How do PT statements work?","The monthly statement counts only sessions the member confirmed or checked in for. Paying out through FighterBase is added later, after a payment review."],
 ["Payments","Do you take a cut of my members' fees?","No fees are being taken in this test version. Pricing will be confirmed before launch."],
-["Problems","I can't see a feature a member mentions","It may be off for their account or they may not have linked. Ask them to check their sharing switches on the Me tab, or use Message us."]
+["Problems","I can't see a feature a member mentions","It may be off for their account or they may not have linked. Ask them to check their sharing switches on the Me tab, or use Message us."],
+["Kids academy and safeguarding","How do parents give photo consent?","Tag the child in a photo and tap Ask the parent, or use Ask every parent in Kids academy. The parent answers once for all photos and chooses where they may be used. Until they answer, a child who can be recognised can't go on social media or your website."],
+["Kids academy and safeguarding","What happens if a parent withdraws photo consent?","FighterBase takes the photos off your blog, public page and class pictures straight away. You get a list of your own social media posts to take down within 2 weeks."],
+["Kids academy and safeguarding","Can I blur a child who has no consent?","No. Blurring doesn't count as consent. Ask the parent, crop the child out of the picture, or choose another photo. If a child is only in the background and can't be recognised, you can tick to confirm and post; your name and the time are saved."],
+["Kids academy and safeguarding","Who can see safeguarding concerns?","Only the safeguarding lead and deputy. Every look is recorded and nothing in the log can be changed or deleted. A concern about the lead goes to someone else."],
+["Kids academy and safeguarding","What goes in the DBS register?","The check details only: the type of check, the date and whether it's on the Update Service. Never upload the certificate itself."],
+["Injuries","What happens after a head injury?","The Injury book starts the return-to-play steps from the UK grassroots guidance: no sport for 24 hours and a health check, non-contact training from day 15 once symptom-free for 14 days, and no competing before day 21. The member or parent confirms they're symptom-free; coaches don't clear them."],
+["Club documents","Which documents should we upload?","Insurance, your governing body membership, the ICO fee, membership terms, risk assessments, your emergency plan and each coach's first aid and insurance. Kids clubs add the safeguarding policy and junior rules. Never upload DBS certificates."],
+["Club documents","How do I know when something runs out?","Add the expiry date when you upload. Club documents and your Overview show anything due within 30 days, and earlier versions are kept when you upload a new one."],
+["Pictures and posts","How do I change a picture everywhere?","Marketing, Pictures, Photo library, Replace picture. Every post, class and blog post using it updates. Say who is in it again before it's posted."],
+["Pictures and posts","Does FighterBase post for us?","No. You copy the words and download or share the picture yourself."],
+["Your club's records","How do I keep a copy of our records?","Set up, Club documents, Keep a copy of your records, Download. It saves one file you can open in any browser to read or print. Take a copy each month (your Overview reminds you) and keep it somewhere safe and private. Safeguarding concerns and children's health details are only in the safeguarding lead's copy."]
 ];
 function e(s){return esc(String(s==null?"":s))}
 function P(){return S.profile||{}}
@@ -17090,6 +17105,15 @@ hubcomm:["Community","Share and borrow workouts, tips and events with other club
 hubevt:["Events","Create seminars, shows and camps. Members can sign up and you can share them to other clubs."],
 hubkids:["Kids academy","Juniors, their families and the checks that keep them safe. Test data only for now."],
 hubacc:["Accounts","Who has paid and who owes. Record cash payments and send reminders from here."],
+hubinj:["Injury book","Your club's accident book for every member, adults and juniors. Record what happened, the first aid given and who was told. A head injury starts the return-to-play steps."],
+hubreg:["Kids register","Mark who is here for each kids class, see the adults on duty and the ratio, and sign children out only to their listed collectors."],
+hubsafe:["Safeguarding","Raise and record concerns, keep the DBS register and your local contacts. Only the safeguarding lead and deputy see the concern log."],
+hubdocs:["Club documents","Your club's paperwork in one place: insurance, policies and coaches' certificates, with expiry reminders. Red means important and missing."],
+hubpics:["Pictures","Every picture your club uses. Change your logo, banner or any photo at any time, and pick pictures for classes, courses and events."],
+hubblog:["Blog","Posts for your members and your public club page, plus your social links. Each post can become a social post in one tap."],
+huboffers:["Offers","Discounts and offers with an end date. Members are reminded before an offer ends, and the full price is always shown."],
+hubcourses:["Courses","Courses with dates, places and a booking page you can share."],
+hubgrading:["Gradings","Your grading ladder, grading days and each member's grade history."],
 hubplans:["Memberships","Your plans and prices, who is on which, and any mismatches to check."]
 };
 /* ---------- control tips: [id, tabs ("" = anywhere), regex on label, tip ("Bold lead: text")] ---------- */
@@ -18145,6 +18169,10 @@ var GD=[
  ["expert help","What this will be","Qualified practitioners will join here. Nothing is live yet."],
  ["register interest","Register interest","We will tell you when it opens. No payment, nothing shared.",0]]},
 /* ---------------- coach ---------------- */
+{id:"safety",tab:"partners",t:"Block, mute and report",m:1,why:"You decide who reaches you.",s:[
+ ["block or mute","Block or mute","Open a crew and tap Block or mute next to someone. Mute hides their messages and cheers. Block also stops partner requests. They aren't told.",0],
+ ["^report$","Report","Report anything wrong or worrying. It goes to FighterBase's moderators, and you can block them at the same time.",0],
+ ["css:.cr-open,#crWrap","Undo it any time","Me, Clear my data and privacy, Safety and complaints lists everyone you blocked or muted, with Unblock and Unmute."]]},
 {id:"c-setup",tab:"hubsetup",t:"Getting set up",m:2,why:"Start here.",s:[
  ["get set up","Pick what to do first","Choose payments, classes, workouts or fight camps. The guide then walks you through it. Skip anything for later."],
  ["run the club","Run the club","Your day-to-day jobs."],
@@ -18194,6 +18222,13 @@ var GD=[
  ["what to do next","What to do next","The few things most likely to help."],
  ["new member journey","New member journey","Where new members drop off."],
  ["draft group message","Draft a message","A draft for you to approve. Nothing is sent for you."]]},
+{id:"c-studio",tab:"hubmkt",t:"Content studio and photo editor",m:1,why:"Share anything, edit the picture.",s:[
+ ["what do you want to share","Share anything","Pick a class, course, event, offer or blog post: the words are written for you."],
+ ["my own post","Make your own post","The headline, the line under it and the button text go on the picture."],
+ ["^use$","Choose a photo","Pick one from your library. The editor opens under the preview.",0],
+ ["edit photo","Edit the photo","Zoom, looks, text you can drag, two-photo layouts and shapes. Nothing changes a face or body."],
+ ["css:.e203 .cc-box","Photo consent","If someone has no consent, it shows here: ask the parent in one tap, or crop them out. Blurring doesn't count as consent."],
+ ["check my post","Check before you post","Checks the length, hashtags and photo consent."]]},
 {id:"c-mkt",tab:"hubmkt",t:"Marketing",m:1,why:"Ready-made posts.",s:[
  ["ideas for this week","Ideas for this week","Posts that suit what is happening at your club."],
  ["post maker","Make a post","Pick a type. It fills in your club details."],
@@ -18209,6 +18244,44 @@ var GD=[
  ["members and payments","Who owes and who paid","Record cash payments and send reminders."],
  ["add a member","Add a member","One at a time, or use the template to add many.",0],
  ["owes money","Filter to who owes","Then record a payment or send a reminder.",0]]},
+{id:"c-kids",tab:"hubkids",t:"Kids academy",m:1,why:"Juniors, families and safety.",s:[
+ ["^kids academy$","Juniors in one place","Children are profiles inside a parent's account. Their age decides what they and their parents can see."],
+ ["checks to sort","Checks to sort","What needs you: dates of birth to confirm, DBS checks and missing details. Work from the top."],
+ ["^confirm$","Confirm a date of birth","Check the child's date of birth against a document, then confirm. Only the fact you checked is saved, never the document.",0],
+ ["add a junior","Add a junior","Parents usually add their children. You can add one here too.",0],
+ ["kids timetable","Kids timetable","Kids classes, with Share to make a post written for parents."],
+ ["^photo consent$","Photo consent","Parents answer once for all photos. Ask everyone who hasn't answered in one tap."],
+ ["junior events and competitions","Junior events","Open an event to juniors with ages, rules, kit and a safeguarding officer."]]},
+{id:"c-inj",tab:"hubinj",t:"Injury book",m:1,why:"Your accident book.",s:[
+ ["^injury book$","Your accident book","For every member, adults and juniors. Entries are kept; corrections are added as notes."],
+ ["record an incident","Record an incident","What happened, where, the first aid given and who was told.",0],
+ ["head injuries: return to play","Head injuries","A head injury starts the return-to-play steps: no sport for 24 hours, then step by step. The member or parent confirms they are symptom-free."],
+ ["^incidents$","The record","Every incident with its notes, newest first."]]},
+{id:"c-reg",tab:"hubreg",t:"Kids register",m:1,why:"Who is here and who collects.",s:[
+ ["^kids register$","Today's kids classes","Pick the class to take the register."],
+ ["adults on duty","Adults on duty","Tick who is coaching. The ratio and DBS checks show here."],
+ ["^mark here$","Mark who is here","Tap each child as they arrive. Health and collection details show on their row.",0],
+ ["sign out","Sign out","Children are signed out only to the people their parents listed. Someone else? The steps for that are on screen."]]},
+{id:"c-safe",tab:"hubsafe",t:"Safeguarding",m:1,why:"Concerns, DBS and contacts.",s:[
+ ["^raise a concern$","Raise a concern","Anyone at the club can raise one. It goes to the safeguarding lead, and the record can't be changed or deleted."],
+ ["concern log","Concern log","Only the lead and deputy see it, and every look is recorded."],
+ ["dbs register","DBS register","Record each adult's check details, never the certificate itself. Expiry and the Update Service are tracked."],
+ ["^contacts$","Local contacts","Your LADO and governing body safeguarding contacts, ready when you need them."]]},
+{id:"c-docs",tab:"hubdocs",t:"Club documents",m:1,why:"Paperwork with reminders.",s:[
+ ["^club documents$","Your paperwork","Red means important and missing. Each upload records the date and who added it."],
+ ["keep a copy of your records","Keep a copy","Download your club's records once a month and keep the file somewhere safe and private. Your Overview reminds you."],
+ ["^upload$","Upload a document","Choose the file and add the expiry date. Reminders start 30 days before.",0],
+ ["upload new version","When you renew","Upload the new one. Earlier versions are kept."],
+ ["^coaches$","Coaches' certificates","First aid, insurance and qualifications for each coach."]]},
+{id:"c-pics",tab:"hubpics",t:"Pictures",m:1,why:"Change any picture, any time.",s:[
+ ["logo and banner","Logo and banner","Change them any time. Your pages update straight away."],
+ ["classes, courses and events","Pictures for classes and events","Pick a photo for each one. Only photos with consent are offered. They're used when you share."],
+ ["^photo library$","Your photo library","Replace a picture and it changes everywhere it's used."],
+ ["^who is in it$","Who is in it","Say who is in each photo. A photo can't be posted until you do.",0]]},
+{id:"c-blog",tab:"hubblog",t:"Blog",m:1,why:"Posts and social links.",s:[
+ ["your social accounts","Your social links","Add Instagram, Facebook and the rest. They show on your club page and on every post."],
+ ["^new post$","Write a post","A title and short summary, then headings, paragraphs, photos and buttons. Preview, then publish.",0],
+ ["^share$","Share it","Turns the post into a social post in the content studio, ready to edit.",0]]},
 {id:"c-plans",tab:"hubplans",t:"Memberships",m:2,why:"Plans and prices.",s:[
  ["^plans$","Your plans","Prices and what each includes."],
  ["add a plan","Add a plan","Name, price and which classes are covered.",0],
@@ -22126,7 +22199,7 @@ function days(a,b){return Math.round((new Date(b+"T12:00")-new Date(a+"T12:00"))
 function uidg(){return "d"+Math.random().toString(36).slice(2,8)}
 function feat(f){try{return !window.FH195||!FH195.on||FH195.feat(f)}catch(x){return true}}
 function market(){try{return window.FH195&&FH195.market?FH195.market():"UK"}catch(x){return "UK"}}
-function kidsOn(){try{return feat("kids")&&((C().kids195||[]).length>0||(C().kidsTT195||[]).length>0)}catch(x){return false}}
+function kidsOn(){try{return feat("kids")&&((((C().kids195||{}).kids)||[]).length>0||(C().kidsTT195||[]).length>0)}catch(x){return false}}
 /* the list: key, name, why, important, renew (months; exp = enter an expiry date, rev = yearly review from upload), group, kids, uk */
 var LIST=[
  ["ins","Public liability insurance","Covers claims if a member or visitor is hurt or property is damaged. Venues and governing bodies usually ask for it.",1,12,"exp","Insurance and membership"],
@@ -22304,6 +22377,66 @@ var css=document.createElement("style");css.textContent=".ca209c+.ca209c{margin-
 function tick(){try{var k=document.getElementById("tab-hubkids");if(k&&!k.hidden)kidsPanel();var t=document.getElementById("tab-today");if(t&&!t.hidden)cards()}catch(x){console.error(x)}}
 setInterval(tick,1500);setTimeout(tick,1500);
 return {on:true,btn:btn,ask:ask,waiting:waiting,need:need};
+})();
+
+/* FighterBase v281: Keep a copy of your club's records (rule 22, backup for the backup; handbook section 10 item 12).
+   One tap downloads a readable file of the club's records: members, injury book and head-injury plans, kids and families, kids register and collectors,
+   DBS register, photo consent and requests, takedowns, junior events, gradings and club documents (names and dates; the files themselves stay in the app).
+   Safeguarding concerns and children's health details are included only when the safeguarding lead or deputy downloads it.
+   The file is a web page: open it in any browser to read or print it. The raw data is inside it too, so it can be loaded back if ever needed.
+   A monthly reminder ("Download your club's records") shows on the club overview for the owner until a copy is taken that month.
+   Club doc: exp210{last:{at,by,byName,lead}}. */
+var FH210=(function(){
+var F=window.FH76;if(!F)return {on:false};
+function club(){return (typeof clubState!=="undefined"&&clubState.club)||null}
+function C(){return club()||{}}
+function e(s){return String(s==null?"":s).replace(/[&<>"']/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]})}
+function isOwner(){try{var c=C();return !!(c.ownerUid&&typeof S!=="undefined"&&c.ownerUid===S.uid)}catch(x){return false}}
+function isCoach(){try{return window.FHC&&FHC.isOwner()}catch(x){return false}}
+function isLead(){try{return !!(window.FH195&&FH195.on&&FH195.isLead&&FH195.isLead())}catch(x){return false}}
+function can(){return isOwner()||isLead()}
+function fmt(k){return k?new Date(String(k).slice(0,10)+"T12:00").toLocaleDateString("en-GB",{day:"numeric",month:"short",year:"numeric"}):""}
+function last(){return (C().exp210||{}).last||null}
+function due(){var l=last();return !l||String(l.at).slice(0,7)<TODAY.slice(0,7)}
+/* ---------- what goes in ---------- */
+function data(){var c=C(),lead=isLead(),o={club:{name:c.name,code:c.code,city:c.city||""},exportedAt:new Date().toISOString(),by:(typeof S!=="undefined"&&S.profile&&S.profile.name)||"",includesConcerns:lead,includesHealth:lead};
+ o.members=(c.roster||[]).map(function(r){return {name:r.name,phone:r.phone||"",email:r.email||"",start:r.start||"",plan:r.plan||"",dob:r.dob||"",dobConfirmed:!!r.dobOk}});
+ o.injuryBook=c.inj196||{};o.kids=((c.kids195||{}).kids||[]).map(function(k){var x=JSON.parse(JSON.stringify(k));if(!lead)delete x.rnote;return x});
+ if(lead)o.health=c.health196||{};o.kidsRegister=c.reg198||{};o.collectors=c.collect198||{};o.dbsRegister=Object.keys(c.dbs199||{}).map(function(k){return Object.assign({key:k},c.dbs199[k])});
+ if(lead){o.concerns=(c.sg199||{}).concerns||[];o.outsideRoute=c.sgOut199||null}
+ o.photoConsent=c.pcons201||{};o.consentRequests=c.cask209||[];o.takedowns=c.takedown201||[];o.juniorEvents=c.jev202||{};o.juniorPolicy=c.policy202||"";
+ o.gradings=c.gradeHist194||{};o.coachNotesShared=c.notes200||[];
+ var D=(c.docs207||{}).items||{};o.clubDocuments={};Object.keys(D).forEach(function(k){o.clubDocuments[k]={na:D[k].na||null,versions:(D[k].v||[]).map(function(v){return {file:v.file,added:v.at,by:v.byName,expires:v.exp||"",note:v.note||""}})}});
+ return o}
+function rows(title,list,cols){if(!list||!list.length)return '<h2>'+e(title)+'</h2><p class="m">None.</p>';return '<h2>'+e(title)+' ('+list.length+')</h2><table><tr>'+cols.map(function(c){return '<th>'+e(c[0])+'</th>'}).join("")+'</tr>'+list.map(function(r){return '<tr>'+cols.map(function(c){var v=typeof c[1]==="function"?c[1](r):r[c[1]];return '<td>'+e(v==null?"":typeof v==="object"?JSON.stringify(v):v)+'</td>'}).join("")+'</tr>'}).join("")+'</table>'}
+function page(o){var inj=(o.injuryBook.log||[]),kids=o.kids||[];
+ var h='<!doctype html><html lang="en-GB"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>'+e(o.club.name)+' records '+e(fmt(o.exportedAt))+'</title><style>body{font:14px/1.45 system-ui,Arial,sans-serif;margin:24px;color:#111;max-width:1100px}h1{font-size:22px;margin:0 0 4px}h2{font-size:17px;margin:26px 0 6px;border-bottom:2px solid #c81e3a;padding-bottom:3px}table{border-collapse:collapse;width:100%;font-size:12.5px}th,td{border:1px solid #ccc;padding:4px 6px;text-align:left;vertical-align:top}th{background:#f2f2f2}.m{color:#666}.box{background:#fff6e0;border:1px solid #e0b84a;padding:8px 10px;border-radius:6px}@media print{body{margin:10mm}}</style></head><body>'+
+  '<h1>'+e(o.club.name)+': club records</h1><p class="m">Downloaded '+e(new Date(o.exportedAt).toLocaleString("en-GB"))+' by '+e(o.by)+' from FighterBase.</p>'+
+  '<p class="box">Keep this file somewhere safe and private (for example an encrypted drive or your club\'s secure cloud folder). It contains personal details'+(o.includesHealth?', children\'s health details and safeguarding records':'')+'. Do not email it or share it.'+(o.includesConcerns?'':' Safeguarding concerns and children\'s health details are not in this copy: the safeguarding lead downloads those.')+'</p>'+
+  rows("Members",o.members,[["Name","name"],["Phone","phone"],["Email","email"],["Started","start"],["Plan","plan"],["Date of birth confirmed",function(r){return r.dobConfirmed?"Yes":""}]])+
+  rows("Injury book",inj,[["Date",function(r){return fmt(r.d||r.at)+(r.tm?" "+r.tm:"")}],["Who",function(r){return r.who&&r.who.name||""}],["Where","where"],["What happened","what"],["Body part","part"],["Head injury",function(r){return r.head?"Yes":""}],["First aid","aid"],["Recorded by","byName"],["Notes",function(r){return (r.notes||[]).map(function(n){return fmt(n.at)+" "+(n.byName||"")+": "+(n.text||n.t||"")}).join(" | ")}]])+
+  rows("Kids and families",kids,[["Child",function(k){return (k.first||"")+" "+(k.last||"")}],["Date of birth",function(k){return k.dob||""}],["Confirmed",function(k){return k.dobOk?"Yes, "+fmt(k.dobOk.at):"No"}],["Group","group"],["Guardians",function(k){return (k.guardians||[]).map(function(g){return g.name+(g.rel?" ("+g.rel+")":"")+(g.restricted?" [restricted]":"")}).join("; ")}],["Status","status"]])+
+  rows("DBS register",o.dbsRegister,[["Name","name"],["Role","role"],["Check",function(r){return {ebl:"Enhanced with barred list",enh:"Enhanced",std:"Standard",basic:"Basic"}[r.level]||r.level||""}],["Issued",function(r){return fmt(r.issued)}],["Update Service",function(r){return r.upd&&r.upd.on?"Yes, checked "+fmt(r.upd.checked):""}],["Safeguarding training expires",function(r){return r.sg&&r.sg.exp?fmt(r.sg.exp):""}],["First aid expires",function(r){return r.fa&&r.fa.exp?fmt(r.fa.exp):""}]])+
+  (o.includesConcerns?rows("Safeguarding concerns",o.concerns,[["Date",function(r){return fmt(r.when||r.at)}],["About","whoName"],["Category","cat"],["Raised by","byName"],["What was seen or said","text"],["Action","act"],["Later entries",function(r){return (r.entries||[]).map(function(x){return fmt(x.at)+" "+(x.byName||"")+": "+(x.text||x.t||"")}).join(" | ")}]]):'')+
+  '<h2>Photo consent</h2>'+(Object.keys(o.photoConsent).length?'<table><tr><th>Child</th><th>Uses agreed</th><th>Child\'s own answer</th><th>Do not photograph</th><th>Last changed</th></tr>'+Object.keys(o.photoConsent).map(function(id){var r=o.photoConsent[id],k=kids.filter(function(x){return x.id===id})[0];return '<tr><td>'+e(k?k.first:id)+'</td><td>'+e(Object.keys(r.uses||{}).filter(function(u){return r.uses[u]}).join(", "))+'</td><td>'+e(r.child||"")+'</td><td>'+(r.dnp?"Yes":"")+'</td><td>'+e(fmt(r.at))+'</td></tr>'}).join("")+'</table>':'<p class="m">None.</p>')+
+  rows("Photo consent requests",o.consentRequests,[["Asked",function(r){return fmt(r.at)}],["Child",function(r){var k=kids.filter(function(x){return x.id===r.kid})[0];return k?k.first:r.kid}],["Asked by","byName"]])+
+  rows("Photos to take down",o.takedowns,[["Child","kid"],["What","what"],["Remove by",function(r){return fmt(r.due)}],["Done",function(r){return r.done?"Yes, "+fmt(r.doneAt):"No"}]])+
+  '<h2>Club documents</h2>'+(Object.keys(o.clubDocuments).length?'<table><tr><th>Document</th><th>Versions</th></tr>'+Object.keys(o.clubDocuments).map(function(k){var d=o.clubDocuments[k];return '<tr><td>'+e(k)+'</td><td>'+(d.na?'Not needed: '+e(d.na.why||""):d.versions.map(function(v){return e(v.file+", added "+fmt(v.added)+" by "+v.by+(v.expires?", expires "+fmt(v.expires):""))}).join("<br>"))+'</td></tr>'}).join("")+'</table><p class="m">The files themselves stay in FighterBase; download them from Club documents if you need copies.</p>':'<p class="m">None.</p>')+
+  '<h2>Everything else</h2><p class="m">Kids register, collectors, junior events, gradings and shared coach notes are in the data below, which FighterBase can load back if ever needed.</p>'+
+  '<script type="application/json" id="fighterbase-data">'+JSON.stringify(o).replace(/</g,"\\u003c")+'<\/script></body></html>';return h}
+function download(){if(!can()){toast("Only the owner or safeguarding lead can download the club's records");return}var o=data(),h=page(o),c=C();
+ try{var b=new Blob([h],{type:"text/html"}),a=document.createElement("a");a.href=URL.createObjectURL(b);a.download=(String(c.name||"club").replace(/[^A-Za-z0-9]+/g,"-")+"-records-"+TODAY+".html").toLowerCase();document.body.appendChild(a);a.click();setTimeout(function(){URL.revokeObjectURL(a.href);a.remove()},1500)}catch(x){toast("Couldn't create the file");return}
+ F.upd({exp210:{last:{at:new Date().toISOString(),by:(typeof S!=="undefined"&&S.uid)||"",byName:o.by,lead:o.includesConcerns}}}).then(function(){toast("Records downloaded","Keep the file somewhere safe and private");re()})}
+/* ---------- where it shows ---------- */
+function panelHTML(){var l=last();return '<div class="sec-h"><h3>Keep a copy of your records</h3><button type="button" class="btn sm" data-x210>Download</button></div><p class="small" style="margin:0">One file with your members, injury book, kids and families, registers, DBS checks, photo consents and club documents. Open it in any browser to read or print. Take a copy each month and keep it somewhere safe and private.'+(isLead()?' As safeguarding lead, your copy includes concerns and children\'s health details.':' Safeguarding concerns and children\'s health details are only in the safeguarding lead\'s copy.')+'</p><p class="muted small" style="margin:6px 0 0">'+(l?'Last copy: '+e(fmt(l.at))+' by '+e(l.byName||""):'No copy taken yet.')+'</p>'}
+function docsPanel(){var body=document.getElementById("hubdocsBody");if(!body||!can())return;var el=document.getElementById("x210p");if(!el){el=document.createElement("div");el.id="x210p";el.className="panel";el.style.gridColumn="1/-1"}var plate=body.querySelector(".plate");if(plate&&plate.nextSibling!==el)body.insertBefore(el,plate.nextSibling);else if(!plate&&body.firstChild!==el)body.insertBefore(el,body.firstChild);var h=panelHTML();if(el.dataset.sig!==h){el.innerHTML=h;el.dataset.sig=h}}
+function card(){var host=document.getElementById("huboverBody"),w=document.getElementById("fb210");if(!host||!can()||!due()){if(w)w.remove();return}if(!w){w=document.createElement("div");w.id="fb210";w.className="panel"}var anchor=document.getElementById("fb207")||document.getElementById("fb113");if(anchor&&anchor.parentNode===host){if(anchor.nextSibling!==w)host.insertBefore(w,anchor.nextSibling)}else if(host.firstChild!==w)host.insertBefore(w,host.firstChild);
+ var l=last(),h='<div class="sec-h"><h3>Monthly copy of your records</h3><button type="button" class="btn ghost sm" data-x210>Download</button></div><p class="small" style="margin:0">'+(l?'Your last copy was '+e(fmt(l.at))+'. Take this month\'s copy and keep it somewhere safe and private.':'Take a copy of your club\'s records and keep it somewhere safe and private. It takes one tap.')+'</p>';if(w.dataset.sig!==h){w.innerHTML=h;w.dataset.sig=h}}
+function re(){["x210p","fb210"].forEach(function(id){var x=document.getElementById(id);if(x)x.dataset.sig=""});tick()}
+document.addEventListener("click",function(ev){var t=ev.target.closest&&ev.target.closest("[data-x210]");if(!t)return;download()});
+function tick(){try{var d=document.getElementById("tab-hubdocs");if(d&&!d.hidden)docsPanel();var o=document.getElementById("tab-hubover");if(o&&!o.hidden)card()}catch(x){console.error(x)}}
+setInterval(tick,1600);setTimeout(tick,1600);
+return {on:true,data:data,page:page,download:download,due:due};
 })();
 
 /* FighterBase v44: always a way back, always a next step. */
