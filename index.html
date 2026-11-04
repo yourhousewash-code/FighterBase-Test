@@ -14713,6 +14713,8 @@ var COACH=[
 ["Pictures and posts","Does FighterBase post for us?","No. You copy the words and download or share the picture yourself."],
 ["Pictures and posts","Can I make short videos?","Yes. Marketing, Video clip: choose a video from your phone, trim it to 60 seconds or less, add words, captions, your club name and an end card, then Make the video. It stays on your phone until you download or share it. Say who is in it first: the same consent rules as photos."],
 ["Pictures and posts","Can I add music to a clip?","Only music you have the rights to use. Instagram and TikTok can mute or remove clips with copyrighted music, so adding a sound in their apps is often safer."],
+["Classes and attendance","How do I ask who's training this week?","Club side, Classes, \"Who's training?\": pick all classes or one, then send the link to your WhatsApp group, by text or by email from your own phone. Members tap it, say I'm in or Can't make it on any class, and come straight back to where they were. You see Expected, Waitlisted (when a class is full) and Needs review (someone the app could not match: you confirm who it was before they count). An answer is a plan, not attendance: that still comes from the automatic check-in. Nothing is posted to the group, no phone numbers or plans leave FighterBase, and you can switch the link off any time."],
+["Classes and attendance","I got a 'Who's training?' link. What does it record?","Only that you plan to come, or can't, to the classes you tap. If you use the app, it is the same I'm coming record you see on Schedule. If you don't, you give a name and mobile once so the coach knows who answered; the club checks it is you before you count. Not answering is fine."],
 ["Your club's records","How do I keep a copy of our records?","Set up, Club documents, Keep a copy of your records, Download. It saves one file you can open in any browser to read or print. Take a copy each month (your Overview reminds you) and keep it somewhere safe and private. Safeguarding concerns and children's health details are only in the safeguarding lead's copy."]
 ];
 function e(s){return esc(String(s==null?"":s))}
@@ -18208,6 +18210,7 @@ var GD=[
  ["brand your club","Make it yours","Add your logo and colours so members see your club."],
  ["copy invite link","Invite members","Copy your link, or use the QR poster. Nothing is sent by us."]]},
 {id:"c-classes",tab:"hubclasses",t:"Classes and timetable",m:2,why:"Build the timetable.",s:[
+ ["css:#w214","Who's training?","Send one link to your WhatsApp group, by text or email. Members tap it, say yes or no to any class this week, and come straight back. You see Expected, Waitlisted and Needs review here. Nothing goes back to the group."],
  ["weekly timetable","Your week","Classes appear on members' timetables straight away."],
  ["\\+ add class","Add a class","Name, day, time, teacher and sport.",0],
  ["\\+ add teacher","Add your teachers","So classes show who is teaching.",0],
@@ -22754,6 +22757,130 @@ var css=document.createElement("style");css.textContent=".fo213{display:flex;gap
 document.head.appendChild(css);
 setInterval(tick,1500);setTimeout(tick,900);
 return {attach:attach,tick:tick}})();
+
+/* FighterBase v286: "Who's training?" by link (Steve, 4 Nov 2026). No WhatsApp provider, ever: the coach sends one link from their own
+   phone (WhatsApp group, text, email, anything). The member taps it, sees the club's classes for the next 7 days with "I'm in" and
+   "Can't make it" on each, answers the ones they want (not answering is fine), then "Back to where you were" returns them to WhatsApp,
+   the text or the email. Nothing is installed and nothing posts back to the group.
+   Link: base#who=CLUBCODE (all classes, 7 days) or base#who=CLUBCODE|classId|date (that class first).
+   Answers: signed-in members linked to the club use the existing "I'm coming" record (profile.rsvp) and "Can't make it" (cant142), so
+   Today, Schedule and the club's lists all agree. Anyone else gives a name and mobile once (kept on their device, who214g) and the
+   answer goes to the club record (club.who214.ans[key][]) as a review case: the club confirms who it was before it counts.
+   Club side (Classes, "Who's training?"): pick the scope, edit the message, send by WhatsApp, text, email or copy; a switch to stop
+   taking answers; a live list per dated class with three counts: Expected (a place), Waitlisted (over the class cap, in answer order)
+   and Needs review (unknown voter, number typed matches a member but not verified, or a member whose plan is not active). Review
+   cases never count as expected. Numbers are masked in the list. An answer is intent only: attendance still comes from the
+   automatic check-in. Real database: db/v286_rsvp.sql (class_rsvps) when the live database carries this; until then the test site
+   keeps it on the device like the rest of the prototype. */
+var FH214=(function(){
+var DNL=["Monday","Tuesday","Wednesday","Thursday","Friday","Saturday","Sunday"];
+function P(){return (typeof S!=="undefined"&&S.profile)||{}}
+function club(){return (typeof clubState!=="undefined"&&clubState.club)||null}
+function members(){return (typeof clubState!=="undefined"&&clubState.members)||[]}
+function e(s){return esc(String(s==null?"":s))}
+function coach(){try{return !!(window.FHC&&FHC.isOwner()&&club())}catch(x){return false}}
+function young(){var a=+P().age;return a>0&&a<18}
+function base(){return location.href.split("#")[0]}
+function dayKeyN(n){return addDays(TODAY,n)}
+function dowK(k){return (new Date(k+"T12:00").getDay()+6)%7}
+function nowHM(){var d=new Date();return String(d.getHours()).padStart(2,"0")+":"+String(d.getMinutes()).padStart(2,"0")}
+function normPhone(p){var n=String(p||"").replace(/[^\d+]/g,"");if(/^0\d{10}$/.test(n))return "+44"+n.slice(1);if(/^44\d{10}$/.test(n))return "+"+n;if(/^\+44\d{10}$/.test(n))return n;if(/^\+\d{7,15}$/.test(n))return n;return n?("?"+n):""}
+function mask(p){var n=normPhone(p);return n?n.slice(0,3)+" … "+n.slice(-3):""}
+function key(d,cid){return d+"_"+cid}
+function when(d){return (d===TODAY?"today":d===dayKeyN(1)?"tomorrow":DNL[dowK(d)]+" "+new Date(d+"T12:00").toLocaleDateString("en-GB",{day:"numeric",month:"short"}))}
+/* the dated classes of the next 7 days, kids classes only for a parent or the club */
+function sessions(c,days,all){var tt=(c&&c.timetable)||[],out=[];for(var i=0;i<(days||7);i++){var d=dayKeyN(i),dw=dowK(d);tt.filter(function(x){return x.dow===dw}).forEach(function(x){if(i===0&&x.time&&x.time<nowHM())return;if(x.kids&&!all)return;out.push({d:d,cid:x.id,k:key(d,x.id),t:x})})}
+ out.sort(function(a,b){return (a.d+a.t.time).localeCompare(b.d+b.t.time)});return out}
+function cfg(c){return (c&&c.who214)||{}}
+function on(c){var w=cfg(c);return w.on!==false}
+function link(c,cid,d){return base()+"#who="+encodeURIComponent(c.code||"")+(cid?"|"+encodeURIComponent(cid)+"|"+encodeURIComponent(d):"")}
+function upd(o){var c=club();if(!c)return;var w=Object.assign({},cfg(c),o);c.who214=w;try{if(typeof db!=="undefined"&&db)db.doc("clubs/"+c.id).update({who214:w}).catch(function(){})}catch(x){}}
+/* ---------- the club's view of one dated class ---------- */
+function rows(c,s){var cap=+s.t.cap||0,ans=[],R=c.roster||[],M=members();
+ M.forEach(function(m){var at=(m.rsvp||{})[s.k],out=(m.cant142||{})[s.k];if(!at&&!out)return;if(out&&(!at||out>at)){ans.push({who:m.name||"Member",uid:m.uid,a:"out",at:out});return}
+  var r=R.filter(function(x){return x.uid===m.uid})[0],bad=r&&r.status&&r.status!=="active"?r.status:null;ans.push({who:(r&&r.name)||m.name||"Member",uid:m.uid,a:"in",at:+at||0,review:bad?"Check class access: plan "+bad:null,ver:true})});
+ var mine=(P().rsvp||{})[s.k],mout=(P().cant142||{})[s.k];if(coach()&&(mine||mout)&&!ans.some(function(a){return a.uid===S.uid}))ans.push({who:(P().name||"You")+" (you)",uid:S.uid,a:mout&&(!mine||mout>mine)?"out":"in",at:+(mine||mout)||0,ver:true});
+ ((cfg(c).ans||{})[s.k]||[]).forEach(function(g){if(g.status==="closed")return;var match=g.match?R.filter(function(x){return x.id===g.match})[0]:null;
+  if(g.status==="ok"&&match){ans.push({who:match.name,gid:g.id,a:g.a,at:g.at,ver:true,byLink:true});return}
+  var byPhone=!match&&g.phone?R.filter(function(x){return normPhone(x.phone)===normPhone(g.phone)}):[];
+  ans.push({who:g.name||"Unknown",gid:g.id,a:g.a,at:g.at,phone:g.phone,review:g.a==="in"?(byPhone.length===1?"Says they are "+g.name+"; the number matches "+byPhone[0].name+" but is not verified: confirm":byPhone.length>1?"Number shared by "+byPhone.map(function(x){return x.name}).join(" and ")+": which one is training?":"Verify who voted: no member with this number"):null,cands:byPhone})});
+ var ins=ans.filter(function(a){return a.a==="in"&&!a.review}).sort(function(a,b){return a.at-b.at});
+ ins.forEach(function(a,i){a.st=cap&&i>=cap?"wait":"exp"});
+ return {exp:ins.filter(function(a){return a.st==="exp"}),wait:ins.filter(function(a){return a.st==="wait"}),rev:ans.filter(function(a){return a.a==="in"&&a.review}),out:ans.filter(function(a){return a.a==="out"}),cap:cap,last:ans.reduce(function(m,a){return Math.max(m,a.at||0)},0)}}
+/* ---------- club panel ---------- */
+var V={scope:"",msg:null,open:{}};
+function msgFor(c){var s=V.scope?sessions(c,7,true).filter(function(x){return x.k===V.scope})[0]:null;
+ if(s)return s.t.title+", "+when(s.d)+" at "+s.t.time+". Who's training? Tap the link, say yes or no, and you're back here in a second. "+link(c,s.cid,s.d);
+ return "Who's training this week at "+c.name+"? Tap the link, say yes or no to any class, and you're back here in a second. "+link(c)}
+function panel(){var c=club();if(!c||!coach())return;var body=document.getElementById("hubclassesBody");if(!body||!body.offsetParent)return;var el=document.getElementById("w214");
+ if(!el){el=document.createElement("div");el.id="w214";el.className="panel plate w214";body.insertBefore(el,body.firstChild)}
+ var ae=document.activeElement;if(ae&&el.contains(ae)&&/TEXTAREA|INPUT|SELECT/.test(ae.tagName))return;
+ var SS=sessions(c,7,true),msg=V.msg!=null?V.msg:msgFor(c),h='<div class="sec-h"><h3>Who\'s training?</h3><label class="small" style="display:flex;gap:6px;align-items:center;cursor:pointer"><input type="checkbox" data-w214on'+(on(c)?" checked":"")+'> Taking answers</label></div>'+
+  '<p class="muted small" style="margin:0">Send one link to your WhatsApp group, by text or by email from your own phone. Members tap it, say yes or no to any class this week, and come straight back. Nothing is posted to the group and nothing is installed. An answer is a plan, not attendance: that still comes from the automatic check-in.</p>'+
+  '<div class="field"><label class="label" for="w214scope">Ask about</label><select id="w214scope" data-w214scope><option value="">All classes this week</option>'+SS.map(function(s){return '<option value="'+e(s.k)+'"'+(V.scope===s.k?" selected":"")+'>'+e(s.t.title)+' · '+e(when(s.d))+' '+e(s.t.time)+'</option>'}).join("")+'</select></div>'+
+  '<div class="field"><label class="label" for="w214msg">Message (edit it if you like)</label><textarea id="w214msg" rows="3" data-w214msg>'+e(msg)+'</textarea></div>'+
+  '<div class="row"><a class="btn sm" href="https://wa.me/?text='+encodeURIComponent(msg)+'" target="_blank" rel="noopener" data-w214sent="WhatsApp">WhatsApp</a><a class="btn ghost sm" href="sms:?&body='+encodeURIComponent(msg)+'" data-w214sent="text">Text</a><a class="btn ghost sm" href="mailto:?subject='+encodeURIComponent("Who's training this week?")+'&body='+encodeURIComponent(msg)+'" data-w214sent="email">Email</a><button class="btn ghost sm" type="button" data-w214copy>Copy</button></div>'+
+  (cfg(c).sent?'<p class="muted small" style="margin:0">Last sent by '+e(cfg(c).sent.ch)+' '+e(new Date(cfg(c).sent.at).toLocaleString("en-GB",{weekday:"short",hour:"2-digit",minute:"2-digit"}))+'.</p>':'');
+ /* live list */
+ var any=SS.map(function(s){return {s:s,r:rows(c,s)}}).filter(function(x){return x.r.exp.length||x.r.wait.length||x.r.rev.length||x.r.out.length});
+ h+='<div class="sec-h" style="margin-top:10px"><span class="label">Answers this week</span><span class="muted small">'+(any.length?any.length+' class'+(any.length===1?"":"es")+' with answers':'none yet')+'</span></div>';
+ any.forEach(function(x){var r=x.r,s=x.s,op=V.open[s.k];h+='<div class="w214c"><button type="button" class="w214h" data-w214open="'+e(s.k)+'" aria-expanded="'+!!op+'"><b>'+e(s.t.title)+'</b><span class="muted small">'+e(when(s.d))+' '+e(s.t.time)+(r.cap?' · '+r.cap+' places':'')+'</span><span class="w214n"><i title="Expected">'+r.exp.length+' expected</i>'+(r.wait.length?'<i title="Waitlisted">'+r.wait.length+' waitlisted</i>':'')+(r.rev.length?'<i class="rv" title="Needs review">'+r.rev.length+' to review</i>':'')+(r.out.length?'<i class="no">'+r.out.length+' can\'t</i>':'')+'</span></button>';
+  if(op){h+='<div class="w214b">';
+   if(r.exp.length)h+='<p class="small" style="margin:0"><b>Expected</b> · '+r.exp.map(function(a){return e(a.who)+(a.byLink?' <span class="muted">(by link)</span>':'')}).join(", ")+'</p>';
+   if(r.wait.length)h+='<p class="small" style="margin:0"><b>Waitlisted</b> (class full, in answer order) · '+r.wait.map(function(a){return e(a.who)}).join(", ")+'</p>';
+   if(r.out.length)h+='<p class="small muted" style="margin:0">Can\'t make it · '+r.out.map(function(a){return e(a.who)}).join(", ")+'</p>';
+   r.rev.forEach(function(a){h+='<div class="w214r"><div><b>Needs review</b> · '+e(a.who)+(a.phone?' <span class="muted small">'+e(mask(a.phone))+'</span>':'')+'<br><span class="small muted">'+e(a.review)+'</span></div><div class="row">'+(a.gid?(a.cands&&a.cands.length?a.cands.map(function(m){return '<button class="btn sm" type="button" data-w214ok="'+e(s.k)+'|'+e(a.gid)+'|'+e(m.id)+'">That\'s '+e(m.name)+'</button>'}).join(""):'<select class="sm" data-w214pick="'+e(s.k)+'|'+e(a.gid)+'"><option value="">Who is it?</option>'+(c.roster||[]).map(function(m){return '<option value="'+e(m.id)+'">'+e(m.name)+'</option>'}).join("")+'</select>')+'<button class="linkbtn" type="button" data-w214close="'+e(s.k)+'|'+e(a.gid)+'">Close</button>':'<button class="btn ghost sm" type="button" data-goto="hubacc">Check their plan</button>')+'</div></div>'});
+   h+='<p class="muted small" style="margin:6px 0 0">Last answer '+(r.last?e(new Date(r.last).toLocaleString("en-GB",{weekday:"short",hour:"2-digit",minute:"2-digit"})):"none")+'. Names and plans never go back to the group.</p></div>'}
+  h+='</div>'});
+ if(el.dataset.sig!==h){el.innerHTML=h;el.dataset.sig=h}}
+/* ---------- member: the link ---------- */
+var A=null;
+function parse(){var m=(location.hash||"").match(/^#who=([^|]+)(?:\|([^|]*)\|([^|]*))?$/);if(!m)return null;var d=function(x){try{return decodeURIComponent(x||"")}catch(e){return x||""}};return {code:d(m[1]).toUpperCase(),cid:d(m[2]),d:d(m[3])}}
+function findClub(code){var c=club();if(c&&String(c.code||"").toUpperCase()===code)return c;var all=(typeof clubState!=="undefined"&&clubState.allClubs)||[];return all.filter(function(x){return String(x.code||"").toUpperCase()===code})[0]||null}
+function linked(c){return !!(S.uid&&P().clubId===c.id)}
+function guest(){return P().who214g||null}
+function sheet(){var o=document.getElementById("who214");if(!o){o=document.createElement("div");o.id="who214";o.className="cs";o.setAttribute("role","dialog");o.setAttribute("aria-modal","true");o.setAttribute("aria-label","Who's training");document.body.appendChild(o)}return o}
+function myAns(c,k){if(linked(c)){var i=(P().rsvp||{})[k],o=(P().cant142||{})[k];if(o&&(!i||o>i))return "out";return i?"in":""}var g=guest();if(!g)return "";var a=((cfg(c).ans||{})[k]||[]).filter(function(x){return x.gid===g.id||x.id===g.id})[0];return a?a.a:""}
+function draw(){var o=sheet();if(!A){o.hidden=true;return}var c=findClub(A.code);
+ if(!c){o.innerHTML='<div class="cs-in"><h2 style="margin:0">Club not found</h2><p class="muted small">This link does not match a club on FighterBase. Ask your coach for a new one.</p><div class="row">'+backBtn()+'</div></div>';o.hidden=false;return}
+ if(!on(c)){o.innerHTML='<div class="cs-in"><h2 style="margin:0">'+e(c.name)+'</h2><p class="muted small">The club has switched off answers by link for now.</p><div class="row">'+backBtn()+'</div></div>';o.hidden=false;return}
+ var ae=document.activeElement;if(ae&&o.contains(ae)&&/INPUT/.test(ae.tagName))return;
+ var isL=linked(c),g=guest(),SS=sessions(c,7,isL&&!!P().fam195);if(A.cid){SS.sort(function(a,b){return (a.k===key(A.d,A.cid)?-1:0)-(b.k===key(A.d,A.cid)?-1:0)})}
+ var h='<div class="cs-in w214m"><div class="sec-h"><div><span class="label">Who\'s training?</span><h2 style="margin:2px 0 0">'+e(c.name)+'</h2></div>'+backBtn()+'</div>';
+ if(!isL&&!g)h+='<p class="small" style="margin:0">So the coach knows who answered, give your name and mobile once. '+(S.uid?'':'Members with the app can also sign in first. ')+'Your answer only tells the club you plan to come.</p><div class="row" style="align-items:flex-end"><div class="field" style="flex:1;min-width:140px;margin:0"><label class="label" for="w214n">Your name</label><input type="text" id="w214n" maxlength="60" autocomplete="name"></div><div class="field" style="flex:1;min-width:140px;margin:0"><label class="label" for="w214p">Mobile</label><input type="tel" id="w214p" maxlength="20" autocomplete="tel" placeholder="07… or +44…"></div><button class="btn sm" type="button" data-w214me>Save</button></div>';
+ else{h+='<p class="muted small" style="margin:0">'+(isL?'Answering as '+e(P().name||"you")+'.':'Answering as '+e(g.name)+' ('+e(mask(g.phone))+'). <button class="linkbtn" type="button" data-w214notme>Not you?</button>')+' Tap yes or no on any class. You can leave the rest.</p>';
+  if(!SS.length)h+='<p class="small" style="margin:8px 0 0">No classes in the next 7 days.</p>';
+  SS.forEach(function(s){var a=myAns(c,s.k),first=A.cid&&s.k===key(A.d,A.cid);h+='<div class="w214s'+(first?" first":"")+'"><div><b>'+e(s.t.title)+'</b><span class="muted small"> · '+e(when(s.d))+' '+e(s.t.time)+(s.t.level?' · '+e(s.t.level):'')+'</span></div><div class="w214yn"><button type="button" class="btn sm'+(a==="in"?" gold":" ghost")+'" data-w214a="'+e(s.k)+'|in" aria-pressed="'+(a==="in")+'">'+(a==="in"?"✓ I'm in":"I'm in")+'</button><button type="button" class="btn sm'+(a==="out"?"":" ghost")+'" data-w214a="'+e(s.k)+'|out" aria-pressed="'+(a==="out")+'">'+(a==="out"?"✓ Can't make it":"Can't make it")+'</button></div></div>'});
+  h+='<p class="muted small" style="margin:8px 0 0">Saved as you tap. '+(isL?'Change it any time on Schedule.':'The club confirms who you are before you count.')+' If a class is full you may be waitlisted; the coach sees the real list.</p>'}
+ h+='<div class="row" style="margin-top:10px">'+backBtn(true)+'</div></div>';
+ if(o.dataset.sig!==h){o.innerHTML=h;o.dataset.sig=h}o.hidden=false}
+function backBtn(big){return '<button type="button" class="btn'+(big?" gold":" ghost sm")+'" data-w214back>'+(big?"Back to where you were":"Back")+'</button>'}
+function goBack(){A=null;var o=sheet();o.hidden=true;try{history.replaceState(null,"",base())}catch(e){}
+ try{if(document.referrer||history.length>1){history.back();setTimeout(function(){try{window.close()}catch(e){}},400)}else window.close()}catch(e){}}
+function answer(c,k,a){if(linked(c)){var p=P();p.rsvp=p.rsvp||{};p.cant142=p.cant142||{};if(a==="in"){if(!p.rsvp[k])p.rsvp[k]=Date.now();delete p.cant142[k]}else{p.cant142[k]=Date.now();delete p.rsvp[k]}profChanged();try{scheduleLeague()}catch(x){}try{clubPro()}catch(x){}return}
+ var g=guest();if(!g)return;var w=Object.assign({},cfg(c)),ans=Object.assign({},w.ans||{}),L=(ans[k]||[]).filter(function(x){return x.gid!==g.id});L.push({id:g.id+"_"+k,gid:g.id,name:g.name,phone:g.phone,a:a,at:Date.now(),status:"review"});ans[k]=L.slice(-200);w.ans=ans;c.who214=w;
+ try{if(typeof db!=="undefined"&&db)db.doc("clubs/"+c.id).update({who214:w}).catch(function(){})}catch(x){}}
+document.addEventListener("click",function(ev){var t=ev.target;if(!t.closest)return;var b,c;
+ if(t.closest("[data-w214back]")){goBack();return}
+ if(b=t.closest("[data-w214a]")){c=A&&findClub(A.code);if(!c)return;var q=b.dataset.w214a.split("|");answer(c,q[0],q[1]);sheet().dataset.sig="";draw();try{toast(q[1]==="in"?"You're down as coming":"Thanks, the club knows")}catch(x){}return}
+ if(t.closest("[data-w214me]")){var n=(document.getElementById("w214n")||{}).value||"",p=(document.getElementById("w214p")||{}).value||"";n=n.trim();if(n.length<2){toast("Your name, please");return}if(!/^\+?\d/.test(normPhone(p))){toast("A mobile number, please","07… or +44…");return}P().who214g={id:"g"+Date.now().toString(36),name:n,phone:p};try{profChanged()}catch(x){}sheet().dataset.sig="";draw();return}
+ if(t.closest("[data-w214notme]")){delete P().who214g;try{profChanged()}catch(x){}sheet().dataset.sig="";draw();return}
+ if(t.closest("[data-w214on]")){upd({on:t.closest("[data-w214on]").checked});return}
+ if(t.closest("[data-w214copy]")){var m=(document.getElementById("w214msg")||{}).value||"";try{navigator.clipboard.writeText(m)}catch(x){}upd({sent:{ch:"copy",at:Date.now()}});toast("Copied","Paste it into your group");return}
+ if(b=t.closest("[data-w214sent]")){upd({sent:{ch:b.dataset.w214sent,at:Date.now()}});return}
+ if(b=t.closest("[data-w214open]")){V.open[b.dataset.w214open]=!V.open[b.dataset.w214open];var el=document.getElementById("w214");if(el)el.dataset.sig="";panel();return}
+ if(b=t.closest("[data-w214ok]")){var r=b.dataset.w214ok.split("|");resolve(r[0],r[1],r[2]);return}
+ if(b=t.closest("[data-w214close]")){var r2=b.dataset.w214close.split("|");resolve(r2[0],r2[1],null,true);return}});
+document.addEventListener("change",function(ev){var t=ev.target;if(!t.dataset)return;
+ if(t.dataset.w214scope!=null){V.scope=t.value;V.msg=null;var el=document.getElementById("w214");if(el)el.dataset.sig="";panel();return}
+ if(t.dataset.w214pick!=null&&t.value){var r=t.dataset.w214pick.split("|");resolve(r[0],r[1],t.value);return}});
+document.addEventListener("input",function(ev){var t=ev.target;if(t&&t.dataset&&t.dataset.w214msg!=null){V.msg=t.value;var m=encodeURIComponent(t.value),el=document.getElementById("w214");if(!el)return;var a=el.querySelector('[data-w214sent="WhatsApp"]');if(a)a.href="https://wa.me/?text="+m;a=el.querySelector('[data-w214sent="text"]');if(a)a.href="sms:?&body="+m;a=el.querySelector('[data-w214sent="email"]');if(a)a.href="mailto:?subject="+encodeURIComponent("Who's training this week?")+"&body="+m}});
+function resolve(k,gid,rosterId,close){var c=club();if(!c||!coach())return;var w=Object.assign({},cfg(c)),ans=Object.assign({},w.ans||{});ans[k]=(ans[k]||[]).map(function(x){if(x.id!==gid)return x;var y=Object.assign({},x);if(close){y.status="closed"}else{y.status="ok";y.match=rosterId}y.by=S.uid;y.byAt=Date.now();return y});w.ans=ans;upd(w);var el=document.getElementById("w214");if(el)el.dataset.sig="";panel();toast(close?"Closed":"Matched","Checked again against the latest answer, plan and places")}
+function watch(){var a=parse();if(!a){if(A){A=null;sheet().hidden=true}return}A=a;var n=0,iv=setInterval(function(){n++;if(findClub(a.code)||n>40){clearInterval(iv);draw()}else if(n%6===0)draw()},500)}
+window.addEventListener("hashchange",watch);setTimeout(watch,400);
+setInterval(function(){try{panel();if(A)draw()}catch(x){}},1500);
+var css=document.createElement("style");css.textContent=".w214 .w214c{border:1px solid var(--line);border-radius:12px;margin-top:8px;overflow:hidden}.w214h{all:unset;box-sizing:border-box;cursor:pointer;display:flex;flex-wrap:wrap;gap:4px 10px;align-items:center;width:100%;padding:10px 12px}.w214h b{flex:1 1 auto}.w214n{display:flex;gap:6px;flex-wrap:wrap}.w214n i{font-style:normal;font-size:12px;padding:2px 8px;border-radius:999px;background:rgba(63,197,126,.15);color:#3FC57E}.w214n i.rv{background:rgba(232,223,200,.15);color:#E8DFC8}.w214n i.no{background:rgba(255,255,255,.08);color:var(--muted)}.w214b{padding:0 12px 10px;display:flex;flex-direction:column;gap:6px}.w214r{display:flex;flex-wrap:wrap;gap:8px;justify-content:space-between;align-items:center;padding:8px 10px;border-radius:10px;border:1px solid rgba(232,223,200,.4);background:rgba(232,223,200,.06)}.w214m{max-width:560px}.w214s{display:flex;flex-wrap:wrap;gap:6px 10px;align-items:center;justify-content:space-between;padding:10px 0;border-top:1px solid var(--line)}.w214s.first{border-top:none;background:rgba(232,223,200,.06);border-radius:10px;padding:10px}.w214yn{display:flex;gap:6px}#who214{z-index:99}";document.head.appendChild(css);
+return {panel:panel,draw:draw,rows:rows,sessions:sessions,normPhone:normPhone,link:link}})();
 
 /* FighterBase v44: always a way back, always a next step. */
 var N31=N31||false;
