@@ -14116,32 +14116,45 @@ var ST=[["details","Re-check your fight details","Date, event, rules and weight 
  ["food","Review how you eat for camp","Your food is your call. Talk it through with your coach or a qualified professional before changing anything big.","nutrition","Open food"],
  ["train","Plan your camp training","Camps usually mean more sessions and more specific work.",null,"Add a session a week"],
  ["goals","Update your goals","Swap any goal that no longer fits the next few weeks.","goals2","Review goals"]];
+/* v289 (Steve, 4 Nov 2026): the camp check is a button. Tap it and a box asks a few questions one at a time; every question has a
+   "No comment" way past it. Answers are kept per fight (profile.campChk[fight]). */
+var QI=0,SH=false;
+function qs(f){var cl=club(),d=dec(f),rq=P().campReq&&P().campReq.k===key(f)?P().campReq:null,off=!!(cl&&((cl.fsvc||{}).camp||d||rq));
+ var Q=[{id:"details",q:"Are your fight details still right?",s:"Date, event, rules and weight limit.",a:[["yes","Yes, all right"],["go:goals2","Something changed"]]},
+  {id:"food",q:"How you eat for camp: sorted?",s:"Your food is your call. Talk it through with your coach or a qualified professional before any big change.",a:[["yes","Sorted"],["go:nutrition","Have a look at food"]]},
+  {id:"train",q:"Add a session a week for camp?",s:"Camps usually mean more sessions and more specific work.",a:[["train","Yes, add one"],["keep","Keep it as it is"]]},
+  {id:"goals",q:"Do your goals still fit the next few weeks?",s:"Swap any that no longer fit.",a:[["yes","They fit"],["go:goals2","Review my goals"]]}];
+ if(off)Q.push({id:"coach",q:"Want your coach's help with camp?",s:d&&d.st==="ok"?(d.by||"Your coach")+" has confirmed.":d&&d.st==="no"?"Your coach can't take this on right now. You can ask another coach.":rq?"Asked. Waiting for your coach.":"Pads, a plan or corner support. They choose whether to take it on.",a:(rq||(d&&d.st==="ok"))?[["yes","OK"]]:[["ask","Ask my coach"],["keep","Not now"]]});
+ return Q}
+function answered(f){var c=chk(f),Q=qs(f);return Q.filter(function(q){return c[q.id]}).length+"/"+Q.length}
 function draw(){var home=document.getElementById("tab-today");if(!home)return;var el=document.getElementById("fb117"),f=fight(),p=P();
- if(!f||!p.onboarded||(chk(f).done)){if(el)el.hidden=true;return}
- var c=chk(f),n=ST.filter(function(s){return c[s[0]]}).length,cl=club(),d=dec(f),rq=p.campReq&&p.campReq.k===key(f)?p.campReq:null;
- var off=!!(cl&&((cl.fsvc||{}).camp||d||rq));var todo=ST.filter(function(q){return !c[q[0]]}).map(function(q){return {details:'fight details',food:'food',train:'training',goals:'goals'}[q[0]]});if(off&&!(d&&d.st==='ok'||c.coach))todo.push('coach support');
- var tot=(off?5:4),nn=n+(off&&(d&&d.st==="ok"||c.coach)?1:0);
- var h='<button type="button" class="c117-h" data-f117tog="1" aria-expanded="'+OPEN+'"><span><span class="fb-kick">Camp check · '+nn+' of '+tot+'</span><b class="c117-t">Check / amend goals</b>'+(todo.length?'<span class="c117-need"><em>Needs doing</em> '+e(todo.join(", "))+'</span>':'<span class="c117-ok">&#10003; All set. Tap to amend.</span>')+'</span><i aria-hidden="true">'+(OPEN?'&#9650;':'&#9660;')+'</i></button>';
- if(!OPEN){if(!el){el=document.createElement("section");el.id="fb117";el.className="fb-card";home.appendChild(el)}el.hidden=false;if(el.dataset.sig!==h){el.innerHTML=h;el.dataset.sig=h}return}
- h+='<p class="muted small" style="margin:8px 0">One place to check your camp. Tick each one when you are happy with it. The detailed week by week check stays in your weekly check-in.</p>'+
- ST.map(function(s){var on=c[s[0]];return '<div class="d112-n" style="align-items:flex-start"><span><b>'+(on?"✓ ":"")+e(s[1])+'</b><br><span class="muted small">'+e(s[2])+'</span></span><div class="row" style="flex-wrap:nowrap"><button class="btn ghost sm" type="button" data-f117go="'+s[0]+'">'+e(s[4])+'</button><button class="btn sm" type="button" data-f117tick="'+s[0]+'" aria-pressed="'+!!on+'">'+(on?"Done":"Mark done")+'</button></div></div>'}).join("");
- if(off){var st=d?d.st:rq?"asked":"";h+='<div class="d112-n" style="align-items:flex-start"><span><b>'+(st==="ok"?"✓ ":"")+'Coach support for camp</b><br><span class="muted small">'+(st==="ok"?e((d.by||"Your coach"))+' has confirmed. '+e(d.note||""):st==="no"?'Your coach can\'t take this on right now'+(d.note?': '+e(d.note):'')+'. You can still ask another coach.':st==="asked"?'Asked. Waiting for your coach to reply.':'Ask your coach to help with pads, a plan or corner support. They choose whether to take it on.')+'</span></span><div class="row"><button class="btn '+(st==="ok"||st==="asked"?"ghost ":"")+'sm" type="button" data-f117ask>'+(st==="asked"?"Asked":st==="ok"?"Confirmed":"Ask my coach")+'</button></div></div>'}
- h+='<div class="row" style="margin-top:8px"><button class="linkbtn" type="button" data-f117done>All sorted, hide this</button></div>';
+ if(!f||!p.onboarded||(chk(f).done)){if(el)el.hidden=true;sheet(null);return}
+ var c=chk(f),Q=qs(f),n=Q.filter(function(q){return c[q.id]}).length,left=Q.filter(function(q){return !c[q.id]});
+ var h='<div class="c117-row"><span><span class="fb-kick">Camp check</span><b class="c117-t">'+(left.length?"Check / amend goals":"All checked")+'</b><span class="'+(left.length?"c117-need":"c117-ok")+'">'+(left.length?'<em>'+left.length+' to do</em> '+e(left.map(function(q){return {details:"fight details",food:"food",train:"training",goals:"goals",coach:"coach support"}[q.id]}).join(", ")):'&#10003; '+n+' of '+Q.length+' answered. Tap to amend.')+'</span></span><button type="button" class="btn '+(left.length?'gold':'ghost')+' sm" data-f117open>'+(left.length?(n?"Carry on":"Do a camp check"):"Amend")+'</button></div>';
  if(!el){el=document.createElement("section");el.id="fb117";el.className="fb-card";home.appendChild(el)}
- el.hidden=false;if(el.dataset.sig!==h){el.innerHTML=h;el.dataset.sig=h}}
+ el.hidden=false;if(el.dataset.sig!==h){el.innerHTML=h;el.dataset.sig=h}
+ if(SH)sheet(f)}
+function sheet(f){var o=document.getElementById("c117s");if(!f||!SH){if(o)o.remove();return}if(!o){o=document.createElement("div");o.id="c117s";o.className="cs";o.setAttribute("role","dialog");o.setAttribute("aria-modal","true");o.setAttribute("aria-label","Camp check");document.body.appendChild(o)}
+ var Q=qs(f),c=chk(f);if(QI>=Q.length)QI=Q.length;var q=Q[QI],h;
+ if(!q){var n=Q.filter(function(x){return c[x.id]&&c[x.id]!=="skip"}).length;h='<div class="cs-in c117-in"><span class="fb-kick">Camp check</span><h2 style="margin:4px 0 6px">That\'s your camp checked</h2><p class="muted small" style="margin:0 0 12px">'+n+' of '+Q.length+' answered'+(n<Q.length?', the rest left for now':'')+'. Come back to it any time from Today.</p><div class="row"><button class="btn gold" type="button" data-f117close>Done</button><button class="linkbtn" type="button" data-f117done>Hide until my next camp</button></div></div>'}
+ else h='<div class="cs-in c117-in"><div class="c117-dots">'+Q.map(function(x,i){return '<i class="'+(i<QI?"d":i===QI?"on":"")+'"></i>'}).join("")+'<span class="muted small">'+(QI+1)+' of '+Q.length+'</span></div><h2 style="margin:6px 0 4px">'+e(q.q)+'</h2><p class="muted small" style="margin:0 0 14px">'+e(q.s)+'</p><div class="c117-a">'+q.a.map(function(a,i){return '<button type="button" class="btn '+(i?"ghost":"gold")+'" data-f117a="'+e(a[0])+'">'+e(a[1])+'</button>'}).join("")+'<button type="button" class="btn ghost" data-f117a="skip">No comment</button></div><div class="row" style="justify-content:space-between;margin-top:12px">'+(QI?'<button class="linkbtn" type="button" data-f117prev>‹ Back</button>':'<span></span>')+'<button class="linkbtn" type="button" data-f117close>Close</button></div></div>';
+ if(o.dataset.sig!==h){o.innerHTML=h;o.dataset.sig=h;o.classList.remove("c117-anim");void o.offsetWidth;o.classList.add("c117-anim")}}
 function announce(){var f=fight(),p=P();if(!f||!p.onboarded)return;p.campSeen=p.campSeen||{};var k=key(f);if(p.campSeen.k===k)return;
  p.campSeen={k:k,at:TODAY};save();try{toast("Camp check ready",(f.event||"Your fight")+": re-check details, food, training and goals.")}catch(x){}}
 document.addEventListener("click",function(ev){var t=ev.target;if(!t.closest)return;var b,f=fight();if(!f)return;
- if(b=t.closest("[data-f117tog]")){OPEN=!OPEN;draw();return}
- if(b=t.closest("[data-f117tick]")){var c=chk(f);c[b.dataset.f117tick]=!c[b.dataset.f117tick];save();draw();return}
- if(b=t.closest("[data-f117go]")){var id=b.dataset.f117go;
-  if(id==="train"){var g=P().eg=P().eg||{};g.train=g.train||{mode:"count",n:3,days:[]};var n=+g.train.n||+P().sessions||3;if(n<7){g.train.n=n+1;P().sessions=n+1;chk(f).train=true;save();try{toast("Weekly target is now "+(n+1),"You can change it any time in Goals")}catch(x){}draw()}return}
-  var s=ST.filter(function(x){return x[0]===id})[0];try{if(s[3]==="goals2"){showTab("progress");setTimeout(function(){var q=document.querySelector('[data-goto="goals2"]');if(q)q.click()},200)}else showTab(s[3])}catch(x){}return}
- if(b=t.closest("[data-f117ask]")){var cl=club();if(!cl||P().campReq&&P().campReq.k===key(f))return;P().campReq={k:key(f),fid:f.id,event:f.event||"Fight",date:f.date,at:Date.now()};chk(f).coach=true;save();draw();try{toast("Asked your coach","They will reply here")}catch(x){}return}
- if(b=t.closest("[data-f117done]")){chk(f).done=true;save();draw()}},true);
+ if(t.closest("[data-f117open]")){SH=true;var Q=qs(f),c=chk(f);QI=Q.findIndex(function(q){return !c[q.id]});if(QI<0)QI=0;sheet(f);return}
+ if(t.closest("[data-f117close]")){SH=false;sheet(null);draw();return}
+ if(t.closest("[data-f117prev]")){QI=Math.max(0,QI-1);sheet(f);return}
+ if(b=t.closest("[data-f117a]")){var v=b.dataset.f117a,Q2=qs(f),q=Q2[QI],c2=chk(f);if(!q)return;
+  if(v==="train"){var g=P().eg=P().eg||{};g.train=g.train||{mode:"count",n:3,days:[]};var n=+g.train.n||+P().sessions||3;if(n<7){g.train.n=n+1;P().sessions=n+1;try{toast("Weekly target is now "+(n+1),"Change it any time in Goals")}catch(x){}}c2[q.id]="yes"}
+  else if(v==="ask"){var cl=club();if(cl&&!(P().campReq&&P().campReq.k===key(f))){P().campReq={k:key(f),fid:f.id,event:f.event||"Fight",date:f.date,at:Date.now()};try{toast("Asked your coach","They will reply here")}catch(x){}}c2[q.id]="yes"}
+  else if(/^go:/.test(v)){c2[q.id]="look";save();SH=false;sheet(null);var tab=v.slice(3);try{if(tab==="goals2"){showTab("progress");setTimeout(function(){var x=document.querySelector('[data-goto="goals2"]');if(x)x.click()},200)}else showTab(tab)}catch(x){}draw();return}
+  else c2[q.id]=v;
+  save();QI++;sheet(f);draw();return}
+ if(t.closest("[data-f117done]")){chk(f).done=true;SH=false;save();sheet(null);draw()}},true);
 var tk=0;setInterval(function(){try{announce();draw()}catch(x){}},1500);
 window.FH117={draw:draw};
-var st=document.createElement("style");st.textContent=".c117-h{all:unset;cursor:pointer;box-sizing:border-box;width:100%;display:flex;align-items:center;justify-content:space-between;gap:10px}.c117-h>span{display:flex;flex-direction:column;gap:2px}.c117-t{font:900 22px var(--display,'Big Shoulders Display'),sans-serif;text-transform:uppercase;letter-spacing:.02em}.c117-h i{font-style:normal;opacity:.7}.c117-need{font-size:13px}.c117-need em{font-style:normal;font-weight:800;font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:#fff;background:#C81E3A;border-radius:999px;padding:2px 8px;margin-right:6px}.c117-ok{font-size:13px;color:#3FC57E}#tab-today #fb117{order:2}#tab-today #fb112{order:3}#fb117[hidden]{display:none}";document.head.appendChild(st);
+var st=document.createElement("style");st.textContent=".c117-row{display:flex;align-items:center;justify-content:space-between;gap:12px}.c117-row>span{display:flex;flex-direction:column;gap:2px;min-width:0}.c117-in{max-width:520px}.c117-dots{display:flex;align-items:center;gap:6px}.c117-dots i{width:8px;height:8px;border-radius:50%;background:rgba(255,255,255,.18)}.c117-dots i.d{background:#3FC57E}.c117-dots i.on{background:#E8DFC8;box-shadow:0 0 0 4px rgba(232,223,200,.18)}.c117-dots span{margin-left:auto}.c117-a{display:flex;flex-direction:column;gap:8px}.c117-a .btn{justify-content:flex-start;text-align:left}#c117s .cs-in{animation:none}.c117-anim .cs-in{animation:c117in .28s cubic-bezier(.2,.8,.2,1)}@keyframes c117in{from{opacity:0;transform:translateX(14px)}to{opacity:1;transform:none}}@media (prefers-reduced-motion:reduce){.c117-anim .cs-in{animation:none}}.c117-h{all:unset;cursor:pointer;box-sizing:border-box;width:100%;display:flex;align-items:center;justify-content:space-between;gap:10px}.c117-h>span{display:flex;flex-direction:column;gap:2px}.c117-t{font:900 22px var(--display,'Big Shoulders Display'),sans-serif;text-transform:uppercase;letter-spacing:.02em}.c117-h i{font-style:normal;opacity:.7}.c117-need{font-size:13px}.c117-need em{font-style:normal;font-weight:800;font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:#fff;background:#C81E3A;border-radius:999px;padding:2px 8px;margin-right:6px}.c117-ok{font-size:13px;color:#3FC57E}#tab-today #fb117{order:2}#tab-today #fb112{order:3}#fb117[hidden]{display:none}";document.head.appendChild(st);
 })();
 
 /* FighterBase v136b: club authority levels, coach approval and PT agreements.
@@ -17728,7 +17741,7 @@ var IDS=["fb115","fb117","fb119","fb120","fb144w"];
 var css=document.createElement("style");
 /* v285 (Steve, 4 Nov 2026): with a fight booked, Fight camp is the first thing on Today, above the daily line and numbers; only a head-injury return-to-sport card sits above it */
 css.textContent="#tab-today>#fb196{order:-26!important}#tab-today #fb154{display:flex;flex-direction:column;gap:12px;grid-column:1/-1}#tab-today #fb154>.k154{display:flex;align-items:center;gap:8px;font:800 12px var(--body,inherit);letter-spacing:.16em;text-transform:uppercase;color:var(--red,#C81E3A);padding:2px 4px 0}#tab-today #fb154>.k154:after{content:\"\";flex:1;height:1px;background:linear-gradient(90deg,var(--red,#C81E3A),transparent);opacity:.5}"+
-"#tab-today #fb154>.g154{display:flex;flex-direction:column;gap:12px}#tab-today #fb154>.g154>#fb115{margin:0!important}"+
+"html #tab-today #fb154>.g154,html body.fb-desk #tab-today #fb154>.g154,html body.fb-desk #tab-today #fb154>.g154.one154{display:flex!important;flex-direction:column;gap:12px;column-count:auto!important}#tab-today #fb154>.g154>#fb115{margin:0!important}"+
 /* v288 (Steve, 4 Nov 2026): the camp cards sit together in one framed box under the countdown; on wide screens two balanced columns, so no empty space under a short card */
 "#tab-today #fb154 .f154{display:flex;flex-direction:column;gap:12px;padding:10px;border-radius:22px;border:1.5px solid rgba(200,30,58,.6);background:rgba(200,30,58,.05);box-shadow:0 0 24px rgba(200,30,58,.12)}#tab-today #fb154 .f154>#fb115{margin:0!important;order:-1!important}#tab-today #fb154 .f154>.k154b{font:800 11px var(--body,inherit);letter-spacing:.16em;text-transform:uppercase;color:var(--muted);padding:0 2px}#tab-today #fb154 .c154{display:flex;flex-direction:column;gap:12px;min-width:0;flex:1}#tab-today #fb154 .c154>*{margin:0!important}"+
 "@media (min-width:520px){#tab-today #fb154 .f154>.cols154{display:flex;gap:12px;align-items:flex-start}}"+
@@ -22928,6 +22941,103 @@ var css=document.createElement("style");css.textContent=".a215{border:1px solid 
 setInterval(tick,2000);setTimeout(tick,2500);
 var st=showTab;showTab=function(t){var r=st.apply(this,arguments);try{if(t==="today")card();if(t==="progress")page()}catch(x){}return r};
 return {list:list,record:record,tick:tick}})();
+
+/* FighterBase v289: visual upgrade (Steve, 4 Nov 2026: group related things, make every section's purpose obvious with icons, motion,
+   top quality). Three parts, all additive and reversible:
+   1. Icons. One inline SVG set (cardio, strength, food, water, sleep, weight, fight, camp, club, timetable, PT, goals, progress, settings,
+      photos, money, safeguarding, kids, crews, messages, recovery, learn, marketing, achievements, check-in, attendance). Section
+      headings, card kickers and menu rows get the icon that matches their words, with a colour per purpose, so a glance says what a
+      card is for. Applied by matching heading text, so it covers old and new screens alike.
+   2. Groups on Today. Related cards sit under one labelled, coloured section: Today (greeting, this week, quick log, focus), Your club
+      (classes, PT, grades, family), Your progress (numbers, chart, weight target). Fight camp already has its box. A group hides when
+      everything in it is hidden.
+   3. Motion. Cards slide in with a small stagger when a tab opens, big numbers count up the first time they are seen, buttons press,
+      cards lift on hover (mouse only), section rules draw in. All off under "reduce motion". */
+var FH216=(function(){
+var I={
+ run:'<path d="M13 4a1.5 1.5 0 1 0 3 0 1.5 1.5 0 0 0-3 0zM6 20l3-6 3 2v4M15 14l2-3-4-3-3 3M9 8l2 1"/>',
+ strength:'<path d="M3 10v4M21 10v4M6 8v8M18 8v8M6 12h12"/>',
+ food:'<path d="M7 3v8M5 3v5a2 2 0 0 0 4 0V3M7 11v10M17 3c-2 0-3 3-3 6s1 4 3 4v8"/>',
+ water:'<path d="M12 3s6 7 6 11a6 6 0 0 1-12 0c0-4 6-11 6-11z"/>',
+ sleep:'<path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5z"/>',
+ scale:'<path d="M4 5h16v14H4zM12 9v3M8 13a4 4 0 0 1 8 0"/>',
+ fight:'<path d="M7 11V7a2 2 0 0 1 4 0v3M11 10V6a2 2 0 0 1 4 0v4M15 10V7a2 2 0 0 1 4 0v6a6 6 0 0 1-12 0v-2a2 2 0 0 1 4 0"/>',
+ camp:'<path d="M12 3c1 4 5 5 5 10a5 5 0 0 1-10 0c0-2 1-3 2-4 0 2 1 3 2 3 0-3 1-6 1-9z"/>',
+ club:'<path d="M3 21h18M5 21V8l7-4 7 4v13M9 21v-6h6v6"/>',
+ timetable:'<path d="M4 5h16v15H4zM4 10h16M8 3v4M16 3v4"/>',
+ pt:'<path d="M12 5a2 2 0 1 0 0-4 2 2 0 0 0 0 4zM5 9l4-2 3 1 3-1 4 2M9 8v12M15 8v12M9 14h6"/>',
+ goal:'<circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1"/>',
+ progress:'<path d="M4 20V4M4 20h16M7 15l4-5 3 3 5-7"/>',
+ settings:'<circle cx="12" cy="12" r="3"/><path d="M19 12a7 7 0 0 0-.1-1l2-1.5-2-3.5-2.3 1a7 7 0 0 0-1.7-1L14.5 3h-5l-.4 2.5a7 7 0 0 0-1.7 1l-2.3-1-2 3.5 2 1.5a7 7 0 0 0 0 2l-2 1.5 2 3.5 2.3-1a7 7 0 0 0 1.7 1l.4 2.5h5l.4-2.5a7 7 0 0 0 1.7-1l2.3 1 2-3.5-2-1.5c.1-.3.1-.7.1-1z"/>',
+ photo:'<path d="M4 8h3l2-3h6l2 3h3v12H4z"/><circle cx="12" cy="13" r="3.5"/>',
+ money:'<path d="M3 7h18v11H3zM3 11h18M7 15h3"/>',
+ shield:'<path d="M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6z"/><path d="M9 12l2 2 4-4"/>',
+ kids:'<circle cx="12" cy="7" r="3"/><path d="M6 21v-3a6 6 0 0 1 12 0v3"/>',
+ crew:'<circle cx="9" cy="8" r="3"/><circle cx="17" cy="9" r="2.5"/><path d="M3 20v-2a6 6 0 0 1 12 0v2M15 20v-2a4 4 0 0 1 6 0v2"/>',
+ message:'<path d="M4 5h16v11H9l-5 4z"/>',
+ heart:'<path d="M12 20s-7-4.5-7-10a4 4 0 0 1 7-2.5A4 4 0 0 1 19 10c0 5.5-7 10-7 10z"/>',
+ learn:'<path d="M4 5h7a2 2 0 0 1 2 2v13a2 2 0 0 0-2-2H4zM20 5h-7a2 2 0 0 0-2 2v13a2 2 0 0 1 2-2h7z"/>',
+ megaphone:'<path d="M4 10v4h3l8 4V6l-8 4zM18 9a4 4 0 0 1 0 6"/>',
+ trophy:'<path d="M8 4h8v5a4 4 0 0 1-8 0zM8 6H5a3 3 0 0 0 3 4M16 6h3a3 3 0 0 1-3 4M12 13v4M9 21h6M10 17h4"/>',
+ check:'<path d="M5 12l4 4L19 6"/>',
+ pin:'<path d="M12 21s-6-6-6-11a6 6 0 0 1 12 0c0 5-6 11-6 11z"/><circle cx="12" cy="10" r="2"/>',
+ clock:'<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>',
+ star:'<path d="M12 3l2.7 6 6.3.6-4.8 4.3 1.5 6.3L12 17l-5.7 3.2 1.5-6.3L3 9.6 9.3 9z"/>',
+ bell:'<path d="M6 16V11a6 6 0 0 1 12 0v5l2 2H4zM10 20a2 2 0 0 0 4 0"/>',
+ mic:'<rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/>',
+ film:'<path d="M3 6h18v12H3zM3 10h18M3 14h18M8 6v12M16 6v12"/>',
+ doc:'<path d="M6 3h8l4 4v14H6zM14 3v4h4M9 12h6M9 16h6"/>',
+ list:'<path d="M8 6h12M8 12h12M8 18h12M4 6h.01M4 12h.01M4 18h.01"/>',
+ spark:'<path d="M12 3l1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8zM19 16l.8 2.2L22 19l-2.2.8L19 22l-.8-2.2L16 19l2.2-.8z"/>'};
+var C={run:"#55C7D9",strength:"#FF9F6B",food:"#E8DFC8",water:"#55C7D9",sleep:"#7A8CFF",scale:"#B482FF",fight:"#C81E3A",camp:"#C81E3A",club:"#3FC57E",timetable:"#3FC57E",pt:"#FF9F6B",goal:"#E8DFC8",progress:"#C81E3A",settings:"#9AA3B2",photo:"#B482FF",money:"#3FC57E",shield:"#E8DFC8",kids:"#55C7D9",crew:"#7A8CFF",message:"#7A8CFF",heart:"#C81E3A",learn:"#B482FF",megaphone:"#FF9F6B",trophy:"#E8DFC8",check:"#3FC57E",pin:"#3FC57E",clock:"#E8DFC8",star:"#E8DFC8",bell:"#E8DFC8",mic:"#9AA3B2",film:"#B482FF",doc:"#9AA3B2",list:"#9AA3B2",spark:"#E8DFC8"};
+/* order matters: first match wins */
+var MAP=[[/\b(head injury|concussion|injur|return to sport|recover|soreness|how i feel)/,"heart"],[/\b(achievement|earned|milestone|trophies|grade|grading|belt)/,"trophy"],[/\b(fight camp|camp check|camp week|camp sharing|camp wrap|your camp|corner)/,"camp"],[/\b(fight|bout|competition|sparring|record)/,"fight"],
+ [/\b(quick log|say it|log a session|log it|log today|check-in|check in|your trackers)/,"check"],[/\b(weight target|weigh|weight|body)/,"scale"],[/\b(water|hydrat)/,"water"],[/\b(sleep|rest)/,"sleep"],
+ [/\b(food|eat|meal|diary|nutrition|calorie|protein|recipe|shopping|supplement|diet)/,"food"],[/\b(run|cardio|steps|roadwork|bag work|round timer|set workout|conditioning)/,"run"],[/\b(strength|gym|lift|weights|routine|workout|session)/,"strength"],
+ [/\b(personal training|pt\b|trainer)/,"pt"],[/\b(timetable|class|schedule|book)/,"timetable"],[/\b(kids|junior|family|parent|child|academy)/,"kids"],[/\b(safeguard|concern|dbs|safety|complaint|block|report|privacy|clear my data)/,"shield"],
+ [/\b(photo|picture|video|clip|gallery|studio|editor|image)/,"photo"],[/\b(payment|account|price|offer|plan|membership|money|fee|pay)/,"money"],[/\b(marketing|post|campaign|blog|social|share|review prompt|leads)/,"megaphone"],
+ [/\b(crew|partner|members?|team|who is training|who's training|coach and sharing|sharing)/,"crew"],[/\b(message|notice|digest|inbox|whatsapp|email)/,"message"],[/\b(goal|focus|target|milestone|plan my|this week|week ahead)/,"goal"],
+ [/\b(progress|numbers|chart|stats|insight|trend|report|analysis|growth)/,"progress"],[/\b(learn|guide|tour|help|how to|lesson|moves|encyclopedia)/,"learn"],[/\b(setting|set up|setup|about you|what i see|devices|sharing|privacy|account)/,"settings"],
+ [/\b(club|gym|overview)/,"club"],[/\b(today|good morning|good afternoon|good evening|right now)/,"clock"],[/\b(film|fight film)/,"film"],[/\b(document|paperwork|records|export|download)/,"doc"],[/\b(notification|alert|reminder)/,"bell"]];
+function svg(k,sz){return '<svg viewBox="0 0 24 24" width="'+(sz||18)+'" height="'+(sz||18)+'" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">'+I[k]+'</svg>'}
+function pick(t){t=String(t||"").toLowerCase().replace(/\s+/g," ").trim();if(t.length<3||t.length>80)return null;for(var i=0;i<MAP.length;i++)if(MAP[i][0].test(t))return MAP[i][1];return null}
+function reduce(){try{return matchMedia("(prefers-reduced-motion: reduce)").matches}catch(e){return false}}
+/* ---------- 1. icons on headings ---------- */
+var SEL=".fb-kick,.fb-card h2,.fb-card h3,.panel h2,.panel h3,.sec-h>.label,.sec-h>div>.label,.fb-card>.label,.panel>.label,.k154,.pmrow>span>b,.pmg-h,nav.hubnav button";
+function icons(root){var list=root.querySelectorAll(SEL),n=0;for(var i=0;i<list.length&&n<400;i++){var el=list[i];if(el.dataset.ic3!=null)continue;if(el.querySelector("svg,img"))continue;if(el.closest("#celebrate,.gr-tour,#fbOb,.cs,#who214,#c117s"))continue;
+  var box=el.closest(".fb-card,.panel,.sec-h,.pm-row,nav");if(box&&box.querySelector(".ic3")&&!el.matches("nav.hubnav button,.pmrow>span>b,h3")){el.dataset.ic3="";continue}if(el.matches("h3")&&el.closest(".sec-h")&&el.closest(".fb-card,.panel")&&el.closest(".fb-card,.panel").querySelector("h2 .ic3")){el.dataset.ic3="";continue}
+  var k=pick(el.textContent);el.dataset.ic3=k||"";if(!k)continue;n++;var s=document.createElement("i");s.className="ic3 ic3-"+k;s.style.color=C[k];s.innerHTML=svg(k,el.matches("nav.hubnav button")?16:el.matches(".fb-kick,.label,.k154")?14:18);el.insertBefore(s,el.firstChild)}}
+/* ---------- 2. groups on Today ---------- */
+var G=[{id:"g216a",t:"Today",k:"clock",c:"#E8DFC8",ids:["fb155","pd170","fb183","fb186"],order:-20},
+ {id:"g216b",t:"Your club",k:"club",c:"#3FC57E",ids:["fb112","fb118m","fb194","fb195","fb113m"],order:-12},
+ {id:"g216c",t:"Your progress",k:"progress",c:"#C81E3A",ids:["nm167","fb139","fb182"],order:-8}];
+function groups(){var home=document.getElementById("tab-today");if(!home||home.hidden)return;
+ G.forEach(function(g){var w=document.getElementById(g.id);var have=g.ids.map(function(i){return document.getElementById(i)}).filter(function(x){return x&&x.closest("#tab-today")});
+  if(!have.length){if(w)w.hidden=true;return}
+  if(!w){w=document.createElement("section");w.id=g.id;w.className="g216";w.style.setProperty("--g",g.c);w.style.order=g.order;w.innerHTML='<div class="g216h">'+svg(g.k,16)+'<span>'+g.t+'</span></div><div class="g216b"></div>';home.appendChild(w)}
+  var b=w.lastChild,cur=[].slice.call(b.children).map(function(x){return x.id}).join(),want=have.map(function(x){return x.id}).join();if(cur!==want)have.forEach(function(x){b.appendChild(x)});
+  var vis=have.some(function(x){return !x.hidden&&getComputedStyle(x).display!=="none"});w.hidden=!vis})}
+/* ---------- 3. motion ---------- */
+var seen=new WeakSet();
+function stagger(tab){if(reduce())return;var sec=document.getElementById("tab-"+tab);if(!sec)return;var cards=sec.querySelectorAll(".fb-card,.panel,.g216,#fb154");var n=0;cards.forEach(function(c){if(seen.has(c)||n>14)return;seen.add(c);var r=c.getBoundingClientRect();if(r.top>innerHeight*1.5)return;c.classList.remove("v3in");void c.offsetWidth;c.style.setProperty("--d",(n*45)+"ms");c.classList.add("v3in");n++})}
+var counted=new WeakSet(),io=null;
+function countUp(el){var raw=(el.textContent||"").trim(),m=raw.match(/^([\d,]+)(\.\d+)?(\s*[a-z%]{0,4})$/i);if(!m)return;var end=parseFloat(m[1].replace(/,/g,"")+(m[2]||""));if(!isFinite(end)||end<=0||end>100000)return;var dec=m[2]?m[2].length-1:0,suf=m[3]||"",t0=performance.now(),dur=650;
+ function f(t){var p=Math.min(1,(t-t0)/dur),e=1-Math.pow(1-p,3),v=end*e;el.textContent=(dec?v.toFixed(dec):Math.round(v).toLocaleString("en-GB"))+suf;if(p<1)requestAnimationFrame(f);else el.textContent=raw}requestAnimationFrame(f)}
+function numbers(){if(reduce()||!("IntersectionObserver" in window))return;if(!io)io=new IntersectionObserver(function(es){es.forEach(function(x){if(!x.isIntersecting||counted.has(x.target))return;counted.add(x.target);countUp(x.target);io.unobserve(x.target)})},{threshold:.6});
+ document.querySelectorAll(".num,.c249 b,.nm167 b,.h139-ro b,.fd-tg b,.t249 b,.a215-i b").forEach(function(el){if(counted.has(el)||el.dataset.v3)return;el.dataset.v3="1";if(el.children.length)return;io.observe(el)})}
+function tick(){try{var vis=document.querySelector("section[id^=tab-]:not([hidden])");if(vis)icons(vis);var nav=document.querySelector("nav.hubnav");if(nav)icons(nav);groups();numbers()}catch(e){}}
+var st=showTab;showTab=function(t){var r=st.apply(this,arguments);try{setTimeout(function(){tick();stagger(t)},40)}catch(e){}return r};
+setInterval(tick,1200);setTimeout(function(){tick();var v=document.querySelector("section[id^=tab-]:not([hidden])");if(v)stagger(v.id.slice(4))},900);
+var css=document.createElement("style");css.textContent=
+".ic3{display:inline-flex;align-items:center;justify-content:center;vertical-align:-3px;margin-right:7px;flex:none}.fb-kick .ic3,.label .ic3,.k154 .ic3{vertical-align:-2px;margin-right:5px}nav.hubnav button .ic3{margin-right:5px;vertical-align:-3px}h2 .ic3 svg,h3 .ic3 svg{filter:drop-shadow(0 0 6px currentColor)}"+
+".g216{display:flex;flex-direction:column;gap:12px;grid-column:1/-1;position:relative;padding-top:4px}.g216h{display:flex;align-items:center;gap:8px;font:800 12px var(--body,inherit);letter-spacing:.16em;text-transform:uppercase;color:var(--g);padding:2px 4px 0}.g216h:after{content:'';flex:1;height:1px;background:linear-gradient(90deg,var(--g),transparent);opacity:.55;transform-origin:left;animation:v3rule .6s cubic-bezier(.2,.8,.2,1) both}.g216b{display:flex;flex-direction:column;gap:12px}.g216b>*{margin:0!important;order:0!important;border-left:3px solid color-mix(in srgb,var(--g) 55%,transparent)!important}"+
+"@media (min-width:760px){.g216b{display:grid;grid-template-columns:1fr 1fr;align-items:start}.g216b>#fb155,.g216b>#fb112,.g216b>#fb139{grid-column:1/-1}}"+
+"@keyframes v3in{from{opacity:0;transform:translateY(14px) scale(.985)}to{opacity:1;transform:none}}.v3in{animation:v3in .42s cubic-bezier(.2,.8,.2,1) both;animation-delay:var(--d,0ms)}@keyframes v3rule{from{transform:scaleX(0)}to{transform:scaleX(1)}}"+
+".btn,.chip,.ob-c,.f186b,.b187-s{transition:transform .12s ease,box-shadow .2s ease,filter .2s ease}.btn:active,.chip:active,.f186b:active,.b187-s:active{transform:scale(.965)}.btn.gold:hover,.btn.gold:focus-visible{filter:brightness(1.06);box-shadow:0 6px 18px rgba(232,223,200,.25)}"+
+"@media (hover:hover) and (pointer:fine){.fb-card,.panel{transition:transform .22s cubic-bezier(.2,.8,.2,1),box-shadow .22s ease}.fb-card:hover,.panel:hover{transform:translateY(-2px);box-shadow:0 14px 34px rgba(0,0,0,.35)}}"+
+"@media (prefers-reduced-motion:reduce){.v3in,.g216h:after{animation:none!important}.fb-card:hover,.panel:hover{transform:none}}";
+document.head.appendChild(css);
+return {svg:svg,pick:pick,tick:tick,I:I,C:C}})();
 
 /* FighterBase v44: always a way back, always a next step. */
 var N31=N31||false;
