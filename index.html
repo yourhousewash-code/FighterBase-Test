@@ -17728,8 +17728,11 @@ var IDS=["fb115","fb117","fb119","fb120","fb144w"];
 var css=document.createElement("style");
 /* v285 (Steve, 4 Nov 2026): with a fight booked, Fight camp is the first thing on Today, above the daily line and numbers; only a head-injury return-to-sport card sits above it */
 css.textContent="#tab-today>#fb196{order:-26!important}#tab-today #fb154{display:flex;flex-direction:column;gap:12px;grid-column:1/-1}#tab-today #fb154>.k154{display:flex;align-items:center;gap:8px;font:800 12px var(--body,inherit);letter-spacing:.16em;text-transform:uppercase;color:var(--red,#C81E3A);padding:2px 4px 0}#tab-today #fb154>.k154:after{content:\"\";flex:1;height:1px;background:linear-gradient(90deg,var(--red,#C81E3A),transparent);opacity:.5}"+
-"@media (min-width:520px){#tab-today #fb154>.g154{display:block;column-count:2;column-gap:12px}#tab-today #fb154>.g154>*{break-inside:avoid;margin:0 0 12px!important}#tab-today #fb154>.g154>#fb115{column-span:all}}"+
-"#tab-today #fb154>.g154>*{order:0!important}#tab-today #fb154>.g154.one154{column-count:1}#fbSide115.sd-me{display:none!important}";
+"#tab-today #fb154>.g154{display:flex;flex-direction:column;gap:12px}#tab-today #fb154>.g154>#fb115{margin:0!important}"+
+/* v288 (Steve, 4 Nov 2026): the camp cards sit together in one framed box under the countdown; on wide screens two balanced columns, so no empty space under a short card */
+"#tab-today #fb154 .f154{display:flex;flex-direction:column;gap:12px;padding:10px;border-radius:22px;border:1.5px solid rgba(200,30,58,.6);background:rgba(200,30,58,.05);box-shadow:0 0 24px rgba(200,30,58,.12)}#tab-today #fb154 .f154>#fb115{margin:0!important;order:-1!important}#tab-today #fb154 .f154>.k154b{font:800 11px var(--body,inherit);letter-spacing:.16em;text-transform:uppercase;color:var(--muted);padding:0 2px}#tab-today #fb154 .c154{display:flex;flex-direction:column;gap:12px;min-width:0;flex:1}#tab-today #fb154 .c154>*{margin:0!important}"+
+"@media (min-width:520px){#tab-today #fb154 .f154>.cols154{display:flex;gap:12px;align-items:flex-start}}"+
+"#tab-today #fb154>.g154>*{order:0!important}#fbSide115.sd-me{display:none!important}";
 document.head.appendChild(css);
 function bal(w,g,have){var sig=have.map(function(x){return x.id+(x.hidden?"h":"")}).join()+"|"+Math.round(w.clientWidth/40)+"|"+have.map(function(x){return Math.round(x.offsetHeight/60)}).join();
  if(g.dataset.sig===sig)return;g.dataset.sig=sig;g.classList.remove("one154");
@@ -17740,16 +17743,21 @@ function bal(w,g,have){var sig=have.map(function(x){return x.id+(x.hidden?"h":""
 function run(){
  try{var bell=document.getElementById("fbBell");if(bell&&!bell.getAttribute("data-tip"))bell.setAttribute("data-tip","Your notifications.")}catch(e){}
  var home=document.getElementById("tab-today");if(!home)return;
- var w=document.getElementById("fb154"),have=IDS.map(function(i){return document.getElementById(i)}).filter(function(x){return x&&(x.parentNode===home||(w&&x.parentNode===w.lastChild)||x.closest("#tab-today"))});
+ var w=document.getElementById("fb154"),have=IDS.map(function(i){return document.getElementById(i)}).filter(function(x){return x&&x.closest("#tab-today")});
  if(!have.length){if(w)w.hidden=true;return}
  if(!w){w=document.createElement("section");w.id="fb154";w.innerHTML='<div class="k154">Fight camp</div><div class="g154"></div>';
   var first=have[0];first.parentNode.insertBefore(w,first)}
- var g=w.lastChild;
- var cur=[].slice.call(g.children).map(function(x){return x.id}).join(),want=have.map(function(x){return x.id}).join();
- if(cur!==want||have.some(function(x){return x.parentNode!==g}))have.forEach(function(x){g.appendChild(x)});
+ var g=w.lastChild,cd=have.filter(function(x){return x.id==="fb115"})[0],rest=have.filter(function(x){return x.id!=="fb115"});
+ var f=g.querySelector(":scope>.f154");if(!f){f=document.createElement("div");f.className="f154";f.innerHTML='<div class="cols154"><div class="c154"></div><div class="c154"></div></div>';g.appendChild(f)}
+ if(cd&&cd.parentNode!==f)f.insertBefore(cd,f.firstChild);
+ var cols=f.querySelectorAll(".c154"),wide=w.clientWidth>=520,vis2=rest.filter(function(x){return !x.hidden});
+ f.querySelector('.cols154').hidden=!vis2.length;f.hidden=!cd&&!vis2.length;
+ /* greedy balance by height: each visible card goes to the shorter column; one column on phones */
+ var hA=0,hB=0,want=[[],[]];vis2.forEach(function(x){var h=x.offsetHeight||200;if(!wide||hA<=hB){want[0].push(x);hA+=h+12}else{want[1].push(x);hB+=h+12}});
+ rest.filter(function(x){return x.hidden}).forEach(function(x){want[0].push(x)});
+ var sig=want.map(function(c){return c.map(function(x){return x.id}).join()}).join("|")+(wide?"w":"n");
+ if(g.dataset.sig2!==sig){g.dataset.sig2=sig;want.forEach(function(list,i){list.forEach(function(x){if(x.parentNode!==cols[i])cols[i].appendChild(x)})});cols[1].hidden=!want[1].length}
  have.forEach(function(x){if(x.style.gridRowEnd)x.style.gridRowEnd=""});
- have.forEach(function(x){if(x.style.gridRowEnd)x.style.gridRowEnd=""});
- bal(w,g,have);
  var vis=have.some(function(x){return !x.hidden});w.hidden=!vis}
 setInterval(run,700);
 var _s=window.showTab;if(typeof _s==="function"){window.showTab=function(t){var r=_s.apply(this,arguments);setTimeout(run,60);return r}}
