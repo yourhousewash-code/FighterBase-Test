@@ -17354,13 +17354,18 @@ function hide(){box.style.display="none";cur=null;clearTimeout(hideT)}
 function show(key,kick,title,text,ms){
  if(mode()==="off")return false;seen()[key]=1;save();cur=key;
  var m=String(text),i=m.indexOf(": "),lead=title,body=m;if(!title&&i>0&&i<46){lead=m.slice(0,i);body=m.slice(i+2)}
- box.innerHTML='<div class="k">'+e(kick)+'</div><b>'+e(lead)+'</b><p>'+e(body)+'</p><div class="r"><button type="button" class="btn gold sm" data-t148ok>Got it</button><button type="button" class="off" data-t148off>Turn tips off</button></div>';
- box.style.display="block";clearTimeout(hideT);hideT=setTimeout(hide,ms||16000);try{window.FH148.last={key:key,lead:lead,body:body}}catch(x){}return true}
+ /* v293 (Steve, 5 Nov 2026): tutorial cards are never timed and need a choice. A screen card offers "OK, next", which walks on to that screen's guided tour
+    card by card, or "Exit tutorial", which closes it and says where the guides live. Button tips get "OK". */
+ var scr=/^s:/.test(key),tab=scr?key.slice(2):"",hasGuide=false;try{hasGuide=!!(window.FH158&&FH158.GD.some(function(g){return g.tab===tab}))}catch(x){}
+ box.innerHTML='<div class="k">'+e(kick)+'</div><b>'+e(lead)+'</b><p>'+e(body)+'</p><div class="r">'+(scr?'<button type="button" class="btn gold sm" data-t148next="'+e(tab)+'">'+(hasGuide?"OK, next":"OK")+'</button><button type="button" class="off" data-t148exit>Exit tutorial</button>':'<button type="button" class="btn gold sm" data-t148ok>OK</button><button type="button" class="off" data-t148off>Turn tips off</button>')+'</div>';
+ box.style.display="block";clearTimeout(hideT);try{window.FH148.last={key:key,lead:lead,body:body}}catch(x){}return true}
 document.addEventListener("click",function(ev){
  var t=ev.target;if(!t||!t.closest)return;
  if(t.closest("[data-t148ok]")){hide();return}
+ if(t.closest("[data-t148next]")){var tb=t.closest("[data-t148next]").dataset.t148next;hide();try{var g=window.FH158&&FH158.GD.filter(function(x){return x.tab===tb})[0];if(g)FH158.start(g.id)}catch(x){}return}
+ if(t.closest("[data-t148exit]")){hide();try{toast("Tutorial closed","Every guide is in Me, Learn, Guided tours (coaches: Set up, Guided tours). Start any one again any time.")}catch(x){}return}
  if(t.closest("[data-t148off]")){P().tipsMode="off";save();hide();try{card()}catch(x){}return}
- if(box.style.display!=="none"&&!t.closest("#fb148")){/* tapping elsewhere closes the tip but the tap still works */var keep=cur;hide()}
+ if(box.style.display!=="none"&&!t.closest("#fb148")&&!/^s:/.test(cur||"")){/* tapping elsewhere closes a button tip (not a screen card); the tap still works */hide()}
  /* control tips */
  if(mode()!=="all"||!ready()||blocked())return;
  var b=t.closest("button,a[href],[role=button],summary,[data-goto],.chip,select");if(!b||b.closest("#fb148"))return;
