@@ -19066,7 +19066,7 @@ var M166=M166||false;
 if(M166)return;M166=true;
 var css=document.createElement("style");css.textContent=[
 ".mc166{margin:12px 0 14px;padding:16px 18px;border:1px solid var(--line,#35383E);border-left:4px solid #E63E50;border-radius:14px;background:var(--surface,#1B1D21)}",
-"#tab-today>.mc166{grid-column:1/-1!important;order:-30;column-span:all;-webkit-column-span:all}",
+"#tab-today>.mc166{grid-column:1/-1!important;order:-23!important;column-span:all;-webkit-column-span:all}",
 ".mc166.go{border-left-color:#2E9E5B}",
 ".mc166 .k{font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted,#B6B7BD);font-weight:700;margin:0 0 4px}",
 ".mc166 b.t{display:block;font-size:1.2rem;margin:0 0 4px}.mc166 p.m{margin:0 0 12px;color:var(--muted,#B6B7BD);font-size:15px}",
@@ -20113,8 +20113,14 @@ function parse(raw){var t=String(raw||"").toLowerCase().replace(/(\d),(\d{3})\b/
   var note=dist?(dist[1]+(/^k/.test(dist[2])?" km":" "+dist[2])):"";var rd2=t.match(/\b(\d{1,2})\s*(?:x\s*)?(?:\d\s*min(?:ute)?s?\s*)?rounds?\b/);if(rd2)note=(note?note+", ":"")+rd2[1]+" rounds";var rp=t.match(/\b(\d{1,4})\s*(press.?ups?|push.?ups?|pull.?ups?|chin.?ups?|sit.?ups?|burpees)\b/);if(rp)note=(note?note+", ":"")+rp[1]+" "+rp[2];return {k:"session",type:type,mins:mm,note:note,say:"Session: "+type+", "+mm+" min"+(guess?" (a guess, change it if wrong)":"")+(note?", "+note:""),guess:guess}}
  var bk=t.match(/^(?:i'?m\s*|i am\s*|now\s*)?(\d{2,3}(?:\.\d)?)\s*(kg|kilos?)\b/);if(bk){if(yo)return {k:"none",say:"Weight tools are for adults (18 and over), so this was not saved."};var bv=+bk[1];if(bv>=30&&bv<=250)return {k:"weight",kg:bv,say:"Weigh-in: "+bv+" kg"}}
  return {k:"none",say:"Not sure what that is. Try \"30 minute run\", \"five k in 28 minutes\", \"weighed 12 stone 4\", \"two litres of water\" or \"chicken and rice 650 kcal\"."}}
-var pend=null,msg="";
-function html(){var h='<div class="q183-top"><span class="label">Quick log</span><h2>Say it or type it</h2></div><div class="field" style="margin:0"><textarea id="q183t" rows="2" maxlength="160" placeholder="e.g. five k run, weighed 12 stone 4, two litres of water" aria-label="Quick log"></textarea></div>';
+var pend=null,msg="",kind="";
+/* v297 (Steve, 5 Nov): say what you are logging first, then say or type it, with examples for that choice */
+var KINDS=[["train","Training","30 minute run","five k in 28 minutes","pads, 6 rounds"],["weight","Weigh-in","weighed 12 stone 4","78.5 kg","11 stone 9"],["water","Water","two litres of water","a glass of water","500 ml water"],["food","Meal","chicken and rice 650 kcal","two eggs on toast","protein shake 200 kcal"],["steps","Steps","8,500 steps","12000 steps","5,000 steps"]];
+function kinds(){return KINDS.filter(function(k){return !(k[0]==="weight"&&young())})}
+function html(){var ks=kinds(),cur2=ks.filter(function(k){return k[0]===kind})[0];
+ var h='<div class="q183-top"><span class="label">Quick log</span><h2>Log it in one line</h2></div><p class="small muted" style="margin:0">What do you want to add to today? Pick one, then say it (tap the microphone on your keyboard) or type it. You see what it understood and confirm before anything is saved.</p><div class="q183-k" role="group" aria-label="What are you logging">'+ks.map(function(k){return '<button type="button" class="chip" data-q183k="'+k[0]+'" aria-pressed="'+(k[0]===kind)+'">'+k[1]+'</button>'}).join("")+'</div>';
+ if(cur2)h+='<p class="small" style="margin:0"><b>For example:</b> '+cur2.slice(2).map(function(x){return '<button type="button" class="linkbtn" data-q183ex="'+e(x)+'">'+e(x)+'</button>'}).join(" · ")+'</p>';
+ h+='<div class="field" style="margin:0"><textarea id="q183t" rows="2" maxlength="160" placeholder="'+(cur2?"Say or type, e.g. "+cur2[2]:"Or just say or type it, e.g. five k run, weighed 12 stone 4, two litres of water")+'" aria-label="Quick log"></textarea></div>';
  if(pend&&pend.k!=="none")h+='<div class="q183-pv"><b>'+e(pend.say)+'</b>'+(pend.k==="session"?'<div class="row" style="margin-top:6px;align-items:center;gap:8px"><label class="small" for="q183m">Minutes</label><input type="number" id="q183m" min="5" max="400" value="'+pend.mins+'" style="max-width:90px"></div>':'')+'<div class="row" style="justify-content:space-between;margin-top:8px"><button class="linkbtn" type="button" data-q183x>Cancel</button><button class="btn gold sm" type="button" data-q183ok>Confirm</button></div></div>';
  else if(pend)h+='<p class="muted small" style="margin:0">'+e(pend.say)+'</p>';
  else h+='<div class="row"><button class="btn sm" type="button" data-q183go>Understand it</button></div>';
@@ -20133,11 +20139,13 @@ async function confirm(){if(!pend)return;var p=pend,ok=false;
  catch(x){console.error(x)}
  pend=null;msg=ok?"Saved: "+p.say.replace(/ \(a guess.*?\)/,""):"Could not save that. Try the Log page.";var ta=document.getElementById("q183t");if(ta)ta.value="";draw(true);try{toast(ok?"Logged":"Not saved")}catch(x){}}
 document.addEventListener("click",function(ev){var t=ev.target;if(!t.closest)return;
+ var kb=t.closest("[data-q183k]");if(kb){kind=kb.dataset.q183k===kind?"":kb.dataset.q183k;pend=null;msg="";draw(true);var ta0=document.getElementById("q183t");if(ta0)try{ta0.focus()}catch(x){}return}
+ var xb=t.closest("[data-q183ex]");if(xb){var ta1=document.getElementById("q183t");if(ta1){ta1.value=xb.dataset.q183ex;msg="";pend=parse(ta1.value);draw(true)}return}
  if(t.closest("[data-q183go]")){msg="";pend=parse((document.getElementById("q183t")||{}).value);if(!pend)msg="Type or say something first.";draw(true);return}
  if(t.closest("[data-q183x]")){pend=null;draw(true);return}
  if(t.closest("[data-q183ok]")){confirm();return}});
 document.addEventListener("keydown",function(ev){if(ev.key==="Enter"&&!ev.shiftKey&&ev.target&&ev.target.id==="q183t"){ev.preventDefault();msg="";pend=parse(ev.target.value);draw(true)}});
-var css=document.createElement("style");css.textContent=".q183{display:flex;flex-direction:column;gap:10px;border-left:4px solid #E8DFC8}.q183-top h2{margin:2px 0 0;font:900 24px var(--display,'Big Shoulders Display',sans-serif);text-transform:uppercase}.q183 textarea{width:100%;box-sizing:border-box;resize:none;font-size:16px;padding:10px 12px;border-radius:12px;border:1px solid var(--line,rgba(255,255,255,.18));background:rgba(255,255,255,.05);color:inherit;font-family:inherit}.q183-pv{padding:10px 12px;border-radius:12px;border:1px solid rgba(232,223,200,.5);background:rgba(232,223,200,.08)}";
+var css=document.createElement("style");css.textContent=".q183{display:flex;flex-direction:column;gap:10px;border-left:4px solid #E8DFC8}.q183-top h2{margin:2px 0 0;font:900 24px var(--display,'Big Shoulders Display',sans-serif);text-transform:uppercase}.q183 textarea{width:100%;box-sizing:border-box;resize:none;font-size:16px;padding:10px 12px;border-radius:12px;border:1px solid var(--line,rgba(255,255,255,.18));background:rgba(255,255,255,.05);color:inherit;font-family:inherit}.q183-k{display:flex;flex-wrap:wrap;gap:8px}.q183-k .chip{min-height:44px}.q183 .linkbtn{display:inline;padding:2px 0}.q183-pv{padding:10px 12px;border-radius:12px;border:1px solid rgba(232,223,200,.5);background:rgba(232,223,200,.08)}";
 document.head.appendChild(css);
 var st=showTab;showTab=function(t){var r=st.apply(this,arguments);try{if(t==="today")draw()}catch(x){}return r};
 setInterval(function(){try{var t=document.getElementById("tab-today");if(t&&!t.hidden)draw()}catch(x){}},4000);
@@ -22965,7 +22973,7 @@ function firstClass(){try{var p=P();if(!p.onboarded||!p.clubId||(p.ach215seen||{
 /* Today: what was earned in the last 24 hours, embossed */
 function card(){var tb=document.getElementById("tab-today");if(!tb||!P().onboarded)return;var cut=Date.now()-864e5,R=list().filter(function(x){return Date.parse(x.at)>cut}),el=document.getElementById("fb215");
  if(!R.length){if(el)el.remove();return}
- if(!el){el=document.createElement("div");el.id="fb215";el.className="fb-card f149keep a215";el.style.order="-27";tb.insertBefore(el,tb.firstChild)}
+ if(!el){el=document.createElement("div");el.id="fb215";el.className="fb-card f149keep a215";el.style.order="-23";tb.insertBefore(el,tb.firstChild)}
  var h='<div class="a215-k">'+e(R.length>1?"Earned today":label(R[R.length-1].k))+'</div>'+R.slice(-3).reverse().map(function(x){return '<div class="a215-i"><b>'+e(x.t)+'</b>'+(x.s?'<span>'+e(x.s)+'</span>':'')+'</div>'}).join("")+'<button type="button" class="linkbtn" data-goto="progress">All your achievements</button>';
  if(el.dataset.sig!==h){el.innerHTML=h;el.dataset.sig=h}}
 /* Progress: the permanent record */
@@ -23069,7 +23077,7 @@ function iconCss(){var out="";Object.keys(I).forEach(function(k){var svg='<svg x
 /* fb139, fb186, fb183 and fb182 stay together in that order: fh186 keeps them so and would fight any other arrangement */
 /* fb155 (the greeting) pins itself to the top of Today every tick, so it stays outside the groups */
 var G=[{id:"g216a",t:"This week",k:"clock",c:"#E8DFC8",ids:["pd170"],order:-18},
- {id:"g216b",t:"Your club",k:"club",c:"#3FC57E",ids:["fb112","fb118m","fb194","fb195","fb113m"],order:-12},
+ {id:"g216b",t:"Your club",k:"club",c:"#3FC57E",ids:["fb118m","fb194","fb195","fb113m"],order:-12},
  {id:"g216c",t:"Your progress",k:"progress",c:"#C81E3A",ids:["nm167","fb139","fb186","fb183","fb182"],order:-8}];
 function groups(){var home=document.getElementById("tab-today");if(!home||home.hidden)return;
  G.forEach(function(g){var w=document.getElementById(g.id);var have=g.ids.map(function(i){return document.getElementById(i)}).filter(function(x){return x&&x.closest("#tab-today")});
@@ -23100,7 +23108,8 @@ var css=document.createElement("style");css.textContent=
 /* section headers: display type, tile icon, gradient rule */
 ".g216{display:flex;flex-direction:column;gap:14px;grid-column:1/-1;position:relative;padding-top:6px}.g216h{display:flex;align-items:center;gap:10px;font:900 22px var(--display,'Big Shoulders Display'),sans-serif;letter-spacing:.04em;text-transform:uppercase;color:#fff;padding:2px 2px 0}.g216h>svg{width:28px;height:28px;padding:5px;border-radius:9px;color:#0B0C0F;background:linear-gradient(145deg,color-mix(in srgb,var(--g) 100%,#fff 18%),var(--g) 55%,color-mix(in srgb,var(--g) 70%,#000));box-shadow:0 8px 20px color-mix(in srgb,var(--g) 40%,transparent),inset 0 1px 0 rgba(255,255,255,.45)}.g216h:after{content:'';flex:1;height:2px;border-radius:2px;background:linear-gradient(90deg,var(--g),color-mix(in srgb,var(--g) 40%,transparent) 50%,transparent);transform-origin:left;animation:v3rule .7s cubic-bezier(.2,.8,.2,1) both}.g216b{display:flex;flex-direction:column;gap:14px}.g216b>*{margin:0!important;order:0!important}"+
 "#tab-today>.k154,#fb154>.k154{font:900 22px var(--display,'Big Shoulders Display'),sans-serif!important;letter-spacing:.04em!important;color:#fff!important}#fb154>.k154 .ic3{width:28px;height:28px;border-radius:9px;vertical-align:-8px}#fb154>.k154 .ic3 svg{width:16px;height:16px}#fb154>.k154:after{height:2px!important;opacity:1!important}"+
-"@media (min-width:760px){.g216b{display:grid;grid-template-columns:1fr 1fr;align-items:start}.g216b>#fb155,.g216b>#fb112,.g216b>#fb139,.g216b>#pd170{grid-column:1/-1}}"+
+"#tab-today>#fb112{order:-24!important}"+
+"@media (min-width:760px){.g216b{display:grid;grid-template-columns:1fr 1fr;align-items:start}.g216b>#fb155,.g216b>#fb139,.g216b>#pd170{grid-column:1/-1}}"+
 /* numbers: display font with a warm gradient */
 ".num,.c249 b,.nm167 b,.h139-ro>.h139-d b,.fd-tg b{background:linear-gradient(180deg,#fff 0%,#E8DFC8 100%);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;color:#E8DFC8}"+
 /* motion */
