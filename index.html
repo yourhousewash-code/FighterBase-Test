@@ -1995,8 +1995,8 @@ function renderTargets(){
 }
 const OCT="M30,2 L70,2 L98,30 L98,70 L70,98 L30,98 L2,70 L2,30 Z";
 function ringSVG(p,color){const pct=Math.max(0,Math.min(1,p||0));return `<svg viewBox="0 0 100 100" aria-hidden="true"><path d="${OCT}" fill="none" stroke="var(--line)" stroke-width="5"/><path d="${OCT}" fill="none" stroke="${color}" stroke-width="5" pathLength="100" stroke-dasharray="${(pct*100).toFixed(1)} 100" stroke-linejoin="round"/></svg>`}
-function renderRings(){const c=calc(S.profile),el=$("#targets");el.hidden=!c;if(!c)return;const s=sumEaten(cur.eaten),wt=waterFor(c),carbT=c.carb==="verylow"?30:todayCarbs(c);
-  const items=[["Calories",s.kcal,c.kcal,"kcal","var(--red)",{lose:"Lose fat",build:"Build muscle",maintain:"Maintain"}[S.profile.goal||"maintain"]+(c.adj?` · ${c.adj>0?"+":""}${c.adj} adj`:"")+(wearOf(cur).activeKcal?` · ${Math.round(wearOf(cur).activeKcal)} active burn`:"")],["Protein",s.protein,c.protein,"g","var(--blue)","Spread over 3–4 meals"],["Carbs",s.carbs,carbT,"g","var(--gold)",c.carb==="verylow"?"Keto: all day":cur.training?c.carbNote:"Rest day"],["Water",+cur.water||0,wt,"L","#4FC3F7",cur.training?"Includes training top-up":"More on training days"]];
+function renderRings(){const c=calc(S.profile),el=$("#targets");el.hidden=!c;if(!c)return;const s=sumDay(cur),wt=waterFor(c),carbT=c.carb==="verylow"?30:todayCarbs(c);
+  const items=[["Calories",s.kcal,c.kcal,"kcal","var(--red)",{lose:"Lose fat",build:"Build muscle",maintain:"Maintain"}[S.profile.goal||"maintain"]+(c.adj?` · ${c.adj>0?"+":""}${c.adj} adj`:"")+(wearOf(cur).activeKcal?` · ${Math.round(wearOf(cur).activeKcal)} active burn`:"")],["Protein",s.protein,c.protein,"g","var(--blue)","Spread over 3–4 meals"],["Carbs",s.carbs,carbT,"g","var(--gold)",c.carb==="verylow"?"Keto: all day":cur.training?c.carbNote:"Rest day"],["Water",+cur.water||0,wt,"L","#4FC3F7",cur.training?"Includes training top-up":"More on training days"]].filter(i=>i[0]!=="Water"||fluidsOn());
   el.innerHTML=items.map(([l,v,t,u,col,sub])=>`<div class="ring"><span class="label">${l}</span><div class="oct">${ringSVG(t?v/t:0,col)}<div class="oct-in"><span class="v">${u==="L"?r1(v):Math.round(v)}</span><span class="of">of ${u==="L"?t:Math.round(t).toLocaleString("en-GB")}${u==="kcal"?"":u}</span></div></div><span class="s">${esc(sub)}</span></div>`).join("")}
 function streak(){const map=logMap();let n=0;for(let i=0;i<400;i++){const d=new Date();d.setDate(d.getDate()-i);if(isLogged(map[dayKey(d)]))n++;else if(i>0)break}return n}
 function renderTape(){const p=S.profile;const nm=(p.name||"Fighter").trim()||"Fighter";const parts=nm.split(/\s+/);
@@ -2128,9 +2128,11 @@ function renderBand(){
 }
 
 /* ---------- Eaten ---------- */
+const fluidsOn=()=>!(S.profile&&S.profile.trackFluids===false);
+const sumDay=l=>{const d=((l&&l.drinks)||[]);return sumEaten(((l&&l.eaten)||[]).concat(d.map(x=>({kcal:x.kcal,protein:x.protein,carbs:x.carbs,fat:x.fat}))))};
 const sumEaten=e=>(e||[]).reduce((a,x)=>({kcal:a.kcal+(+x.kcal||0),protein:a.protein+(+x.protein||0),carbs:a.carbs+(+x.carbs||0),fat:a.fat+(+x.fat||0)}),{kcal:0,protein:0,carbs:0,fat:0});
 function renderMeters(){
-  renderRings();const c=calc(S.profile),s=sumEaten(cur.eaten);
+  renderRings();const c=calc(S.profile),s=sumDay(cur);
   if(!c){$("#meters").innerHTML="";return}
   const fatT=cur.training?c.fatT:c.fatR;
   const m=(label,v,t,unit)=>{const pct=Math.min(100,Math.round(v/t*100));return `<div class="meter"><div class="row"><span class="label">${label}</span><span class="num">${Math.round(v)} / ${t}${unit}</span></div><div class="bar"><i class="${v>t*1.05?"over":""}" style="width:${pct}%"></i></div></div>`};
@@ -2392,8 +2394,8 @@ function renderCoach(){
 $("#exportBtn").addEventListener("click",async()=>{
   if(!downloads)return;const map=logMap();const keys=Object.keys(map).sort();
   const q=v=>{const s=String(v??"");return /[",\n]/.test(s)?'"'+s.replace(/"/g,'""')+'"':s};
-  const head=["date","weight_kg","sleep_h","energy","soreness","water_l","smoke_free","on_plan","sessions","training_mins","training_load","meals","kcal","protein_g","carbs_g","fat_g","notes"];
-  const rows=keys.filter(k=>isLogged(map[k])).map(k=>{const l=map[k],s=sumEaten(l.eaten);return [k,l.weight,l.sleep,l.energy,l.soreness,l.water,l.smokeFree?1:0,l.carbsOnPlan?1:0,(l.sessions||[]).length,(l.sessions||[]).reduce((a,x)=>a+(+x.mins||0),0),dayLoad(l),(l.eaten||[]).length,Math.round(s.kcal),Math.round(s.protein),Math.round(s.carbs),Math.round(s.fat),l.notes].map(q).join(",")});
+  const head=["date","weight_kg","sleep_h","energy","soreness","water_l","other_drinks_ml","smoke_free","on_plan","sessions","training_mins","training_load","meals","kcal","protein_g","carbs_g","fat_g","notes"];
+  const rows=keys.filter(k=>isLogged(map[k])).map(k=>{const l=map[k],s=sumEaten(l.eaten);return [k,l.weight,l.sleep,l.energy,l.soreness,l.water,((l.drinks||[]).reduce((a,x)=>a+(+x.ml||0),0)),l.smokeFree?1:0,l.carbsOnPlan?1:0,(l.sessions||[]).length,(l.sessions||[]).reduce((a,x)=>a+(+x.mins||0),0),dayLoad(l),(l.eaten||[]).length,Math.round(s.kcal),Math.round(s.protein),Math.round(s.carbs),Math.round(s.fat),l.notes].map(q).join(",")});
   try{await downloads.save({filename:"fighterbase-log.csv",data:[head.join(","),...rows].join("\n")});$("#exportMsg").textContent="Saved."}catch(e){if(e&&e.code!=="declined")$("#exportMsg").textContent="Couldn't save the file."}
 });
 
@@ -3063,7 +3065,7 @@ const CK_NAMES={morning:"Morning",midday:"Midday",evening:"Evening"};
 const COMMON_FOODS=["eggs","chicken","chickenbreast","beef","mince","salmon","tuna","prawns","greekyog","tofu","greens","broccoli","peppers","mushrooms","onion","avocado","oats","sweetpotato","potatoes","rice","lentils","chickpeas","banana","berries","almonds","cheese","bread","pasta","milk","coffee"];
 let celebratedToday=false,lastDue=null,showAllMeals=false;
 function checkins(){const c=S.profile.checkins||{};return {morning:{...DEFAULT_CHECKINS.morning,...(c.morning||{})},midday:{...DEFAULT_CHECKINS.midday,...(c.midday||{})},evening:{...DEFAULT_CHECKINS.evening,...(c.evening||{})}}}
-function three(l){l=l||cur;return {fuel:(l.eaten||[]).length>=2||!!l.carbsOnPlan,train:(l.sessions||[]).length>0||!!l.trained||!!l.restDay,check:l.energy!=null&&(+l.water||0)>0}}
+function three(l){l=l||cur;return {fuel:(l.eaten||[]).length>=2||!!l.carbsOnPlan,train:(l.sessions||[]).length>0||!!l.trained||!!l.restDay,check:l.energy!=null}}
 function dayResult(l){if(!l||!(isLogged(l)||l.restDay))return null;const t=three(l),ks=typeof tkRows==="function"?tkRows():["fuel","train","check"],n=ks.filter(k=>t[k]).length;return ks.length&&n===ks.length?"W":n>0?"D":null}
 function fightRecord(){const map=logMap();let w=0,d=0;Object.keys(map).forEach(k=>{const r=dayResult(map[k]);if(r==="W")w++;else if(r==="D")d++});return {w,d}}
 function dayPoints(l){if(!l)return 0;let p=Math.min(4,(l.eaten||[]).length)*5+Math.min(2,(l.sessions||[]).length)*15;if(l.trained&&!(l.sessions||[]).length)p+=10;if(l.restDay)p+=5;if(l.energy!=null)p+=10;if(+l.water)p+=5;p+=Object.values(l.checkinsDone||{}).filter(Boolean).length*5;if(dayResult(l)==="W")p+=20;if(l.smokeFree)p+=5;return p}
@@ -3102,7 +3104,7 @@ function renderThree(){
   const rows={
     fuel:["Fuel",t.fuel?"Done":`${e}/2 meals logged`,t.fuel?"":`<button class="btn sm" type="button" data-jump="eat">Log a meal</button>`],
     train:["Train",t.train?(cur.restDay?"Rest day":"Done"):(cur.training?`Session at ${cur.trainTime}`:"Training or rest?"),t.train?"":`${cur.training?"":`<button class="btn sm ghost" type="button" data-three="training">Training today</button>`}<button class="btn sm" type="button" data-three="trained">${cur.training?"Log it":"I trained"}</button><button class="btn sm ghost" type="button" data-three="rest">Rest day</button>`],
-    check:["Check in",t.check?"Done":`${cur.energy!=null?"Energy ✓":"Energy"} · ${+cur.water?"Water ✓":"Water"}`,t.check?"":`<button class="btn sm" type="button" data-jump="check">Check in</button>`]};
+    check:["Check in",t.check?"Done":`${cur.energy!=null?"Energy ✓":"Energy"}${fluidsOn()?` · ${+cur.water?"Water ✓":"Water (optional)"}`:""}`,t.check?"":`<button class="btn sm" type="button" data-jump="check">Check in</button>`]};
   const IDX={fuel:0,train:1,check:2};
   $("#threeRows").innerHTML=keys.map((k,i)=>{const [name,st,act]=rows[k];return `<div class="three-row ${t[k]?"done":""}"><span class="tick" style="--c:${SEG[IDX[k]]}">${t[k]?"✓":i+1}</span><div class="tr-main"><b>${name}</b><span>${st}</span></div><div class="tr-act">${act}</div></div>`}).join("");
   const tc=$("#threeCard");if(tc)tc.hidden=!tot;
@@ -6916,6 +6918,7 @@ var logsFor=function(k){return k===TODAY?cur:(logMap()[k]||null)};
 function meals(k){return ((logsFor(k)||{}).eaten||[])}
 function totals(list){var t={kcal:0,protein:0,carbs:0,fat:0,est:0,n:list.length};list.forEach(function(x){if(x.kcal!=null&&x.kcal!==""){t.est++;t.kcal+=+x.kcal||0;t.protein+=+x.protein||0;t.carbs+=+x.carbs||0;t.fat+=+x.fat||0}});return t}
 function week(){var out=[];for(var i=6;i>=0;i--){var k=addDays(TODAY,-i),l=logsFor(k)||{};out.push({k:k,m:(l.eaten||[]),w:+l.water||0})}return out}
+window.FH51V={day:function(){return view},logs:function(k){return logsFor(k)},page:function(){page()}};
 async function edit(k,fn){var ok=await editDay(k,fn);if(k===TODAY)try{renderCheckin()}catch(e){}return ok}
 
 /* ---------- AI: photo estimate, label, barcode digits ---------- */
@@ -6960,7 +6963,7 @@ async function eatReg(id,k,quiet){var r=regs().filter(function(x){return x.id===
 function addReg(x,prepN){var R=regs().slice();if(R.some(function(r){return r.name.toLowerCase()===String(x.name||"").toLowerCase()})){toast("Already in your regular meals");return}var r={id:uid(),name:x.name||"Meal",slot:x.slot||"lunch",est:!!x.est,src:x.src||"quick"};["kcal","protein","carbs","fat"].forEach(function(f){if(x[f]!=null&&x[f]!=="")r[f]=Math.round(+x[f]*10)/10});if(x.ph)r.ph=x.ph;if(prepN>0)r.prep={total:prepN,left:prepN,at:TODAY};R.unshift(r);P().regMeals=R.slice(0,30);profChanged();toast("Saved as a regular meal",prepN>0?prepN+" portions prepped":"One tap to log it next time")}
 var regMan=false;
 function thumb(x){return x.ph?'<img src="'+phs(x.ph)+'" alt="" class="fd-ph">':'<span class="fd-ph fd-ic">'+(x.src==="barcode"||x.src==="label"?"▦":"✎")+'</span>'}
-function page(){var el=$("#diaryBody");if(!el)return;var list=meals(view),t=totals(list),l=logsFor(view)||{},h="",isT=view===TODAY;
+function page(){var el=$("#diaryBody");if(!el)return;var list=meals(view),t=totals(list),l=logsFor(view)||{},h="",isT=view===TODAY;var dk=(window.FH218?FH218.sum(l):{kcal:0,protein:0,carbs:0,fat:0});
  h+='<div class="panel plate fd-head"><div class="sec-h"><h2>Food diary</h2><div class="row fd-nav"><button class="btn ghost sm" type="button" data-fdday="-1" aria-label="Previous day">‹</button><b>'+(isT?"Today":fmtD(view))+'</b><button class="btn ghost sm" type="button" data-fdday="1" aria-label="Next day"'+(isT?" disabled":"")+'>›</button></div></div>'+
   '<p class="muted small" style="margin:0">Snap each meal and it goes in your diary. A record for you, not a diet plan. '+(pro()?'<span class="fd-pro">PRO</span> rough calorie and protein estimates are on'+(P().pro==null?" (free while testing)":"")+'.':'Photos are free. Pro adds rough calorie and protein estimates.')+'</p>'+
   '<div class="fd-add"><label class="fd-big"><input type="file" accept="image/*" capture="environment" hidden data-fdphoto><span class="fd-i">📷</span><b>Photo</b><em>Any meal</em></label><label class="fd-big"><input type="file" accept="image/*" capture="environment" hidden data-fdbar><span class="fd-i">▦</span><b>Barcode</b><em>Packaged food</em></label><button type="button" class="fd-big" data-fdquick><span class="fd-i">✎</span><b>Quick add</b><em>Type it in</em></button></div>'+
@@ -6968,9 +6971,10 @@ function page(){var el=$("#diaryBody");if(!el)return;var list=meals(view),t=tota
  if(draft)h+=draftHTML();
  h+=regHTML();
  /* totals */
- h+='<div class="panel fd-tot"><div class="fd-tg"><div><span class="label">Meals</span><b class="num">'+t.n+'</b></div><div><span class="label">Calories</span><b class="num">'+(t.est?r0(t.kcal):"—")+'</b></div><div><span class="label">Protein</span><b class="num">'+(t.est?r0(t.protein)+"g":"—")+'</b></div><div><span class="label">Water</span><b class="num">'+(l.water?(+l.water).toFixed(1).replace(/\.0$/,"")+"L":"—")+'</b></div></div>'+
-  (t.n&&t.est<t.n?'<p class="muted small" style="margin:0">'+t.est+' of '+t.n+' meals have numbers, so totals are partial.</p>':'')+(t.est?'<p class="muted small" style="margin:0">Carbs '+r0(t.carbs)+'g · fat '+r0(t.fat)+'g. Photo estimates are rough.</p>':'')+
+ h+='<div class="panel fd-tot"><div class="fd-tg"><div><span class="label">Meals</span><b class="num">'+t.n+'</b></div><div><span class="label">Calories</span><b class="num">'+(t.est||dk.kcal?r0(t.kcal+dk.kcal):"—")+'</b></div><div><span class="label">Protein</span><b class="num">'+(t.est||dk.protein?r0(t.protein+dk.protein)+"g":"—")+'</b></div><div><span class="label">Water</span><b class="num">'+(l.water?(+l.water).toFixed(1).replace(/\.0$/,"")+"L":"—")+'</b></div></div>'+
+  (t.n&&t.est<t.n?'<p class="muted small" style="margin:0">'+t.est+' of '+t.n+' meals have numbers, so totals are partial.</p>':'')+(t.est?'<p class="muted small" style="margin:0">Carbs '+r0(t.carbs+dk.carbs)+'g · fat '+r0(t.fat+dk.fat)+'g. Photo estimates are rough'+(dk.kcal?'; drinks included':'')+'.</p>':'')+
   '<div id="fdMeters"></div><div class="row fd-water"><span class="muted small">Add water</span>'+[0.25,0.5,0.75].map(function(v){return '<button class="btn ghost sm" type="button" data-fdwater="'+v+'">+'+(v*1000)+' ml</button>'}).join("")+(l.water?'<button class="linkbtn" type="button" data-fdwater="-0.25">−250</button>':'')+'</div></div>';
+ if(window.FH218)h+=FH218.html(view);
  /* by slot */
  var bySlot={};list.forEach(function(x,i){var s=x.slot||"snack";(bySlot[s]=bySlot[s]||[]).push([x,i])});
  if(!list.length)h+='<div class="panel"><p class="muted" style="margin:0">Nothing logged '+(isT?"yet today":"on this day")+'. Tap Photo before you eat: it takes two seconds.</p></div>';
@@ -23150,6 +23154,74 @@ return {svg:svg,pick:pick,tick:tick,I:I,C:C}})();
   document.addEventListener("visibilitychange",function(){if(!document.hidden)names.forEach(function(n){try{window[n]()}catch(e){}})});
   window.FH_STEADY=window.FH_STEADY||{};window.FH_STEADY.throttled=names.length;
 })();
+
+/* FighterBase v300: water and drinks, all optional. Water keeps its own buttons (Food diary, daily check-in) and its own number (l.water, litres).
+   Other drinks (tea, coffee, milk, juice, squash, fizzy, energy, sports drinks, and for adults beer or cider and wine) are logged in the Food diary
+   under the water buttons and stored on the day as l.drinks. Tea and coffee take sugar (teaspoons) and milk. Sugar is allowed and never judged:
+   the card says what it adds, in grams, and nothing more. Calories, protein, carbs and fat of drinks are rough estimates for a typical drink, marked as such,
+   and count in the day's totals (Calories ring, Food diary) but not as meals. All drinks except alcohol count as fluids; alcohol is logged but is not counted as fluid.
+   Under-18s see volumes only (no calories) and no alcohol. A member who does not want to track water or drinks can switch it off (profile.trackFluids=false):
+   the water field, buttons and ring go, and the daily check-in no longer asks for water. */
+var FH218=(function(){
+var K=[["tea","Tea",1,0,.2,0,1,0,250,"hot"],["coffee","Coffee",1,.1,0,0,1,0,250,"hot"],["milk","Milk",46,3.5,4.8,1.6,1,0,200,""],["juice","Juice",45,.7,10,.1,1,0,200,""],
+ ["squash","Squash",20,0,5,0,1,0,250,"sf:2,0,0"],["fizzy","Fizzy drink",42,0,10.6,0,1,0,330,"sf:0,0,0"],["energy","Energy drink",45,0,11,0,1,0,330,"sf:3,0,0"],["sports","Sports drink",26,0,6,0,1,0,500,""],
+ ["beer","Beer or cider",45,.4,3.5,0,0,1,568,""],["wine","Wine",83,.1,2.6,0,0,1,175,""]];
+var SZ=[["Glass",200],["Cup",250],["Mug",350],["Can",330],["Bottle",500]];
+var MK=[["No milk",0],["A splash",1],["Lots",2]],MKV=[[0,0,0,0],[9,.7,1,.3],[23,1.7,2.4,.8]];
+var ST={k:null,ml:250,sg:0,mk:0,sf:false,msg:""};
+function e(s){return String(s==null?"":s).replace(/[&<>"]/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]})}
+function P_(){try{return S.profile||{}}catch(x){return {}}}
+function young(){var a=+P_().age;return a>0&&a<18}
+function on(){return P_().trackFluids!==false}
+function kd(id){return K.filter(function(k){return k[0]===id})[0]}
+function calcD(id,ml,sg,mk,sf){var k=kd(id);if(!k)return {kcal:0,protein:0,carbs:0,fat:0,sugar:0};var f=ml/100,sfv=null;
+ if(sf&&/^sf:/.test(k[9])){sfv=k[9].slice(3).split(",").map(Number)}
+ var kc=sfv?sfv[0]:k[2],p=sfv?sfv[1]:k[3],c=sfv?sfv[2]:k[4],fa=sfv?sfv[3]:k[5];
+ var o={kcal:kc*f,protein:p*f,carbs:c*f,fat:fa*f,sugar:0};
+ if(k[9]==="hot"){var m=MKV[mk||0];o.kcal+=m[0]+(sg||0)*16;o.protein+=m[1];o.carbs+=m[2]+(sg||0)*4;o.fat+=m[3];o.sugar=(sg||0)*4}
+ o.kcal=Math.round(o.kcal);o.protein=Math.round(o.protein*10)/10;o.carbs=Math.round(o.carbs*10)/10;o.fat=Math.round(o.fat*10)/10;return o}
+function label(d){var k=kd(d.k),s=k?k[1]:"Drink";if(d.sf)s+=", sugar-free";if(k&&k[9]==="hot"){s+=d.sg?", "+d.sg+" sugar"+(d.sg>1?"s":""):", no sugar";if(d.mk)s+=d.mk===1?", a splash of milk":", lots of milk"}return s}
+function sum(l){var o={kcal:0,protein:0,carbs:0,fat:0,ml:0,n:0};((l&&l.drinks)||[]).forEach(function(d){o.kcal+=+d.kcal||0;o.protein+=+d.protein||0;o.carbs+=+d.carbs||0;o.fat+=+d.fat||0;var k=kd(d.k);if(k&&k[6])o.ml+=+d.ml||0;o.n++});return o}
+function litres(ml){return (Math.round(ml/100)/10).toString().replace(/\.0$/,"")}
+function size(){var s='<div class="dr218-r" role="group" aria-label="Size">'+SZ.map(function(z){return '<button type="button" class="btn sm'+(ST.ml===z[1]?"":" ghost")+'" data-dr218ml="'+z[1]+'">'+z[0]+" "+z[1]+" ml</button>"}).join("")+'</div>';return s}
+function form(){var k=kd(ST.k);if(!k)return"";var h='<div class="dr218-f"><b>'+e(k[1])+'</b>'+size();
+ if(k[9]==="hot"){h+='<span class="label">Sugar</span><div class="dr218-r" role="group" aria-label="Sugar">'+[0,1,2,3,4].map(function(n){return '<button type="button" class="btn sm'+(ST.sg===n?"":" ghost")+'" data-dr218sg="'+n+'">'+(n?n+" spoon"+(n>1?"s":""):"None")+'</button>'}).join("")+'</div>'+
+  '<span class="label">Milk</span><div class="dr218-r" role="group" aria-label="Milk">'+MK.map(function(m){return '<button type="button" class="btn sm'+(ST.mk===m[1]?"":" ghost")+'" data-dr218mk="'+m[1]+'">'+m[0]+'</button>'}).join("")+'</div>'}
+ if(/^sf:/.test(k[9]))h+='<div class="dr218-r" role="group" aria-label="Sugar-free"><button type="button" class="btn sm'+(ST.sf?"":" ghost")+'" data-dr218sf="1">Sugar-free</button></div>';
+ var c=calcD(k[0],ST.ml,ST.sg,ST.mk,ST.sf),note="";
+ if(k[9]==="hot"&&ST.sg)note="Sugar adds about "+c.sugar+" g"+(young()?"":" and "+ST.sg*16+" kcal")+".";
+ else if(!young())note="About "+c.kcal+" kcal"+(c.carbs>=1?" and "+Math.round(c.carbs)+" g carbs":"")+" (a rough estimate).";
+ try{var cc=calc(P_());if(cc&&cc.carb==="verylow"&&c.carbs>=1&&!young())note+=" Counts towards your carbs."}catch(x){}
+ h+=(note?'<p class="small muted" style="margin:0">'+e(note)+'</p>':'')+'<div class="row"><button type="button" class="btn" data-dr218add="1">Add drink</button><button type="button" class="btn ghost" data-dr218x="1">Cancel</button></div></div>';return h}
+function html(day){var l=(typeof FH51V!=="undefined"?FH51V.logs(day):null)||{};
+ if(!on())return '<div class="panel dr218"><p class="small muted" style="margin:0">Water and drinks tracking is off. <button class="linkbtn" type="button" data-dr218on="1">Turn it on</button></p></div>';
+ var s=sum(l),w=+l.water||0,ds=l.drinks||[];
+ var h='<div class="panel dr218"><div class="sec-h"><h3>Drinks</h3><span class="muted small">Optional</span></div><p class="small muted" style="margin:0">Water has its own buttons above. Log tea, coffee and other drinks here if you want to. Nothing is judged.</p>'+
+  '<div class="dr218-r" role="group" aria-label="Kind of drink">'+K.filter(function(k){return !(k[7]&&young())}).map(function(k){return '<button type="button" class="btn sm'+(ST.k===k[0]?"":" ghost")+'" data-dr218k="'+k[0]+'">'+k[1]+'</button>'}).join("")+'</div>'+form();
+ if(ST.msg)h+='<p class="small" style="margin:0">'+e(ST.msg)+'</p>';
+ if(ds.length){h+='<div class="list">'+ds.map(function(d,i){var c=young()?"":(d.kcal?" · about "+d.kcal+" kcal":"");return '<div class="fb-row"><span>'+e(label(d))+'<br><span class="muted small">'+e(d.ml)+' ml'+e(c)+'</span></span><button class="btn ghost sm" type="button" data-dr218del="'+i+'" aria-label="Remove '+e(label(d))+'">Remove</button></div>'}).join("")+'</div>'}
+ if(w>0||s.ml>0)h+='<p class="small" style="margin:0"><b>Fluids:</b> '+litres(w*1000+s.ml)+' L ('+litres(w*1000)+' L water'+(s.ml?', '+litres(s.ml)+' L other drinks':'')+'). Alcohol is not counted.</p>';
+ if(s.kcal&&!young())h+='<p class="small muted" style="margin:0">Drinks add about '+s.kcal+' kcal to today\'s totals (rough estimates, not counted as meals).</p>';
+ h+='<p class="small muted" style="margin:0"><button class="linkbtn" type="button" data-dr218off="1">Not tracking water or drinks? Switch it off</button></p></div>';return h}
+function again(){try{FH51V.page()}catch(x){}}
+function setOn(v){var p=P_();p.trackFluids=v;try{profChanged()}catch(x){}flag();again();try{renderCheckin()}catch(x){}try{renderRings()}catch(x){}}
+function flag(){var b=document.body;if(!b)return;var off=!on();if(b.classList.contains("fh-nofl")!==off)b.classList.toggle("fh-nofl",off)}
+document.addEventListener("click",async function(ev){var t=ev.target&&ev.target.closest?ev.target:null;if(!t)return;var b;
+ if(b=t.closest("[data-dr218k]")){var id=b.dataset.dr218k;if(ST.k===id){ST.k=null}else{var k=kd(id);ST.k=id;ST.ml=k[8];ST.sg=0;ST.mk=0;ST.sf=false}ST.msg="";again();return}
+ if(b=t.closest("[data-dr218ml]")){ST.ml=+b.dataset.dr218ml;again();return}
+ if(b=t.closest("[data-dr218sg]")){ST.sg=+b.dataset.dr218sg;again();return}
+ if(b=t.closest("[data-dr218mk]")){ST.mk=+b.dataset.dr218mk;again();return}
+ if(t.closest("[data-dr218sf]")){ST.sf=!ST.sf;again();return}
+ if(t.closest("[data-dr218x]")){ST.k=null;again();return}
+ if(t.closest("[data-dr218add]")){var kk=kd(ST.k);if(!kk)return;var c=calcD(kk[0],ST.ml,ST.sg,ST.mk,ST.sf),en={k:kk[0],ml:ST.ml,sg:kk[9]==="hot"?ST.sg:0,mk:kk[9]==="hot"?ST.mk:0,sf:!!ST.sf&&/^sf:/.test(kk[9]),kcal:c.kcal,protein:c.protein,carbs:c.carbs,fat:c.fat,t:(typeof nowHM==="function"?nowHM():"")};
+  var day=FH51V.day();var ok=await editDay(day,function(d){d.drinks=(d.drinks||[]).concat([en])});ST.msg=ok?label(en)+" added.":"Could not save that. Try again.";ST.k=null;again();try{renderRings()}catch(x){}return}
+ if(b=t.closest("[data-dr218del]")){var i=+b.dataset.dr218del,day2=FH51V.day();await editDay(day2,function(d){var a=(d.drinks||[]).slice();a.splice(i,1);d.drinks=a});ST.msg="Removed.";again();try{renderRings()}catch(x){}return}
+ if(t.closest("[data-dr218off]")){setOn(false);return}
+ if(t.closest("[data-dr218on]")){setOn(true);return}
+},false);
+var css=document.createElement("style");css.textContent=".dr218{display:flex;flex-direction:column;gap:10px}.dr218-r{display:flex;flex-wrap:wrap;gap:8px}.dr218-f{display:flex;flex-direction:column;gap:8px;border:1px solid var(--line);border-radius:12px;padding:10px}.dr218 .btn.sm{min-height:40px}.fh-nofl .field:has(#water),.fh-nofl #waterQuick,.fh-nofl .fd-water,.fh-nofl .w-bar{display:none!important}";
+document.head.appendChild(css);setInterval(flag,2000);setTimeout(flag,600);
+return {html:html,sum:sum,on:on,calc:calcD,label:label}})();
 
 /* FighterBase v44: always a way back, always a next step. */
 var N31=N31||false;
