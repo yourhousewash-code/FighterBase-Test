@@ -6975,6 +6975,7 @@ function page(){var el=$("#diaryBody");if(!el)return;var list=meals(view),t=tota
   (t.n&&t.est<t.n?'<p class="muted small" style="margin:0">'+t.est+' of '+t.n+' meals have numbers, so totals are partial.</p>':'')+(t.est?'<p class="muted small" style="margin:0">Carbs '+r0(t.carbs+dk.carbs)+'g · fat '+r0(t.fat+dk.fat)+'g. Photo estimates are rough'+(dk.kcal?'; drinks included':'')+'.</p>':'')+
   '<div id="fdMeters"></div><div class="row fd-water"><span class="muted small">Add water</span>'+[0.25,0.5,0.75].map(function(v){return '<button class="btn ghost sm" type="button" data-fdwater="'+v+'">+'+(v*1000)+' ml</button>'}).join("")+(l.water?'<button class="linkbtn" type="button" data-fdwater="-0.25">−250</button>':'')+'</div></div>';
  if(window.FH218)h+=FH218.html(view);
+ if(window.FH220)h+=FH220.html();
  /* by slot */
  var bySlot={};list.forEach(function(x,i){var s=x.slot||"snack";(bySlot[s]=bySlot[s]||[]).push([x,i])});
  if(!list.length)h+='<div class="panel"><p class="muted" style="margin:0">Nothing logged '+(isT?"yet today":"on this day")+'. Tap Photo before you eat: it takes two seconds.</p></div>';
@@ -23295,6 +23296,37 @@ document.addEventListener("keydown",function(ev){if(ev.key==="Enter"&&ev.target&
 var css=document.createElement("style");css.textContent=".ff219{display:flex;flex-direction:column;gap:8px;border:1px dashed var(--line);border-radius:12px;padding:10px}.ff219 .row{display:flex;gap:8px;align-items:center}.ff219 input[type=search]{flex:1;min-width:0}.ff219-r{align-items:center}";
 document.head.appendChild(css);
 return {html:html,lib:lib,state:ST}})();
+
+/* FighterBase v303: "How your targets are worked out". A plain, step-by-step card in the Food diary showing where the calorie, protein, carb, fat and water targets
+   come from, using the member's own numbers (the same calc() that sets the targets, so it can never disagree with them). The member can nudge the calories up or down
+   by 50 and reset; there is no floor and nobody else (club, coach, FighterBase) sets a target. General information, not medical advice. Hidden for under-18s, who have no food targets. */
+var FH220=(function(){
+function e(s){return String(s==null?"":s).replace(/[&<>"]/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]})}
+var open=false;
+function young(){var a=+((S.profile||{}).age);return a>0&&a<18}
+function html(){if(young())return "";var p=S.profile||{},c=null;try{c=calc(p)}catch(x){}
+ var h='<details class="panel tw220"'+(open?" open":"")+' data-tw220d><summary><b>How your targets are worked out</b></summary>';
+ if(!c)return h+'<p class="small muted" style="margin:8px 0 0">Add your sex, age, height and weight in Me and your targets, and how they are worked out, appear here.</p></details>';
+ var w=c.w,h_=+p.height,a=+p.age,fem=p.sex==="female",bmr=Math.round(10*w+6.25*h_-5*a+(fem?-161:5)),n=+p.sessions||0,act=n<=1?1.4:n<=3?1.55:n<=5?1.7:1.85,goal=p.goal||"maintain",gl={lose:"lose fat: 15% below what you burn",build:"build muscle: 10% above what you burn",maintain:"maintain: what you burn"}[goal]||"maintain";
+ var pf=goal==="lose"||(p.focus||[]).indexOf("strength")>-1?2.2:2.0;
+ var st=function(t,b){return '<li><b>'+t+'</b><br><span class="small muted">'+b+'</span></li>'};
+ h+='<ol class="tw220-l">'+
+  st("1. Your numbers",e(Math.round(w*10)/10)+" kg (your latest weigh-in), "+e(h_)+" cm, age "+e(a)+", "+(fem?"female":"male")+". Change them in Me.")+
+  st("2. What your body burns at rest: about "+bmr+" kcal","10 × your kilos + 6.25 × your centimetres − 5 × your age "+(fem?"− 161":"+ 5")+". This is a standard formula (Mifflin–St Jeor). It is an estimate for an average person.")+
+  st("3. Add your activity: about "+c.tdee.toLocaleString("en-GB")+" kcal a day","You train about "+n+" time"+(n===1?"":"s")+" a week, so the rest figure is multiplied by "+act+".")+
+  st("4. Your goal: "+c.kcal.toLocaleString("en-GB")+" kcal a day","Goal: "+gl+(c.adj?", then your own adjustment of "+(c.adj>0?"+":"")+c.adj+" kcal":"")+", rounded to the nearest 10.")+
+  st("5. Protein: "+c.protein+" g","Your weight × "+pf+" g"+(goal==="lose"?" (a little higher when losing fat, to protect muscle)":"")+".")+
+  st("6. Carbs: "+(c.carb==="verylow"?"under 30 g all day":c.trainCarbs+" g on training days, "+c.restCarbs+" g on rest days"),"Set by your eating style and goal. "+e(c.carbNote)+".")+
+  st("7. Fat: about "+c.fatT+" g on training days, "+c.fatR+" g on rest days","What is left of your calories after protein and carbs.")+
+  st("8. Water: about "+c.waterBase+" L, plus 0.6 L for each hour you train","3.5% of your weight in kilos, as litres. Optional to track.")+'</ol>'+
+  '<div class="row tw220-a"><span class="small">Calories feel wrong?</span><button type="button" class="btn sm ghost" data-tw220adj="-50">−50 kcal</button><button type="button" class="btn sm ghost" data-tw220adj="50">+50 kcal</button>'+(c.adj?'<button type="button" class="btn sm ghost" data-tw220adj="0">Reset</button>':'')+'</div>'+
+  '<p class="small muted" style="margin:8px 0 0">These are starting points from a formula, not advice from a doctor or dietitian. Your own results over a few weeks matter more: if your weight is not moving the way you want, nudge the calories. Only you set your targets. Your club, your coach and FighterBase never do.</p></details>';return h}
+document.addEventListener("click",function(ev){var t=ev.target&&ev.target.closest?ev.target:null;if(!t)return;var b=t.closest("[data-tw220adj]");
+ if(b){var d=+b.dataset.tw220adj,p=S.profile;if(d===0){p.kcalAdjust=0;p.adjustedOn=null}else{p.kcalAdjust=Math.max(-1000,Math.min(1000,(+p.kcalAdjust||0)+d));p.adjustedOn=TODAY}try{profChanged()}catch(x){}try{FH51V.page()}catch(x){}try{renderRings()}catch(x){}return}},false);
+document.addEventListener("toggle",function(ev){var d=ev.target;if(d&&d.matches&&d.matches("[data-tw220d]"))open=d.open},true);
+var css=document.createElement("style");css.textContent=".tw220 summary{cursor:pointer;min-height:40px;display:flex;align-items:center}.tw220-l{list-style:none;margin:8px 0;padding:0;display:flex;flex-direction:column;gap:10px}.tw220-a{display:flex;flex-wrap:wrap;gap:8px;align-items:center}";
+document.head.appendChild(css);
+return {html:html}})();
 
 /* FighterBase v44: always a way back, always a next step. */
 var N31=N31||false;
