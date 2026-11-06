@@ -20111,15 +20111,50 @@ function parse(raw){var t=String(raw||"").toLowerCase().replace(/(\d),(\d{3})\b/
   return {k:"food",name:name,kcal:+kc[1],protein:pr?+pr[1]:null,say:"Food: "+name+", "+kc[1]+" kcal"+(pr?", "+pr[1]+" g protein":"")}}
  var wa=t.match(/(\d+(?:\.\d+)?)\s*(litres?|liters?|l|ml|millilitres?|glass(?:es)?|bottles?|pints?)\b(?:\s*of)?\s*water|water\D{0,12}(\d+(?:\.\d+)?)\s*(litres?|liters?|l|ml)\b|\b(a|one) (glass|bottle|pint) of water\b/);
  if(wa){var q=wa[1]!=null?+wa[1]:wa[3]!=null?+wa[3]:1,u=wa[2]||wa[4]||wa[6]||"l",L=/^ml|^milli/.test(u)?q/1000:/^glass/.test(u)?q*.25:/^bottle/.test(u)?q*.5:/^pint/.test(u)?q*.568:q;L=Math.round(L*100)/100;if(L>0&&L<=6)return {k:"water",l:L,say:"Water: +"+L+" L"}}
+ var dr=drinkParse(t,yo);if(dr)return dr;
  var sp=t.match(/\b(\d{3,6})\s*steps?\b/);if(sp&&mins(t.replace(sp[0],""))==null&&!/\d\s*(k|km|kms|miles?|mi)\b/.test(t.replace(sp[0],""))){var nst=+sp[1];if(nst>=100&&nst<=100000)return {k:"steps",n:nst,say:"Steps today: "+nst.toLocaleString("en-GB")}}
  var type=null;SP.some(function(x){if(x[1].test(t)){type=x[0];return true}});
  if(type){var mm=mins(t),dist=t.match(/(\d+(?:\.\d+)?)\s*(k|km|kms|miles?|mi)\b/),guess=false;if(!dist&&/\bhalf marathon\b/.test(t))dist=[0,"21.1","km"];else if(!dist&&/\bmarathon\b/.test(t))dist=[0,"42.2","km"];var rx=t.match(/\b(\d{1,2})\s*x\s*(\d)\s*min(?:ute)?s?\s*rounds?\b/);if(rx&&(mm==null||mm===+rx[2])){mm=(+rx[1])*((+rx[2])+1);guess=true}var rd=t.match(/\b(\d{1,2})\s*(?:x\s*)?(?:\d\s*min(?:ute)?s?\s*)?rounds?\b/);if(mm==null&&rd){mm=Math.max(5,(+rd[1])*4);guess=true}if(mm==null&&/\b(press.?ups?|push.?ups?|pull.?ups?|chin.?ups?|sit.?ups?|burpees)\b/.test(t)&&!/\b(gym|weights?|lift\w*)\b/.test(t)){mm=20;guess=true}if(mm==null){mm=/10k/.test(t)?60:/5k|parkrun/.test(t)?30:/half marathon/.test(t)?120:/marathon/.test(t)?240:60;guess=true}
   var note=dist?(dist[1]+(/^k/.test(dist[2])?" km":" "+dist[2])):"";var rd2=t.match(/\b(\d{1,2})\s*(?:x\s*)?(?:\d\s*min(?:ute)?s?\s*)?rounds?\b/);if(rd2)note=(note?note+", ":"")+rd2[1]+" rounds";var rp=t.match(/\b(\d{1,4})\s*(press.?ups?|push.?ups?|pull.?ups?|chin.?ups?|sit.?ups?|burpees)\b/);if(rp)note=(note?note+", ":"")+rp[1]+" "+rp[2];return {k:"session",type:type,mins:mm,note:note,say:"Session: "+type+", "+mm+" min"+(guess?" (a guess, change it if wrong)":"")+(note?", "+note:""),guess:guess}}
  var bk=t.match(/^(?:i'?m\s*|i am\s*|now\s*)?(\d{2,3}(?:\.\d)?)\s*(kg|kilos?)\b/);if(bk){if(yo)return {k:"none",say:"Weight tools are for adults (18 and over), so this was not saved."};var bv=+bk[1];if(bv>=30&&bv<=250)return {k:"weight",kg:bv,say:"Weigh-in: "+bv+" kg"}}
+ var fd=foodParse(t);if(fd)return fd;
  return {k:"none",say:"Not sure what that is. Try \"30 minute run\", \"five k in 28 minutes\", \"weighed 12 stone 4\", \"two litres of water\" or \"chicken and rice 650 kcal\"."}}
+
+/* v302: drinks and foods by name. "a cup of tea with 2 sugars", "two coffees", "a can of fizzy" go to the Drinks log (fh218); "two eggs and toast", "chicken and rice 200 g" are matched to our own library (fh219 shares it), with the portion shown so it can be checked. Nothing guessed silently: unmatched words are listed. */
+var DK=[["tea",/\b(teas?|cuppa)\b/],["coffee",/\b(coffees?|espressos?|lattes?|cappuccinos?|americanos?|flat whites?)\b/],["squash",/\b(squash|cordial)\b/],["fizzy",/\b(coke|cola|pepsi|lemonade|fanta|sprite|fizzy|soda|irn.?bru)\b/],["energy",/\b(energy drinks?|red bull|monster)\b/],["sports",/\b(sports? drinks?|isotonic|electrolytes?|lucozade sport|gatorade|powerade)\b/],["juice",/\b(juices?)\b/],["beer",/\b(beers?|lagers?|ciders?|ales?|pints?)\b/],["wine",/\b(wines?)\b/],["milk",/\b(milk)\b/]];
+function drinkParse(t,yo){var kind=null;DK.some(function(x){if(x[1].test(t)){kind=x[0];return true}});if(!kind)return null;
+ if(kind==="tea"||kind==="coffee"){}else if(/\bmilk\b/.test(t)&&kind!=="milk"&&!/\bmilk (tea|coffee)\b/.test(t)){}
+ if(kind==="milk"&&(/\b(tea|coffee)\b/.test(t)))return null;
+ if(yo&&(kind==="beer"||kind==="wine"))return {k:"none",say:"Alcohol is not logged for under-18s, so this was not saved."};
+ if(typeof FH218==="undefined")return null;
+ var n=1,m=t.match(/\b(\d{1,2})\s*(?:x\s*)?(?:(?:cups?|mugs?|glasses|glass|cans?|bottles?|pints?)\s*(?:of\s*)?)?(?:\w+\s+){0,1}?(?:teas?|coffees?|espressos?|lattes?|cappuccinos?|americanos?|flat whites?|squash|cokes?|colas?|lemonades?|beers?|lagers?|ciders?|ales?|wines?|juices?|milks?|energy drinks?|sports? drinks?|pints?)\b/);
+ if(m&&+m[1]>=1&&+m[1]<=12)n=+m[1];
+ var ml=null,um=t.match(/(\d+(?:\.\d+)?)\s*(ml|litres?|liters?|l)\b/);if(um){ml=/^ml/.test(um[2])?+um[1]:Math.round(+um[1]*1000);if(ml<50||ml>2000)ml=null}
+ if(ml==null){if(/\bpint\b/.test(t))ml=568;else if(/\bcan\b/.test(t))ml=330;else if(/\bbottle\b/.test(t))ml=500;else if(/\bmug\b/.test(t))ml=350;else if(/\bglass\b/.test(t))ml=kind==="wine"?175:200;else if(/\bcup\b/.test(t))ml=250}
+ var sg=0,sgm=t.match(/\b(\d)\s*(?:sugars?|spoons? of sugar|teaspoons? of sugar|tsps? of sugar)\b/);if(sgm)sg=Math.min(4,+sgm[1]);else if(/\bno sugar\b|\bunsweetened\b|\bsugar.?free\b/.test(t))sg=0;else if(/\bwith sugar\b|\bsweet(ened)?\b|\bsugar\b/.test(t))sg=1;
+ var mk=0;if(kind==="tea"||kind==="coffee"){if(/\b(no milk|black)\b/.test(t))mk=0;else if(/\blots of milk\b|\bmilky\b|\blatte|\bcappuccino|\bflat white/.test(t))mk=2;else if(/\bmilk\b|\bsplash\b/.test(t))mk=1}
+ var sf=/\b(diet|zero|sugar.?free|no sugar)\b/.test(t)&&(kind==="squash"||kind==="fizzy"||kind==="energy");
+ var def=FH218.def(kind);if(ml==null)ml=def;
+ var c=FH218.calc(kind,ml,kind==="tea"||kind==="coffee"?sg:0,mk,sf),lbl=FH218.label({k:kind,sg:kind==="tea"||kind==="coffee"?sg:0,mk:mk,sf:sf});
+ var say="Drink: "+(n>1?n+" × ":"")+lbl+", "+ml+" ml"+(yo?"":", about "+(c.kcal*n)+" kcal")+(sg&&(kind==="tea"||kind==="coffee")?" (sugar adds about "+(c.sugar*n)+" g)":"");
+ return {k:"drink",kind:kind,n:n,ml:ml,sg:kind==="tea"||kind==="coffee"?sg:0,mk:mk,sf:sf,say:say}}
+var STOPW=/\b(i|had|ate|eaten|have|for|lunch|dinner|breakfast|supper|snack|some|a|an|the|of|about|around|my|just|today|this morning|tonight)\b/g;
+function singular(w){return w.replace(/ies$/,"y").replace(/(ch|sh|x|s)es$/,"$1").replace(/s$/,"")}
+function libItems(){var L=window.FH_LIB||{};return (L.foods||[]).concat(L.meals||[]).concat((typeof S!=="undefined"&&S.customFoods)||[]).filter(function(f){return f&&f.name&&f.per100})}
+function foodParse(t){var items=libItems();if(!items.length)return null;var segs=t.replace(STOPW," ").split(/\s+(?:and|with|on|plus|then)\s+|\s+/).length?t.replace(STOPW," ").split(/\s+(?:and|with|on|plus|then)\s+/):[];var out=[],miss=[];
+ segs.forEach(function(sg){sg=sg.replace(/\s+/g," ").trim();if(!sg)return;var gm=sg.match(/(\d+(?:\.\d+)?)\s*(g|grams?|kg)\b/),g=gm?(/^kg/.test(gm[2])?+gm[1]*1000:+gm[1]):null,q=null;var rest=sg.replace(/(\d+(?:\.\d+)?)\s*(g|grams?|kg)\b/,"").trim(),qm=rest.match(/^(\d{1,2})\b\s*(?:x\s*)?/);if(qm){q=+qm[1];rest=rest.replace(qm[0],"").trim()}
+  var AL={oats:"porridge oats",oat:"porridge oats",toast:"bread",rice:"rice cooked",chicken:"chicken breast",egg:"eggs",eggs:"eggs",bread:"bread"};if(AL[rest])rest=AL[rest];
+  var words=rest.split(" ").filter(function(w){return w.length>1});if(!words.length)return;
+  var best=null;items.forEach(function(f){var nm=(f.name+" "+(f.tags||[]).join(" ")).toLowerCase(),nms=nm.split(/[^a-z]+/).map(singular);var ok=words.every(function(w){var sw=singular(w);return nms.indexOf(sw)>-1||nm.indexOf(w)>-1&&w.length>3});var isF=(window.FH_LIB&&(FH_LIB.foods||[]).indexOf(f)>-1)?0:1000,rk=isF+f.name.length;if(ok&&(!best||rk<best._rk)){best=f;best._rk=rk}});
+  if(!best){miss.push(rest);return}
+  var port=best.portion||{g:100,label:"1 portion"},pn=(String(port.label||"").match(/^(\d+)\b/)||[])[1],unit=pn?port.g/(+pn):port.g,gr=g!=null?g:Math.round((q||1)*unit);var k=gr/100,pp=best.per100;
+  out.push({name:best.name,g:gr,assumed:g==null,kcal:Math.round((pp.kcal||0)*k),protein:Math.round((pp.p!=null?pp.p:pp.protein||0)*k*10)/10,carbs:Math.round((pp.c!=null?pp.c:pp.carbs||0)*k*10)/10,fat:Math.round((pp.f!=null?pp.f:pp.fat||0)*k*10)/10,per100:{kcal:pp.kcal,protein:pp.p!=null?pp.p:pp.protein,carbs:pp.c!=null?pp.c:pp.carbs,fat:pp.f!=null?pp.f:pp.fat}})});
+ if(!out.length)return null;
+ var tot=out.reduce(function(a,x){return a+x.kcal},0);
+ return {k:"foods",items:out,miss:miss,say:"Food: "+out.map(function(x){return x.name+" "+x.g+" g"+(x.assumed?" (a typical portion)":"")+", about "+x.kcal+" kcal"}).join("; ")+(out.length>1?". Total about "+tot+" kcal":"")+(miss.length?". Not found, so not added: "+miss.join(", "):"")+". Rough estimates from our own library."}}
 var pend=null,msg="",kind="";
 /* v297 (Steve, 5 Nov): say what you are logging first, then say or type it, with examples for that choice */
-var KINDS=[["train","Training","30 minute run","five k in 28 minutes","pads, 6 rounds"],["weight","Weigh-in","weighed 12 stone 4","78.5 kg","11 stone 9"],["water","Water","two litres of water","a glass of water","500 ml water"],["food","Meal","chicken and rice 650 kcal","two eggs on toast","protein shake 200 kcal"],["steps","Steps","8,500 steps","12000 steps","5,000 steps"]];
+var KINDS=[["train","Training","30 minute run","five k in 28 minutes","pads, 6 rounds"],["weight","Weigh-in","weighed 12 stone 4","78.5 kg","11 stone 9"],["water","Water","two litres of water","a glass of water","500 ml water"],["food","Meal","two eggs and toast","chicken and rice 200 g","protein shake 200 kcal"],["drink","Drink","a cup of tea with 2 sugars","two coffees","a pint of beer"],["steps","Steps","8,500 steps","12000 steps","5,000 steps"]];
 function kinds(){return KINDS.filter(function(k){return !(k[0]==="weight"&&young())})}
 function html(){var ks=kinds(),cur2=ks.filter(function(k){return k[0]===kind})[0];
  var h='<div class="q183-top"><span class="label">Quick log</span><h2>Log it in one line</h2></div><p class="small muted" style="margin:0">What do you want to add to today? Pick one, then say it (tap the microphone on your keyboard) or type it. You see what it understood and confirm before anything is saved.</p><div class="q183-k" role="group" aria-label="What are you logging">'+ks.map(function(k){return '<button type="button" class="chip" data-q183k="'+k[0]+'" aria-pressed="'+(k[0]===kind)+'">'+k[1]+'</button>'}).join("")+'</div>';
@@ -20137,6 +20172,8 @@ function young(){var a=+P().age;return a>0&&a<18}
 async function confirm(){if(!pend)return;var p=pend,ok=false;
  try{if(p.k==="weight"){ok=await editDay(TODAY,function(d){d.weight=p.kg});try{P().weight=p.kg;profChanged()}catch(x){}}
   else if(p.k==="food"){var en={id:"q"+Date.now().toString(36),name:p.name,slot:(function(){var h=new Date().getHours();return h<11?"breakfast":h<15?"lunch":h<17?"snack":h<22?"dinner":"snack"})(),t:(function(){var d=new Date();return String(d.getHours()).padStart(2,"0")+":"+String(d.getMinutes()).padStart(2,"0")})(),est:true,src:"quicklog",kcal:p.kcal};if(p.protein!=null)en.protein=p.protein;ok=await editDay(TODAY,function(d){d.eaten=(d.eaten||[]).concat([en])})}
+  else if(p.k==="drink"){var ens=[];for(var i=0;i<p.n;i++){var c=FH218.calc(p.kind,p.ml,p.sg,p.mk,p.sf);ens.push({k:p.kind,ml:p.ml,sg:p.sg,mk:p.mk,sf:!!p.sf,kcal:c.kcal,protein:c.protein,carbs:c.carbs,fat:c.fat,t:(function(){var d=new Date();return String(d.getHours()).padStart(2,"0")+":"+String(d.getMinutes()).padStart(2,"0")})()})}ok=await editDay(TODAY,function(d){d.drinks=(d.drinks||[]).concat(ens)})}
+  else if(p.k==="foods"){var sl=(function(){var h=new Date().getHours();return h<11?"breakfast":h<15?"lunch":h<17?"snack":h<22?"dinner":"snack"})(),tm=(function(){var d=new Date();return String(d.getHours()).padStart(2,"0")+":"+String(d.getMinutes()).padStart(2,"0")})();var ens2=p.items.map(function(x,i){return {id:"q"+Date.now().toString(36)+i,name:x.name,slot:sl,t:tm,est:true,src:"quicklog",via:"Our library",g:x.g,per100:x.per100,kcal:x.kcal,protein:x.protein,carbs:x.carbs,fat:x.fat}});ok=await editDay(TODAY,function(d){d.eaten=(d.eaten||[]).concat(ens2)})}
   else if(p.k==="water"){ok=await editDay(TODAY,function(d){d.water=r1((+d.water||0)+p.l)})}
   else if(p.k==="steps"){ok=await editDay(TODAY,function(d){d.wear=Object.assign({},d.wear||{},{steps:p.n,source:"manual"})})}
   else if(p.k==="session"){var m=Math.max(5,Math.min(400,+((document.getElementById("q183m")||{}).value)||p.mins));cur.sessions=(cur.sessions||[]).concat([{sport:p.type,type:p.type,mins:m,rpe:6,club:false,notes:p.note||"Quick log",t:(function(){var d=new Date();return String(d.getHours()).padStart(2,"0")+":"+String(d.getMinutes()).padStart(2,"0")})(),src:"quicklog"}]);cur.trained=true;markDirty();ok=true}}
@@ -23221,7 +23258,7 @@ document.addEventListener("click",async function(ev){var t=ev.target&&ev.target.
 },false);
 var css=document.createElement("style");css.textContent=".dr218{display:flex;flex-direction:column;gap:10px}.dr218-r{display:flex;flex-wrap:wrap;gap:8px}.dr218-f{display:flex;flex-direction:column;gap:8px;border:1px solid var(--line);border-radius:12px;padding:10px}.dr218 .btn.sm{min-height:40px}.fh-nofl .field:has(#water),.fh-nofl #waterQuick,.fh-nofl .fd-water,.fh-nofl .w-bar{display:none!important}";
 document.head.appendChild(css);setInterval(flag,2000);setTimeout(flag,600);
-return {html:html,sum:sum,on:on,calc:calcD,label:label}})();
+return {html:html,sum:sum,on:on,calc:calcD,label:label,def:function(id){var k=kd(id);return k?k[8]:250}}})();
 
 /* FighterBase v301: find a food by name. In the Food diary's Quick add form there is a "Find a food" box. It searches our own library of foods first
    (instant, on the phone) and then Open Food Facts (free open food database) by name, and shows per-100 g numbers with the source named on every row.
