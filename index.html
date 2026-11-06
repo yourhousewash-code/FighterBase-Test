@@ -6918,7 +6918,7 @@ var logsFor=function(k){return k===TODAY?cur:(logMap()[k]||null)};
 function meals(k){return ((logsFor(k)||{}).eaten||[])}
 function totals(list){var t={kcal:0,protein:0,carbs:0,fat:0,est:0,n:list.length};list.forEach(function(x){if(x.kcal!=null&&x.kcal!==""){t.est++;t.kcal+=+x.kcal||0;t.protein+=+x.protein||0;t.carbs+=+x.carbs||0;t.fat+=+x.fat||0}});return t}
 function week(){var out=[];for(var i=6;i>=0;i--){var k=addDays(TODAY,-i),l=logsFor(k)||{};out.push({k:k,m:(l.eaten||[]),w:+l.water||0})}return out}
-window.FH51V={day:function(){return view},logs:function(k){return logsFor(k)},page:function(){page()}};
+window.FH51V={day:function(){return view},logs:function(k){return logsFor(k)},page:function(){page()},rerender:function(){grab();page()},apply:function(o){grab();if(!draft)return;Object.keys(o).forEach(function(k){draft[k]=o[k]});if(draft.per100)fromPer100();page()}};
 async function edit(k,fn){var ok=await editDay(k,fn);if(k===TODAY)try{renderCheckin()}catch(e){}return ok}
 
 /* ---------- AI: photo estimate, label, barcode digits ---------- */
@@ -6986,7 +6986,7 @@ function page(){var el=$("#diaryBody");if(!el)return;var list=meals(view),t=tota
  el.innerHTML=h;try{if(window.FH213)FH213.attach()}catch(e){}}
 function draftHTML(){var d=draft,pm=[.5,.75,1,1.25,1.5,2];
  return '<div class="panel fd-draft">'+(d.ph?'<img src="'+d.ph+'" alt="" class="fd-dph">':'')+
- '<div class="grid2"><div class="field"><label class="label" for="fdName">What is it</label><input type="text" id="fdName" maxlength="80" value="'+esc(d.name||"")+'" placeholder="e.g. Chicken, rice and greens"></div><div class="field"><label class="label" for="fdSlot">Meal</label><select id="fdSlot">'+SLOTS.map(function(s){return '<option value="'+s[0]+'"'+(d.slot===s[0]?" selected":"")+'>'+s[1]+'</option>'}).join("")+'</select></div></div>'+
+ (window.FH219&&(d.src==='quick'||d.src==='search')?FH219.html():'')+'<div class="grid2"><div class="field"><label class="label" for="fdName">What is it</label><input type="text" id="fdName" maxlength="80" value="'+esc(d.name||"")+'" placeholder="e.g. Chicken, rice and greens"></div><div class="field"><label class="label" for="fdSlot">Meal</label><select id="fdSlot">'+SLOTS.map(function(s){return '<option value="'+s[0]+'"'+(d.slot===s[0]?" selected":"")+'>'+s[1]+'</option>'}).join("")+'</select></div></div>'+
  (d.per100?'<div class="field"><label class="label" for="fdG">How much (grams)</label><input type="number" id="fdG" value="'+(d.g||100)+'" min="1"></div><p class="muted small" style="margin:0">Per 100 g: '+r0(d.per100.kcal)+' kcal · P'+r0(d.per100.protein)+' C'+r0(d.per100.carbs)+' F'+r0(d.per100.fat)+(d.via?' · from '+esc(d.via):'')+'</p>':'')+
  (d.est?'<div class="chips">'+pm.map(function(x){return '<button type="button" class="chip" data-fdpm="'+x+'" aria-pressed="'+((d.pm||1)===x)+'">'+(x===1?"As shown":"×"+x)+'</button>'}).join("")+'</div>':'')+
  '<div class="fd-nums"><div class="field"><label class="label" for="fdK">kcal</label><input type="number" id="fdK" value="'+(d.kcal!=null?r0(d.kcal):"")+'"></div><div class="field"><label class="label" for="fdP">Protein g</label><input type="number" id="fdP" value="'+(d.protein!=null?r0(d.protein):"")+'"></div><div class="field"><label class="label" for="fdC">Carbs g</label><input type="number" id="fdC" value="'+(d.carbs!=null?r0(d.carbs):"")+'"></div><div class="field"><label class="label" for="fdF">Fat g</label><input type="number" id="fdF" value="'+(d.fat!=null?r0(d.fat):"")+'"></div></div>'+
@@ -23222,6 +23222,42 @@ document.addEventListener("click",async function(ev){var t=ev.target&&ev.target.
 var css=document.createElement("style");css.textContent=".dr218{display:flex;flex-direction:column;gap:10px}.dr218-r{display:flex;flex-wrap:wrap;gap:8px}.dr218-f{display:flex;flex-direction:column;gap:8px;border:1px solid var(--line);border-radius:12px;padding:10px}.dr218 .btn.sm{min-height:40px}.fh-nofl .field:has(#water),.fh-nofl #waterQuick,.fh-nofl .fd-water,.fh-nofl .w-bar{display:none!important}";
 document.head.appendChild(css);setInterval(flag,2000);setTimeout(flag,600);
 return {html:html,sum:sum,on:on,calc:calcD,label:label}})();
+
+/* FighterBase v301: find a food by name. In the Food diary's Quick add form there is a "Find a food" box. It searches our own library of foods first
+   (instant, on the phone) and then Open Food Facts (free open food database) by name, and shows per-100 g numbers with the source named on every row.
+   "Use" fills the quick add form (name, per-100 g numbers, grams) and the entry keeps "from <source>". Nothing is guessed: a result with no energy value is not shown.
+   Searching sends the words typed to Open Food Facts; the box says so. No timers, no redraws unless the member searches or taps. */
+var FH219=(function(){
+var ST={q:"",res:[],busy:false,err:"",done:false,ofs:0};
+function e(s){return String(s==null?"":s).replace(/[&<>"]/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]})}
+function n1(x){return Math.round((+x||0)*10)/10}
+function lib(q){var words=q.toLowerCase().split(/\s+/).filter(Boolean);if(!words.length)return[];var src=((window.FH_LIB&&FH_LIB.foods)||[]).concat((window.FH_LIB&&FH_LIB.meals)||[]).concat((typeof S!=="undefined"&&S.customFoods)||[]),out=[];
+ src.forEach(function(f){if(!f||!f.name||!f.per100)return;var nm=f.name.toLowerCase(),tg=(f.tags||[]).join(" ").toLowerCase(),ok=words.every(function(w){return nm.indexOf(w)>-1||tg.indexOf(w)>-1});if(!ok)return;
+  out.push({name:f.name,per100:{kcal:f.per100.kcal,protein:f.per100.p!=null?f.per100.p:f.per100.protein,carbs:f.per100.c!=null?f.per100.c:f.per100.carbs,fat:f.per100.f!=null?f.per100.f:f.per100.fat},g:(f.portion&&f.portion.g)||100,src:"Our library",rank:nm.indexOf(words[0])===0?0:1})});
+ out.sort(function(a,b){return a.rank-b.rank});return out.slice(0,6)}
+async function off(q){var u="https://world.openfoodfacts.org/cgi/search.pl?search_terms="+encodeURIComponent(q)+"&search_simple=1&action=process&json=1&page_size=12&fields=product_name,brands,nutriments,serving_quantity";
+ var r=await fetch(u,{headers:{"Accept":"application/json"}});if(!r.ok)throw new Error("http");var j=await r.json(),out=[];
+ ((j&&j.products)||[]).forEach(function(p){var n=p.nutriments||{},kc=n["energy-kcal_100g"]!=null?+n["energy-kcal_100g"]:(n.energy_100g!=null?+n.energy_100g/4.184:null);if(!p.product_name||kc==null||isNaN(kc))return;
+  out.push({name:[p.brands&&String(p.brands).split(",")[0],p.product_name].filter(Boolean).join(" · "),per100:{kcal:Math.round(kc),protein:n1(n.proteins_100g),carbs:n1(n.carbohydrates_100g),fat:n1(n.fat_100g)},g:+p.serving_quantity||100,src:"Open Food Facts"})});return out.slice(0,8)}
+function row(r,i){var p=r.per100;return '<div class="fb-row ff219-r"><span><b>'+e(r.name)+'</b><br><span class="muted small">Per 100 g: '+Math.round(p.kcal)+' kcal · P'+Math.round(p.protein)+' C'+Math.round(p.carbs)+' F'+Math.round(p.fat)+' · from '+e(r.src)+'</span></span><button type="button" class="btn sm" data-ff219use="'+i+'">Use</button></div>'}
+function html(){var h='<div class="ff219"><div class="field"><label class="label" for="ff219q">Find a food</label><div class="row"><input type="search" id="ff219q" maxlength="60" value="'+e(ST.q)+'" placeholder="e.g. porridge oats, chicken breast" enterkeyhint="search"><button type="button" class="btn sm" data-ff219go="1">Search</button></div></div>';
+ if(ST.busy)h+='<p class="small muted" style="margin:0">Searching…</p>';
+ if(ST.err)h+='<p class="small" style="margin:0">'+e(ST.err)+'</p>';
+ if(ST.res.length)h+='<div class="list">'+ST.res.map(row).join("")+'</div>';
+ else if(ST.done&&!ST.busy)h+='<p class="small muted" style="margin:0">Nothing with numbers found for that. You can type the numbers in below.</p>';
+ h+='<p class="small muted" style="margin:0">Searching also sends the words you type to Open Food Facts, a free open food database. Numbers vary by product: check them against the pack.</p></div>';return h}
+async function go(){var inp=document.getElementById("ff219q"),q=(inp?inp.value:ST.q).trim();ST.q=q;if(q.length<2){ST.err="Type at least two letters.";FH51V.rerender();return}
+ ST.err="";ST.done=false;ST.res=lib(q);ST.busy=true;FH51V.rerender();
+ try{var o=await off(q);ST.res=ST.res.concat(o)}catch(x){ST.err=ST.res.length?"Open Food Facts could not be reached, so only our own library is shown.":"Could not reach Open Food Facts. Check your connection, or type the numbers in below."}
+ ST.busy=false;ST.done=true;FH51V.rerender()}
+function use(i){var r=ST.res[i];if(!r)return;FH51V.apply({name:r.name,per100:r.per100,g:r.g,via:r.src,src:"search",est:false});ST.res=[];ST.done=false;ST.q=""}
+document.addEventListener("click",function(ev){var t=ev.target&&ev.target.closest?ev.target:null;if(!t)return;var b;
+ if(t.closest("[data-ff219go]")){go();return}
+ if(b=t.closest("[data-ff219use]")){use(+b.dataset.ff219use);return}},false);
+document.addEventListener("keydown",function(ev){if(ev.key==="Enter"&&ev.target&&ev.target.id==="ff219q"){ev.preventDefault();go()}},false);
+var css=document.createElement("style");css.textContent=".ff219{display:flex;flex-direction:column;gap:8px;border:1px dashed var(--line);border-radius:12px;padding:10px}.ff219 .row{display:flex;gap:8px;align-items:center}.ff219 input[type=search]{flex:1;min-width:0}.ff219-r{align-items:center}";
+document.head.appendChild(css);
+return {html:html,lib:lib,state:ST}})();
 
 /* FighterBase v44: always a way back, always a next step. */
 var N31=N31||false;
