@@ -23379,6 +23379,31 @@ var css=document.createElement("style");css.textContent=".ai221 summary{cursor:p
 document.head.appendChild(css);
 return {html:html,ask:ask,fake:fake}})();
 
+/* FighterBase v308: native geofence link (phone app only). In the Android/iPhone app a small bridge (app/src/geo-bridge.js) puts window.FBGeo on the page.
+   This module (1) registers the club place with it while the member has Automatic attendance switched on, (2) removes it when they switch it off or leave the club,
+   and (3) forwards the phone's enter/exit events, time only, into FH173.native, which already applies the 10-minute dwell, booked/unbooked rules and the visit log.
+   In a normal browser window.FBGeo does not exist and this module does nothing. No coordinates are stored by this module: the club's place comes from the club
+   document and goes straight to the plugin. Nothing here has run on a real phone yet. */
+var FH222=(function(){
+var sig="",wired=false,last={ok:null,at:0,error:null};
+function P(){return (typeof S!=="undefined"&&S.profile)||{}}
+function club(){try{return clubState&&clubState.club}catch(x){return null}}
+function G(){return window.FBGeo||null}
+function place(){var c=club(),g=c&&c.geo;if(!c||!g||typeof g.lat!=="number"||typeof g.lng!=="number")return null;return {id:c.id||"club",lat:g.lat,lng:g.lng,r:+g.r||100}}
+function wire(){var B=G();if(!B||wired)return;wired=true;B.on(function(ev){try{if(window.FH173&&ev&&(ev.kind==="enter"||ev.kind==="exit"))FH173.native({kind:ev.kind,at:+ev.at||Date.now()})}catch(x){}})}
+async function sync(){var B=G();if(!B)return "none";wire();
+ var want=P().autoAtt===true&&P().clubId?place():null,s=want?[want.id,want.lat,want.lng,want.r].join("|"):"";
+ if(s===sig)return "same";
+ var r=want?await B.setPlace(want):await B.clear();
+ last={ok:!!(r&&r.ok),at:Date.now(),error:r&&r.error||null};
+ if(last.ok)sig=s;   // on failure sig stays, so the next tick tries again
+ return last.ok?(want?"registered":"cleared"):"failed"}
+setInterval(function(){try{sync()}catch(x){}},20000);
+document.addEventListener("visibilitychange",function(){if(!document.hidden)try{sync()}catch(x){}});
+document.addEventListener("click",function(e){if(e.target&&e.target.closest&&e.target.closest("[data-a142auto]"))setTimeout(function(){try{sync()}catch(x){}},400)});
+setTimeout(function(){try{sync()}catch(x){}},3000);
+return {sync:sync,status:function(){return {native:!!G(),registered:!!sig,last:last}}}})();
+
 /* FighterBase v44: always a way back, always a next step. */
 var N31=N31||false;
 (function(){
