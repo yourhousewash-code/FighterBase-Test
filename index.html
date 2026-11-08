@@ -4065,8 +4065,8 @@ try{clubPro()}catch(e){}
 /* FighterBase v19: plans, AI limits, usage meter, add-ons, club perk (prototype: no real payments) */
 var P19=false;
 var PLANS={free:{n:"Free",m:0,y:0,lim:{chat:5,review:1,scan:3}},
- plus:{n:"Plus",m:4.99,y:null,lim:{chat:60,review:8,scan:40}},
- pro:{n:"Pro",m:9.99,y:null,lim:{chat:200,review:20,scan:120}}};
+ plus:{n:"Plus",m:4.99,y:49.99,lim:{chat:60,review:8,scan:40}},
+ pro:{n:"Pro",m:9.99,y:99.99,lim:{chat:200,review:20,scan:120}}};
 var PL_RANK={free:0,plus:1,pro:2};
 var PL_KIND={chat:"coach chats",review:"weekly reviews",scan:"scans and photo logs"};
 var PL_BULLETS={free:["Daily plan, targets and food logging","Goals, countdown and Growth checks","Club, partners and challenges","Weight-cut safety limits and the simulator","Weight, energy and sessions-per-week charts, and a weekly summary"],
@@ -4075,7 +4075,7 @@ var PL_BULLETS={free:["Daily plan, targets and food logging","Goals, countdown a
 var plBill="month",plReason="";
 function plMonth(){return TODAY.slice(0,7)}
 function plSave(){if(typeof profChanged==="function")profChanged()}
-function ensurePlan(){var p=S.profile;if(!p||!p.onboarded)return null;if(!p.plan||typeof p.plan!=="object"){p.plan={tier:"plus",src:"trial",until:addDays(TODAY,14),trialUsed:true};plSave()}return p.plan}
+function ensurePlan(){var p=S.profile;if(!p||!p.onboarded)return null;if(!p.plan||typeof p.plan!=="object"){p.plan={tier:"plus",src:"trial",until:addDays(TODAY,30),trialUsed:true};plSave()}return p.plan}
 function plBase(){var pl=ensurePlan();if(!pl)return "free";if(pl.until&&pl.until<TODAY)return "free";return PLANS[pl.tier]?pl.tier:"free"}
 function plCamp(){var pl=S.profile&&S.profile.plan;return !!(pl&&pl.campUntil&&pl.campUntil>=TODAY)}
 function tierNow(){var b=plBase();if(plCamp()&&PL_RANK[b]<2)return "pro";return b}
@@ -4095,10 +4095,10 @@ function plInstall(){if(typeof sampleFn!=="undefined"&&sampleFn&&!sampleFn.__fhm
 var plPoll=0,plTimer=setInterval(function(){plInstall();ensurePlan();if(++plPoll>150)clearInterval(plTimer)},400);
 
 function plDaysLeft(d){return Math.max(0,diffDays(TODAY,d))}
-function plStatus(){var pl=ensurePlan();if(!pl)return {badge:"Free",line:"Finish setting up to start your 14-day Plus trial."};
+function plStatus(){var pl=ensurePlan();if(!pl)return {badge:"Free",line:"Finish setting up to start your 30-day Plus trial."};
  var t=tierNow(),b=plBase(),bits=[];
  if(pl.until&&pl.until>=TODAY&&PL_RANK[b]>0){var d=plDaysLeft(pl.until);bits.push((pl.src==="trial"?"Trial":pl.src==="club"?"Club perk":"Plan")+" ends in "+d+" day"+(d===1?"":"s")+", then Free.")}
- else if(pl.until&&pl.until<TODAY&&pl.src==="trial")bits.push("Your 14-day trial has ended. You are on Free.");
+ else if(pl.until&&pl.until<TODAY&&pl.src==="trial")bits.push("Your 30-day trial has ended. You are on Free.");
  else if(pl.until&&pl.until<TODAY)bits.push("Your "+(pl.src==="club"?"club perk":"plan")+" has ended. You are on Free.");
  if(plCamp())bits.push("Camp pass: Pro until "+pl.campUntil+".");
  if(pl.src==="test"&&PL_RANK[b]>0&&!pl.until)bits.push("Test mode: nothing is charged.");
@@ -4127,14 +4127,14 @@ function plSheetHtml(){var t=tierNow(),pl=ensurePlan()||{},msg="";
   return '<div class="plcard'+(k==="pro"?" best":"")+(cur?" cur":"")+'"><div class="plc-h"><h3>'+PLANS[k].n+'</h3>'+(cur?'<span class="badge ok-chip">Current</span>':'')+'</div><div class="plc-p">'+plPrice(k)+'</div><ul class="plc-l">'+PL_BULLETS[k].map(function(x){return '<li>'+esc(x)+'</li>'}).join("")+'<li><b>AI each month:</b> '+lim.chat+' coach chats, '+lim.review+' weekly review'+(lim.review===1?"":"s")+', '+lim.scan+' scans</li></ul>'+
    (cur?'':'<button class="btn'+(k==="free"?" ghost":"")+'" type="button" data-plpick="'+k+'">'+(k==="free"?"Switch to Free":"Try "+PLANS[k].n)+'</button>')+'</div>'}).join("");
  return '<div class="plsheet-in" role="dialog" aria-modal="true" aria-label="Plans"><div class="plsheet-top"><h2>Plans</h2><button class="btn ghost" type="button" data-plclose>Close</button></div>'+msg+
-  '<p class="muted small" style="margin:0 0 10px">Every new account gets 14 days of Plus. Test mode: nothing is charged. Picking a plan switches it on so you can try it. Real billing will go through the App Store and Google Play later. Prices are working figures.</p>'+
-  (PLANS.plus.y?'<div class="seg-ctl" id="plBillCtl"><button type="button" data-plbill="month" aria-pressed="'+(plBill==="month")+'">Monthly</button><button type="button" data-plbill="year" aria-pressed="'+(plBill==="year")+'">Yearly: save a third</button></div>':'<p class="muted small" style="margin:0">Monthly prices. Yearly prices to follow.</p>')+
+  '<p class="muted small" style="margin:0 0 10px">Every new account gets 30 days of Plus. Test mode: nothing is charged. Picking a plan switches it on so you can try it. Real billing will go through the App Store and Google Play later. Prices are working figures.</p>'+
+  (PLANS.plus.y?'<div class="seg-ctl" id="plBillCtl"><button type="button" data-plbill="month" aria-pressed="'+(plBill==="month")+'">Monthly</button><button type="button" data-plbill="year" aria-pressed="'+(plBill==="year")+'">Yearly: two months free</button></div>':'<p class="muted small" style="margin:0">Monthly prices. Yearly prices to follow.</p>')+
   '<div class="plgrid">'+cards+'</div>'+
   '<div class="panel" style="margin-top:12px"><div class="sec-h"><h2>Add-ons</h2></div>'+
   '<div class="pladd"><div><b>Fight camp pass</b><p class="small muted" style="margin:2px 0 0">Pro for 12 weeks, one payment of £24.99, no renewal. '+(plCamp()?'Active until '+pl.campUntil+'.':'Made for a camp.')+'</p></div><button class="btn" type="button" data-pladd="camp">'+(plCamp()?'Add 12 more weeks':'Get pass')+'</button></div>'+
   '<div class="pladd"><div><b>AI top-up</b><p class="small muted" style="margin:2px 0 0">50 extra AI uses for £2.99. They never expire and are used only after your monthly allowance runs out.</p></div><button class="btn" type="button" data-pladd="topup">Add 50</button></div></div>'+
   '<p class="small muted" style="margin:10px 0 0">Fair use: allowances are per person. Weight-cut safety limits, head-knock guidance and your own data export are never locked.</p>'+
-  '<details class="plbox"><summary>Test tools</summary><div class="row" style="margin-top:8px"><button class="btn ghost" type="button" data-plreset>Reset my AI usage</button><button class="btn ghost" type="button" data-pltrial>Restart 14-day trial</button></div></details></div>'}
+  '<details class="plbox"><summary>Test tools</summary><div class="row" style="margin-top:8px"><button class="btn ghost" type="button" data-plreset>Reset my AI usage</button><button class="btn ghost" type="button" data-pltrial>Restart 30-day trial</button></div></details></div>'}
 function plOpen(reason){plReason=reason||"";var s=document.getElementById("planSheet");if(!s){s=document.createElement("div");s.id="planSheet";s.className="plsheet";document.body.appendChild(s)}
  s.innerHTML=plSheetHtml();s.hidden=false;document.body.classList.add("pl-open")}
 function plClose(){var s=document.getElementById("planSheet");if(s)s.hidden=true;document.body.classList.remove("pl-open");plReason=""}
@@ -4146,7 +4146,7 @@ document.addEventListener("click",function(e){if(!P19)return;var t=e.target,x;
  if(x=t.closest("[data-plpick]")){plSetTier(x.dataset.plpick);toast("Now on "+PLANS[x.dataset.plpick].n,"Test mode: nothing was charged");plOpen(plReason);return}
  if(x=t.closest("[data-pladd]")){var pl=ensurePlan();if(!pl)return;if(x.dataset.pladd==="camp"){var from=pl.campUntil&&pl.campUntil>=TODAY?pl.campUntil:TODAY;pl.campUntil=addDays(from,84);toast("Camp pass added","Pro until "+pl.campUntil)}else{var u=plUsage();u.bonus=(u.bonus||0)+50;toast("Top-up added","50 extra AI uses")}plSave();plRender();plOpen(plReason);return}
  if(t.closest("[data-plreset]")){var u2=plUsage();u2.chat=0;u2.review=0;u2.scan=0;u2.bonus=0;plSave();plRender();plOpen(plReason);toast("AI usage reset","");return}
- if(t.closest("[data-pltrial]")){var p2=S.profile;if(p2){p2.plan={tier:"plus",src:"trial",until:addDays(TODAY,14),trialUsed:true};plSave();plRender();plOpen(plReason);toast("Trial restarted","14 days of Plus")}return}
+ if(t.closest("[data-pltrial]")){var p2=S.profile;if(p2){p2.plan={tier:"plus",src:"trial",until:addDays(TODAY,30),trialUsed:true};plSave();plRender();plOpen(plReason);toast("Trial restarted","30 days of Plus")}return}
  if(t.classList&&t.classList.contains("plsheet")){plClose()}});
 document.addEventListener("keydown",function(e){if(P19&&e.key==="Escape")plClose()});
 
