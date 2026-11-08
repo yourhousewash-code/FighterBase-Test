@@ -23507,7 +23507,54 @@ document.addEventListener("click",function(ev){var b=ev.target.closest&&ev.targe
 document.addEventListener("change",function(ev){var t=ev.target;if(t&&t.id==="s223d"){F.date=t.value;F.add=false;rerender()}});
 setInterval(function(){try{draw(false)}catch(x){}},1500);
 var st=document.createElement("style");st.textContent="#fb223 .t223{display:block;font:600 12px var(--body,inherit);color:var(--muted,#9AA0AA)}#fb223 .t223.up{color:#3FC57E}#fb223 .t223.dn{color:var(--muted,#9AA0AA)}#fb223 .chips{display:flex;flex-wrap:wrap;gap:6px;margin:4px 0}";document.head.appendChild(st);
-window.FH223={week:week,trend:trend};
+function range(a,b){var r=0,m=0;allSpar().forEach(function(x){if(x.d>=a&&x.d<=b){r+=+x.s.spar.n||0;m+=(+x.s.spar.n||0)*(+x.s.spar.len||0)}});return{r:r,m:m}}
+window.FH223={week:week,trend:trend,range:range};
+})();
+
+/* FighterBase v316 (Steve, 8 Nov 2026): month-on-month trends.
+   Member: a "Your month so far" card on Today. Sessions, training time, days trained and sparring rounds, this month so far against the SAME DAYS of last month (so a half month is never judged against a whole one).
+   Club (staff): a "Your club this month" card on the club overview: class check-ins, active members and check-ins per active member, same comparison.
+   Tone: up is celebrated with a green arrow; level is "steady"; down is shown quietly in a neutral colour with a kind line, never red and never a warning (Steve: don't be negative, using the app means they are training).
+   Read only. Nothing here changes saved data. Club figures count class check-ins only, so a member who trained elsewhere is not counted. */
+var K224=K224||false;
+(function(){
+if(K224)return;K224=true;
+function e(s){return esc(String(s==null?"":s))}
+function P(){return S.profile||{}}
+function club(){return (typeof clubState!=="undefined"&&clubState.club)||null}
+function staff(){try{return !!(window.FHC&&FHC.isOwner())}catch(x){return false}}
+function pad(n){return String(n).padStart(2,"0")}
+function ranges(){var y=+TODAY.slice(0,4),m=+TODAY.slice(5,7),d=+TODAY.slice(8,10),py=m===1?y-1:y,pm=m===1?12:m-1,len=new Date(py,pm,0).getDate(),pd=Math.min(d,len);
+ return{cur:[y+"-"+pad(m)+"-01",TODAY],prev:[py+"-"+pad(pm)+"-01",py+"-"+pad(pm)+"-"+pad(pd)],pname:new Date(py,pm-1,1).toLocaleDateString("en-GB",{month:"long"})}}
+function hm(m){m=Math.round(+m||0);var h=Math.floor(m/60),r=m%60;return h?(h+"h"+(r?" "+r+"m":"")):(r+"m")}
+function chip(a,b,unit){/* positive framing */
+ if(!a&&!b)return"";if(!b)return'<span class="tr224 up">&#9650; new</span>';var pc=Math.round((a-b)/b*100);
+ if(pc>=5)return'<span class="tr224 up">&#9650; '+pc+'%</span>';if(pc<=-5)return'<span class="tr224 dn">&#9660; '+(-pc)+'%</span>';return'<span class="tr224 nt">&#9644; steady</span>'}
+function mlogs(){var a=(S.logs||[]).filter(function(l){return l.date!==TODAY});try{if(typeof cur!=="undefined"&&cur)a.push(cur)}catch(x){}return a}
+function mstats(a,b){var n=0,m=0,d=0;mlogs().forEach(function(l){if(l.date<a||l.date>b)return;var ss=(l.sessions||[]);var c=ss.length||(l.trained?1:0);n+=c;m+=ss.reduce(function(t,s){return t+(+s.mins||0)},0);if(c)d++});
+ var r=0;try{if(window.FH223)r=FH223.range(a,b).r}catch(x){}return{n:n,m:m,d:d,r:r}}
+function head(a,b,noun,pname,sameDays){
+ if(!b&&a)return'<b class="hd224 up">&#9650; You are back training this month</b>';
+ var pc=b?Math.round((a-b)/b*100):0;
+ if(pc>=5)return'<b class="hd224 up">&#9650; '+noun+' up '+pc+'% on '+e(pname)+'</b>';
+ if(pc<=-5)return'<b class="hd224 dn">A lighter start than '+e(pname)+'</b><span class="small muted"> Every session counts, and it is early in the month.</span>';
+ return'<b class="hd224 nt">&#9644; '+noun+' steady with '+e(pname)+'</b>'}
+function memberCard(){var R=ranges(),A=mstats(R.cur[0],R.cur[1]),B=mstats(R.prev[0],R.prev[1]);if(!A.n&&!B.n)return"";
+ var rows=[["Sessions",A.n,B.n,String(A.n)],["Training time",A.m,B.m,hm(A.m)],["Days trained",A.d,B.d,String(A.d)]];if(A.r||B.r)rows.push(["Sparring rounds",A.r,B.r,String(A.r)]);
+ return'<span class="fb-kick">Your month so far</span><div style="margin:2px 0 8px">'+head(A.n,B.n,"Training",R.pname)+'</div><div class="g224">'+rows.map(function(r){return'<div class="c224"><span class="k">'+r[0]+'</span><b>'+e(r[3])+'</b>'+chip(r[1],r[2])+'</div>'}).join("")+'</div><p class="muted small" style="margin:8px 0 0">Compared with the same days of '+e(R.pname)+'. This is a record of what you logged, not a target.</p>'}
+function clubStats(a,b){var M=((typeof clubState!=="undefined"&&clubState.members)||[]).filter(function(m){return m.uid!==S.uid&&m.status!=="left"}),ci=0,act=0;
+ M.forEach(function(m){var n=0;Object.keys(m.att||{}).forEach(function(k){var d=k.slice(0,10);if(d>=a&&d<=b)n++});ci+=n;if(n)act++});return{ci:ci,act:act,per:act?Math.round(ci/act*10)/10:0,mem:M.length}}
+function clubCard(){var c=club();if(!c||!staff())return"";var R=ranges(),A=clubStats(R.cur[0],R.cur[1]),B=clubStats(R.prev[0],R.prev[1]);if(!A.ci&&!B.ci)return"";
+ var rows=[["Class check-ins",A.ci,B.ci,String(A.ci)],["Members who trained",A.act,B.act,String(A.act)+(A.mem?" of "+A.mem:"")],["Check-ins each",A.per,B.per,String(A.per)]];
+ return'<div class="sec-h"><h3>Your club this month</h3></div><div style="margin:2px 0 8px">'+head(A.ci,B.ci,"Check-ins",R.pname)+'</div><div class="g224">'+rows.map(function(r){return'<div class="c224"><span class="k">'+r[0]+'</span><b>'+e(r[3])+'</b>'+chip(r[1],r[2])+'</div>'}).join("")+'</div><p class="muted small" style="margin:8px 0 0">This month so far against the same days of '+e(R.pname)+'. Counts class check-ins only, so a member who trained elsewhere is not included.</p>'}
+function put(id,cls,host,h,after){if(!host)return;var el=document.getElementById(id);if(!h){if(el)el.remove();return}
+ if(!el){el=document.createElement("div");el.id=id;el.className=cls;el.dataset.sig="";if(after&&after.parentNode===host)host.insertBefore(el,after.nextSibling);else host.appendChild(el)}
+ if(el.dataset.sig!==h){el.innerHTML=h;el.dataset.sig=h}}
+function draw(){try{var tab=document.getElementById("tab-today");if(tab&&!tab.hidden&&P().onboarded&&!(typeof clubState!=="undefined"&&clubState.hubview))put("fb316","fb-card f149keep",tab,memberCard(),document.getElementById("nm167")||document.getElementById("fb155"));
+  var hb=document.getElementById("huboverBody");if(hb)put("fb316c","panel f149keep",hb,clubCard(),null)}catch(x){}}
+setInterval(draw,2000);setTimeout(draw,600);
+var st=document.createElement("style");st.textContent="#fb316,#fb316c{order:-20}.g224{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:8px}.c224{display:flex;flex-direction:column;gap:2px;padding:10px 12px;border-radius:12px;background:rgba(255,255,255,.04);border:1px solid var(--line,rgba(255,255,255,.1))}.c224 .k{font:800 10px var(--body,inherit);letter-spacing:.14em;text-transform:uppercase;color:var(--muted,#9AA0AA)}.c224 b{font:800 26px/1.05 var(--display,inherit)}.tr224{font:700 12px var(--body,inherit)}.tr224.up,.hd224.up{color:#3FC57E}.tr224.dn{color:#9FA8B8}.tr224.nt{color:var(--muted,#9AA0AA)}.hd224{font:800 16px var(--body,inherit)}.hd224.nt,.hd224.dn{color:var(--fg,inherit)}";document.head.appendChild(st);
+window.FH224={draw:draw};
 })();
 
 /* FighterBase v44: always a way back, always a next step. */
