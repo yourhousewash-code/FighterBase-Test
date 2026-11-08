@@ -13791,12 +13791,12 @@ function bar(v,t,col){var p=t>0?Math.min(100,Math.round(v/t*100)):0;return '<spa
 function nTile(lab,v,t,unit,col,seed,logged,fmt){var st=!logged?null:FBSAY.target(v,t,share());return '<div class="d112-t"><span>'+lab+'</span><b>'+(logged?fmt(v):'&ndash;')+(t?'<i> of '+fmt(t)+unit+'</i>':'')+'</b>'+(t?bar(logged?v:0,t,col):'')+'<small>'+(!logged?'Not logged yet today':(t&&window.FBSAY?FBSAY.chip(st,seed):'Logged today'))+'</small></div>'}
 function nutriHTML(it){var d={};try{d=FBE.diet()}catch(x){}var ea=(cur.eaten||[]),kc=ea.reduce(function(a,x){return a+(+x.kcal||0)},0),pr=ea.reduce(function(a,x){return a+(+x.protein||0)},0),wa=+cur.water||0,kt=kid()?0:kcalT();
  var h='<div class="d112-top"><div><span class="fb-kick">'+e(new Date(TODAY+"T12:00").toLocaleDateString("en-GB",{weekday:"long",day:"numeric",month:"long"}))+'</span><h2>Your nutrition</h2></div><button class="linkbtn" type="button" data-goto="diary">Food diary</button></div>';
- var tiles=[];if(!kid())tiles.push(nTile("Calories",kc,kt," kcal","#E8DFC8","kcal",kc>0,function(v){return Math.round(v).toLocaleString("en-GB")}));
+ var tiles=[];if(!kid())tiles.push(nTile("Calories",kc,kt," kcal","#E9A23B","kcal",kc>0,function(v){return Math.round(v).toLocaleString("en-GB")}));
  tiles.push(nTile("Protein",pr,d.protT||0," g","#FF9F6B","prot",ea.some(function(x){return x.protein!=null&&x.protein!==""}),function(v){return Math.round(v)}));
  tiles.push(nTile("Water",wa,d.waterT||0," L","#55C7D9","water",wa>0,function(v){return Math.round(v*100)/100}));
  h+='<div class="d112-tiles">'+tiles.join("")+'</div>';
  var D=d7(),useK=!kid()&&D.some(function(x){return x.l&&(x.l.eaten||[]).some(function(q){return +q.kcal>0})}),vals=D.map(function(x){if(!x.l||!(x.l.eaten||[]).length)return null;return (x.l.eaten||[]).reduce(function(a,q){return a+(+(useK?q.kcal:q.protein)||0)},0)});
- h+='<div class="c227"><div class="c227h"><span>'+(useK?'Calories':'Protein')+' logged, last 7 days</span><b>'+vals.filter(function(v){return v!=null}).length+' of 7 days logged</b></div>'+bars7(vals,useK?kt:(d.protT||0),useK?"#E8DFC8":"#FF9F6B",(useK?"Calories":"Protein")+" logged for each of the last 7 days",function(v){return Math.round(v)+(useK?" kcal":" g")})+(useK&&kt||(!useK&&d.protT)?'<p class="muted small" style="margin:2px 0 0">Dashed line: your target. A small grey mark means nothing logged that day, not that you did not eat.</p>':'')+'</div>';
+ h+='<div class="c227"><div class="c227h"><span>'+(useK?'Calories':'Protein')+' logged, last 7 days</span><b>'+vals.filter(function(v){return v!=null}).length+' of 7 days logged</b></div>'+bars7(vals,useK?kt:(d.protT||0),useK?"#E9A23B":"#FF9F6B",(useK?"Calories":"Protein")+" logged for each of the last 7 days",function(v){return Math.round(v)+(useK?" kcal":" g")})+(useK&&kt||(!useK&&d.protT)?'<p class="muted small" style="margin:2px 0 0">Dashed line: your target. A small grey mark means nothing logged that day, not that you did not eat.</p>':'')+'</div>';
  h+=(window.FH132?FH132.todayMeals():'');
  h+='<div class="d112-sec d112-food">'+foodHTML(it.list)+'</div>';
  return h}
@@ -23739,6 +23739,151 @@ function say(st,seed){if(!st||!B[st])return null;var L=B[st],t=L[h(day()+"|"+(se
 function chip(st,seed){var o=say(st,seed);if(!o)return"";return '<span class="say227 '+o.c+'">'+o.i+' '+o.t+'</span>'}
 var css=document.createElement("style");css.textContent=".say227{display:inline-flex;align-items:center;gap:4px;font:700 12px var(--body,inherit);white-space:nowrap}.say227.up,.say227.ok{color:#3FC57E}.say227.nt{color:var(--muted,#9AA0AA)}.say227.dn{color:#C9B37E}";document.head.appendChild(css);
 return {state:state,target:target,say:say,chip:chip,bank:B}})();
+
+/* FighterBase v321 (Steve, 8 Nov 2026): "an image says a thousand words". Visuals pack 1.
+   1. FBV: one small chart kit (plain SVG, no library) so every screen draws charts the same way: bars with an optional dashed target, a line,
+      a progress ring, a donut with a legend. Every chart has a text label for screen readers and a hover/tap title on every mark; nothing is
+      told by colour alone (legends and labels carry the meaning); not logged is a grey stub, never zero.
+   2. Chart cards where the audit found numbers but no picture: Sessions (training per week, sport mix, sparring rounds), Food diary (calories and
+      protein this week, today's macros), Goals (rings for every goal and this week's targets), Attendance (club check-ins by month), and for club
+      staff the club Overview (check-ins per week, busiest classes, members active per week).
+   3. Cover pictures on screens that had none: training photos on training and club screens, food photos only on nutrition screens (Steve's rule).
+   Read only: nothing here changes saved data. Phrases come from FBSAY (fh227). */
+var K228=K228||false;
+(function(){
+if(K228)return;K228=true;
+function e(s){return esc(String(s==null?"":s))}
+function P(){return S.profile||{}}
+function kid(){var a=+P().age;return a>0&&a<18}
+function lm(){var m={};try{m=logMap()||{}}catch(x){}try{if(typeof cur!=="undefined"&&cur&&cur.date)m[cur.date]=cur}catch(x){}return m}
+function mon(k){var d=new Date(k+"T12:00"),w=(d.getDay()+6)%7;return addDays(k,-w)}
+function dlab(k,o){return new Date(k+"T12:00").toLocaleDateString("en-GB",o||{day:"numeric",month:"short"})}
+function sessOf(l){try{return FBE.sessOf(l)||[]}catch(x){return (l&&l.sessions)||[]}}
+/* ---------------- chart kit ----------------
+   Colours: never use the brand gold #E8DFC8 for data, the theme (fh114) swaps it for each club's accent. Calories use amber #E9A23B. */
+var FBV={};
+FBV.bars=function(o){/* o:{vals:[n|null], labels:[], tips:[], target, col, h, lab, hi (index to highlight)} */
+ var W=320,H=o.h||110,PB=18,PT=6,n=o.vals.length,mx=Math.max.apply(null,o.vals.map(function(v){return v||0}).concat([o.target||0,1])),bw=W/n,s='<svg viewBox="0 0 '+W+' '+H+'" width="100%" height="'+H+'" role="img" aria-label="'+e(o.lab)+'" class="v228">';
+ [.5,1].forEach(function(f){var y=H-PB-(H-PB-PT)*f;s+='<line x1="0" x2="'+W+'" y1="'+y.toFixed(1)+'" y2="'+y.toFixed(1)+'" class="v228g"/>'});
+ o.vals.forEach(function(v,i){var x=i*bw+bw*.18,w=bw*.64,tip=(o.tips&&o.tips[i])||"";
+  if(v==null)s+='<rect x="'+x.toFixed(1)+'" y="'+(H-PB-2)+'" width="'+w.toFixed(1)+'" height="2" rx="1" class="v228n"><title>'+e(tip+": not logged")+'</title></rect>';
+  else{var bh=Math.max(v>0?3:1,(H-PB-PT)*v/mx);s+='<rect x="'+x.toFixed(1)+'" y="'+(H-PB-bh).toFixed(1)+'" width="'+w.toFixed(1)+'" height="'+bh.toFixed(1)+'" rx="4" fill="'+(o.col||"#3FC57E")+'" opacity="'+((o.hi==null?n-1:o.hi)===i?1:.72)+'"><title>'+e(tip)+'</title></rect>'}
+  if(o.labels&&o.labels[i]!=null&&(n<=7||(n-1-i)%2===0))s+='<text x="'+(i*bw+bw/2).toFixed(1)+'" y="'+(H-4)+'" text-anchor="middle" class="v228t">'+e(o.labels[i])+'</text>'});
+ if(o.target>0){var ty=H-PB-(H-PB-PT)*o.target/mx;s+='<line x1="0" x2="'+W+'" y1="'+ty.toFixed(1)+'" y2="'+ty.toFixed(1)+'" class="v228tg"><title>Target '+e(o.target)+'</title></line>'}
+ return s+'</svg>'};
+FBV.line=function(o){/* o:{vals, labels, tips, col, h, lab, target} */
+ var W=320,H=o.h||110,PB=18,PT=8,n=o.vals.length,v=o.vals.filter(function(x){return x!=null});if(o.target!=null)v.push(o.target);if(!v.length)return"";var mn=Math.min.apply(null,v),mx=Math.max.apply(null,v);if(mn===mx){mn-=1;mx+=1}var pad=(mx-mn)*.12;mn-=pad;mx+=pad;
+ function X(i){return n>1?8+i*(W-16)/(n-1):W/2}function Y(x){return PT+(1-(x-mn)/(mx-mn))*(H-PB-PT)}
+ var s='<svg viewBox="0 0 '+W+' '+H+'" width="100%" height="'+H+'" role="img" aria-label="'+e(o.lab)+'" class="v228">',d="",on=false;
+ o.vals.forEach(function(x,i){if(x==null){on=false;return}d+=(on?"L":"M")+X(i).toFixed(1)+","+Y(x).toFixed(1);on=true});
+ if(o.target!=null){var ty=Y(o.target);s+='<line x1="0" x2="'+W+'" y1="'+ty.toFixed(1)+'" y2="'+ty.toFixed(1)+'" class="v228tg"><title>Target '+e(o.target)+'</title></line>'}
+ s+='<path d="'+d+'" fill="none" stroke="'+(o.col||"#B482FF")+'" stroke-width="2.2" stroke-linejoin="round" stroke-linecap="round"/>';
+ o.vals.forEach(function(x,i){if(x!=null)s+='<circle cx="'+X(i).toFixed(1)+'" cy="'+Y(x).toFixed(1)+'" r="'+(i===n-1?4:3)+'" fill="'+(o.col||"#B482FF")+'" stroke="var(--bg2,#15161b)" stroke-width="2"><title>'+e((o.tips&&o.tips[i])||x)+'</title></circle>';
+  if(o.labels&&o.labels[i]!=null&&(n<=6||(n-1-i)%2===0))s+='<text x="'+X(i).toFixed(1)+'" y="'+(H-4)+'" text-anchor="'+(i===0?"start":i===n-1?"end":"middle")+'" class="v228t">'+e(o.labels[i])+'</text>'});
+ return s+'</svg>'};
+FBV.ring=function(o){/* o:{v (0..1), col, big, small, lab, size} */
+ var S2=o.size||84,r=S2/2-7,c=2*Math.PI*r,p=Math.max(0,Math.min(1,+o.v||0));
+ return '<svg viewBox="0 0 '+S2+' '+S2+'" width="'+S2+'" height="'+S2+'" role="img" aria-label="'+e(o.lab)+'" class="v228r"><circle cx="'+S2/2+'" cy="'+S2/2+'" r="'+r+'" class="v228rb" stroke-width="8" fill="none"/>'+
+  '<circle cx="'+S2/2+'" cy="'+S2/2+'" r="'+r+'" stroke="'+(o.col||"#3FC57E")+'" stroke-width="8" fill="none" stroke-linecap="round" stroke-dasharray="'+(c*p).toFixed(1)+' '+c.toFixed(1)+'" transform="rotate(-90 '+S2/2+' '+S2/2+')"><title>'+e(o.lab)+'</title></circle>'+
+  '<text x="50%" y="'+(o.small?"47%":"54%")+'" text-anchor="middle" class="v228rt">'+e(o.big)+'</text>'+(o.small?'<text x="50%" y="66%" text-anchor="middle" class="v228rs">'+e(o.small)+'</text>':'')+'</svg>'};
+var CAT=["#C81E3A","#4DA3FF","#3FC57E","#E9A23B","#B482FF","#55C7D9"];
+FBV.donut=function(o){/* o:{parts:[[label,value]], lab, unit} ; top 5 then Other, fixed colour order, legend with values */
+ var ps=o.parts.filter(function(p){return p[1]>0}).sort(function(a,b){return b[1]-a[1]});if(!ps.length)return"";if(ps.length>6){var rest=ps.slice(5).reduce(function(a,p){return a+p[1]},0);ps=ps.slice(0,5).concat([["Other",rest]])}
+ var tot=ps.reduce(function(a,p){return a+p[1]},0),S2=110,r=40,c=2*Math.PI*r,acc=0,s='<svg viewBox="0 0 '+S2+' '+S2+'" width="'+S2+'" height="'+S2+'" role="img" aria-label="'+e(o.lab)+'" class="v228r">';
+ ps.forEach(function(p,i){var f=p[1]/tot,col=p[0]==="Other"?"#6B7280":CAT[i%CAT.length];s+='<circle cx="55" cy="55" r="'+r+'" fill="none" stroke="'+col+'" stroke-width="16" stroke-dasharray="'+Math.max(0,c*f-2).toFixed(1)+' '+c.toFixed(1)+'" stroke-dashoffset="'+(-c*acc).toFixed(1)+'" transform="rotate(-90 55 55)"><title>'+e(p[0]+": "+Math.round(f*100)+"%")+'</title></circle>';acc+=f});
+ s+='</svg>';
+ var lg='<ul class="v228l">'+ps.map(function(p,i){var col=p[0]==="Other"?"#6B7280":CAT[i%CAT.length];return '<li><i style="background:'+col+'"></i>'+e(p[0])+' <b>'+Math.round(p[1]/tot*100)+'%</b>'+(o.unit?' <span class="muted small">'+e(Math.round(p[1])+o.unit)+'</span>':'')+'</li>'}).join("")+'</ul>';
+ return '<div class="v228d">'+s+lg+'</div>'};
+FBV.card=function(kick,title,body,say){return '<span class="fb-kick">'+e(kick)+'</span><h2 class="m184-t" style="margin:2px 0 4px">'+e(title)+'</h2>'+(say||"")+body};
+window.FBV=FBV;
+function say(st,seed,txt){if(!window.FBSAY)return"";var o=FBSAY.say(st,seed);return o?'<p class="v228s"><span class="say227 '+o.c+'">'+o.i+' '+o.t+'</span>'+(txt?' <span class="muted small">'+txt+'</span>':'')+'</p>':""}
+/* ---------------- training ---------------- */
+function trainCard(){var m=lm(),wk0=mon(TODAY),W=[],tgt=3;try{tgt=FBE.target()}catch(x){}
+ for(var i=7;i>=0;i--){var a=addDays(wk0,-7*i),n=0,mins=0;for(var d=0;d<7;d++){var k=addDays(a,d);if(k>TODAY)break;sessOf(m[k]).forEach(function(s){n++;mins+=+s.mins>0?+s.mins:45})}W.push({a:a,n:n,m:mins})}
+ if(!W.some(function(w){return w.n}))return"";
+ var last=W[W.length-1],prev4=W.slice(3,7).reduce(function(a,w){return a+w.n},0)/4,share=Math.min(1,(((new Date(TODAY+"T12:00").getDay()+6)%7)+1)/7);
+ var h=FBV.card("Last 8 weeks","Your training at a glance",'<div class="v228c"><div class="v228h"><span>Sessions each week</span><b>'+last.n+' this week · target '+tgt+'</b></div>'+FBV.bars({vals:W.map(function(w){return w.n}),labels:W.map(function(w){return dlab(w.a)}),tips:W.map(function(w){return "Week of "+dlab(w.a)+": "+w.n+" session"+(w.n===1?"":"s")+", "+Math.round(w.m)+" min"}),target:tgt,col:"#3FC57E",lab:"Training sessions in each of the last 8 weeks, with your weekly target"})+'</div>',
+  say(window.FBSAY?FBSAY.target(last.n,tgt,share):null,"wk8",'This week so far against your target of '+tgt+'. Your usual week lately: '+(Math.round(prev4*10)/10)+'.'));
+ var mix={};for(var j=0;j<30;j++){var k2=addDays(TODAY,-j);sessOf(m[k2]).forEach(function(s){var sp=s.sport||s.type||"Other";mix[sp]=(mix[sp]||0)+(+s.mins>0?+s.mins:45)})}
+ var dn=FBV.donut({parts:Object.keys(mix).map(function(k){return [k,mix[k]]}),lab:"Share of training time by sport, last 30 days",unit:" min"});
+ if(dn)h+='<div class="v228c"><div class="v228h"><span>What you trained, last 30 days</span><b>by time</b></div>'+dn+'</div>';
+ try{if(window.FH223){var R=W.map(function(w){return FH223.range(w.a,addDays(w.a,6)).r});if(R.some(function(x){return x}))h+='<div class="v228c"><div class="v228h"><span>Sparring and rolling rounds</span><b>'+R[R.length-1]+' this week</b></div>'+FBV.line({vals:R,labels:W.map(function(w){return dlab(w.a)}),tips:R.map(function(r,i){return "Week of "+dlab(W[i].a)+": "+r+" rounds"}),col:"#C81E3A",lab:"Sparring and rolling rounds per week, last 8 weeks"})+'</div>'}}catch(x){}
+ return h}
+/* ---------------- food ---------------- */
+function kcalT(){var t=0;try{var c=calc(S.profile);if(c&&c.kcal>0)t=c.kcal}catch(x){}if(!t){try{t=+((P().g90||{}).food||{}).t.kcal||0}catch(x){}}if(!t)t=+P().kcalTarget||0;return Math.round(t)}
+function foodCard(){var m=lm(),D=[];for(var i=6;i>=0;i--){var k=addDays(TODAY,-i),l=m[k],ea=(l&&l.eaten)||[];D.push({k:k,n:ea.length,kc:ea.reduce(function(a,x){return a+(+x.kcal||0)},0),pr:ea.reduce(function(a,x){return a+(+x.protein||0)},0),c:ea.reduce(function(a,x){return a+(+x.carbs||0)},0),f:ea.reduce(function(a,x){return a+(+x.fat||0)},0)})}
+ if(!D.some(function(d){return d.n}))return"";var dt={};try{dt=FBE.diet()}catch(x){}var kt=kid()?0:kcalT(),pt=dt.protT||0,lab=D.map(function(d){return dlab(d.k,{weekday:"narrow"})}),logged=D.filter(function(d){return d.n}).length;
+ var h=FBV.card("Last 7 days","Your food week","",say(window.FBSAY?FBSAY.target(logged,7,1):null,"fw",logged+' of 7 days logged.'));
+ if(!kid())h+='<div class="v228c"><div class="v228h"><span>Calories logged</span><b>'+(kt?'target '+kt.toLocaleString("en-GB"):'no target set')+'</b></div>'+FBV.bars({vals:D.map(function(d){return d.n?d.kc:null}),labels:lab,tips:D.map(function(d){return dlab(d.k,{weekday:"long"})+": "+Math.round(d.kc).toLocaleString("en-GB")+" kcal"}),target:kt,col:"#E9A23B",lab:"Calories logged each day this week"})+'</div>';
+ h+='<div class="v228c"><div class="v228h"><span>Protein</span><b>'+(pt?'target '+pt+' g':'no target set')+'</b></div>'+FBV.bars({vals:D.map(function(d){return d.n?d.pr:null}),labels:lab,tips:D.map(function(d){return dlab(d.k,{weekday:"long"})+": "+Math.round(d.pr)+" g protein"}),target:pt,col:"#FF9F6B",lab:"Protein logged each day this week"})+'</div>';
+ var t=D[D.length-1];if(t.pr+t.c+t.f>0)h+='<div class="v228c"><div class="v228h"><span>Today\'s plate</span><b>share of energy</b></div>'+FBV.donut({parts:[["Protein",t.pr*4],["Carbs",t.c*4],["Fat",t.f*9]],lab:"Today's energy split between protein, carbs and fat",unit:" kcal"})+'</div>';
+ return h+'<p class="muted small" style="margin:6px 0 0">Grey stubs are days with nothing logged, not days you did not eat. Dashed lines are your own targets.</p>'}
+/* ---------------- goals ---------------- */
+function goalsCard(){var R=[],tgt=3,n=0;try{tgt=FBE.target()}catch(x){}var m=lm(),w0=mon(TODAY);for(var d=0;d<7;d++){var k=addDays(w0,d);if(k>TODAY)break;n+=sessOf(m[k]).length}
+ R.push({v:n/tgt,big:n+"/"+tgt,small:"sessions",t:"Training this week",st:window.FBSAY?FBSAY.target(n,tgt,Math.min(1,(((new Date(TODAY+"T12:00").getDay()+6)%7)+1)/7)):null});
+ var dt={};try{dt=FBE.diet()}catch(x){}var ea=(cur&&cur.eaten)||[];
+ if(dt.protT){var pr=ea.reduce(function(a,x){return a+(+x.protein||0)},0);R.push({v:pr/dt.protT,big:Math.round(pr)+"g",small:"of "+dt.protT+"g",t:"Protein today",col:"#FF9F6B",st:ea.length&&window.FBSAY?FBSAY.target(pr,dt.protT,.6):null})}
+ if(dt.waterT){var wa=+((cur||{}).water)||0;R.push({v:wa/dt.waterT,big:(Math.round(wa*10)/10)+"L",small:"of "+dt.waterT+"L",t:"Water today",col:"#55C7D9",st:wa&&window.FBSAY?FBSAY.target(wa,dt.waterT,.6):null})}
+ var G=[];try{G=(window.FH87&&FH87.G().goals)||[]}catch(x){}
+ G.slice(0,9).forEach(function(g){var v=0,big="",small="";
+  if(g.done){v=1;big="Done";small=g.doneAt?dlab(g.doneAt):""}
+  else if(g.type==="frequency"){var L=((FH87.G().log||{})[g.id]||[]).filter(function(d){return d>=w0}).length,t=+g.target||1;v=L/t;big=L+"/"+t;small="this week"}
+  else if(g.type==="number"&&g.target!=null){var st=+g.start||0,tg=+g.target,cv=g.cur!=null?+g.cur:st;v=tg===st?1:(cv-st)/(tg-st);big=String(cv)+(g.unit||"");small="to "+tg+(g.unit||"")}
+  else{v=0;big="Open";small=g.date?"by "+dlab(g.date):""}
+  R.push({v:v,big:big,small:small,t:g.title||"Goal",col:g.done?"#E9A23B":"#B482FF",st:g.done?"hit":null})});
+ var h=FBV.card("Right now","Your goals at a glance",'<div class="v228rg">'+R.map(function(r,i){return '<div class="v228ri">'+FBV.ring({v:r.v,col:r.col,big:r.big,small:r.small,lab:r.t+": "+r.big+" "+r.small})+'<b>'+e(r.t)+'</b>'+(r.st&&window.FBSAY?FBSAY.chip(r.st,"g"+i):'')+'</div>'}).join("")+'</div>'+(G.length?'':'<p class="muted small" style="margin:6px 0 0">Add a goal below and it gets its own ring here.</p>'));
+ return h}
+/* ---------------- member attendance ---------------- */
+function attCard(){var at=P().att||{},M={};Object.keys(at).forEach(function(k){var mo=k.slice(0,7);M[mo]=(M[mo]||0)+1});var now=TODAY.slice(0,7),L=[];
+ for(var i=5;i>=0;i--){var d=new Date(+now.slice(0,4),+now.slice(5,7)-1-i,1),k=d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0");L.push({k:k,n:M[k]||0,lab:d.toLocaleDateString("en-GB",{month:"short"})})}
+ if(!L.some(function(x){return x.n}))return"";var a=L[L.length-1].n,b=L[L.length-2].n;
+ return FBV.card("Last 6 months","Your club check-ins",'<div class="v228c">'+FBV.bars({vals:L.map(function(x){return x.n}),labels:L.map(function(x){return x.lab}),tips:L.map(function(x){return x.lab+": "+x.n+" class check-in"+(x.n===1?"":"s")}),col:"#4DA3FF",lab:"Class check-ins each month, last 6 months"})+'</div>',say(window.FBSAY?FBSAY.state(a,b):null,"att",a+' this month so far, '+b+' last month.'))}
+/* ---------------- club overview (staff) ---------------- */
+function staff(){try{return !!(window.FHC&&FHC.isOwner())}catch(x){return false}}
+function clubCard(){if(!staff()||typeof clubState==="undefined"||!clubState.club)return"";var M=(clubState.members||[]).filter(function(m){return m.uid!==S.uid&&m.status!=="left"}),w0=mon(TODAY),W=[];
+ for(var i=7;i>=0;i--){var a=addDays(w0,-7*i),b=addDays(a,6),ci=0,act=0;M.forEach(function(m){var n=Object.keys(m.att||{}).filter(function(k){var d=k.slice(0,10);return d>=a&&d<=b}).length;ci+=n;if(n)act++});W.push({a:a,ci:ci,act:act})}
+ if(!W.some(function(w){return w.ci}))return"";var cls={},tt={};try{(clubState.club.timetable||[]).forEach(function(x){tt[x.id]=x.title})}catch(x){}var cut=addDays(TODAY,-30);
+ M.forEach(function(m){Object.keys(m.att||{}).forEach(function(k){if(k.slice(0,10)<cut)return;var id=k.slice(11),t=tt[id]||"Other";cls[t]=(cls[t]||0)+1})});
+ var top=Object.keys(cls).map(function(k){return [k,cls[k]]}).sort(function(a,b){return b[1]-a[1]}).slice(0,6),mx=top.length?top[0][1]:1;
+ var h=FBV.card("Last 8 weeks","Your club at a glance",'<div class="v228c"><div class="v228h"><span>Class check-ins each week</span><b>'+W[W.length-1].ci+' this week</b></div>'+FBV.bars({vals:W.map(function(w){return w.ci}),labels:W.map(function(w){return dlab(w.a)}),tips:W.map(function(w){return "Week of "+dlab(w.a)+": "+w.ci+" check-ins, "+w.act+" members"}),col:"#4DA3FF",lab:"Class check-ins per week, last 8 weeks"})+'</div>'+
+  '<div class="v228c"><div class="v228h"><span>Members who trained each week</span><b>'+W[W.length-1].act+' this week of '+M.length+'</b></div>'+FBV.line({vals:W.map(function(w){return w.act}),labels:W.map(function(w){return dlab(w.a)}),tips:W.map(function(w){return "Week of "+dlab(w.a)+": "+w.act+" members checked in"}),col:"#3FC57E",lab:"Members who checked in each week, last 8 weeks"})+'</div>'+
+  (top.length?'<div class="v228c"><div class="v228h"><span>Busiest classes, last 30 days</span><b>check-ins</b></div><div class="v228hb">'+top.map(function(t){return '<div><span>'+e(t[0])+'</span><i><em style="width:'+Math.round(t[1]/mx*100)+'%"></em></i><b>'+t[1]+'</b></div>'}).join("")+'</div></div>':''),
+  say(window.FBSAY?FBSAY.state(W[W.length-2].ci,W[W.length-3].ci):null,"club",'Last full week against the week before. Counts class check-ins only.'));
+ return h}
+/* ---------------- cover pictures ---------------- */
+var TRAIN={train:"FB-TRAIN-008",workouts:"FB-TRAIN-005",schedule:"FB-TRAIN-010",mylib:"FB-TRAIN-006",skills:"FB-TRAIN-007",challenges:"FB-TRAIN-009",partners:"FB-TRAIN-002",film:"FB-TRAIN-001",learn:"FB-TRAIN-003",goals2:"FB-TRAIN-005",mygym:"FB-TRAIN-010",club:"FB-TRAIN-004",engine:"FB-TRAIN-001",cut:"FB-TRAIN-009",hubclasses:"FB-TRAIN-010",hubmem:"FB-TRAIN-007",hubgrading:"FB-TRAIN-003",hubcomp:"FB-TRAIN-001",hubwk:"FB-TRAIN-008",hubms:"FB-TRAIN-006"};
+var FOOD={meals:"FB-FOOD-D-highprotein",foods:"FB-FOOD-C-fruit",supps:"FB-FOOD-C-supplements",shop:"FB-FOOD-C-roots-squash-and-starchy-vegetables"};
+var CAP={train:"Every round counts",workouts:"Build it, then do it",schedule:"Turn up. Train. Repeat.",mylib:"Your own playbook",skills:"Sharpen the tools",challenges:"Take one on",partners:"Train better together",film:"Your fight record",learn:"Learn it right",goals2:"Set it. Chase it. Land it.",mygym:"Your gym, your home",club:"Show up for your club",engine:"Your training record",cut:"Make weight safely",hubclasses:"Classes and coaches",hubmem:"Your members",hubgrading:"Gradings",hubcomp:"Competition",hubwk:"Club workouts",hubms:"Milestones",meals:"Fuel for training",foods:"Know what you eat",supps:"Only what you need",shop:"Shop for the week"};
+function coverSrc(t){if(TRAIN[t]){var m=window.FH_IMAGES||{};return m[TRAIN[t]]||""}if(FOOD[t])return "images/food/"+FOOD[t]+".webp";return""}
+function cover(t){var sec=document.getElementById("tab-"+t);if(!sec||sec.hidden)return;var src=coverSrc(t);if(!src)return;var el=document.getElementById("cv228_"+t);
+ if(sec.querySelector(".im161,.cv228x"))return;
+ if(!el){el=document.createElement("figure");el.id="cv228_"+t;el.className="cv228 f149keep";el.innerHTML='<img alt="" loading="lazy" decoding="async" src="'+src+'"><figcaption>'+e(CAP[t]||"")+'</figcaption>';
+  el.querySelector("img").addEventListener("error",function(){el.hidden=true;el.classList.add("cv228bad")});sec.insertBefore(el,sec.firstChild)}}
+/* ---------------- placement ---------------- */
+var SPOTS=[["train","v228train",trainCard],["diary","v228food",foodCard],["goals2","v228goals",goalsCard],["club","v228att",attCard],["hubover","v228club",clubCard]];
+function put(tab,id,fn){var sec=document.getElementById("tab-"+tab);if(!sec||sec.hidden)return;var el=document.getElementById(id),h="";try{h=fn()}catch(x){try{console.warn("v228",id,x)}catch(_){}}
+ if(!h){if(el)el.remove();return}
+ if(!el){el=document.createElement("div");el.id=id;el.className="fb-card v228card f149keep";el.dataset.sig="";var host=tab==="hubover"?(document.getElementById("huboverBody")||sec):sec,cv=document.getElementById("cv228_"+tab);
+  if(cv&&cv.parentNode===host)host.insertBefore(el,cv.nextSibling);else if(tab==="hubover"&&host.firstChild)host.insertBefore(el,host.firstChild.nextSibling);else host.insertBefore(el,host.firstChild)}
+ if(el.dataset.sig!==h){el.innerHTML=h;el.dataset.sig=h}}
+function tick(){var vis=document.querySelector("section[id^=tab-]:not([hidden])");if(!vis)return;var t=vis.id.slice(4);
+ try{cover(t)}catch(x){}SPOTS.forEach(function(s){if(s[0]===t)put(s[0],s[1],s[2])})}
+setInterval(tick,2000);setTimeout(tick,800);
+var st0=showTab;showTab=function(t){var r=st0.apply(this,arguments);setTimeout(tick,120);return r};
+var css=document.createElement("style");css.textContent=
+".v228card{display:flex;flex-direction:column;gap:10px;order:-30}.v228c{display:flex;flex-direction:column;gap:4px;padding:10px 12px;border:1px solid var(--line,rgba(255,255,255,.1));border-radius:14px;background:rgba(255,255,255,.03)}"+
+".v228h{display:flex;justify-content:space-between;gap:8px;align-items:baseline;flex-wrap:wrap}.v228h span{font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted,#9AA0AA)}.v228h b{font-size:13px}"+
+".v228 .v228g{stroke:rgba(255,255,255,.07);stroke-width:1}.v228 .v228tg{stroke:rgba(255,255,255,.6);stroke-width:1.2;stroke-dasharray:3 4}.v228 .v228n{fill:rgba(255,255,255,.18)}.v228t{font-size:9px;fill:var(--muted,#9AA0AA)}"+
+".v228rb{stroke:rgba(255,255,255,.08)}.v228rt{font:800 15px var(--display,inherit);fill:#fff}.v228rs{font-size:9px;fill:var(--muted,#9AA0AA)}"+
+".v228d{display:flex;align-items:center;gap:16px;flex-wrap:wrap}.v228l{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:5px;font-size:13px;flex:1;min-width:150px}.v228l i{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:7px;vertical-align:-1px}"+
+".v228rg{display:grid;grid-template-columns:repeat(auto-fill,minmax(110px,1fr));gap:12px}.v228ri{display:flex;flex-direction:column;align-items:center;gap:4px;text-align:center;padding:10px 6px;border:1px solid var(--line,rgba(255,255,255,.1));border-radius:14px;background:rgba(255,255,255,.03)}.v228ri b{font-size:12.5px;line-height:1.2}.v228ri .say227{white-space:normal;font-size:11.5px}"+
+".v228s{margin:0 0 2px;display:flex;flex-wrap:wrap;gap:6px;align-items:baseline}.v228s .say227{font-size:14px}"+
+".v228hb{display:flex;flex-direction:column;gap:6px}.v228hb>div{display:grid;grid-template-columns:minmax(90px,38%) 1fr 34px;gap:8px;align-items:center;font-size:13px}.v228hb span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.v228hb i{display:block;height:10px;border-radius:5px;background:rgba(255,255,255,.07);overflow:hidden}.v228hb em{display:block;height:100%;border-radius:5px;background:#4DA3FF}.v228hb b{text-align:right}"+
+".cv228[hidden],.cv228bad{display:none!important}.cv228{position:relative;margin:0;border-radius:18px;overflow:hidden;order:-40;grid-column:1/-1;min-height:110px;max-height:180px;background:#111}.cv228 img{display:block;width:100%;height:170px;object-fit:cover;filter:saturate(1.05) contrast(1.05)}.cv228:after{content:'';position:absolute;inset:0;background:linear-gradient(90deg,rgba(10,10,14,.85) 0%,rgba(10,10,14,.35) 55%,rgba(10,10,14,.1) 100%)}"+
+".cv228 figcaption{position:absolute;left:18px;bottom:14px;z-index:1;font:900 26px/1 var(--display,'Big Shoulders Display',sans-serif);text-transform:uppercase;letter-spacing:.03em;color:#fff;max-width:70%}"+
+"@media (max-width:600px){.cv228 img{height:120px}.cv228 figcaption{font-size:21px}}";
+document.head.appendChild(css);
+})();
 
 /* FighterBase v44: always a way back, always a next step. */
 var N31=N31||false;
