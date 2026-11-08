@@ -23415,6 +23415,10 @@ var css=document.createElement("style");css.textContent=".tw220 summary{cursor:p
 document.head.appendChild(css);
 return {html:html}})();
 
+/* v322 (FB-023, 8 Nov 2026): when a server address is set (FH_CONFIG.aiEndpoint, or typed into "Connect a test key" by Steve and kept on that device only),
+   questions go to the real Ask FighterBase server function (supabase/functions/ask-fighterbase), which holds the Anthropic key and the daily allowance.
+   Without it, the fake preview below still runs. Safety words are still stopped here first and never sent. Only a small set of numbers is sent, never names or notes.
+   window.FH221.server(mode,q) is shared with voice-to-log. */
 /* FighterBase v305: "Ask FighterBase" PREVIEW of the AI add-on. There is NO AI here: no key, no network call, no account. A small fake provider answers a fixed set
    of questions from the member's own numbers so Steve can see and judge the screens, consent, limits and safety wording. Off until the member turns it on; hidden for
    under-18s; health, allergy and eating-disorder words get a fixed "speak to a person" answer and never reach any provider. Real AI (Anthropic API) waits for Steve's yes,
@@ -23438,25 +23442,43 @@ function fake(q){var t=q.toLowerCase(),p=P(),c=null;try{c=calc(p)}catch(x){}
  if(/week|summary|how.*(am i|did i)|this week/.test(t)){var L=(window.FH51V&&FH51V.logs)||{},k=Object.keys(L||{}).sort().slice(-7),tk=0,n=0;k.forEach(function(d){var x=sumDay(L[d]||{});if(x.kcal){tk+=x.kcal;n++}});
   return n?"Over your last "+n+" logged day"+(n===1?"":"s")+" you averaged about "+Math.round(tk/n)+" kcal a day, against a target of "+c.kcal+". This is only what you logged, so missing days are not counted.":"I do not see any logged days yet, so there is nothing to summarise.";}
  return "In this preview I can answer: \"what's left today?\", \"suggest a meal\" and \"how was my week?\". The real version will do more, and you will see exactly what it can do before you switch it on."}
+function cfg(){var c=window.FH_CONFIG||{},t={};try{t=JSON.parse(localStorage.getItem("fbAiTest")||"{}")}catch(x){}return {url:c.aiEndpoint||t.url||"",anon:c.supabaseAnonKey||t.anon||"",code:t.code||""}}
+function live(){return !!cfg().url}
+function dev(){var d="";try{d=localStorage.getItem("fbDev")||"";if(!d){d="d"+Math.random().toString(36).slice(2,12)+Date.now().toString(36);localStorage.setItem("fbDev",d)}}catch(x){d="d0"}return d}
+function ctx(){var p=P(),c=null,o={};try{c=calc(p)}catch(x){}var s={};try{s=sumDay(cur)||{}}catch(x){}
+ if(c){o.kcalTarget=c.kcal;o.proteinTarget=c.protein}try{var d=FBE.diet();if(d.waterT)o.waterTarget=d.waterT}catch(x){}
+ o.kcalToday=Math.round(s.kcal||0);o.proteinToday=Math.round(s.protein||0);o.waterToday=+((cur||{}).water)||0;o.age=+p.age||null;
+ try{o.sessionsWeek=FBW.n("sess",7);o.sessionsTarget=FBW.tgt(7)}catch(x){}try{o.eatingStyle=FH62.mine()}catch(x){}o.sports=(p.sports||[]).slice(0,4);return o}
+var LEFT=null,BUSY=false;
+function server(mode,q){var c=cfg();if(!c.url)return Promise.reject({code:"off"});var h={"Content-Type":"application/json"};if(c.anon){h.apikey=c.anon}if(c.code)h["x-fb-test"]=c.code;
+ try{var tok=window.FH_SESSION_TOKEN||"";if(tok)h.Authorization="Bearer "+tok}catch(x){}
+ return fetch(c.url,{method:"POST",headers:h,body:JSON.stringify({mode:mode,q:q,ctx:ctx(),device:dev()})}).then(function(r){return r.json().catch(function(){return {ok:false,code:"busy",text:"Ask FighterBase is busy. Please try again later."}})}).then(function(j){if(j&&j.left!=null)LEFT=j.left;return j})}
+function askLive(q){BUSY=true;log.push({r:"app",t:"Thinking…",wait:1});redraw();
+ server("ask",q).then(function(j){log=log.filter(function(m){return !m.wait});log.push({r:"app",t:(j&&j.text)||"Ask FighterBase is busy. Please try again later.",flag:j&&j.code==="flag"?1:0});BUSY=false;redraw()},
+  function(){log=log.filter(function(m){return !m.wait});log.push({r:"app",t:"Couldn't reach Ask FighterBase. Check your connection and try again."});BUSY=false;redraw()})}
 function ask(q){q=String(q||"").trim().slice(0,200);if(!q)return;log.push({r:"me",t:q});
  if(FLAG.test(q)){log.push({r:"app",t:flagMsg(),flag:1});return}
+ if(live()){if(!BUSY)askLive(q);return}
  if(used()>=CAP){log.push({r:"app",t:"You have used today's "+CAP+" preview questions. They reset tomorrow."});return}
  P().askUse={d:TODAY,n:used()+1};try{profChanged()}catch(x){}log.push({r:"app",t:fake(q)})}
-function html(){if(young())return "";var p=P(),on=!!p.askAi,h='<details class="panel ai221"'+(open?" open":"")+' data-ai221d><summary><b>Ask FighterBase</b> <span class="ai221-tag">Preview</span></summary>';
+function html(){if(young())return "";var p=P(),on=!!p.askAi,h='<details class="panel ai221"'+(open?" open":"")+' data-ai221d><summary><b>Ask FighterBase</b> <span class="ai221-tag">'+(live()?'Live test':'Preview')+'</span></summary>';
  if(!on)return h+'<p class="small" style="margin:8px 0">A helper that answers questions about your own food numbers. <b>This is a preview with no real AI behind it</b>: nothing you type leaves your phone, and answers come from a fixed set of replies built on your own targets.</p><p class="small muted" style="margin:0 0 8px">When the real version arrives it will be off until you turn it on, give general guidance only (not medical advice), send anything about allergies, health or eating problems to a real person, and have a daily limit. Never for under-18s.</p><div class="row"><button type="button" class="btn sm" data-ai221on="1">Try the preview</button></div></details>';
  h+='<div class="ai221-log">'+(log.length?log.map(function(m){return '<div class="ai221-m '+(m.r==="me"?"me":"app")+(m.flag?" flag":"")+'">'+e(m.t)+'</div>'}).join(""):'<p class="small muted" style="margin:8px 0 0">Try: "what\'s left today?", "suggest a meal" or "how was my week?"</p>')+'</div>'+
   '<div class="row ai221-in"><input type="text" id="ai221q" maxlength="200" placeholder="Ask about your food today" aria-label="Ask FighterBase"><button type="button" class="btn sm" data-ai221go="1">Ask</button></div>'+
-  '<p class="small muted" style="margin:6px 0 0">Preview only: no AI, nothing sent anywhere. '+used()+' of '+CAP+' questions used today. General guidance, not medical advice. <button type="button" class="linkbtn" data-ai221off="1">Switch off</button></p></details>';return h}
+  '<p class="small muted" style="margin:6px 0 0">'+(live()?'Real AI (test). Your question and a few of your numbers (targets and today\'s totals, no names or notes) go to FighterBase\'s server and Anthropic\'s Claude. '+(LEFT!=null?LEFT+' questions left today. ':''):'Preview only: no AI, nothing sent anywhere. '+used()+' of '+CAP+' questions used today. ')+'General guidance, not medical advice. <button type="button" class="linkbtn" data-ai221off="1">Switch off</button></p>'+testForm()+'</details>';return h}
+function testForm(){var c=cfg();if((window.FH_CONFIG||{}).aiEndpoint)return "";return '<details class="ai221-t"><summary class="small muted">Connect a test key (Steve only)</summary><p class="small muted" style="margin:6px 0">For the private key test. Kept on this device only, never sent anywhere except the server address you enter.</p><div class="field"><label class="label" for="ai221u">Server address</label><input id="ai221u" type="url" value="'+e(c.url)+'" placeholder="https://<project>.supabase.co/functions/v1/ask-fighterbase"></div><div class="field"><label class="label" for="ai221a">Supabase anon key</label><input id="ai221a" type="text" value="'+e(c.anon)+'"></div><div class="field"><label class="label" for="ai221c">Test code</label><input id="ai221c" type="password" value="'+e(c.code)+'"></div><div class="row"><button type="button" class="btn sm" data-ai221save="1">Save</button>'+(c.url?'<button type="button" class="btn ghost sm" data-ai221clear="1">Back to preview</button>':'')+'</div></details>'}
 function redraw(){try{FH51V.page()}catch(x){}}
 document.addEventListener("click",function(ev){var t=ev.target&&ev.target.closest?ev.target:null;if(!t)return;var b;
+ if(b=t.closest("[data-ai221save]")){var g=function(id){var x=document.getElementById(id);return x?x.value.trim():""};try{localStorage.setItem("fbAiTest",JSON.stringify({url:g("ai221u"),anon:g("ai221a"),code:g("ai221c")}))}catch(x){}LEFT=null;try{toast("Saved","Ask FighterBase will use the test server")}catch(x){}redraw();return}
+ if(b=t.closest("[data-ai221clear]")){try{localStorage.removeItem("fbAiTest")}catch(x){}LEFT=null;redraw();return}
  if(b=t.closest("[data-ai221on]")){P().askAi=true;try{profChanged()}catch(x){}open=true;redraw();return}
  if(b=t.closest("[data-ai221off]")){P().askAi=false;log=[];try{profChanged()}catch(x){}redraw();return}
  if(b=t.closest("[data-ai221go]")){var i=document.getElementById("ai221q");if(i&&i.value.trim()){ask(i.value);open=true;redraw()}return}});
 document.addEventListener("keydown",function(ev){if(ev.key==="Enter"&&ev.target&&ev.target.id==="ai221q"){ev.preventDefault();ask(ev.target.value);open=true;redraw()}});
 document.addEventListener("toggle",function(ev){var d=ev.target;if(d&&d.matches&&d.matches("[data-ai221d]"))open=d.open},true);
-var css=document.createElement("style");css.textContent=".ai221 summary{cursor:pointer;min-height:40px;display:flex;align-items:center;gap:8px}.ai221-tag{font-size:11px;font-weight:700;padding:2px 8px;border-radius:999px;border:1px solid var(--line);color:#E8DFC8}.ai221-log{display:flex;flex-direction:column;gap:8px;margin:8px 0}.ai221-m{padding:8px 12px;border-radius:12px;font-size:14px;max-width:92%}.ai221-m.me{align-self:flex-end;background:rgba(255,106,61,.18)}.ai221-m.app{align-self:flex-start;background:rgba(255,255,255,.06)}.ai221-m.flag{border:1px solid #E8DFC8}.ai221-in{display:flex;gap:8px}.ai221-in input{flex:1;min-width:0;background:rgba(255,255,255,.04);border:1px solid var(--line);border-radius:10px;color:inherit;padding:8px 10px;font-size:16px}";
+var css=document.createElement("style");css.textContent=".ai221-t{margin-top:8px}.ai221-t summary{min-height:30px}.ai221 summary{cursor:pointer;min-height:40px;display:flex;align-items:center;gap:8px}.ai221-tag{font-size:11px;font-weight:700;padding:2px 8px;border-radius:999px;border:1px solid var(--line);color:#E8DFC8}.ai221-log{display:flex;flex-direction:column;gap:8px;margin:8px 0}.ai221-m{padding:8px 12px;border-radius:12px;font-size:14px;max-width:92%}.ai221-m.me{align-self:flex-end;background:rgba(255,106,61,.18)}.ai221-m.app{align-self:flex-start;background:rgba(255,255,255,.06)}.ai221-m.flag{border:1px solid #E8DFC8}.ai221-in{display:flex;gap:8px}.ai221-in input{flex:1;min-width:0;background:rgba(255,255,255,.04);border:1px solid var(--line);border-radius:10px;color:inherit;padding:8px 10px;font-size:16px}";
 document.head.appendChild(css);
-return {html:html,ask:ask,fake:fake}})();
+return {html:html,ask:ask,fake:fake,server:server,live:live}})();
 
 /* FighterBase v308: native geofence link (phone app only). In the Android/iPhone app a small bridge (app/src/geo-bridge.js) puts window.FBGeo on the page.
    This module (1) registers the club place with it while the member has Automatic attendance switched on, (2) removes it when they switch it off or leave the club,
