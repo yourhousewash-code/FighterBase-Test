@@ -24136,6 +24136,64 @@ document.head.appendChild(css);
 window.FH231={streak:streak,eff:effOf};
 })();
 
+/* FighterBase v326 (Steve, 8 Nov 2026): year-end recap for the fighter and the gym ("Wrapped" style, our way: training first, honest numbers, pictures).
+   Member: My progress tab, top: "Your year so far" (from 1 December it becomes "Your <year> recap"), and from 1 December to 15 January a teaser on Today.
+     Sessions, hours, days trained, sparring and rolling rounds, effort points, a month-by-month bar chart, what you trained (by time), longest run of weeks
+     with training, best week, goals achieved, challenges completed, Committed Club months, club check-ins; a fight-flavoured headline.
+   Club (staff), Overview: "Your club's year": class check-ins, members who trained, check-ins by month, busiest month, busiest classes.
+   Only what was logged or checked in; nothing is guessed. No weight or food numbers in the recap (it's about training, and people share it). */
+var K232=K232||false;
+(function(){
+if(K232)return;K232=true;
+function e(s){return esc(String(s==null?"":s))}
+function P(){return S.profile||{}}
+function Y(){return TODAY.slice(0,4)}
+function late(){var m=+TODAY.slice(5,7),d=+TODAY.slice(8,10);return m===12||(m===1&&d<=15)}
+function yr(){var m=+TODAY.slice(5,7),y=+Y();return m===1?String(y-1):String(y)}
+function lm(){var m={};try{m=logMap()||{}}catch(x){}try{if(typeof cur!=="undefined"&&cur&&cur.date)m[cur.date]=cur}catch(x){}return m}
+function sessOf(l){try{return FBE.sessOf(l)||[]}catch(x){return (l&&l.sessions)||[]}}
+var MON=["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+function stats(y){var L=lm(),o={n:0,mins:0,days:0,eff:0,months:[0,0,0,0,0,0,0,0,0,0,0,0],sport:{},weeks:{},att:0,spar:0};
+ Object.keys(L).forEach(function(k){if(k.slice(0,4)!==y)return;var ss=sessOf(L[k]);if(!ss.length)return;o.days++;o.months[+k.slice(5,7)-1]+=ss.length;var wk=(function(){var d=new Date(k+"T12:00"),w=(d.getDay()+6)%7;return addDays(k,-w)})();o.weeks[wk]=(o.weeks[wk]||0)+ss.length;
+  ss.forEach(function(s){o.n++;var m=+s.mins>0?+s.mins:45;o.mins+=m;o.eff+=window.FH231?FH231.eff(s):Math.round(m*(+s.rpe||6)/10);var sp=s.sport||s.type||"Other";o.sport[sp]=(o.sport[sp]||0)+m})});
+ try{if(window.FH223)o.spar=FH223.range(y+"-01-01",y+"-12-31").r}catch(x){}
+ Object.keys(P().att||{}).forEach(function(k){if(k.slice(0,4)===y)o.att++});
+ var wks=Object.keys(o.weeks).sort(),run=0,best=0,prev=null;wks.forEach(function(w){run=(prev&&addDays(prev,7)===w)?run+1:1;if(run>best)best=run;prev=w});o.run=best;
+ o.bestWeek=wks.reduce(function(a,w){return o.weeks[w]>(a?o.weeks[a]:0)?w:a},null);
+ try{o.goals=(window.FH87?FH87.achieved():[]).filter(function(g){return String(g.at).slice(0,4)===y}).length}catch(x){o.goals=0}
+ o.ch=(P().challenges||[]).filter(function(j){return j.completed&&String(j.completed).slice(0,4)===y}).length;
+ var c=P().commit||{},h=c.hist||{};o.cc=0;Object.keys(h).forEach(function(m){if(m.slice(0,4)===y){var n=0;Object.keys(L).forEach(function(k){if(k.slice(0,7)===m)n+=sessOf(L[k]).length});if(n>=h[m])o.cc++}});
+ return o}
+function headline(o){var t=o.n>=200?"A fighter's year. Relentless.":o.n>=120?"Serious work. You turned up, again and again.":o.n>=60?"Solid graft. The habit's built.":o.n>=20?"You started something. Keep the gloves on.":"First rounds done. Next year, more.";return t}
+function tile(lab,big,sub){return '<div class="r232t"><span>'+e(lab)+'</span><b>'+e(big)+'</b>'+(sub?'<small>'+e(sub)+'</small>':'')+'</div>'}
+function memberCard(){if(!P().onboarded)return"";var y=late()?yr():Y(),o=stats(y);if(!o.n)return"";var V=window.FBV,isRecap=late();
+ var h='<span class="fb-kick">'+(isRecap?'Your '+e(y)+' recap':'Your year so far · '+e(y))+'</span><h2 class="m184-t" style="margin:2px 0 4px">'+e(isRecap?'Your '+y+' in training':'Your '+y+' so far')+'</h2><p class="r232h">'+e(headline(o))+'</p>';
+ h+='<div class="r232g">'+tile("Sessions",o.n.toLocaleString("en-GB"),"")+tile("Hours",String(Math.round(o.mins/60)),"of training")+tile("Days trained",String(o.days),"")+tile("Effort points",o.eff.toLocaleString("en-GB"),"")+(o.spar?tile("Rounds",String(o.spar),"sparring and rolling"):"")+tile("Longest run",o.run+" wk"+(o.run===1?"":"s"),"in a row with training")+(o.att?tile("Club check-ins",String(o.att),""):"")+(o.goals?tile("Goals achieved",String(o.goals),""):"")+(o.ch?tile("Challenges won",String(o.ch),""):"")+(o.cc?tile("Committed Club",o.cc+" month"+(o.cc===1?"":"s"),""):"")+'</div>';
+ var best=o.months.indexOf(Math.max.apply(null,o.months));
+ if(V)h+='<div class="v228c" style="margin-top:10px"><div class="v228h"><span>Sessions by month</span><b>best: '+MON[best]+' ('+o.months[best]+')</b></div>'+V.bars({vals:o.months.map(function(v,i){return (y===Y()&&i>+TODAY.slice(5,7)-1)?null:v}),labels:MON.map(function(m){return m.charAt(0)}),tips:o.months.map(function(v,i){return MON[i]+": "+v+" session"+(v===1?"":"s")}),hi:best,col:"#3FC57E",lab:"Sessions each month this year"})+'</div>';
+ var dn=V?V.donut({parts:Object.keys(o.sport).map(function(k){return [k,o.sport[k]]}),lab:"What you trained this year, by time",unit:" min"}):"";if(dn)h+='<div class="v228c" style="margin-top:10px"><div class="v228h"><span>What you trained</span><b>by time</b></div>'+dn+'</div>';
+ if(o.bestWeek)h+='<p class="muted small" style="margin:8px 0 0">Best week: '+o.weeks[o.bestWeek]+' sessions, week of '+new Date(o.bestWeek+"T12:00").toLocaleDateString("en-GB",{day:"numeric",month:"long"})+'. Only what you logged or checked in counts.</p>';
+ return h}
+function teaser(){if(!late()||!P().onboarded)return"";var o=stats(yr());if(!o.n)return"";return '<span class="fb-kick">Your '+e(yr())+' recap</span><h2 class="m184-t" style="margin:2px 0 4px">'+o.n+' sessions. '+Math.round(o.mins/60)+' hours.</h2><p class="small" style="margin:0 0 8px">'+e(headline(o))+'</p><button type="button" class="btn sm" data-r232go>See your year</button>'}
+function staff(){try{return !!(window.FHC&&FHC.isOwner())}catch(x){return false}}
+function clubCard(){if(!staff()||typeof clubState==="undefined"||!clubState.club)return"";var y=late()?yr():Y(),M=(clubState.members||[]).filter(function(m){return m.uid!==S.uid}),mon=[0,0,0,0,0,0,0,0,0,0,0,0],act=0,cls={},tt={},tot=0;try{(clubState.club.timetable||[]).forEach(function(x){tt[x.id]=x.title})}catch(x){}
+ M.forEach(function(m){var n=0;Object.keys(m.att||{}).forEach(function(k){if(k.slice(0,4)!==y)return;n++;tot++;mon[+k.slice(5,7)-1]++;var t=tt[k.slice(11)]||"Other";cls[t]=(cls[t]||0)+1});if(n)act++});
+ if(!tot)return"";var V=window.FBV,best=mon.indexOf(Math.max.apply(null,mon)),top=Object.keys(cls).map(function(k){return [k,cls[k]]}).sort(function(a,b){return b[1]-a[1]}).slice(0,5),mx=top.length?top[0][1]:1;
+ return '<span class="fb-kick">'+(late()?'Your club\'s '+e(y)+' recap':'Your club\'s year so far · '+e(y))+'</span><h2 class="m184-t" style="margin:2px 0 6px">'+tot.toLocaleString("en-GB")+' class check-ins</h2><div class="r232g">'+tile("Members who trained",String(act),"at least once")+tile("Busiest month",MON[best],mon[best]+" check-ins")+tile("Check-ins each",act?String(Math.round(tot/act)):"0","per member on average")+'</div>'+
+  (V?'<div class="v228c" style="margin-top:10px"><div class="v228h"><span>Check-ins by month</span><b>'+e(y)+'</b></div>'+V.bars({vals:mon.map(function(v,i){return (y===Y()&&i>+TODAY.slice(5,7)-1)?null:v}),labels:MON.map(function(m){return m.charAt(0)}),tips:mon.map(function(v,i){return MON[i]+": "+v+" check-ins"}),hi:best,col:"#4DA3FF",lab:"Class check-ins each month this year"})+'</div>':'')+
+  (top.length?'<div class="v228c" style="margin-top:10px"><div class="v228h"><span>Busiest classes</span><b>check-ins</b></div><div class="v228hb">'+top.map(function(t){return '<div><span>'+e(t[0])+'</span><i><em style="width:'+Math.round(t[1]/mx*100)+'%"></em></i><b>'+t[1]+'</b></div>'}).join("")+'</div></div>':'')+
+  '<p class="muted small" style="margin:8px 0 0">From class check-ins only. A members\' version of this is a great end-of-year post (no names).</p>'}
+function put(id,host,h,before,order){if(!host)return;var el=document.getElementById(id);if(!h){if(el)el.remove();return}if(!el){el=document.createElement("div");el.id=id;el.className="fb-card f149keep r232";el.dataset.sig="";if(order!=null)el.style.order=order;if(before&&before.parentNode===host)host.insertBefore(el,before);else host.insertBefore(el,host.firstChild)}if(el.dataset.sig!==h){el.innerHTML=h;el.dataset.sig=h}}
+function tick(){var vis=document.querySelector("section[id^=tab-]:not([hidden])");if(!vis)return;var t=vis.id.slice(4);
+ try{if(t==="engine")put("r232m",vis,memberCard(),vis.firstChild,-30);if(t==="today")put("r232t",vis,teaser(),null,-45);if(t==="hubover"){var hb=document.getElementById("huboverBody");put("r232c",hb,clubCard(),null,null)}}catch(x){try{console.warn("r232",x)}catch(_){}}}
+document.addEventListener("click",function(ev){if(ev.target.closest&&ev.target.closest("[data-r232go]")){try{showTab("engine")}catch(x){}}});
+setInterval(tick,2500);setTimeout(tick,1000);
+var st0=showTab;showTab=function(tab){var r=st0.apply(this,arguments);setTimeout(tick,170);return r};
+var css=document.createElement("style");css.textContent=".r232{display:flex;flex-direction:column;gap:6px}.r232h{margin:0 0 8px;font:800 17px var(--body,inherit);color:#3FC57E}.r232g{display:grid;grid-template-columns:repeat(auto-fill,minmax(118px,1fr));gap:8px}.r232t{display:flex;flex-direction:column;gap:2px;padding:10px 12px;border-radius:14px;border:1px solid var(--line,rgba(255,255,255,.1));background:rgba(255,255,255,.03)}.r232t span{font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted,#9AA0AA)}.r232t b{font:900 26px/1.05 var(--display,inherit)}.r232t small{font-size:11.5px;color:var(--muted,#9AA0AA)}";
+document.head.appendChild(css);
+window.FH232={stats:stats};
+})();
+
 /* FighterBase v44: always a way back, always a next step. */
 var N31=N31||false;
 (function(){
