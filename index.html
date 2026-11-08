@@ -23557,6 +23557,49 @@ var st=document.createElement("style");st.textContent="#fb316,#fb316c{order:-20}
 window.FH224={draw:draw};
 })();
 
+/* FighterBase v317 (Steve, 8 Nov 2026): interval and round timer. Your own rounds, work and rest (or a quick preset: boxing, Muay Thai, MMA, kids, HIIT), a 10 second get-ready, bell at each change, warning beep 10 seconds before the end of a round, screen kept awake, pause, skip, and an optional save to the day log. Separate from the set bag-work timer (fh187). No data leaves the phone. Voice start for coaches is planned for later. */
+var K225=K225||false;
+(function(){
+if(K225)return;K225=true;
+var PRE=[["Boxing",3,180,60],["Amateur boxing",3,120,60],["Muay Thai",5,180,120],["MMA",3,300,60],["Kids class",3,120,30],["HIIT",8,20,10]];
+var cfg={rounds:3,work:180,rest:60,prep:10},st=null,iv=null,ctx=null,wl=null;
+try{var sv=JSON.parse(localStorage.getItem("fb225")||"null");if(sv&&sv.rounds)cfg=Object.assign(cfg,sv)}catch(x){}
+function e(s){return String(s==null?"":s).replace(/[&<>"]/g,function(c){return{"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]})}
+function mm(s){s=Math.max(0,Math.ceil(s));return Math.floor(s/60)+":"+("0"+s%60).slice(-2)}
+function keep(){try{localStorage.setItem("fb225",JSON.stringify(cfg))}catch(x){}}
+function beep(n){try{ctx=ctx||new(window.AudioContext||window.webkitAudioContext)();var o=ctx.createOscillator(),g=ctx.createGain();o.frequency.value=n>1?660:880;o.connect(g);g.connect(ctx.destination);g.gain.value=.2;o.start();o.stop(ctx.currentTime+(n>1?.6:.25))}catch(x){}try{navigator.vibrate&&navigator.vibrate(n>1?[250,100,250]:120)}catch(x){}}
+function wake(on){try{if(on&&navigator.wakeLock){navigator.wakeLock.request("screen").then(function(l){wl=l}).catch(function(){})}else if(wl){wl.release();wl=null}}catch(x){}}
+function total(){return cfg.rounds*cfg.work+(cfg.rounds-1)*cfg.rest}
+function card(){var tb=document.getElementById("tab-train");if(!tb)return;var el=document.getElementById("b225c");if(!el){el=document.createElement("div");el.id="b225c";el.className="fb-card f149keep";var a=document.getElementById("b187c_tab-train")||document.getElementById("fb223");if(a&&a.parentNode===tb)tb.insertBefore(el,a.nextSibling);else tb.insertBefore(el,tb.firstChild)}
+ if(el.contains(document.activeElement)&&document.activeElement.tagName==="INPUT")return;
+ function row(k,lab,v,step,fmt){return'<div class="r225"><span>'+lab+'</span><button type="button" class="s225" data-t225="'+k+':-'+step+'" aria-label="Less '+lab+'">&minus;</button><b>'+fmt(v)+'</b><button type="button" class="s225" data-t225="'+k+':'+step+'" aria-label="More '+lab+'">+</button></div>'}
+ var h='<span class="label">Round timer</span><h2 class="m184-t">Rounds, work and rest</h2><div class="chips">'+PRE.map(function(p,i){return'<button type="button" class="chip" data-p225="'+i+'">'+e(p[0])+'</button>'}).join("")+'</div>'+row("rounds","Rounds",cfg.rounds,1,String)+row("work","Round length",cfg.work,15,mm)+row("rest","Rest",cfg.rest,15,mm)+'<p class="muted small" style="margin:6px 0 8px">'+cfg.rounds+' rounds, about '+Math.round(total()/60)+' minutes. A 10 second get-ready comes first.</p><button class="btn" type="button" data-go225>Start timer</button>';
+ if(el.dataset.sig!==h){el.innerHTML=h;el.dataset.sig=h}}
+function ov(){var o=document.getElementById("b225");if(!o){o=document.createElement("div");o.id="b225";o.setAttribute("role","dialog");o.setAttribute("aria-modal","true");document.body.appendChild(o)}return o}
+function draw(){var o=ov();if(!st){o.hidden=true;return}o.hidden=false;
+ var lab=st.ph==="prep"?"Get ready":st.ph==="work"?"Round "+(st.r+1)+" of "+cfg.rounds:st.ph==="rest"?"Rest. Next: round "+(st.r+2):"Done";
+ var h='<div class="b225-in"><div class="row" style="justify-content:space-between"><span class="label">Round timer</span><button class="linkbtn" type="button" data-x225>Close</button></div><p class="b225-l '+st.ph+'">'+lab+'</p>';
+ if(st.ph==="done")h+='<p class="muted">'+cfg.rounds+' rounds, about '+Math.round(total()/60)+' minutes.</p><div class="row"><button class="btn" type="button" data-save225>Save to my log</button><button class="linkbtn" type="button" data-x225>Close without saving</button></div>';
+ else h+='<p class="b225-t" id="b225t">'+mm(st.left)+'</p><div class="row"><button class="btn ghost" type="button" data-pause225>'+(st.paused?"Resume":"Pause")+'</button><button class="btn ghost" type="button" data-skip225>Skip</button><button class="linkbtn" type="button" data-x225>Stop</button></div>';
+ o.className="ph225-"+st.ph;o.innerHTML=h+'</div>'}
+function set(ph,sec){st.ph=ph;st.end=Date.now()+sec*1000;st.left=sec}
+function next(){if(st.ph==="prep"){beep(2);st.r=0;set("work",cfg.work)}else if(st.ph==="work"){beep(2);if(st.r>=cfg.rounds-1){st.ph="done";clearInterval(iv);iv=null;wake(false)}else if(cfg.rest>0)set("rest",cfg.rest);else{st.r++;set("work",cfg.work)}}else if(st.ph==="rest"){beep(2);st.r++;set("work",cfg.work)}draw()}
+function tick(){if(!st||st.paused||st.ph==="done")return;st.left=Math.max(0,(st.end-Date.now())/1000);var t=document.getElementById("b225t");if(t)t.textContent=mm(st.left);if(st.ph==="work"&&cfg.work>20&&st.left<=10&&st.left>9.7)beep(1);if(st.left<=0)next()}
+function stop(){if(iv){clearInterval(iv);iv=null}st=null;wake(false);draw()}
+document.addEventListener("click",function(ev){var t=ev.target.closest&&ev.target.closest("[data-t225],[data-p225],[data-go225],[data-x225],[data-pause225],[data-skip225],[data-save225]");if(!t)return;
+ if(t.dataset.t225){var a=t.dataset.t225.split(":"),k=a[0],d=+a[1],lim={rounds:[1,30],work:[10,1200],rest:[0,600]}[k];cfg[k]=Math.min(lim[1],Math.max(lim[0],cfg[k]+d));keep();card();return}
+ if(t.dataset.p225){var p=PRE[+t.dataset.p225];cfg.rounds=p[1];cfg.work=p[2];cfg.rest=p[3];keep();card();return}
+ if(t.hasAttribute("data-go225")){try{ctx=ctx||new(window.AudioContext||window.webkitAudioContext)()}catch(x){}st={r:0,paused:false};set("prep",cfg.prep);wake(true);beep(1);draw();iv=setInterval(tick,200);return}
+ if(t.hasAttribute("data-x225")){stop();return}
+ if(t.hasAttribute("data-pause225")){if(st.paused){st.end=Date.now()+st.left*1000;st.paused=false}else st.paused=true;draw();return}
+ if(t.hasAttribute("data-skip225")){next();return}
+ if(t.hasAttribute("data-save225")){var ok=false,sp="Training";try{sp=(S.profile.sports&&S.profile.sports[0])||sp;var mins=Math.max(5,Math.round(total()/60));cur.sessions=(cur.sessions||[]).concat([{sport:sp,type:sp,mins:mins,rpe:7,club:false,notes:"Timed rounds ("+cfg.rounds+" x "+mm(cfg.work)+")",t:(function(){var d=new Date();return String(d.getHours()).padStart(2,"0")+":"+String(d.getMinutes()).padStart(2,"0")})(),src:"timer"}]);cur.trained=true;markDirty();ok=true}catch(x){}try{toast(ok?"Saved":"Could not save")}catch(x){}stop()}});
+document.addEventListener("visibilitychange",function(){if(!document.hidden&&st&&!st.paused&&st.ph!=="done"){wake(true);tick()}});
+setInterval(card,1500);setTimeout(card,1500);
+var css=document.createElement("style");css.textContent="#b225{position:fixed;inset:0;z-index:2147481000;background:var(--bg,#0b0b0d);overflow:auto;padding:16px}#b225[hidden]{display:none}#b225.ph225-work{background:#0d2a1a}#b225.ph225-rest{background:#2a1a0d}#b225.ph225-prep{background:#101826}.b225-in{max-width:560px;margin:0 auto;display:flex;flex-direction:column;gap:14px;align-items:center;text-align:center}.b225-t{font:900 clamp(84px,30vw,160px)/1 var(--cond);margin:0;letter-spacing:.02em}.b225-l{font:900 28px/1 var(--cond);text-transform:uppercase;margin:12px 0 0}.r225{display:flex;align-items:center;gap:10px;padding:6px 0}.r225 span{flex:1;font-weight:600}.r225 b{min-width:52px;text-align:center;font:800 20px var(--cond)}.s225{all:unset;cursor:pointer;width:40px;height:40px;border-radius:12px;border:1px solid var(--line);text-align:center;line-height:40px;font-size:22px;background:rgba(255,255,255,.04)}";document.head.appendChild(css);
+window.FH225={cfg:cfg};
+})();
+
 /* FighterBase v44: always a way back, always a next step. */
 var N31=N31||false;
 (function(){
