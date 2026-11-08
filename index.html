@@ -13796,8 +13796,9 @@ function nutriHTML(it){var d={};try{d=FBE.diet()}catch(x){}var ea=(cur.eaten||[]
  tiles.push(nTile("Protein",pr,d.protT||0," g","#FF9F6B","prot",ea.some(function(x){return x.protein!=null&&x.protein!==""}),function(v){return Math.round(v)}));
  tiles.push(nTile("Water",wa,d.waterT||0," L","#55C7D9","water",wa>0,function(v){return Math.round(v*100)/100}));
  h+='<div class="d112-tiles">'+tiles.join("")+'</div>';
- var D=d7(),useK=!kid()&&D.some(function(x){return x.l&&(x.l.eaten||[]).some(function(q){return +q.kcal>0})}),vals=D.map(function(x){if(!x.l||!(x.l.eaten||[]).length)return null;return (x.l.eaten||[]).reduce(function(a,q){return a+(+(useK?q.kcal:q.protein)||0)},0)});
- h+='<div class="c227"><div class="c227h"><span>'+(useK?'Calories':'Protein')+' logged, last 7 days</span><b>'+vals.filter(function(v){return v!=null}).length+' of 7 days logged</b></div>'+bars7(vals,useK?kt:(d.protT||0),useK?"#E9A23B":"#FF9F6B",(useK?"Calories":"Protein")+" logged for each of the last 7 days",function(v){return Math.round(v)+(useK?" kcal":" g")})+(useK&&kt||(!useK&&d.protT)?'<p class="muted small" style="margin:2px 0 0">Dashed line: your target. A small grey mark means nothing logged that day, not that you did not eat.</p>':'')+'</div>';
+ /* v328 (Steve): one chart for protein, carbs and fat together, not just what was logged */
+ try{if(window.FBV&&FBV.macros){var D=d7(),cc=null;try{cc=calc(S.profile)}catch(x){}var tr=(cur.sessions||[]).length>0;
+  h+=FBV.macros({days:D.map(function(x){var e2=(x.l&&x.l.eaten)||[];return {k:x.k,n:e2.length,p:e2.reduce(function(a,q){return a+(+q.protein||0)},0),c:e2.reduce(function(a,q){return a+(+q.carbs||0)},0),f:e2.reduce(function(a,q){return a+(+q.fat||0)},0)}}),kid:kid(),kcalT:kt,tP:d.protT||(cc&&cc.protein)||0,tC:cc?((tr?cc.trainCarbs:cc.restCarbs)||0):0,tF:cc?((tr?cc.fatT:cc.fatR)||0):0})}}catch(x){}
  h+=(window.FH132?FH132.todayMeals():'');
  h+='<div class="d112-sec d112-food">'+foodHTML(it.list)+'</div>';
  return h}
@@ -16442,7 +16443,9 @@ var _rp=(typeof renderProgress==="function")?renderProgress:null;
 if(_rp)renderProgress=function(){var r=_rp.apply(this,arguments);try{draw()}catch(x){}return r};
 return {stats:stats,share:share,draw:draw}})();
 
-/* v327 (Steve, 8 Nov 2026): the overall score is named the Training Index (was "Activity level").
+/* v328 (Steve, 8 Nov 2026): the Training Index card is the first thing on Home (above Fight camp; a head-injury card stays above it when present),
+   training minutes are on in the chart for everyone, and a "This week so far" row shows the key stats with fight-word phrases.
+   v327 (Steve, 8 Nov 2026): the overall score is named the Training Index (was "Activity level").
    FighterBase v166: Home chart. A shaded "activity level" line for the last 7 / 14 / 30 days with steps, calories logged, training sessions
    and weight that can be switched on over it, a day readout, and a plain "why did my weight change" panel that compares this period with the one before.
    Everything comes from what the member logs, imports or checks in. Not logged = unknown, drawn as a gap, never as zero.
@@ -16450,7 +16453,7 @@ return {stats:stats,share:share,draw:draw}})();
    training only and says so. A relative picture for the member, not a medical measure. Profile: homeChartDays (7|14|30), homeChartOver {s,k,t,w}, homeChartOff.
    Under-18 profiles and anyone who switches it off do not see weight or calorie figures. */
 var FH139=(function(){
-var COL={s:"#55C7D9",k:"#E8DFC8",t:"#3FC57E",w:"#B482FF",m:"#FF9F6B",z:"#7A8CFF",a:"#C81E3A"},NAME={s:"Steps",k:"Calories",t:"Sessions",m:"Active minutes",z:"Sleep",w:"Weight"};
+var COL={s:"#55C7D9",k:"#E8DFC8",t:"#3FC57E",w:"#B482FF",m:"#FF9F6B",z:"#7A8CFF",a:"#C81E3A"},NAME={s:"Steps",k:"Calories",t:"Sessions",m:"Training minutes",z:"Sleep",w:"Weight"};
 function P(){return (typeof S!=="undefined"&&S.profile)||{}}
 function e(s){return esc(String(s==null?"":s))}
 function n0(x){return Math.round(x).toLocaleString("en-GB")}
@@ -16458,7 +16461,7 @@ function r1(x){return Math.round(x*10)/10}
 function days(){var d=+P().homeChartDays;return d===7||d===14||d===30||d===90?d:90}
 function young(){var a=+P().age;return a>0&&a<18}
 function bodyHidden(){return young()||!!P().homeChartNoBody}
-function over(){var o=P().homeChartOver;return o||{s:true,k:true,t:true,m:false,z:false,w:true}}
+function over(){var p=P(),o=p.homeChartOver;if(o&&!p.hc328){o=Object.assign({},o,{m:true});p.homeChartOver=o;p.hc328=1}/* v328: training minutes on for everyone once (Steve) */return o||{s:true,k:true,t:true,m:true,z:false,w:true}}
 function lab(k,o){return new Date(k+"T12:00").toLocaleDateString("en-GB",o||{weekday:"short",day:"numeric",month:"short"})}
 function day(k,m){var l=m[k],r={k:k,sleep:null,steps:null,kcal:null,sess:0,mins:0,w:null,score:null,hasTrack:false};if(!l)return r;
  var wr=l.wear||{},tr=l.tr||{},st=+wr.steps||+tr.steps||0;try{if(window.FH135&&FH135.steps(k))st=FH135.steps(k)}catch(x){}if(st>0)r.steps=Math.round(st);
@@ -16539,7 +16542,7 @@ function gl(d){var A=[];try{A=(window.FH87&&FH87.achieved())||[]}catch(x){}var b
 function readoutW(d){var parts=[],last=d.k2===TODAY;parts.push('<b>'+e(last?"Last 7 days":"Week of "+lab(d.k,{day:"numeric",month:"short"}))+'</b>');
  parts.push('Training Index '+(d.score==null?'<span class="muted">not enough logged</span>':'<b style="color:'+COL.a+'">'+d.score+'</b>/100 <span class="muted small">average</span>'));if(d.score!=null&&d.parts)parts.push(partsLine(d.parts,true));gl(d).forEach(function(t){parts.push(t)});
  parts.push('<span style="color:'+COL.s+'">Steps</span> '+(d.steps!=null?n0(d.steps)+' a day':'<span class="muted">none</span>'));
- parts.push('<span style="color:'+COL.m+'">Active minutes</span> '+(d.smins>0?Math.round(d.smins)+' that week':'<span class="muted">none</span>'));
+ parts.push('<span style="color:'+COL.m+'">Training minutes</span> '+(d.smins>0?Math.round(d.smins)+' that week':'<span class="muted">none</span>'));
  parts.push('<span style="color:'+COL.z+'">Sleep</span> '+(d.sleep!=null?r1(d.sleep)+' h a night':'<span class="muted">not logged</span>'));
  parts.push('<span style="color:'+COL.t+'">Sessions</span> '+(d.sess?d.sess+' that week':'<span class="muted">none logged</span>'));
  if(!bodyHidden()){parts.push('<span style="color:'+COL.k+'">Calories</span> '+(d.kcal!=null?n0(d.kcal)+' a day <span class="muted small">('+d.kd+' of '+d.nd+' days logged)</span>':'<span class="muted">not logged</span>'));parts.push('<span style="color:'+COL.w+'">Weight</span> '+(d.w!=null?r1(d.w)+' kg average':'<span class="muted">not weighed</span>'))}
@@ -16547,7 +16550,7 @@ function readoutW(d){var parts=[],last=d.k2===TODAY;parts.push('<b>'+e(last?"Las
 function readout(d){if(!d)return '';if(d.wk)return readoutW(d);var parts=[];parts.push('<b>'+e(d.k===TODAY?"Today":lab(d.k))+'</b>');
  parts.push('Training Index '+(d.score==null?'<span class="muted">not enough logged</span>':'<b style="color:'+COL.a+'">'+d.score+'</b>/100'));if(d.score!=null&&d.parts)parts.push(partsLine(d.parts,false));gl(d).forEach(function(t){parts.push(t)});
  parts.push('<span style="color:'+COL.s+'">Steps</span> '+(d.steps!=null?n0(d.steps):'<span class="muted">none</span>'));
-parts.push('<span style="color:'+COL.m+'">Active minutes</span> '+(d.mins>0?Math.round(d.mins):'<span class="muted">none</span>'));parts.push('<span style="color:'+COL.z+'">Sleep</span> '+(d.sleep!=null?r1(d.sleep)+' h':'<span class="muted">not logged</span>'));
+parts.push('<span style="color:'+COL.m+'">Training minutes</span> '+(d.mins>0?Math.round(d.mins):'<span class="muted">none</span>'));parts.push('<span style="color:'+COL.z+'">Sleep</span> '+(d.sleep!=null?r1(d.sleep)+' h':'<span class="muted">not logged</span>'));
  parts.push('<span style="color:'+COL.t+'">Sessions</span> '+(d.sess?d.sess+(d.mins?' · '+Math.round(d.mins)+' min':''):'<span class="muted">none logged</span>'));
  if(!bodyHidden()){parts.push('<span style="color:'+COL.k+'">Calories</span> '+(d.kcal!=null?n0(d.kcal):'<span class="muted">not logged</span>'));parts.push('<span style="color:'+COL.w+'">Weight</span> '+(d.w!=null?r1(d.w)+' kg':'<span class="muted">not weighed</span>'))}
  return '<div class="h139-ro">'+parts.map(function(x,i){return '<div'+(i===0?' class="h139-d"':'')+'>'+x+'</div>'}).join('')+'</div>'}
@@ -16580,15 +16583,25 @@ function why(){if(bodyHidden())return '';var n=days(),cur=series(n,0),prev=serie
  return '<div class="h139-why"><b>Why did my weight change?</b><p>'+e(head)+'</p>'+(story?'<p>'+e(story+cover)+'</p>':(cover?'<p class="muted small">'+e(cover)+'</p>':''))+
   (rows.length?'<ul class="h139-ul">'+rows.map(function(r){return '<li>'+e(r.t)+'</li>'}).join("")+'</ul>':'')+
   '<p class="muted small">Weight moves a few hundred grams day to day with water and salt, so look at the trend, not one morning. General information, not medical advice.</p></div>'}
+function weekStrip(){var m={};try{m=logMap()||{}}catch(x){}try{if(cur&&cur.date)m[cur.date]=cur}catch(x){}var d0=new Date(TODAY+"T12:00"),wd=(d0.getDay()+6)%7,mon=addDays(TODAY,-wd);
+ function agg(start){var o={min:0,ses:0,st:[],sl:[],f:[]};for(var i=0;i<=wd;i++){var dd=day(addDays(start,i),m);o.min+=dd.mins||0;o.ses+=dd.sess||0;if(dd.steps!=null)o.st.push(dd.steps);if(dd.sleep!=null)o.sl.push(dd.sleep);(dd.parts||[]).forEach(function(q){if(q[0]==="f")o.f.push(q[2])})}return o}
+ var A=agg(mon),B=agg(addDays(mon,-7)),T=[];function chip(a,b,seed){return window.FBSAY?FBSAY.chip(FBSAY.state(a,b),seed):""}
+ T.push(['Training minutes',Math.round(A.min)+'',chip(A.min,B.min,"wmin")]);T.push(['Sessions',A.ses+'',chip(A.ses,B.ses,"wses")]);
+ if(A.st.length)T.push(['Steps a day',n0(avg(A.st)),B.st.length?chip(avg(A.st),avg(B.st),"wst"):""]);
+ if(A.f.length)T.push(['Food goals met',Math.round(avg(A.f)*100)+'%',B.f.length?chip(avg(A.f),avg(B.f),"wf"):""]);
+ if(A.sl.length)T.push(['Sleep',r1(avg(A.sl))+' h',""]);
+ return '<div class="h139-wk"><p class="h139-wkh">This week so far <span class="muted small">against the same days last week</span></p><div class="h139-wkg">'+T.map(function(t){return '<div><span>'+t[0]+'</span><b>'+t[1]+'</b>'+(t[2]||'')+'</div>'}).join("")+'</div></div>'}
 /* ---- card ---- */
 var SELI=null;
 function html(){var p=P();if(!p.onboarded)return '';var n=days(),D=series(n,0),o=over();if(n===90)D=weeks(D);var any=D.some(function(d){return d.score!=null||d.w!=null||d.kcal!=null});
  if(SELI==null||SELI>=D.length)SELI=D.length-1;
- var h='<div class="h139-top"><div><span class="fb-kick">'+(window.FH140&&FH140.on()?"Fight camp · ":"")+(n===90?'Last 3 months':'Last '+n+' days')+'</span><h2>Your progress</h2></div><div class="h139-rng">'+[7,30,90].map(function(x){return '<button type="button" class="h139-r'+(x===n?' on':'')+'" data-h139n="'+x+'">'+(x===90?'3m':x)+'</button>'}).join("")+'</div></div>';
+ var h='<div class="h139-top"><div><span class="fb-kick">'+(window.FH140&&FH140.on()?"Fight camp · ":"")+(n===90?'Last 3 months':'Last '+n+' days')+'</span><h2>Your Training Index</h2></div><div class="h139-rng">'+[7,30,90].map(function(x){return '<button type="button" class="h139-r'+(x===n?' on':'')+'" data-h139n="'+x+'">'+(x===90?'3m':x)+'</button>'}).join("")+'</div></div>';
  if(!any)return h+'<p class="muted small">Log a session, your steps or a check-in and your Training Index appears here.</p>';
  /* v323: a dial for the overall score: today (or the latest day with a score) and the 7-day average, so the figure itself is a picture */
  try{if(window.FBV){var S7=series(7,0),lastD=null;for(var qi=S7.length-1;qi>=0;qi--)if(S7[qi].score!=null){lastD=S7[qi];break}var a7=avg(vals(S7,function(d){return d.score}));
   if(lastD)h+='<div class="h139-dial">'+FBV.ring({v:lastD.score/100,big:String(lastD.score),small:lastD.k===TODAY?"today":lab(lastD.k,{weekday:"short"}),lab:"Training Index "+(lastD.k===TODAY?"today":"on "+lab(lastD.k))+": "+lastD.score+" out of 100",col:COL.a,size:92})+(a7!=null?FBV.ring({v:a7/100,big:String(Math.round(a7)),small:"7-day avg",lab:"Training Index 7-day average: "+Math.round(a7)+" out of 100",col:"#7A8CFF",size:92}):'')+'<div class="h139-dt"><b>Training Index</b><span class="muted small">Your overall figure: training, steps, food goals and habits in one number out of 100.</span></div></div>'}}catch(x){}
+ /* v328 (Steve): your key stats for this week in one row, under the dials, each with a fight-word phrase against the same days last week */
+ try{h+=weekStrip()}catch(x){}
  try{var cA=avg(vals(series(n,0),function(d){return d.score})),pA=avg(vals(series(n,n),function(d){return d.score}));if(cA!=null&&window.FBSAY){var stt=FBSAY.state(cA,pA),oo=FBSAY.say(stt,"score"+n);if(oo)h+='<p class="h139-say"><span class="say227 '+oo.c+'">'+oo.i+' '+oo.t+'</span> <span class="muted small">Training Index '+Math.round(cA)+' on average'+(pA!=null?', '+(Math.round(cA)===Math.round(pA)?'level with':(cA>pA?'up '+Math.round(cA-pA)+' on':'down '+Math.round(pA-cA)+' on'))+' the '+(n===90?'3 months':n+' days')+' before':'')+'.</span></p>'}}catch(x){}
  var keys=["s","t","m","z"].concat(bodyHidden()?[]:["k","w"]);
  h+='<div class="h139-lg"><span class="h139-chip fixed" style="--c:'+COL.a+'"><i></i>Training Index</span>'+keys.map(function(k){return '<button type="button" class="h139-chip'+(o[k]?' on':'')+'" style="--c:'+COL[k]+'" data-h139o="'+k+'" aria-pressed="'+!!o[k]+'"><i></i>'+NAME[k]+'</button>'}).join("")+'</div>';
@@ -16612,6 +16625,8 @@ var css=document.createElement("style");css.textContent="#tab-today #fb139{order
 ".h139-rng{display:flex;gap:4px}.h139-r{all:unset;cursor:pointer;box-sizing:border-box;min-width:38px;text-align:center;padding:7px 10px;border-radius:999px;border:1px solid var(--line,rgba(255,255,255,.14));font-size:13px;font-weight:700}.h139-r.on{background:#C81E3A;border-color:#C81E3A;color:#fff}"+
 ".h139-lg{display:flex;flex-wrap:wrap;gap:6px}.h139-chip{all:unset;box-sizing:border-box;cursor:pointer;display:inline-flex;align-items:center;gap:6px;padding:6px 11px;border-radius:999px;border:1px solid var(--line,rgba(255,255,255,.14));font-size:13px;opacity:.6}.h139-chip.fixed{opacity:1;cursor:default}.h139-chip.on{opacity:1;border-color:var(--c)}.h139-chip i{width:10px;height:10px;border-radius:3px;background:var(--c);display:inline-block}"+
 ".h139-svg{width:100%;height:auto;display:block;touch-action:manipulation}.h139-gl{stroke:var(--line,rgba(255,255,255,.12));stroke-width:1}.h139-ax{fill:var(--muted,#9AA0AA);font-size:9px}.h139-sel{stroke:var(--muted,#9AA0AA);stroke-width:1;stroke-dasharray:3 3}"+
+".h139-wk{margin:2px 0 6px}.h139-wkh{margin:0 0 6px;font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted,#9AA0AA)}.h139-wkh span{text-transform:none;letter-spacing:0}.h139-wkg{display:grid;grid-template-columns:repeat(auto-fit,minmax(104px,1fr));gap:8px}.h139-wkg>div{display:flex;flex-direction:column;gap:2px;padding:8px 10px;border-radius:12px;border:1px solid var(--line,rgba(255,255,255,.1));background:rgba(255,255,255,.03)}.h139-wkg span{font-size:10.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted,#9AA0AA)}.h139-wkg b{font:900 22px/1.05 var(--display,inherit)}.h139-wkg .say227{font-size:11.5px;white-space:normal}"+
+"#tab-today>#fb196{order:-29!important}#tab-today>#fb139{order:-28!important}#tab-today>#fb316{order:-27!important}"+
 ".h139-dial{display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin:2px 0 4px}.h139-dt{display:flex;flex-direction:column;gap:2px;flex:1;min-width:160px}.h139-dt b{font-size:15px}"+
 ".h139-say{margin:-2px 0 2px;display:flex;gap:6px;flex-wrap:wrap;align-items:baseline}.h139-say .say227{font-size:14px}"+
 ".h139-ro>div:has(.h139-pts),.h139-ro>div:has(.h139-gm){grid-column:1/-1}.h139-pts,.h139-gm{font-size:12.5px}.h139-pts b{color:#fff}.h139-gm{color:#E8DFC8}.h139-gk{margin:4px 0 0}"+
@@ -23213,7 +23228,7 @@ function iconCss(){var out="";Object.keys(I).forEach(function(k){var svg='<svg x
 /* fb155 (the greeting) pins itself to the top of Today every tick, so it stays outside the groups */
 var G=[{id:"g216a",t:"This week",k:"clock",c:"#E8DFC8",ids:["pd170"],order:-18},
  {id:"g216b",t:"Your club",k:"club",c:"#3FC57E",ids:["fb118m","fb194","fb195","fb113m"],order:-12},
- {id:"g216c",t:"Your progress",k:"progress",c:"#C81E3A",ids:["nm167","fb139","fb186","fb183","fb182"],order:-8}];
+ {id:"g216c",t:"Your progress",k:"progress",c:"#C81E3A",ids:["nm167","fb186","fb183","fb182"],order:-8}];/* v328: fb139 (the Training Index chart) left the group: it now leads Home on its own */
 function groups(){var home=document.getElementById("tab-today");if(!home||home.hidden)return;
  G.forEach(function(g){var w=document.getElementById(g.id);var have=g.ids.map(function(i){return document.getElementById(i)}).filter(function(x){return x&&x.closest("#tab-today")});
   if(!have.length){if(w)w.hidden=true;return}
@@ -23717,12 +23732,13 @@ function put(){var tb=document.getElementById("tab-today");if(!tb||tb.hidden)ret
  if(!el){el=document.createElement("div");el.id="fb226";el.className="fb-card f149keep";el.dataset.sig="";tb.appendChild(el)}
  if(el.dataset.sig!==h){el.innerHTML=h;el.dataset.sig=h}}
 function wide(){return document.body.classList.contains("fb-desk")&&window.innerWidth>=1100}
-var IDS=["fb154","fb226","fb112","fb227","g216c","fb316"];
+var IDS=["fb196","fb139","fb316","fb154","fb226","fb112","fb227"];/* fb196 = head-injury return-to-sport card: when present it spans the top *//* v328: Training Index chart and Your month so far lead; the progress group goes back into the normal flow */
 function lay(){var tb=document.getElementById("tab-today");if(!tb)return;var g0=document.getElementById("g216c");if(g0){g0.classList.add("f149keep");g0.classList.remove("f149m")}/* v323: the progress chart is never folded away, on any screen size */var w=document.getElementById("d226");
  if(!wide()){if(w){[].slice.call(w.querySelectorAll("#d226l>*,#d226>*:not(#d226l)")).forEach(function(x){tb.appendChild(x)});w.remove()}return}
  var have=IDS.map(function(i){return document.getElementById(i)}).filter(function(x){return x&&x.closest("#tab-today")});
  if(!w){if(!have.length)return;w=document.createElement("div");w.id="d226";tb.appendChild(w)}
  var L=document.getElementById("d226l");if(!L){L=document.createElement("div");L.id="d226l";w.insertBefore(L,w.firstChild)}
+ var gq=document.getElementById("g216c");if(gq&&gq.parentElement===w)tb.appendChild(gq);
  have.forEach(function(x){var P=(x.id==="fb154"||x.id==="fb226")?L:w;if(x.parentElement!==P){x.style.gridRowEnd="";P.appendChild(x)}});
  var s=document.getElementById("fb196");tb.classList.toggle("s226",!!(s&&!s.hidden&&getComputedStyle(s).display!=="none"))}
 document.addEventListener("click",function(ev){if(ev.target.closest&&ev.target.closest("[data-go226]")){try{showTab("clubpage")}catch(x){}}});
@@ -23730,9 +23746,9 @@ setInterval(function(){try{put();lay()}catch(x){}},1500);setTimeout(function(){t
 var st=document.createElement("style");
 st.textContent=".r226{display:flex;flex-wrap:wrap;gap:4px 10px;align-items:baseline;padding:7px 0;border-top:1px solid var(--line,rgba(255,255,255,.1))}.k226{font:800 13px var(--cond,inherit);letter-spacing:.08em;color:var(--muted,#9AA0AA)}"+
 "#d226{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px;align-items:start;grid-column:1/-1;order:-30}"+
-"#d226>#d226l{grid-column:1;grid-row:1;display:flex;flex-direction:column;gap:16px;min-width:0}body #tab-today #d226>#fb112{grid-column:2/3!important;grid-row:1!important;min-width:0}body #tab-today #d226>#fb227{grid-column:3/4!important;grid-row:1!important;min-width:0}"+
-"html body #d226>#fb112{--acc:#3FC57E;border:1px solid rgba(63,197,126,.6)!important;border-left:4px solid #3FC57E!important;box-shadow:0 0 0 1px rgba(63,197,126,.18),0 0 18px rgba(63,197,126,.32),inset 0 0 26px rgba(63,197,126,.07)!important}body #tab-today #d226>#g216c{grid-column:1/3!important;grid-row:2!important;min-width:0}body #tab-today #d226>#fb316{grid-column:3/4!important;grid-row:2!important}"+
-"#tab-today>#fb196{order:-50}"+
+"#d226>#d226l{grid-column:1;grid-row:calc(var(--r1) + 1);display:flex;flex-direction:column;gap:16px;min-width:0}#d226{--r1:1}#tab-today.s226 #d226{--r1:2}body #tab-today #d226>#fb196{grid-column:1/-1!important;grid-row:1!important}body #tab-today #d226>#fb139{grid-column:1/3!important;grid-row:var(--r1)!important;min-width:0}body #tab-today #d226>#fb316{grid-column:3/4!important;grid-row:var(--r1)!important;min-width:0}body #tab-today #d226>#fb112{grid-column:2/3!important;grid-row:calc(var(--r1) + 1)!important;min-width:0}body #tab-today #d226>#fb227{grid-column:3/4!important;grid-row:calc(var(--r1) + 1)!important;min-width:0}"+
+"html body #d226>#fb112{--acc:#3FC57E;border:1px solid rgba(63,197,126,.6)!important;border-left:4px solid #3FC57E!important;box-shadow:0 0 0 1px rgba(63,197,126,.18),0 0 18px rgba(63,197,126,.32),inset 0 0 26px rgba(63,197,126,.07)!important}"+
+"html body #tab-today>#fb196{order:-30!important}"+/* v328: safety card first on phones too */
 "#d226 #fb154>.g154,#d226 #fb154>.g154.one154{column-count:1!important}#d226 #fb154 .cols154{flex-direction:column!important}#d226 #fb154 .c154{width:100%}"+
 "#d226 .fb-card,#d226 .g216{margin:0!important}#d226 #g216c #fb139{order:-1}#d226>*,#d226 #d226l>*,#d226 .g216b>*{grid-row-end:auto!important}";
 document.head.appendChild(st);
@@ -23799,6 +23815,24 @@ FBV.bars=function(o){/* o:{vals:[n|null], labels:[], tips:[], target, col, h, la
   if(o.labels&&o.labels[i]!=null&&(n<=7||(n-1-i)%2===0))s+='<text x="'+(i*bw+bw/2).toFixed(1)+'" y="'+(H-4)+'" text-anchor="middle" class="v228t">'+e(o.labels[i])+'</text>'});
  if(o.target>0){var ty=H-PB-(H-PB-PT)*o.target/mx;s+='<line x1="0" x2="'+W+'" y1="'+ty.toFixed(1)+'" y2="'+ty.toFixed(1)+'" class="v228tg"><title>Target '+e(o.target)+'</title></line>'}
  return s+'</svg>'};
+FBV.stack=function(o){/* v328 stacked bars. o:{rows:[[v1,v2,v3]|null], cols:[], names:[], labels:[], tips:[[...]], target, lab, h} ; a 2px gap between segments; null = grey stub */
+ var W=320,H=o.h||120,PB=18,PT=6,n=o.rows.length,tot=o.rows.map(function(r){return r?r.reduce(function(a,v){return a+(+v||0)},0):0}),mx=Math.max.apply(null,tot.concat([o.target||0,1])),bw=W/n,s='<svg viewBox="0 0 '+W+' '+H+'" width="100%" height="'+H+'" role="img" aria-label="'+e(o.lab)+'" class="v228">';
+ [.5,1].forEach(function(f){var y=H-PB-(H-PB-PT)*f;s+='<line x1="0" x2="'+W+'" y1="'+y.toFixed(1)+'" y2="'+y.toFixed(1)+'" class="v228g"/>'});
+ o.rows.forEach(function(r,i){var x=i*bw+bw*.18,w=bw*.64;if(!r||!tot[i]){s+='<rect x="'+x.toFixed(1)+'" y="'+(H-PB-2)+'" width="'+w.toFixed(1)+'" height="2" rx="1" class="v228n"><title>'+e(((o.tips&&o.tips[i]&&o.tips[i][0])||"")+": not logged")+'</title></rect>'}
+  else{var y=H-PB;r.forEach(function(v,j){v=+v||0;if(!v)return;var hh=(H-PB-PT)*v/mx,gap=j?2:0;y-=hh;s+='<rect x="'+x.toFixed(1)+'" y="'+(y+gap/2).toFixed(1)+'" width="'+w.toFixed(1)+'" height="'+Math.max(1,hh-gap).toFixed(1)+'" rx="'+(j===r.length-1?3:1)+'" fill="'+o.cols[j]+'" opacity="'+(i===n-1?1:.8)+'"><title>'+e((o.tips&&o.tips[i]&&o.tips[i][j+1])||(o.names[j]+": "+v))+'</title></rect>'})}
+  if(o.labels&&o.labels[i]!=null)s+='<text x="'+(i*bw+bw/2).toFixed(1)+'" y="'+(H-4)+'" text-anchor="middle" class="v228t">'+e(o.labels[i])+'</text>'});
+ if(o.target>0){var ty=H-PB-(H-PB-PT)*o.target/mx;s+='<line x1="0" x2="'+W+'" y1="'+ty.toFixed(1)+'" y2="'+ty.toFixed(1)+'" class="v228tg"><title>Target '+e(o.target)+'</title></line>'}
+ return s+'</svg><div class="v228k">'+o.names.map(function(nm,j){return '<span><i style="background:'+o.cols[j]+'"></i>'+e(nm)+'</span>'}).join("")+'</div>'};
+/* v328: one macro chart used by Your nutrition and the Food diary. Protein, carbs and fat for 7 days, stacked as calories (adults) or grams (under-18s),
+   with today's grams against the member's own targets as three bars. Colours: protein orange, carbs blue, fat purple (never the theme gold). */
+FBV.MAC={p:"#FF9F6B",c:"#4DA3FF",f:"#B482FF"};
+FBV.macros=function(o){/* o:{days:[{k,p,c,f,n}], kid, kcalT, tP, tC, tF} */
+ var K=!o.kid,D=o.days,rows=D.map(function(d){return d.n?(K?[d.p*4,d.c*4,d.f*9]:[d.p,d.c,d.f]):null}),u=K?" kcal":" g";
+ var tips=D.map(function(d){var w=new Date(d.k+"T12:00").toLocaleDateString("en-GB",{weekday:"long"});return [w,w+": protein "+Math.round(d.p)+" g"+(K?" ("+Math.round(d.p*4)+" kcal)":""),w+": carbs "+Math.round(d.c)+" g"+(K?" ("+Math.round(d.c*4)+" kcal)":""),w+": fat "+Math.round(d.f)+" g"+(K?" ("+Math.round(d.f*9)+" kcal)":"")]});
+ var t=D[D.length-1],bar=function(lab,v,tg,col){var pc=tg>0?Math.min(100,Math.round(v/tg*100)):0;return '<div class="v228m"><span>'+lab+'</span><i><em style="width:'+pc+'%;background:'+col+'"></em></i><b>'+Math.round(v)+(tg?'<small>/'+Math.round(tg)+' g</small>':' g')+'</b></div>'};
+ return '<div class="v228c"><div class="v228h"><span>Protein, carbs and fat, last 7 days</span><b>'+(K?(o.kcalT?'dashed line '+o.kcalT.toLocaleString("en-GB")+' kcal':'as calories'):'in grams')+'</b></div>'+
+  FBV.stack({rows:rows,cols:[FBV.MAC.p,FBV.MAC.c,FBV.MAC.f],names:["Protein","Carbs","Fat"],labels:D.map(function(d){return new Date(d.k+"T12:00").toLocaleDateString("en-GB",{weekday:"narrow"})}),tips:tips,target:K?o.kcalT:0,lab:"Protein, carbs and fat logged each day for the last 7 days"+(K?", as calories":", in grams")})+
+  '<div class="v228mm"><p class="v228mt">Today against your targets</p>'+bar("Protein",t.p,o.tP,FBV.MAC.p)+bar("Carbs",t.c,o.tC,FBV.MAC.c)+bar("Fat",t.f,o.tF,FBV.MAC.f)+'</div></div>'};
 FBV.line=function(o){/* o:{vals, labels, tips, col, h, lab, target} */
  var W=320,H=o.h||110,PB=18,PT=8,n=o.vals.length,v=o.vals.filter(function(x){return x!=null});if(o.target!=null)v.push(o.target);if(!v.length)return"";var mn=Math.min.apply(null,v),mx=Math.max.apply(null,v);if(mn===mx){mn-=1;mx+=1}var pad=(mx-mn)*.12;mn-=pad;mx+=pad;
  function X(i){return n>1?8+i*(W-16)/(n-1):W/2}function Y(x){return PT+(1-(x-mn)/(mx-mn))*(H-PB-PT)}
@@ -23839,11 +23873,11 @@ function trainCard(){var m=lm(),wk0=mon(TODAY),W=[],tgt=3;try{tgt=FBE.target()}c
  return h}
 /* ---------------- food ---------------- */
 function kcalT(){var t=0;try{var c=calc(S.profile);if(c&&c.kcal>0)t=c.kcal}catch(x){}if(!t){try{t=+((P().g90||{}).food||{}).t.kcal||0}catch(x){}}if(!t)t=+P().kcalTarget||0;return Math.round(t)}
+function macroT(){var c=null;try{c=calc(S.profile)}catch(x){}if(!c)return {};var tr=false;try{tr=sessOf(cur).length>0}catch(x){}return {p:c.protein||0,c:(tr?c.trainCarbs:c.restCarbs)||0,f:(tr?c.fatT:c.fatR)||0}}
 function foodCard(){var m=lm(),D=[];for(var i=6;i>=0;i--){var k=addDays(TODAY,-i),l=m[k],ea=(l&&l.eaten)||[];D.push({k:k,n:ea.length,kc:ea.reduce(function(a,x){return a+(+x.kcal||0)},0),pr:ea.reduce(function(a,x){return a+(+x.protein||0)},0),c:ea.reduce(function(a,x){return a+(+x.carbs||0)},0),f:ea.reduce(function(a,x){return a+(+x.fat||0)},0)})}
  if(!D.some(function(d){return d.n}))return"";var dt={};try{dt=FBE.diet()}catch(x){}var kt=kid()?0:kcalT(),pt=dt.protT||0,lab=D.map(function(d){return dlab(d.k,{weekday:"narrow"})}),logged=D.filter(function(d){return d.n}).length;
  var h=FBV.card("Last 7 days","Your food week","",say(window.FBSAY?FBSAY.target(logged,7,1):null,"fw",logged+' of 7 days logged.'));
- if(!kid())h+='<div class="v228c"><div class="v228h"><span>Calories logged</span><b>'+(kt?'target '+kt.toLocaleString("en-GB"):'no target set')+'</b></div>'+FBV.bars({vals:D.map(function(d){return d.n?d.kc:null}),labels:lab,tips:D.map(function(d){return dlab(d.k,{weekday:"long"})+": "+Math.round(d.kc).toLocaleString("en-GB")+" kcal"}),target:kt,col:"#E9A23B",lab:"Calories logged each day this week"})+'</div>';
- h+='<div class="v228c"><div class="v228h"><span>Protein</span><b>'+(pt?'target '+pt+' g':'no target set')+'</b></div>'+FBV.bars({vals:D.map(function(d){return d.n?d.pr:null}),labels:lab,tips:D.map(function(d){return dlab(d.k,{weekday:"long"})+": "+Math.round(d.pr)+" g protein"}),target:pt,col:"#FF9F6B",lab:"Protein logged each day this week"})+'</div>';
+ var tg=macroT();h+=FBV.macros({days:D.map(function(d){return {k:d.k,p:d.pr,c:d.c,f:d.f,n:d.n}}),kid:kid(),kcalT:kt,tP:tg.p||pt,tC:tg.c,tF:tg.f});
  var t=D[D.length-1];if(t.pr+t.c+t.f>0)h+='<div class="v228c"><div class="v228h"><span>Today\'s plate</span><b>share of energy</b></div>'+FBV.donut({parts:[["Protein",t.pr*4],["Carbs",t.c*4],["Fat",t.f*9]],lab:"Today's energy split between protein, carbs and fat",unit:" kcal"})+'</div>';
  return h+'<p class="muted small" style="margin:6px 0 0">Grey stubs are days with nothing logged, not days you did not eat. Dashed lines are your own targets.</p>'}
 /* ---------------- goals ---------------- */
@@ -23907,7 +23941,7 @@ var css=document.createElement("style");css.textContent=
 ".v228rg{display:grid;grid-template-columns:repeat(auto-fill,minmax(110px,1fr));gap:12px}.v228ri{display:flex;flex-direction:column;align-items:center;gap:4px;text-align:center;padding:10px 6px;border:1px solid var(--line,rgba(255,255,255,.1));border-radius:14px;background:rgba(255,255,255,.03)}.v228ri b{font-size:12.5px;line-height:1.2}.v228ri .say227{white-space:normal;font-size:11.5px}"+
 ".v228s{margin:0 0 2px;display:flex;flex-wrap:wrap;gap:6px;align-items:baseline}.v228s .say227{font-size:14px}"+
 ".v228hb{display:flex;flex-direction:column;gap:6px}.v228hb>div{display:grid;grid-template-columns:minmax(90px,38%) 1fr 34px;gap:8px;align-items:center;font-size:13px}.v228hb span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.v228hb i{display:block;height:10px;border-radius:5px;background:rgba(255,255,255,.07);overflow:hidden}.v228hb em{display:block;height:100%;border-radius:5px;background:#4DA3FF}.v228hb b{text-align:right}"+
-".cv228[hidden],.cv228bad{display:none!important}.cv228{position:relative;margin:0;border-radius:18px;overflow:hidden;order:-40;grid-column:1/-1;min-height:110px;max-height:180px;background:#111}.cv228 img{display:block;width:100%;height:170px;object-fit:cover;filter:saturate(1.05) contrast(1.05)}.cv228:after{content:'';position:absolute;inset:0;background:linear-gradient(90deg,rgba(10,10,14,.85) 0%,rgba(10,10,14,.35) 55%,rgba(10,10,14,.1) 100%)}"+
+".v228k{display:flex;gap:12px;flex-wrap:wrap;font-size:12px;margin-top:2px}.v228k i{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:5px;vertical-align:-1px}.v228mm{display:flex;flex-direction:column;gap:6px;margin-top:10px;padding-top:8px;border-top:1px solid var(--line,rgba(255,255,255,.1))}.v228mt{margin:0;font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted,#9AA0AA)}.v228m{display:grid;grid-template-columns:62px 1fr 86px;gap:8px;align-items:center;font-size:13px}.v228m i{display:block;height:9px;border-radius:5px;background:rgba(255,255,255,.07);overflow:hidden}.v228m em{display:block;height:100%;border-radius:5px}.v228m b{text-align:right;font-size:13px}.v228m small{color:var(--muted,#9AA0AA);font-weight:500}"+".cv228[hidden],.cv228bad{display:none!important}.cv228{position:relative;margin:0;border-radius:18px;overflow:hidden;order:-40;grid-column:1/-1;min-height:110px;max-height:180px;background:#111}.cv228 img{display:block;width:100%;height:170px;object-fit:cover;filter:saturate(1.05) contrast(1.05)}.cv228:after{content:'';position:absolute;inset:0;background:linear-gradient(90deg,rgba(10,10,14,.85) 0%,rgba(10,10,14,.35) 55%,rgba(10,10,14,.1) 100%)}"+
 ".cv228 figcaption{position:absolute;left:18px;bottom:14px;z-index:1;font:900 26px/1 var(--display,'Big Shoulders Display',sans-serif);text-transform:uppercase;letter-spacing:.03em;color:#fff;max-width:70%}"+
 "@media (max-width:600px){.cv228 img{height:120px}.cv228 figcaption{font-size:21px}}";
 document.head.appendChild(css);
