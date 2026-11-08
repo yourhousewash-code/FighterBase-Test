@@ -23600,6 +23600,58 @@ var css=document.createElement("style");css.textContent="#b225{position:fixed;in
 window.FH225={cfg:cfg};
 })();
 
+/* FighterBase v318 (Steve, 8 Nov 2026): desktop Home layout and "Your club today".
+   1. On wide screens (sidebar layout, 1100px and up) the top of Today is three panels: Fight camp (left), Your day (right, two columns wide), and under Fight camp a new
+      "Your club today" panel. Below them, "Your progress" (with the activity chart) is pulled out of the "show more" fold, with "Your month so far" beside it.
+      A head-injury return-to-sport card, when present, spans the top above them. Phones and narrow windows are unchanged.
+   2. Your club today (members of a club): today's classes with time, who from the club is coming (a count, no names), whether you are in, the next class if none today,
+      and how many members have checked in today. Read only. Staff keep the club overview.
+   Layout only: nothing here changes saved data. */
+var K226=K226||false;
+(function(){
+if(K226)return;K226=true;
+function e(s){return esc(String(s==null?"":s))}
+function club(){return (typeof clubState!=="undefined"&&clubState.club)||null}
+function staff(){try{return !!(window.FHC&&FHC.isOwner())}catch(x){return false}}
+function hm(t){var m=/^(\d{1,2}):(\d{2})/.exec(t||"");return m?(+m[1])*60+(+m[2]):0}
+function nowMin(){var d=new Date();return d.getHours()*60+d.getMinutes()}
+function cls(c,k){try{return (classesOn(c,k)||[]).slice().sort(function(a,b){return hm(a.time)-hm(b.time)})}catch(x){return []}}
+function html(){var c=club();if(!c||!(S.profile||{}).clubId||staff())return"";
+ var M=((typeof clubState!=="undefined"&&clubState.members)||[]).filter(function(m){return m.uid!==S.uid&&m.status!=="left"&&m.status!=="paused"}),list=cls(c,TODAY),mine=(S.profile.rsvp||{});
+ var here=M.filter(function(m){return Object.keys(m.att||{}).some(function(k){return k.slice(0,10)===TODAY})}).length;
+ var h='<span class="fb-kick">'+e(new Date(TODAY+"T12:00").toLocaleDateString("en-GB",{weekday:"long",day:"numeric",month:"long"}))+'</span><h2 class="m184-t" style="margin:2px 0 8px">Your club today</h2>';
+ if(!list.length){var nx=null;for(var i=1;i<=7&&!nx;i++){var k=addDays(TODAY,i),l=cls(c,k);if(l.length)nx={k:k,c:l[0]}}
+  h+='<p class="muted" style="margin:0 0 6px">No classes today.</p>'+(nx?'<p style="margin:0">Next: <b>'+e(nx.c.title)+'</b> '+e(nx.k===addDays(TODAY,1)?"tomorrow":new Date(nx.k+"T12:00").toLocaleDateString("en-GB",{weekday:"long"}))+' at '+e(nx.c.time)+'</p>':'')}
+ else h+=list.map(function(x){var key=TODAY+"_"+x.id,coming=M.filter(function(m){return m.rsvp&&m.rsvp[key]}).length+(mine[key]?1:0),end=hm(x.time)+(+x.mins||60),st=hm(x.time)>nowMin()?"":end>nowMin()?"On now":"Finished";
+  return'<div class="r226"><span class="k226">'+e(x.time)+'</span><b>'+e(x.title)+'</b><span class="muted small">'+(coming?coming+' coming':'')+(mine[key]?' · you are in':'')+(st?' · '+st:'')+'</span></div>'}).join("");
+ h+='<p class="muted small" style="margin:8px 0 0">'+(here?here+' club member'+(here===1?'':'s')+' checked in so far today.':'Nobody from the club has checked in yet today.')+'</p><div class="row" style="margin-top:8px"><button class="linkbtn" type="button" data-go226>Timetable and club page</button></div>';
+ return h}
+function put(){var tb=document.getElementById("tab-today");if(!tb||tb.hidden)return;var el=document.getElementById("fb226"),h="";try{h=html()}catch(x){}
+ if(!h){if(el)el.remove();return}
+ if(!el){el=document.createElement("div");el.id="fb226";el.className="fb-card f149keep";el.dataset.sig="";tb.appendChild(el)}
+ if(el.dataset.sig!==h){el.innerHTML=h;el.dataset.sig=h}}
+function wide(){return document.body.classList.contains("fb-desk")&&window.innerWidth>=1100}
+var IDS=["fb154","fb226","fb112","g216c","fb316"];
+function lay(){var tb=document.getElementById("tab-today");if(!tb)return;var w=document.getElementById("d226");
+ if(!wide()){if(w){[].slice.call(w.querySelectorAll("#d226l>*,#d226>*:not(#d226l)")).forEach(function(x){tb.appendChild(x)});w.remove()}return}
+ var have=IDS.map(function(i){return document.getElementById(i)}).filter(function(x){return x&&x.closest("#tab-today")});
+ if(!w){if(!have.length)return;w=document.createElement("div");w.id="d226";tb.appendChild(w)}
+ var L=document.getElementById("d226l");if(!L){L=document.createElement("div");L.id="d226l";w.insertBefore(L,w.firstChild)}
+ have.forEach(function(x){var P=(x.id==="fb154"||x.id==="fb226")?L:w;if(x.parentElement!==P){x.style.gridRowEnd="";P.appendChild(x)}});
+ var s=document.getElementById("fb196");tb.classList.toggle("s226",!!(s&&!s.hidden&&getComputedStyle(s).display!=="none"))}
+document.addEventListener("click",function(ev){if(ev.target.closest&&ev.target.closest("[data-go226]")){try{showTab("clubpage")}catch(x){}}});
+setInterval(function(){try{put();lay()}catch(x){}},1500);setTimeout(function(){try{put();lay()}catch(x){}},700);
+var st=document.createElement("style");
+st.textContent=".r226{display:flex;flex-wrap:wrap;gap:4px 10px;align-items:baseline;padding:7px 0;border-top:1px solid var(--line,rgba(255,255,255,.1))}.k226{font:800 13px var(--cond,inherit);letter-spacing:.08em;color:var(--muted,#9AA0AA)}"+
+"#d226{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px;align-items:start;grid-column:1/-1;order:-30}"+
+"#d226>#d226l{grid-column:1;grid-row:1;display:flex;flex-direction:column;gap:16px;min-width:0}#d226>#fb112{grid-column:2/4;grid-row:1}#d226>#g216c{grid-column:1/3;grid-row:2}#d226>#fb316{grid-column:3;grid-row:2}"+
+"#tab-today>#fb196{order:-50}"+
+"#d226 #fb154>.g154,#d226 #fb154>.g154.one154{column-count:1!important}#d226 #fb154 .cols154{flex-direction:column!important}#d226 #fb154 .c154{width:100%}"+
+"#d226 .fb-card,#d226 .g216{margin:0!important}#d226 #g216c #fb139{order:-1}#d226>*,#d226 #d226l>*,#d226 .g216b>*{grid-row-end:auto!important}";
+document.head.appendChild(st);
+window.FH226={put:put};
+})();
+
 /* FighterBase v44: always a way back, always a next step. */
 var N31=N31||false;
 (function(){
