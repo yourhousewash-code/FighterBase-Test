@@ -14084,7 +14084,7 @@ function fightCard(){var el=document.getElementById("fb115"),home=document.getEl
  el.hidden=false;
  var word=c.kind==="event"?(/interclub/i.test(c.type)?"Interclub":"Event"):(/interclub/i.test(c.type)?"Interclub":"Fight"),
   dt=new Date(c.date+"T12:00").toLocaleDateString("en-GB",{weekday:"long",day:"numeric",month:"long"})+(c.time?" at "+c.time:"");
- var chips=[];if(c.type&&!/^interclub$/i.test(c.type))chips.push(c.type);if(c.sport)chips.push(c.sport);
+ var chips=[];if(c.type&&!/^interclub$/i.test(c.type))chips.push(c.type);if(c.sport)chips.push(c.sport);/* v324: drop chips the rules line already says (was "N class · Muay Thai · N class, Muay Thai rules, ...") */if(c.rules){var rl=String(c.rules).toLowerCase();chips=chips.filter(function(x){return rl.indexOf(String(x).toLowerCase())<0})}
  var h='<div class="cd-top"><span class="cd-kick">'+e(word)+' booked</span><em class="d112-s s-'+c.status[0]+'">'+e(c.status[1])+'</em></div>'+
   '<h2 class="cd-t">'+e(c.title)+'</h2><p class="cd-d">'+e(dt)+(c.place?" · "+e(c.place):"")+'</p>'+cdHTML(c)+
   (chips.length||c.rules?'<p class="cd-r">'+e(chips.concat(c.rules?[c.rules]:[]).join(" · "))+'</p>':'')+
@@ -23986,6 +23986,76 @@ var css=document.createElement("style");css.textContent=".v229a{font-style:norma
 ".v229s{display:flex;flex-wrap:wrap;gap:3px;margin-top:4px}.v229s i{width:11px;height:11px;border-radius:3px;display:block}.v229s i.h{background:#E9A23B}.v229s i.m{border:1.5px solid rgba(255,255,255,.35)}.v229s i.f{background:rgba(255,255,255,.07)}"+
 ".v228hb s{position:absolute;top:-2px;bottom:-2px;width:2px;background:#fff;opacity:.8;text-decoration:none}";
 document.head.appendChild(css);
+})();
+
+/* FighterBase v324 (Steve, 8 Nov 2026): voice to log a session. "Use Claude, the same tech as nutrition logging, just put in a different place. Make it simple."
+   Sessions tab, top: "Say your session". Tap the box and use the microphone (the free phone/browser speech-to-text, fh178) or type, e.g.
+   "Muay Thai an hour, six rounds sparring with Jay, felt good, worked on teeps". Then "Understand it":
+   - with Ask FighterBase connected (FH221.live(), adults only), the line goes to the server function in "log" mode and Claude fills in sport, type,
+     minutes, rounds, sparring rounds and length, partner, how it felt and notes;
+   - otherwise the free on-phone reader (FH183.parse) fills what it can.
+   Nothing is saved until the member checks the details and taps Save. Saved as a normal session (src "voice"); sparring goes in the same place as the
+   roll and sparring log (fh223: spar {n,len,p:[{n}]}), so it counts in every chart. Partner names stay on the member's phone. */
+var K230=K230||false;
+(function(){
+if(K230)return;K230=true;
+function e(s){return esc(String(s==null?"":s))}
+function P(){return S.profile||{}}
+function kid(){var a=+P().age;return a>0&&a<18}
+var st={txt:"",busy:false,d:null,msg:"",via:""};
+var TYPES=["Class","Sparring","Rolling / live grappling","Pads","Bag work","Drilling","Strength","Cardio","Other"];
+var FEEL=[["great","Great"],["good","Good"],["ok","OK"],["tired","Tired"],["sore","Sore"]];
+function sports(){var a=(P().sports||[]).slice();["Muay Thai","Boxing","Brazilian Jiu-Jitsu","MMA","Kickboxing","Wrestling","Strength","Running","Conditioning","Other"].forEach(function(x){if(a.indexOf(x)<0)a.push(x)});return a}
+function ai(){try{return !kid()&&window.FH221&&FH221.live()}catch(x){return false}}
+function fromLocal(t){var p=null;try{p=FH183.parse(t)}catch(x){}if(!p||p.k!=="session")return null;var low=t.toLowerCase(),rd=low.match(/(\d{1,2})\s*rounds?/),sp=/spar|rolling|rolled|\broll\b/.test(low);
+ return {sport:p.type||"Other",type:sp?(/roll/.test(low)?"Rolling / live grappling":"Sparring"):"Class",mins:p.mins||null,rounds:rd?+rd[1]:null,rpe:null,feel:/great|brilliant|amazing/.test(low)?"great":/good|well/.test(low)?"good":/tired|knackered|wrecked/.test(low)?"tired":/sore/.test(low)?"sore":null,spar:sp&&rd?{n:+rd[1],len:null,partner:null}:null,notes:""}}
+function norm(L){if(!L)return null;var o={sport:String(L.sport||"Other").slice(0,40),type:TYPES.indexOf(L.type)>=0?L.type:"Class",mins:+L.mins>0?Math.min(400,Math.round(+L.mins)):null,rounds:+L.rounds>0?Math.round(+L.rounds):null,rpe:+L.rpe>0?Math.min(10,Math.round(+L.rpe)):null,feel:FEEL.some(function(f){return f[0]===L.feel})?L.feel:null,notes:String(L.notes||"").slice(0,200),spar:null};
+ if(L.spar&&+L.spar.n>0)o.spar={n:Math.round(+L.spar.n),len:+L.spar.len>0?+L.spar.len:null,partner:L.spar.partner?String(L.spar.partner).slice(0,40):null};return o}
+function card(){var h='<span class="fb-kick">'+(ai()?'Voice log · Claude':'Voice log')+'</span><h2 class="m184-t" style="margin:2px 0 4px">Say your session</h2>';
+ if(!st.d){h+='<p class="small muted" style="margin:0 0 8px">Tap the box, then the microphone, and say it the way you\'d tell your coach. For example: <i>"Muay Thai an hour, six rounds sparring with Jay, felt good, worked on teeps."</i></p>'+
+  '<textarea id="v230t" rows="2" maxlength="500" placeholder="Say or type your session" aria-label="Say or type your session">'+e(st.txt)+'</textarea>'+
+  '<div class="row" style="margin-top:8px"><button class="btn" type="button" data-v230go'+(st.busy?' disabled':'')+'>'+(st.busy?'Understanding…':'Understand it')+'</button></div>'+
+  (st.msg?'<p class="small" style="margin:6px 0 0">'+e(st.msg)+'</p>':'')+
+  '<p class="small muted" style="margin:6px 0 0">'+(ai()?'Your words go to FighterBase\'s server and Anthropic\'s Claude to fill in the details. Nothing is saved until you tap Save.':'Read on your phone, free and private. Nothing is saved until you tap Save.')+'</p>';return h}
+ var d=st.d;h+='<p class="small muted" style="margin:0 0 8px">Check it, change anything, then Save. '+(st.via==="ai"?'Filled in by Claude.':'Filled in on your phone.')+'</p>'+
+  '<div class="v230g"><label>Sport<select id="v230s">'+sports().map(function(x){return '<option'+(x===d.sport?' selected':'')+'>'+e(x)+'</option>'}).join("")+(sports().indexOf(d.sport)<0?'<option selected>'+e(d.sport)+'</option>':'')+'</select></label>'+
+  '<label>Type<select id="v230y">'+TYPES.map(function(x){return '<option'+(x===d.type?' selected':'')+'>'+e(x)+'</option>'}).join("")+'</select></label>'+
+  '<label>Minutes<input id="v230m" type="number" min="5" max="400" inputmode="numeric" value="'+(d.mins||"")+'"></label>'+
+  '<label>Sparring or rolling rounds<input id="v230r" type="number" min="0" max="40" inputmode="numeric" value="'+(d.spar?d.spar.n:"")+'"></label>'+
+  '<label>Round length (min)<input id="v230l" type="number" min="1" max="10" step="0.5" inputmode="decimal" value="'+(d.spar&&d.spar.len?d.spar.len:"")+'"></label>'+
+  '<label>Partner (optional)<input id="v230p" type="text" maxlength="40" value="'+e(d.spar&&d.spar.partner||"")+'"></label></div>'+
+  '<div class="chips" style="margin-top:8px" role="group" aria-label="How did it feel">'+FEEL.map(function(f){return '<button type="button" class="chip'+(d.feel===f[0]?' on':'')+'" data-v230f="'+f[0]+'" aria-pressed="'+(d.feel===f[0])+'">'+f[1]+'</button>'}).join("")+'</div>'+
+  '<label class="v230n">Notes<input id="v230o" type="text" maxlength="200" value="'+e(d.notes)+'"></label>'+
+  '<div class="row" style="margin-top:10px"><button class="btn" type="button" data-v230save>Save</button><button class="linkbtn" type="button" data-v230back>Back</button></div>';
+ return h}
+function draw(force){var tb=document.getElementById("tab-train");if(!tb||tb.hidden)return;var el=document.getElementById("v230");
+ if(!el){el=document.createElement("div");el.id="v230";el.className="fb-card f149keep";el.dataset.sig="";var cv=document.getElementById("cv228_train");if(cv&&cv.parentNode===tb)tb.insertBefore(el,cv.nextSibling);else tb.insertBefore(el,tb.firstChild)}
+ if(!force&&el.contains(document.activeElement)&&/INPUT|TEXTAREA|SELECT/.test(document.activeElement.tagName))return;
+ var h=card();if(force||el.dataset.sig!==h){el.innerHTML=h;el.dataset.sig=h}}
+function grab(){var g=function(id){var x=document.getElementById(id);return x?x.value:""};var d=st.d;d.sport=g("v230s")||d.sport;d.type=g("v230y")||d.type;var m=+g("v230m");d.mins=m>0?Math.min(400,Math.round(m)):null;
+ var r=+g("v230r"),l=+g("v230l"),p=g("v230p").trim();d.spar=r>0?{n:Math.round(r),len:l>0?l:null,partner:p||null}:null;d.notes=g("v230o").trim().slice(0,200)}
+function understand(){var ta=document.getElementById("v230t");st.txt=ta?ta.value.trim():st.txt;st.msg="";if(!st.txt){st.msg="Say or type your session first.";draw(true);return}
+ if(ai()){st.busy=true;draw(true);FH221.server("log",st.txt).then(function(j){st.busy=false;if(j&&j.ok&&j.log){st.d=norm(j.log);st.via="ai"}else{var L=fromLocal(st.txt);if(L){st.d=L;st.via="local"}else st.msg=(j&&j.text)||"Sorry, I couldn't read that. Try the sport and how long, e.g. \"Boxing, one hour\"."}draw(true)},function(){st.busy=false;var L=fromLocal(st.txt);if(L){st.d=L;st.via="local"}else st.msg="Couldn't reach Claude. Try the sport and how long, e.g. \"Boxing, one hour\".";draw(true)});return}
+ var L=fromLocal(st.txt);if(L){st.d=L;st.via="local"}else st.msg="Sorry, I couldn't read that. Try the sport and how long, e.g. \"Boxing, one hour\".";draw(true)}
+function save(){grab();var d=st.d;if(!d.mins){st.msg="";try{toast("Add the minutes first")}catch(x){}return}
+ var rpe=d.rpe||({great:7,good:6,ok:5,tired:7,sore:7})[d.feel]||6,t=(function(){var x=new Date();return String(x.getHours()).padStart(2,"0")+":"+String(x.getMinutes()).padStart(2,"0")})();
+ var s={sport:d.sport,type:d.type,mins:d.mins,rpe:rpe,club:false,notes:d.notes||st.txt.slice(0,200),t:t,src:"voice"};if(d.feel)s.feel=d.feel;
+ if(d.spar){s.spar={n:d.spar.n,len:d.spar.len||null,p:d.spar.partner?[{n:d.spar.partner}]:[]};s.rounds=d.spar.n}
+ var ok=false;try{cur.sessions=(cur.sessions||[]).concat([s]);cur.trained=true;markDirty();ok=true}catch(x){}
+ try{toast(ok?"Session saved":"Could not save",ok?d.sport+", "+d.mins+" min"+(d.spar?", "+d.spar.n+" rounds":""):"")}catch(x){}
+ st={txt:"",busy:false,d:null,msg:"",via:""};draw(true);try{renderTrain()}catch(x){}}
+document.addEventListener("click",function(ev){var t=ev.target;if(!t.closest)return;var b;
+ if(t.closest("[data-v230go]")){understand();return}
+ if(t.closest("[data-v230back]")){st.d=null;draw(true);return}
+ if(t.closest("[data-v230save]")){save();return}
+ if(b=t.closest("[data-v230f]")){grab();st.d.feel=st.d.feel===b.dataset.v230f?null:b.dataset.v230f;draw(true);return}});
+document.addEventListener("input",function(ev){if(ev.target&&ev.target.id==="v230t")st.txt=ev.target.value});
+setInterval(function(){try{draw(false)}catch(x){}},2000);
+var st0=showTab;showTab=function(tab){var r=st0.apply(this,arguments);if(tab==="train")setTimeout(function(){try{draw(true)}catch(x){}},150);return r};
+var css=document.createElement("style");css.textContent="#v230{order:-35}#v230 textarea{width:100%;box-sizing:border-box;font:inherit;padding:10px 12px;border-radius:12px;border:1px solid var(--line);background:rgba(255,255,255,.04);color:inherit}"+
+".v230g{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:8px}.v230g label,.v230n{display:flex;flex-direction:column;gap:3px;font-size:12px;color:var(--muted,#9AA0AA)}.v230n{margin-top:8px}.v230g select,.v230g input,.v230n input{font:inherit;font-size:15px;padding:8px 10px;border-radius:10px;border:1px solid var(--line);background:rgba(255,255,255,.04);color:var(--fg,#fff)}";
+document.head.appendChild(css);
+window.FH230={draw:draw};
 })();
 
 /* FighterBase v44: always a way back, always a next step. */
