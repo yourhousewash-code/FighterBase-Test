@@ -2865,7 +2865,7 @@ function challengeValue(ch,st){if(!ch)return 0;return ch.metric==="checkins"?st.
 let leagueTimer=null;function scheduleLeague(){clearTimeout(leagueTimer);leagueTimer=setTimeout(syncLeague,2500)}
 async function syncLeague(){if(!db||!S.uid||!S.profile.clubId)return;const wk=periodStats(weekStartKey()),mo=periodStats(monthStartKey());
   const events=(S.profile.clubEvents||[]).slice(-12);
-  try{await db.doc("league/"+S.uid).set({uid:S.uid,clubId:S.profile.clubId,name:S.profile.leagueName||(S.profile.name||"Member").split(" ")[0],ring:String(S.profile.ring||"").trim().slice(0,40),sports:sportsOf(S.profile).slice(0,3),optIn:S.profile.leagueOptIn===true,updated:new Date().toISOString(),weekStart:weekStartKey(),week:wk,month:mo,daily:dailySeries(45),streak:streak(),rank:rankOf(totalXP()).name,events,rsvp:rsvpPrune(S.profile.rsvp),att:S.profile.att||{},det:(S.profile.det142||[]).slice(-10),cant:rsvpPrune(S.profile.cant142),mp:S.profile.msgPref||null,fr:(window.FHF&&FHF.req?FHF.req():[]),share:(S.profile.clubConsent?{c:S.profile.clubConsent.consistency!==false,w:!!S.profile.clubConsent.weight}:{c:false,w:false}),wv:(S.profile.wvPub&&S.profile.wv&&S.profile.wv.clubId===S.profile.clubId)?S.profile.wvPub:null,ms:(S.profile.mship&&S.profile.mship.clubId===S.profile.clubId)?S.profile.mship:null})}catch(e){}}
+  try{await db.doc("league/"+S.uid).set({uid:S.uid,clubId:S.profile.clubId,name:S.profile.leagueName||(S.profile.name||"Member").split(" ")[0],ring:String(S.profile.ring||"").trim().slice(0,40),sports:sportsOf(S.profile).slice(0,3),optIn:S.profile.leagueOptIn===true,commit:(S.profile.commit&&S.profile.commit.m&&S.profile.commit.n)?{m:S.profile.commit.m,n:S.profile.commit.n}:null,updated:new Date().toISOString(),weekStart:weekStartKey(),week:wk,month:mo,daily:dailySeries(45),streak:streak(),rank:rankOf(totalXP()).name,events,rsvp:rsvpPrune(S.profile.rsvp),att:S.profile.att||{},det:(S.profile.det142||[]).slice(-10),cant:rsvpPrune(S.profile.cant142),mp:S.profile.msgPref||null,fr:(window.FHF&&FHF.req?FHF.req():[]),share:(S.profile.clubConsent?{c:S.profile.clubConsent.consistency!==false,w:!!S.profile.clubConsent.weight}:{c:false,w:false}),wv:(S.profile.wvPub&&S.profile.wv&&S.profile.wv.clubId===S.profile.clubId)?S.profile.wvPub:null,ms:(S.profile.mship&&S.profile.mship.clubId===S.profile.clubId)?S.profile.mship:null})}catch(e){}}
 function pushClubEvent(text){if(!S.profile.clubId)return;const ev=[...(S.profile.clubEvents||[]),{id:Date.now().toString(36),date:TODAY,text}].slice(-12);S.profile.clubEvents=ev;profChanged();scheduleLeague()}
 function subscribeClub(){clubState.unsubs.forEach(u=>{try{u()}catch(e){}});clubState.unsubs=[];if(!db||!S.profile.clubId){clubState.club=null;clubState.members=[];renderClub();updateNav();return}
   const id=S.profile.clubId,fail=()=>{};
@@ -13072,6 +13072,7 @@ document.head.appendChild(css2);
 window.FH100={card:card,upcoming:upcoming,weekCounts:weekCounts,weekDays:weekDays};
 })();
 
+/* v325: the team goal can also count Effort points (fh231): minutes x how hard it felt / 10, so effort counts, not ability. */
 /* FighterBase v115: club team goal (replaces the points league).
    One shared target for the whole club (for example "150 sessions this month"). Nobody is ranked and no names are shown.
    Counts only members who opted in (leagueOptIn === true), and the total only shows once at least 3 have opted in so nobody can be picked out.
@@ -13086,9 +13087,9 @@ function club(){return clubState&&clubState.club}
 function opted(){return (clubState.members||[]).filter(function(m){return m.optIn===true})}
 function monthEnd(){var d=new Date();return dayKey(new Date(d.getFullYear(),d.getMonth()+1,0))}
 function weekEnd(){return addDays(weekStartKey(),6)}
-function valueOf(g,list){var tot=0,act=0;list.forEach(function(m){var v=seriesValue(m.daily,"s",g.start,g.end);tot+=v;if(v>0)act++});return g.metric==="act"?act:tot}
-function mine(g){var me=(clubState.members||[]).filter(function(m){return m.uid===S.uid})[0];var d=me&&me.daily?me.daily:dailySeries(45);return seriesValue(d,"s",g.start,g.end)}
-function unit(g){return g.metric==="act"?"members trained":"sessions"}
+function valueOf(g,list){var tot=0,act=0,mt=g.metric==="e"?"e":"s";list.forEach(function(m){var v=seriesValue(m.daily,mt,g.start,g.end);tot+=v;if(v>0)act++});return g.metric==="act"?act:tot}
+function mine(g){var me=(clubState.members||[]).filter(function(m){return m.uid===S.uid})[0];var d=me&&me.daily?me.daily:dailySeries(45);return seriesValue(d,g.metric==="e"?"e":"s",g.start,g.end)}
+function unit(g){return g.metric==="act"?"members trained":g.metric==="e"?"effort points":"sessions"}
 function suggest(metric,per){
  /* last full period of the opted-in members, plus 10%, never below 5 (members) or 10 (sessions) */
  var list=opted(),st=per==="week"?addDays(weekStartKey(),-7):dayKey(new Date(new Date().getFullYear(),new Date().getMonth()-1,1)),en=per==="week"?addDays(weekStartKey(),-1):dayKey(new Date(new Date().getFullYear(),new Date().getMonth(),0));
@@ -13096,7 +13097,7 @@ function suggest(metric,per){
 function bar(v,t){var p=t>0?Math.min(100,Math.round(v/t*100)):0;return '<div class="tg-bar" role="progressbar" aria-valuenow="'+v+'" aria-valuemax="'+t+'"><i style="width:'+p+'%"></i></div>'}
 var F={metric:"s",per:"month",target:"",title:""};
 function form(){return '<div class="stack" style="gap:8px;border-top:1px solid var(--line);padding-top:12px"><span class="label">Coach: set the club team goal</span>'+
- '<div class="grid2"><div class="field"><label class="label" for="tgMetric">Count</label><select id="tgMetric"><option value="s"'+(F.metric==="s"?" selected":"")+'>Total sessions by opted-in members</option><option value="act"'+(F.metric==="act"?" selected":"")+'>Members who train at least once</option></select></div>'+
+ '<div class="grid2"><div class="field"><label class="label" for="tgMetric">Count</label><select id="tgMetric"><option value="s"'+(F.metric==="s"?" selected":"")+'>Total sessions by opted-in members</option><option value="act"'+(F.metric==="act"?" selected":"")+'>Members who train at least once</option><option value="e"'+(F.metric==="e"?" selected":"")+'>Effort points (minutes x how hard, so every level counts)</option></select></div>'+
  '<div class="field"><label class="label" for="tgPer">Period</label><select id="tgPer"><option value="week"'+(F.per==="week"?" selected":"")+'>This week</option><option value="month"'+(F.per==="month"?" selected":"")+'>This month</option></select></div>'+
  '<div class="field"><label class="label" for="tgTarget">Target</label><input type="number" id="tgTarget" min="1" max="5000" inputmode="numeric" value="'+esc2(F.target)+'"></div>'+
  '<div class="field"><label class="label" for="tgTitle">Name (optional)</label><input type="text" id="tgTitle" maxlength="50" placeholder="e.g. 150 sessions in October" value="'+esc2(F.title)+'"></div></div>'+
@@ -23813,12 +23814,12 @@ FBV.ring=function(o){/* o:{v (0..1), col, big, small, lab, size} */
   '<circle cx="'+S2/2+'" cy="'+S2/2+'" r="'+r+'" stroke="'+(o.col||"#3FC57E")+'" stroke-width="8" fill="none" stroke-linecap="round" stroke-dasharray="'+(c*p).toFixed(1)+' '+c.toFixed(1)+'" transform="rotate(-90 '+S2/2+' '+S2/2+')"><title>'+e(o.lab)+'</title></circle>'+
   '<text x="50%" y="'+(o.small?"47%":"54%")+'" text-anchor="middle" class="v228rt">'+e(o.big)+'</text>'+(o.small?'<text x="50%" y="66%" text-anchor="middle" class="v228rs">'+e(o.small)+'</text>':'')+'</svg>'};
 var CAT=["#C81E3A","#4DA3FF","#3FC57E","#E9A23B","#B482FF","#55C7D9"];
-FBV.donut=function(o){/* o:{parts:[[label,value]], lab, unit} ; top 5 then Other, fixed colour order, legend with values */
+FBV.donut=function(o){/* o:{parts:[[label,value]], lab, unit, cols:{label:colour} for status charts where colour carries meaning} ; top 5 then Other, fixed colour order, legend with values */
  var ps=o.parts.filter(function(p){return p[1]>0}).sort(function(a,b){return b[1]-a[1]});if(!ps.length)return"";if(ps.length>6){var rest=ps.slice(5).reduce(function(a,p){return a+p[1]},0);ps=ps.slice(0,5).concat([["Other",rest]])}
  var tot=ps.reduce(function(a,p){return a+p[1]},0),S2=110,r=40,c=2*Math.PI*r,acc=0,s='<svg viewBox="0 0 '+S2+' '+S2+'" width="'+S2+'" height="'+S2+'" role="img" aria-label="'+e(o.lab)+'" class="v228r">';
- ps.forEach(function(p,i){var f=p[1]/tot,col=p[0]==="Other"?"#6B7280":CAT[i%CAT.length];s+='<circle cx="55" cy="55" r="'+r+'" fill="none" stroke="'+col+'" stroke-width="16" stroke-dasharray="'+Math.max(0,c*f-2).toFixed(1)+' '+c.toFixed(1)+'" stroke-dashoffset="'+(-c*acc).toFixed(1)+'" transform="rotate(-90 55 55)"><title>'+e(p[0]+": "+Math.round(f*100)+"%")+'</title></circle>';acc+=f});
+ ps.forEach(function(p,i){var f=p[1]/tot,col=(o.cols&&o.cols[p[0]])||(p[0]==="Other"?"#6B7280":CAT[i%CAT.length]);s+='<circle cx="55" cy="55" r="'+r+'" fill="none" stroke="'+col+'" stroke-width="16" stroke-dasharray="'+Math.max(0,c*f-2).toFixed(1)+' '+c.toFixed(1)+'" stroke-dashoffset="'+(-c*acc).toFixed(1)+'" transform="rotate(-90 55 55)"><title>'+e(p[0]+": "+Math.round(f*100)+"%")+'</title></circle>';acc+=f});
  s+='</svg>';
- var lg='<ul class="v228l">'+ps.map(function(p,i){var col=p[0]==="Other"?"#6B7280":CAT[i%CAT.length];return '<li><i style="background:'+col+'"></i>'+e(p[0])+' <b>'+Math.round(p[1]/tot*100)+'%</b>'+(o.unit?' <span class="muted small">'+e(Math.round(p[1])+o.unit)+'</span>':'')+'</li>'}).join("")+'</ul>';
+ var lg='<ul class="v228l">'+ps.map(function(p,i){var col=(o.cols&&o.cols[p[0]])||(p[0]==="Other"?"#6B7280":CAT[i%CAT.length]);return '<li><i style="background:'+col+'"></i>'+e(p[0])+' <b>'+Math.round(p[1]/tot*100)+'%</b>'+(o.unit?' <span class="muted small">'+e(Math.round(p[1])+o.unit)+'</span>':'')+'</li>'}).join("")+'</ul>';
  return '<div class="v228d">'+s+lg+'</div>'};
 FBV.card=function(kick,title,body,say){return '<span class="fb-kick">'+e(kick)+'</span><h2 class="m184-t" style="margin:2px 0 4px">'+e(title)+'</h2>'+(say||"")+body};
 window.FBV=FBV;
@@ -23967,7 +23968,7 @@ function staff(){try{return !!(window.FHC&&FHC.isOwner())}catch(x){return false}
 function Mem(){return ((typeof clubState!=="undefined"&&clubState.members)||[]).filter(function(m){return m.uid!==S.uid&&m.status!=="left"})}
 function memCard(){if(!staff())return"";var M=Mem();if(!M.length)return"";var a=addDays(TODAY,-14),b=addDays(TODAY,-30),g={act:0,q:0,away:0,never:0};
  M.forEach(function(m){var ks=Object.keys(m.att||{}).map(function(k){return k.slice(0,10)}).sort(),last=ks[ks.length-1];if(!last)g.never++;else if(last>=a)g.act++;else if(last>=b)g.q++;else g.away++});
- return V().card("Right now","Your members at a glance",V().donut({parts:[["Trained in the last 2 weeks",g.act],["Quiet 2 to 4 weeks",g.q],["Not seen for over 4 weeks",g.away],["Never checked in",g.never]],lab:"Members by when they last checked in"})+'<p class="muted small" style="margin:6px 0 0">From class check-ins only. A quiet member may be training elsewhere or away, so a friendly message works better than a chase.</p>',say(window.FBSAY?FBSAY.target(g.act,M.length,.8):null,"mem",g.act+' of '+M.length+' members trained in the last two weeks.'))}
+ return V().card("Right now","Your members at a glance",V().donut({parts:[["Trained in the last 2 weeks",g.act],["Quiet 2 to 4 weeks",g.q],["Not seen for over 4 weeks",g.away],["Never checked in",g.never]],lab:"Members by when they last checked in",cols:{"Trained in the last 2 weeks":"#3FC57E","Quiet 2 to 4 weeks":"#E9A23B","Not seen for over 4 weeks":"#7B8494","Never checked in":"#4B5260"}})+'<p class="muted small" style="margin:6px 0 0">From class check-ins only. A quiet member may be training elsewhere or away, so a friendly message works better than a chase.</p>',say(window.FBSAY?FBSAY.target(g.act,M.length,.8):null,"mem",g.act+' of '+M.length+' members trained in the last two weeks.'))}
 function clsCard(){if(!staff()||typeof clubState==="undefined"||!clubState.club)return"";var T=clubState.club.timetable||[];if(!T.length)return"";var M=Mem(),a=addDays(TODAY,-28),rows=[];
  T.forEach(function(x){var occ={};M.forEach(function(m){Object.keys(m.att||{}).forEach(function(k){if(k.slice(11)===String(x.id)&&k.slice(0,10)>=a&&k.slice(0,10)<=TODAY)occ[k.slice(0,10)]=(occ[k.slice(0,10)]||0)+1})});var n=Object.keys(occ).length;if(!n)return;var av=Object.keys(occ).reduce(function(s,k){return s+occ[k]},0)/n;rows.push({t:x.title+(x.time?" · "+x.time:""),av:av,cap:+x.cap||0})});
  if(!rows.length)return"";rows.sort(function(p,q){return q.av-p.av});var mx=Math.max.apply(null,rows.map(function(r){return Math.max(r.av,r.cap)}));
@@ -24056,6 +24057,83 @@ var css=document.createElement("style");css.textContent="#v230{order:-35}#v230 t
 ".v230g{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:8px}.v230g label,.v230n{display:flex;flex-direction:column;gap:3px;font-size:12px;color:var(--muted,#9AA0AA)}.v230n{margin-top:8px}.v230g select,.v230g input,.v230n input{font:inherit;font-size:15px;padding:8px 10px;border-radius:10px;border:1px solid var(--line);background:rgba(255,255,255,.04);color:var(--fg,#fff)}";
 document.head.appendChild(css);
 window.FH230={draw:draw};
+})();
+
+/* FighterBase v325 (Steve, 8 Nov 2026): club commitments and effort points, inside club challenges.
+   "Effort-based points and challenges will make part of club challenges; club commitments might work."
+   1. Your commitment (Sessions tab): the member picks how many sessions they commit to this month (8, 12, 16, 20 or their own). A ring, a pace phrase,
+      days left, and "Committed Club": months in a row they met their commitment. Stored in profile.commit {m:"YYYY-MM", n, hist:{"YYYY-MM":n}}.
+   2. Effort points: every session earns minutes x how hard it felt (RPE, 1 to 10) / 10, e.g. 60 minutes at 7 = 42. Effort, not ability, so a beginner
+      working hard scores like an expert working hard. Shown as 8 weeks of bars on the commitment card, and added to the daily series the club sees (m.e).
+   3. Club team goal can now count Effort points (fh101 metric "e"), alongside sessions and members who trained.
+   4. Club side, Overview (staff): Committed Club this month: how many opted-in members committed, already met it, on pace, and need a push. Counts only,
+      no names, and only when 3 or more have committed, like the team goal.
+   The commitment is shared with the club only if the member is in the team goal (league opt-in), as the rest of the league data is. */
+var K231=K231||false;
+(function(){
+if(K231)return;K231=true;
+function e(s){return esc(String(s==null?"":s))}
+function P(){return S.profile||{}}
+function ym(k){return String(k||TODAY).slice(0,7)}
+function mname(m){return new Date(m+"-15T12:00").toLocaleDateString("en-GB",{month:"long"})}
+function dim(m){var y=+m.slice(0,4),mo=+m.slice(5,7);return new Date(y,mo,0).getDate()}
+function prevM(m){var y=+m.slice(0,4),mo=+m.slice(5,7)-1;if(mo<1){mo=12;y--}return y+"-"+String(mo).padStart(2,"0")}
+function lm(){var m={};try{m=logMap()||{}}catch(x){}try{if(typeof cur!=="undefined"&&cur&&cur.date)m[cur.date]=cur}catch(x){}return m}
+function sessOf(l){try{return FBE.sessOf(l)||[]}catch(x){return (l&&l.sessions)||[]}}
+function effOf(s){var m=+s.mins>0?+s.mins:45,r=+s.rpe>0?Math.min(10,+s.rpe):6;return Math.round(m*r/10)}
+function monthCount(m){var L=lm(),n=0;Object.keys(L).forEach(function(k){if(k.slice(0,7)===m)n+=sessOf(L[k]).length});return n}
+/* ---- data: commitment with month roll-over ---- */
+function C(){var p=P(),c=p.commit;if(!c)return null;var now=ym();if(c.m&&c.m<now){c.hist=c.hist||{};c.hist[c.m]=c.n;c.m=null;c.n=null;try{profChanged()}catch(x){}}return c}
+function setCommit(n){var p=P(),c=p.commit||{hist:{}};c.hist=c.hist||{};c.m=ym();c.n=n;p.commit=c;try{profChanged()}catch(x){}try{if(typeof scheduleLeague==="function")scheduleLeague()}catch(x){}}
+function streak(){var c=C();if(!c||!c.hist)return 0;var m=prevM(ym()),n=0;while(c.hist[m]&&monthCount(m)>=c.hist[m]){n++;m=prevM(m)}if(c.m===ym()&&c.n&&monthCount(ym())>=c.n)n++;return n}
+/* ---- effort points into the shared daily series and the series reader ---- */
+try{var ds0=dailySeries;dailySeries=function(days){var o=ds0.apply(this,arguments),L=lm();Object.keys(o||{}).forEach(function(k){o[k].e=sessOf(L[k]).reduce(function(a,s){return a+effOf(s)},0)});return o}}catch(x){}
+try{var sv0=seriesValue;seriesValue=function(daily,metric,start,end){if(metric!=="e")return sv0.apply(this,arguments);var v=0;Object.keys(daily||{}).forEach(function(k){if(k>=start&&k<=end){var m=daily[k]||{};v+=m.e!=null?+m.e:(demo()?(+m.s||0)*40:0)}});return v}}catch(x){}
+function demo(){try{return !!sessionStorage.getItem("fbDemo")}catch(x){return false}}
+/* ---- member card ---- */
+function card(){if(!P().onboarded)return"";var c=C(),m=ym(),n=monthCount(m),d=+TODAY.slice(8,10),D=dim(m),left=D-d,mn=mname(m),V=window.FBV,h='<span class="fb-kick">Club commitment · '+e(mn)+'</span><h2 class="m184-t" style="margin:2px 0 6px">Your commitment</h2>';
+ if(!c||!c.n||c.m!==m){var last=c&&c.hist?c.hist[prevM(m)]:null,lastN=monthCount(prevM(m));
+  h+='<p class="small" style="margin:0 0 8px">How many sessions will you commit to in '+e(mn)+'? Pick a number you can hit. Meet it and you\'re in the <b>Committed Club</b> for '+e(mn)+'.'+(last?' Last month you committed to '+last+' and did '+lastN+'.':(lastN?' Last month you did '+lastN+'.':''))+'</p>'+
+   '<div class="chips">'+[8,12,16,20].map(function(x){return '<button type="button" class="chip" data-c231="'+x+'">'+x+' sessions</button>'}).join("")+'<button type="button" class="chip" data-c231own>My own number</button></div>'+
+   (OWN?'<div class="row" style="margin-top:8px;align-items:center"><input type="number" id="c231n" min="1" max="62" inputmode="numeric" style="width:90px" placeholder="e.g. 10"><button type="button" class="btn sm" data-c231set>Commit</button></div>':'');}
+ else{var share=d/D,stt=window.FBSAY?FBSAY.target(n,c.n,share):null,need=Math.max(0,c.n-n),sk=streak();
+  h+='<div class="c231r">'+(V?V.ring({v:n/c.n,big:n+"/"+c.n,small:"sessions",lab:"Commitment: "+n+" of "+c.n+" sessions in "+mn,col:n>=c.n?"#E9A23B":"#3FC57E",size:96}):'')+'<div class="c231m">'+(stt&&window.FBSAY?FBSAY.chip(stt,"commit"):'')+
+   '<span>'+(need?need+' more to go, '+left+' day'+(left===1?'':'s')+' left in '+e(mn)+'.':'Commitment met. You\'re in the Committed Club for '+e(mn)+'.')+'</span>'+
+   '<span class="c231s">'+(sk?'&#9670; Committed Club: <b>'+sk+' month'+(sk===1?'':'s')+'</b> in a row':'Meet it to start your Committed Club run.')+'</span>'+
+   '<button type="button" class="linkbtn" data-c231chg style="align-self:flex-start">Change my number</button></div></div>'}
+ /* effort points: 8 weeks */
+ var L=lm(),w0=(function(){var x=new Date(TODAY+"T12:00"),k=(x.getDay()+6)%7;return addDays(TODAY,-k)})(),W=[];
+ for(var i=7;i>=0;i--){var a=addDays(w0,-7*i),p=0;for(var j=0;j<7;j++){var k=addDays(a,j);if(k>TODAY)break;sessOf(L[k]).forEach(function(s){p+=effOf(s)})}W.push({a:a,p:p})}
+ if(V&&W.some(function(x){return x.p})){var tw=W[W.length-1].p,lw=W[W.length-2].p;h+='<div class="v228c" style="margin-top:10px"><div class="v228h"><span>Effort points each week</span><b>'+tw+' this week</b></div>'+V.bars({vals:W.map(function(x){return x.p}),labels:W.map(function(x){return new Date(x.a+"T12:00").toLocaleDateString("en-GB",{day:"numeric",month:"short"})}),tips:W.map(function(x){return "Week of "+new Date(x.a+"T12:00").toLocaleDateString("en-GB",{day:"numeric",month:"short"})+": "+x.p+" effort points"}),col:"#C81E3A",lab:"Effort points per week, last 8 weeks"})+
+  '<p class="muted small" style="margin:4px 0 0">Minutes x how hard it felt (1 to 10) / 10: an hour at 7 out of 10 is 42 points. Effort, not ability, so everyone can score.'+(lw?' Last week: '+lw+'.':'')+'</p></div>'}
+ return h}
+var OWN=false;
+function put(){var tb=document.getElementById("tab-train");if(!tb||tb.hidden)return;var el=document.getElementById("c231"),h="";try{h=card()}catch(x){try{console.warn("c231",x)}catch(_){}}
+ if(!h){if(el)el.remove();return}
+ if(!el){el=document.createElement("div");el.id="c231";el.className="fb-card f149keep";el.dataset.sig="";var a=document.getElementById("v228train")||document.getElementById("v230");if(a&&a.parentNode===tb)tb.insertBefore(el,a.nextSibling);else tb.insertBefore(el,tb.firstChild)}
+ if(el.contains(document.activeElement)&&document.activeElement.tagName==="INPUT")return;
+ if(el.dataset.sig!==h){el.innerHTML=h;el.dataset.sig=h}}
+/* ---- club side: Committed Club this month ---- */
+function staff(){try{return !!(window.FHC&&FHC.isOwner())}catch(x){return false}}
+function demoCommit(m){/* demo only: made-up commitments for the made-up members, so the club panel can be seen */var h=0,s=String(m.uid);for(var i=0;i<s.length;i++)h=(h*31+s.charCodeAt(i))>>>0;return h%10<7?{m:ym(),n:[8,12,16][h%3]}:null}
+function clubCard(){if(!staff()||typeof clubState==="undefined"||!clubState.club)return"";var M=(clubState.members||[]).filter(function(m){return m.uid!==S.uid&&m.optIn===true&&m.status!=="left"}),mo=ym(),a=mo+"-01",d=+TODAY.slice(8,10),D=dim(mo),g={c:0,met:0,pace:0,push:0};
+ M.forEach(function(m){var c=m.commit&&m.commit.m===mo?m.commit:(demo()?demoCommit(m):null);if(!c||!c.n)return;g.c++;var n=0;try{n=seriesValue(m.daily,"s",a,TODAY)}catch(x){}if(n>=c.n)g.met++;else if(n>=c.n*d/D*0.9)g.pace++;else g.push++});
+ if(g.c<3)return"";var V=window.FBV;
+ return '<span class="fb-kick">'+e(mname(mo))+'</span><h2 class="m184-t" style="margin:2px 0 6px">Committed Club</h2>'+(V?V.donut({parts:[["Already met it",g.met],["On pace",g.pace],["Could use a nudge",g.push]],lab:"Members' monthly commitments: met, on pace, could use a nudge",cols:{"Already met it":"#E9A23B","On pace":"#3FC57E","Could use a nudge":"#7B8494"}}):'')+
+  '<p class="muted small" style="margin:6px 0 0">'+g.c+' of '+M.length+' members in the team goal set a commitment for '+e(mname(mo))+'. Counts only, no names. A nudge works best as a friendly message, never a chase.</p>'}
+function putClub(){var host=document.getElementById("huboverBody");if(!host||document.getElementById("tab-hubover").hidden)return;var el=document.getElementById("c231c"),h="";try{h=clubCard()}catch(x){}
+ if(!h){if(el)el.remove();return}if(!el){el=document.createElement("div");el.id="c231c";el.className="fb-card f149keep";el.dataset.sig="";var a=document.getElementById("v228club");if(a&&a.parentNode===host)host.insertBefore(el,a.nextSibling);else host.appendChild(el)}
+ if(el.dataset.sig!==h){el.innerHTML=h;el.dataset.sig=h}}
+document.addEventListener("click",function(ev){var t=ev.target;if(!t.closest)return;var b;
+ if(b=t.closest("[data-c231]")){setCommit(+b.dataset.c231);OWN=false;try{toast("Committed",b.dataset.c231+" sessions in "+mname(ym()))}catch(x){}put();return}
+ if(t.closest("[data-c231own]")){OWN=true;var el=document.getElementById("c231");if(el)el.dataset.sig="x";put();return}
+ if(t.closest("[data-c231set]")){var v=Math.round(+((document.getElementById("c231n")||{}).value)||0);if(v>=1&&v<=62){setCommit(v);OWN=false;try{toast("Committed",v+" sessions in "+mname(ym()))}catch(x){}}put();return}
+ if(t.closest("[data-c231chg]")){var c=P().commit;if(c){c.n=null;try{profChanged()}catch(x){}}put();return}});
+setInterval(function(){try{put();putClub()}catch(x){}},2000);
+var st0=showTab;showTab=function(tab){var r=st0.apply(this,arguments);setTimeout(function(){try{put();putClub()}catch(x){}},160);return r};
+var css=document.createElement("style");css.textContent="#c231{order:-31}.c231r{display:flex;gap:14px;align-items:center;flex-wrap:wrap}.c231m{display:flex;flex-direction:column;gap:4px;flex:1;min-width:180px}.c231m .say227{font-size:14px}.c231s{font-size:13px;color:#E9A23B}";
+document.head.appendChild(css);
+window.FH231={streak:streak,eff:effOf};
 })();
 
 /* FighterBase v44: always a way back, always a next step. */
