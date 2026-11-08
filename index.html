@@ -17790,7 +17790,9 @@ css.textContent="#tab-today>#fb196{order:-26!important}#tab-today #fb154{display
 /* v288 (Steve, 4 Nov 2026): the camp cards sit together in one framed box under the countdown; on wide screens two balanced columns, so no empty space under a short card */
 "#tab-today #fb154 .f154{display:flex;flex-direction:column;gap:12px;padding:10px;border-radius:22px;border:2px solid rgba(232,223,200,.9);background:linear-gradient(180deg,rgba(232,223,200,.08),rgba(200,30,58,.08));box-shadow:0 0 0 1px rgba(200,30,58,.45),0 0 30px -2px rgba(232,223,200,.5),0 0 40px -6px rgba(200,30,58,.4)}#tab-today #fb154 .f154>#fb115{margin:0!important;order:-1!important}#tab-today #fb154 .f154>.k154b{font:800 11px var(--body,inherit);letter-spacing:.16em;text-transform:uppercase;color:var(--muted);padding:0 2px}#tab-today #fb154 .c154{display:flex;flex-direction:column;gap:12px;min-width:0;flex:1}#tab-today #fb154 .c154>*{margin:0!important}"+
 "@media (min-width:520px){#tab-today #fb154 .f154>.cols154{display:flex;gap:12px;align-items:flex-start}}"+
-"#tab-today #fb154>.g154>*{order:0!important}#fbSide115.sd-me{display:none!important}";
+"#tab-today #fb154>.g154>*{order:0!important}#fbSide115.sd-me{display:none!important}"+
+/* v312 (Steve, 8 Nov 2026): Camp check and Share with your coach are one card inside the Fight camp box */
+"#tab-today #fb154 .m154{margin:0!important;display:flex;flex-direction:column;gap:0}#tab-today #fb154 .m154 [hidden]{display:none!important}#tab-today #fb154 .m154>.in154{background:none!important;border:0!important;box-shadow:none!important;padding:0!important;margin:0!important;border-radius:0!important;animation:none!important;overflow:visible!important}#tab-today #fb154 .m154>.in154::before{display:none!important}#tab-today #fb154 .m154>#fb117{order:1!important}#tab-today #fb154 .m154>.t154{order:2!important}#tab-today #fb154 .m154>#fb120{order:3!important}#tab-today #fb154 .m154 .c117-row{flex-wrap:wrap}#tab-today #fb154 .m154 .c117-row .btn{flex:none}#tab-today #fb154 .m154.has17>.in154~.in154,#tab-today #fb154 .m154.has17>.t154{border-top:1px solid rgba(255,255,255,.12)!important;margin-top:12px!important;padding-top:12px!important}#tab-today #fb154 .m154>.t154{display:flex;justify-content:space-between;align-items:center;gap:10px;width:100%;background:none;color:inherit;font:700 14px var(--body,inherit);text-align:left;cursor:pointer;border:0;border-top:0}#tab-today #fb154 .m154>.t154 i{font-style:normal;color:var(--gold,#E8DFC8);flex:none}#tab-today #fb154 .m154.fold:not(.open)>#fb120{display:none!important}#tab-today #fb154 .m154.fold.open>.t154{padding-bottom:0}";
 document.head.appendChild(css);
 function bal(w,g,have){var sig=have.map(function(x){return x.id+(x.hidden?"h":"")}).join()+"|"+Math.round(w.clientWidth/40)+"|"+have.map(function(x){return Math.round(x.offsetHeight/60)}).join();
  if(g.dataset.sig===sig)return;g.dataset.sig=sig;g.classList.remove("one154");
@@ -17808,8 +17810,19 @@ function run(){
  var g=w.lastChild,cd=have.filter(function(x){return x.id==="fb115"})[0],rest=have.filter(function(x){return x.id!=="fb115"});
  var f=g.querySelector(":scope>.f154");if(!f){f=document.createElement("div");f.className="f154";f.innerHTML='<div class="cols154"><div class="c154"></div><div class="c154"></div></div>';g.appendChild(f)}
  if(cd&&cd.parentNode!==f)f.insertBefore(cd,f.firstChild);
+ /* merged Camp check + Camp sharing card */
+ var m=f.querySelector(":scope>#m154"),c17=document.getElementById("fb117"),c20=document.getElementById("fb120");
+ if(!m){m=document.createElement("section");m.id="m154";m.className="fb-card m154";f.insertBefore(m,f.querySelector(".cols154"))}
+ [c17,c20].forEach(function(x){if(x&&x.closest("#tab-today")){if(x.parentNode!==m&&!(x.id==="fb120"&&m.querySelector(".t154")&&x.parentNode===m))m.appendChild(x);x.classList.add("in154","f149keep");x.classList.remove("f149m")}});m.classList.add("f149keep");
+ var fold=!!(c20&&!c20.hidden&&c20.querySelector("[data-f120on]")),tb=m.querySelector(".t154");
+ m.classList.toggle("fold",fold);m.classList.toggle("has17",!!(c17&&!c17.hidden));
+ if(fold){if(!tb){tb=document.createElement("button");tb.type="button";tb.className="t154";tb.addEventListener("click",function(){m.classList.toggle("open");run()});m.insertBefore(tb,c20)}
+  var lab='Share your camp week with your coach?<i>'+(m.classList.contains("open")?"Hide":"Choose")+' &#8250;</i>';if(tb.dataset.l!==lab){tb.innerHTML=lab;tb.dataset.l=lab}tb.hidden=false;if(tb.nextSibling!==c20)m.insertBefore(tb,c20)}
+ else if(tb)tb.remove();
+ m.hidden=!((c17&&!c17.hidden)||(c20&&!c20.hidden));
+ have=have.filter(function(x){return x.id!=="fb117"&&x.id!=="fb120"});rest=rest.filter(function(x){return x.id!=="fb117"&&x.id!=="fb120"});
  var cols=f.querySelectorAll(".c154"),wide=w.clientWidth>=520,vis2=rest.filter(function(x){return !x.hidden});
- f.querySelector('.cols154').hidden=!vis2.length;f.hidden=!cd&&!vis2.length;
+ f.querySelector('.cols154').hidden=!vis2.length;f.hidden=!cd&&!vis2.length&&m.hidden;
  /* greedy balance by height: each visible card goes to the shorter column; one column on phones */
  /* deal only when the set of visible cards or the width class changes, never on height changes, so nothing jumps while cards animate */
  var key=vis2.map(function(x){return x.id}).join()+(wide?"|w":"|n");
@@ -17817,7 +17830,7 @@ function run(){
   rest.filter(function(x){return x.hidden}).forEach(function(x){want[0].push(x)});
   want.forEach(function(list,i){list.forEach(function(x){if(x.parentNode!==cols[i])cols[i].appendChild(x)})});cols[1].hidden=!want[1].length}
  have.forEach(function(x){if(x.style.gridRowEnd)x.style.gridRowEnd=""});
- var vis=have.some(function(x){return !x.hidden});w.hidden=!vis}
+ var vis=have.some(function(x){return !x.hidden})||!m.hidden;w.hidden=!vis}
 setInterval(run,1500);
 var _s=window.showTab;if(typeof _s==="function"){window.showTab=function(t){var r=_s.apply(this,arguments);setTimeout(run,60);return r}}
 setTimeout(run,300);
