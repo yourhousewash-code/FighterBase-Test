@@ -7277,7 +7277,7 @@ var CATS=[
  ["weight","Weight trend","Direction and how far to your body goal. Useful for camps and weigh-ins.",false],
  ["food","Food summary","Days logged and average protein. Never your meals, photos or calories.",false],
  ["recovery","Recovery","Average sleep and energy from your check-ins.",false],
- ["chart","Progress chart","The Home chart for the last 30 days: steps, active minutes, sessions, sleep and your Activity level, so your coach can see how camp and training are going. Never calories. Weight only if you also share Weight trend. Not available under 18.",false],
+ ["chart","Progress chart","The Home chart for the last 30 days: steps, active minutes, sessions, sleep and your Training Index, so your coach can see how camp and training are going. Never calories. Weight only if you also share Weight trend. Not available under 18.",false],
  ["plan","Your week plan","Which days you plan to train and whether you did them. Never what your own sessions are or any notes.",false],
  ["injury","Training modified","That you're training around an injury. Never the details.",true],
  ["fights","Fights and camps","Fights you ask the club to confirm, and fight-camp details.",true],
@@ -16442,7 +16442,8 @@ var _rp=(typeof renderProgress==="function")?renderProgress:null;
 if(_rp)renderProgress=function(){var r=_rp.apply(this,arguments);try{draw()}catch(x){}return r};
 return {stats:stats,share:share,draw:draw}})();
 
-/* FighterBase v166: Home chart. A shaded "activity level" line for the last 7 / 14 / 30 days with steps, calories logged, training sessions
+/* v327 (Steve, 8 Nov 2026): the overall score is named the Training Index (was "Activity level").
+   FighterBase v166: Home chart. A shaded "activity level" line for the last 7 / 14 / 30 days with steps, calories logged, training sessions
    and weight that can be switched on over it, a day readout, and a plain "why did my weight change" panel that compares this period with the one before.
    Everything comes from what the member logs, imports or checks in. Not logged = unknown, drawn as a gap, never as zero.
    Activity level (0-100) = up to 50 from steps (10,000 = 50) + up to 50 from training and logged activities (60 minutes = 50). With no steps it is
@@ -16510,7 +16511,7 @@ function path(pts){var d="",open=false;pts.forEach(function(p){if(p[1]==null){op
 function areaPath(pts){var segs=[],cur=[];pts.forEach(function(p){if(p[1]==null){if(cur.length)segs.push(cur);cur=[]}else cur.push(p)});if(cur.length)segs.push(cur);var base=H-PB;
  return segs.map(function(s){return "M"+s[0][0].toFixed(1)+","+base+s.map(function(p){return "L"+p[0].toFixed(1)+","+p[1].toFixed(1)}).join("")+"L"+s[s.length-1][0].toFixed(1)+","+base+"Z"}).join("")}
 function norm(a,f){var v=vals(a,f);if(!v.length)return null;var mn=Math.min.apply(null,v),mx=Math.max.apply(null,v);if(mn===mx){mn-=1;mx+=1}return {mn:mn,mx:mx}}
-function svg(D,SEL){var n=D.length,o=over(),h='<svg class="h139-svg" viewBox="0 0 '+W+' '+H+'" role="img" aria-label="'+(D[0]&&D[0].wk?'Activity level over the last 3 months, one point a week':'Activity level over the last '+n+' days')+'">';
+function svg(D,SEL){var n=D.length,o=over(),h='<svg class="h139-svg" viewBox="0 0 '+W+' '+H+'" role="img" aria-label="'+(D[0]&&D[0].wk?'Training Index over the last 3 months, one point a week':'Training Index over the last '+n+' days')+'">';
  h+='<defs><linearGradient id="h139g" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="'+COL.a+'" stop-opacity=".55"/><stop offset="1" stop-color="'+COL.a+'" stop-opacity=".04"/></linearGradient></defs>';
  [0,50,100].forEach(function(g){var y=Y(g,0,100);h+='<line x1="'+PL+'" x2="'+(W-PR)+'" y1="'+y+'" y2="'+y+'" class="h139-gl"/>'});
  var sc0=D.map(function(d){return d.score});if(n>=30)sc0=(function(a){return a.map(function(v,i){var w=[];for(var q=Math.max(0,i-6);q<=i;q++)if(a[q]!=null)w.push(a[q]);return w.length?w.reduce(function(x,y){return x+y},0)/w.length:null})})(sc0);
@@ -16536,7 +16537,7 @@ function svg(D,SEL){var n=D.length,o=over(),h='<svg class="h139-svg" viewBox="0 
  return h+'</svg>'}
 function gl(d){var A=[];try{A=(window.FH87&&FH87.achieved())||[]}catch(x){}var b=d.wk?d.k2:d.k;return A.filter(function(g){return g.at>=d.k&&g.at<=b}).map(function(g){return '<span class="h139-gm">&#9670; Goal achieved: <b>'+e(g.title)+'</b></span>'})}
 function readoutW(d){var parts=[],last=d.k2===TODAY;parts.push('<b>'+e(last?"Last 7 days":"Week of "+lab(d.k,{day:"numeric",month:"short"}))+'</b>');
- parts.push('Activity level '+(d.score==null?'<span class="muted">not enough logged</span>':'<b style="color:'+COL.a+'">'+d.score+'</b>/100 <span class="muted small">average</span>'));if(d.score!=null&&d.parts)parts.push(partsLine(d.parts,true));gl(d).forEach(function(t){parts.push(t)});
+ parts.push('Training Index '+(d.score==null?'<span class="muted">not enough logged</span>':'<b style="color:'+COL.a+'">'+d.score+'</b>/100 <span class="muted small">average</span>'));if(d.score!=null&&d.parts)parts.push(partsLine(d.parts,true));gl(d).forEach(function(t){parts.push(t)});
  parts.push('<span style="color:'+COL.s+'">Steps</span> '+(d.steps!=null?n0(d.steps)+' a day':'<span class="muted">none</span>'));
  parts.push('<span style="color:'+COL.m+'">Active minutes</span> '+(d.smins>0?Math.round(d.smins)+' that week':'<span class="muted">none</span>'));
  parts.push('<span style="color:'+COL.z+'">Sleep</span> '+(d.sleep!=null?r1(d.sleep)+' h a night':'<span class="muted">not logged</span>'));
@@ -16544,7 +16545,7 @@ function readoutW(d){var parts=[],last=d.k2===TODAY;parts.push('<b>'+e(last?"Las
  if(!bodyHidden()){parts.push('<span style="color:'+COL.k+'">Calories</span> '+(d.kcal!=null?n0(d.kcal)+' a day <span class="muted small">('+d.kd+' of '+d.nd+' days logged)</span>':'<span class="muted">not logged</span>'));parts.push('<span style="color:'+COL.w+'">Weight</span> '+(d.w!=null?r1(d.w)+' kg average':'<span class="muted">not weighed</span>'))}
  return '<div class="h139-ro">'+parts.map(function(x,i){return '<div'+(i===0?' class="h139-d"':'')+'>'+x+'</div>'}).join('')+'</div>'}
 function readout(d){if(!d)return '';if(d.wk)return readoutW(d);var parts=[];parts.push('<b>'+e(d.k===TODAY?"Today":lab(d.k))+'</b>');
- parts.push('Activity level '+(d.score==null?'<span class="muted">not enough logged</span>':'<b style="color:'+COL.a+'">'+d.score+'</b>/100'));if(d.score!=null&&d.parts)parts.push(partsLine(d.parts,false));gl(d).forEach(function(t){parts.push(t)});
+ parts.push('Training Index '+(d.score==null?'<span class="muted">not enough logged</span>':'<b style="color:'+COL.a+'">'+d.score+'</b>/100'));if(d.score!=null&&d.parts)parts.push(partsLine(d.parts,false));gl(d).forEach(function(t){parts.push(t)});
  parts.push('<span style="color:'+COL.s+'">Steps</span> '+(d.steps!=null?n0(d.steps):'<span class="muted">none</span>'));
 parts.push('<span style="color:'+COL.m+'">Active minutes</span> '+(d.mins>0?Math.round(d.mins):'<span class="muted">none</span>'));parts.push('<span style="color:'+COL.z+'">Sleep</span> '+(d.sleep!=null?r1(d.sleep)+' h':'<span class="muted">not logged</span>'));
  parts.push('<span style="color:'+COL.t+'">Sessions</span> '+(d.sess?d.sess+(d.mins?' · '+Math.round(d.mins)+' min':''):'<span class="muted">none logged</span>'));
@@ -16562,18 +16563,18 @@ function why(){if(bodyHidden())return '';var n=days(),cur=series(n,0),prev=serie
  var stc=avg(vals(cur,function(d){return d.steps})),stp=avg(vals(prev,function(d){return d.steps}));
  var ssc=cur.reduce(function(s,d){return s+d.sess},0),ssp=prev.reduce(function(s,d){return s+d.sess},0);
  var kc=vals(cur,function(d){return d.kcal}),kp=vals(prev,function(d){return d.kcal});
- var rows=[cmp("Activity level",sc,sp,"",function(x){return Math.round(x)}),cmp("Steps a day",stc,stp,"",n0),cmp("Training sessions",ssc,ssp,"",function(x){return x})];
+ var rows=[cmp("Training Index",sc,sp,"",function(x){return Math.round(x)}),cmp("Steps a day",stc,stp,"",n0),cmp("Training sessions",ssc,ssp,"",function(x){return x})];
  var kcmp=null;if(kc.length>=3&&kp.length>=3)kcmp=cmp("Calories logged a day",avg(kc),avg(kp),"",n0);rows.push(kcmp);
  rows=rows.filter(Boolean);
- var up=[],dn=[];if(sc!=null&&sp!=null){var c=cmp("a",sc,sp,"",String);if(c&&c.dir)(c.dir>0?up:dn).push("your Activity level")}
+ var up=[],dn=[];if(sc!=null&&sp!=null){var c=cmp("a",sc,sp,"",String);if(c&&c.dir)(c.dir>0?up:dn).push("your Training Index")}
  if(kcmp&&kcmp.dir)(kcmp.dir>0?"up":"dn")&&(kcmp.dir>0?up:dn).push("the calories you logged");
  var head,note;
  if(dir===0)head="Your weight is steady: "+r1(first)+" kg to "+r1(last)+" kg over "+n+" days.";
  else head="Your weight went "+(dir>0?"up":"down")+" "+Math.abs(dl)+" kg ("+r1(first)+" to "+r1(last)+" kg) over "+n+" days.";
  var story="";
- if(dir>0){var more=[],less=[];if(sc!=null&&sp!=null&&sc<sp*0.9)less.push("your Activity level fell");if(kcmp&&kcmp.dir>0)more.push("you logged more calories");
+ if(dir>0){var more=[],less=[];if(sc!=null&&sp!=null&&sc<sp*0.9)less.push("your Training Index fell");if(kcmp&&kcmp.dir>0)more.push("you logged more calories");
   if(less.length||more.length)story="Compared with the "+n+" days before, "+less.concat(more).join(" and ")+". That can push weight up. ";else if(rows.length)story=(rows.some(function(r){return r.dir!==0})?"What you logged moved in ways that do not clearly explain it, so some of it may be water, salt, or what is still in your gut. ":"Nothing you logged changed much, so this may be water, salt, or what is still in your gut. ");}
- if(dir<0){var l2=[];if(sc!=null&&sp!=null&&sc>sp*1.1)l2.push("your Activity level rose");if(kcmp&&kcmp.dir<0)l2.push("you logged fewer calories");
+ if(dir<0){var l2=[];if(sc!=null&&sp!=null&&sc>sp*1.1)l2.push("your Training Index rose");if(kcmp&&kcmp.dir<0)l2.push("you logged fewer calories");
   story=l2.length?"Compared with the "+n+" days before, "+l2.join(" and ")+". That can bring weight down. ":(rows.length?(rows.some(function(r){return r.dir!==0})?"What you logged moved in ways that do not clearly explain it, so some of it may be water or a lighter gut. ":"Nothing you logged changed much, so this may be water or a lighter gut. "):"")}
  var cover=kc.length<n*0.6?'Calories are only counted on the '+kc.length+' of '+n+' days you logged food, so treat that part as a guess. ':'';
  return '<div class="h139-why"><b>Why did my weight change?</b><p>'+e(head)+'</p>'+(story?'<p>'+e(story+cover)+'</p>':(cover?'<p class="muted small">'+e(cover)+'</p>':''))+
@@ -16584,15 +16585,15 @@ var SELI=null;
 function html(){var p=P();if(!p.onboarded)return '';var n=days(),D=series(n,0),o=over();if(n===90)D=weeks(D);var any=D.some(function(d){return d.score!=null||d.w!=null||d.kcal!=null});
  if(SELI==null||SELI>=D.length)SELI=D.length-1;
  var h='<div class="h139-top"><div><span class="fb-kick">'+(window.FH140&&FH140.on()?"Fight camp · ":"")+(n===90?'Last 3 months':'Last '+n+' days')+'</span><h2>Your progress</h2></div><div class="h139-rng">'+[7,30,90].map(function(x){return '<button type="button" class="h139-r'+(x===n?' on':'')+'" data-h139n="'+x+'">'+(x===90?'3m':x)+'</button>'}).join("")+'</div></div>';
- if(!any)return h+'<p class="muted small">Log a session, your steps or a check-in and your activity line appears here.</p>';
+ if(!any)return h+'<p class="muted small">Log a session, your steps or a check-in and your Training Index appears here.</p>';
  /* v323: a dial for the overall score: today (or the latest day with a score) and the 7-day average, so the figure itself is a picture */
  try{if(window.FBV){var S7=series(7,0),lastD=null;for(var qi=S7.length-1;qi>=0;qi--)if(S7[qi].score!=null){lastD=S7[qi];break}var a7=avg(vals(S7,function(d){return d.score}));
-  if(lastD)h+='<div class="h139-dial">'+FBV.ring({v:lastD.score/100,big:String(lastD.score),small:lastD.k===TODAY?"today":lab(lastD.k,{weekday:"short"}),lab:"Activity level "+(lastD.k===TODAY?"today":"on "+lab(lastD.k))+": "+lastD.score+" out of 100",col:COL.a,size:92})+(a7!=null?FBV.ring({v:a7/100,big:String(Math.round(a7)),small:"7-day avg",lab:"Activity level 7-day average: "+Math.round(a7)+" out of 100",col:"#7A8CFF",size:92}):'')+'<div class="h139-dt"><b>Activity level</b><span class="muted small">Your overall figure: training, steps, food goals and habits in one number out of 100.</span></div></div>'}}catch(x){}
- try{var cA=avg(vals(series(n,0),function(d){return d.score})),pA=avg(vals(series(n,n),function(d){return d.score}));if(cA!=null&&window.FBSAY){var stt=FBSAY.state(cA,pA),oo=FBSAY.say(stt,"score"+n);if(oo)h+='<p class="h139-say"><span class="say227 '+oo.c+'">'+oo.i+' '+oo.t+'</span> <span class="muted small">Activity level '+Math.round(cA)+' on average'+(pA!=null?', '+(Math.round(cA)===Math.round(pA)?'level with':(cA>pA?'up '+Math.round(cA-pA)+' on':'down '+Math.round(pA-cA)+' on'))+' the '+(n===90?'3 months':n+' days')+' before':'')+'.</span></p>'}}catch(x){}
+  if(lastD)h+='<div class="h139-dial">'+FBV.ring({v:lastD.score/100,big:String(lastD.score),small:lastD.k===TODAY?"today":lab(lastD.k,{weekday:"short"}),lab:"Training Index "+(lastD.k===TODAY?"today":"on "+lab(lastD.k))+": "+lastD.score+" out of 100",col:COL.a,size:92})+(a7!=null?FBV.ring({v:a7/100,big:String(Math.round(a7)),small:"7-day avg",lab:"Training Index 7-day average: "+Math.round(a7)+" out of 100",col:"#7A8CFF",size:92}):'')+'<div class="h139-dt"><b>Training Index</b><span class="muted small">Your overall figure: training, steps, food goals and habits in one number out of 100.</span></div></div>'}}catch(x){}
+ try{var cA=avg(vals(series(n,0),function(d){return d.score})),pA=avg(vals(series(n,n),function(d){return d.score}));if(cA!=null&&window.FBSAY){var stt=FBSAY.state(cA,pA),oo=FBSAY.say(stt,"score"+n);if(oo)h+='<p class="h139-say"><span class="say227 '+oo.c+'">'+oo.i+' '+oo.t+'</span> <span class="muted small">Training Index '+Math.round(cA)+' on average'+(pA!=null?', '+(Math.round(cA)===Math.round(pA)?'level with':(cA>pA?'up '+Math.round(cA-pA)+' on':'down '+Math.round(pA-cA)+' on'))+' the '+(n===90?'3 months':n+' days')+' before':'')+'.</span></p>'}}catch(x){}
  var keys=["s","t","m","z"].concat(bodyHidden()?[]:["k","w"]);
- h+='<div class="h139-lg"><span class="h139-chip fixed" style="--c:'+COL.a+'"><i></i>Activity level</span>'+keys.map(function(k){return '<button type="button" class="h139-chip'+(o[k]?' on':'')+'" style="--c:'+COL[k]+'" data-h139o="'+k+'" aria-pressed="'+!!o[k]+'"><i></i>'+NAME[k]+'</button>'}).join("")+'</div>';
+ h+='<div class="h139-lg"><span class="h139-chip fixed" style="--c:'+COL.a+'"><i></i>Training Index</span>'+keys.map(function(k){return '<button type="button" class="h139-chip'+(o[k]?' on':'')+'" style="--c:'+COL[k]+'" data-h139o="'+k+'" aria-pressed="'+!!o[k]+'"><i></i>'+NAME[k]+'</button>'}).join("")+'</div>';
  h+=svg(D,SELI)+readout(D[SELI]);var gq=goalsIn(D);h+='<p class="muted small h139-gk">'+(gq.length?'<span style="color:#E8DFC8">&#9670;</span> '+gq.length+' goal'+(gq.length===1?'':'s')+' achieved in this view. ':'')+'<button type="button" class="linkbtn" data-h139goal="1">'+(gq.length?'Set your next goal':'Set a goal to see it marked here')+'</button></p>';
- h+='<details class="h139-how"><summary>How is the Activity level worked out?</summary><p class="muted small">This is the FighterBase own overall score, from 0 to 100: one figure for everything you did that day, not just how many sessions. Training up to 40 points (60 minutes of sessions or logged activities is full marks), steps up to 30 (10,000 is full), food goals up to 20 (the share of your own targets met: protein, water, and calories within 10% if you set a calorie target), and daily habits up to 10 (the share you ticked). Only the parts you track count: points earned are scaled to 100 over those parts, so not tracking something never counts against you. Tap a day to see what made up its score. Gold diamonds mark goals you achieved. It is a relative picture of your own training, not a medical score. Days with nothing logged are gaps, not zero. On 30 days each line is a 7-day average (sessions show a weekly total). On 3 months each point is one week: averages for that week, with sessions and active minutes as the week\u2019s total. Dotted lines are your calorie and weight targets. Other lines are scaled to their own range, so tap a day or a week to see the real numbers.</p></details>';
+ h+='<details class="h139-how"><summary>How is the Training Index worked out?</summary><p class="muted small">The Training Index is the FighterBase own overall score, from 0 to 100: one figure for everything you did that day, not just how many sessions. Training up to 40 points (60 minutes of sessions or logged activities is full marks), steps up to 30 (10,000 is full), food goals up to 20 (the share of your own targets met: protein, water, and calories within 10% if you set a calorie target), and daily habits up to 10 (the share you ticked). Only the parts you track count: points earned are scaled to 100 over those parts, so not tracking something never counts against you. Tap a day to see what made up its score. Gold diamonds mark goals you achieved. It is a relative picture of your own training, not a medical score. Days with nothing logged are gaps, not zero. On 30 days each line is a 7-day average (sessions show a weekly total). On 3 months each point is one week: averages for that week, with sessions and active minutes as the week\u2019s total. Dotted lines are your calorie and weight targets. Other lines are scaled to their own range, so tap a day or a week to see the real numbers.</p></details>';
  var wy=why();if(wy)h+='<details class="h139-whyd"><summary>Why did my weight change?</summary>'+wy+'</details>';
  h+='<div class="h139-ft">'+(window.FH140?FH140.control():'')+'<button class="linkbtn" type="button" data-h139body="1">'+(young()?'':(p.homeChartNoBody?'Show weight and calories':'Hide weight and calories'))+'</button></div>';
  return h}
@@ -17128,10 +17129,10 @@ function profile(m){if(!m||!(window.FHC&&FHC.isOwner&&FHC.isOwner()))return "";v
   sc=avg(last.map(function(d){return d[4]>=0?d[4]:0})),sp=avg(prev.map(function(d){return d[4]>=0?d[4]:0})),w=m.chw&&m.chw.filter(function(x){return x>0}).length>1?m.chw:null,ws=w?w.filter(function(x){return x>0}):[];
  var trend=(sc!=null&&sp!=null)?(sc-sp>=5?"up on the week before":sp-sc>=5?"down on the week before":"about the same as the week before"):"";
  return '<div class="pm-sec"><span class="label">Progress chart · last 30 days (shared by '+e2(String(m.name||"member").split(" ")[0])+')</span>'+svg(ch,w)+
-  '<p class="muted small" style="margin:0">Bars: active minutes. Red line: Activity level (0 to 100, from steps and training)'+(w?'. Dashed line: weight, shared by the member':'')+'.</p>'+
+  '<p class="muted small" style="margin:0">Bars: active minutes. Red line: Training Index (0 to 100, from training, steps, food goals and habits)'+(w?'. Dashed line: weight, shared by the member':'')+'.</p>'+
   '<div class="fb-row"><span>Sessions in 30 days</span><b>'+sess+'</b></div><div class="fb-row"><span>Active time in 30 days</span><b>'+(Math.round(mins/6)/10)+' h</b></div>'+
   '<div class="fb-row"><span>Steps a day (last 7 days)</span><b>'+r0(st)+'</b></div>'+(sl!=null?'<div class="fb-row"><span>Sleep (last 7 days)</span><b>'+(Math.round(sl*10)/10)+' h</b></div>':'')+
-  '<div class="fb-row"><span>Activity level (last 7 days)</span><b>'+r0(sc)+(trend?' <span class="muted small">'+trend+'</span>':'')+'</b></div>'+
+  '<div class="fb-row"><span>Training Index (last 7 days)</span><b>'+r0(sc)+(trend?' <span class="muted small">'+trend+'</span>':'')+'</b></div>'+
   (ws.length>1?'<div class="fb-row"><span>Weight</span><b>'+ws[0]+' to '+ws[ws.length-1]+' kg</b></div>':'')+
   '<p class="muted small" style="margin:0">A pattern in what they logged, not a judgement. Ask them before drawing conclusions.</p></div>'}
 window.FH146={profile:profile};
@@ -23891,7 +23892,7 @@ var SPOTS=[["train","v228train",trainCard],["diary","v228food",foodCard],["goals
 function put(tab,id,fn){var sec=document.getElementById("tab-"+tab);if(!sec||sec.hidden)return;var el=document.getElementById(id),h="";try{h=fn()}catch(x){try{console.warn("v228",id,x)}catch(_){}}
  if(!h){if(el)el.remove();return}
  if(!el){el=document.createElement("div");el.id=id;el.className="fb-card v228card f149keep";el.dataset.sig="";var host=tab==="hubover"?(document.getElementById("huboverBody")||sec):sec,cv=document.getElementById("cv228_"+tab);
-  if(cv&&cv.parentNode===host)host.insertBefore(el,cv.nextSibling);else if(tab==="hubover"&&host.firstChild)host.insertBefore(el,host.firstChild.nextSibling);else host.insertBefore(el,host.firstChild)}
+  if(tab==="hubover")host.appendChild(el);/* v327: append on club Overview, never in front of cards that pin themselves (fb113, fb207, fb210), or they re-pin and the churn test fails */else if(cv&&cv.parentNode===host)host.insertBefore(el,cv.nextSibling);else host.insertBefore(el,host.firstChild)}
  if(el.dataset.sig!==h){el.innerHTML=h;el.dataset.sig=h}}
 function tick(){var vis=document.querySelector("section[id^=tab-]:not([hidden])");if(!vis)return;var t=vis.id.slice(4);
  try{cover(t)}catch(x){}SPOTS.forEach(function(s){if(s[0]===t)put(s[0],s[1],s[2])})}
@@ -24122,7 +24123,7 @@ function clubCard(){if(!staff()||typeof clubState==="undefined"||!clubState.club
  return '<span class="fb-kick">'+e(mname(mo))+'</span><h2 class="m184-t" style="margin:2px 0 6px">Committed Club</h2>'+(V?V.donut({parts:[["Already met it",g.met],["On pace",g.pace],["Could use a nudge",g.push]],lab:"Members' monthly commitments: met, on pace, could use a nudge",cols:{"Already met it":"#E9A23B","On pace":"#3FC57E","Could use a nudge":"#7B8494"}}):'')+
   '<p class="muted small" style="margin:6px 0 0">'+g.c+' of '+M.length+' members in the team goal set a commitment for '+e(mname(mo))+'. Counts only, no names. A nudge works best as a friendly message, never a chase.</p>'}
 function putClub(){var host=document.getElementById("huboverBody");if(!host||document.getElementById("tab-hubover").hidden)return;var el=document.getElementById("c231c"),h="";try{h=clubCard()}catch(x){}
- if(!h){if(el)el.remove();return}if(!el){el=document.createElement("div");el.id="c231c";el.className="fb-card f149keep";el.dataset.sig="";var a=document.getElementById("v228club");if(a&&a.parentNode===host)host.insertBefore(el,a.nextSibling);else host.appendChild(el)}
+ if(!h){if(el)el.remove();return}if(!el){el=document.createElement("div");el.id="c231c";el.className="fb-card f149keep";el.dataset.sig="";host.appendChild(el)}
  if(el.dataset.sig!==h){el.innerHTML=h;el.dataset.sig=h}}
 document.addEventListener("click",function(ev){var t=ev.target;if(!t.closest)return;var b;
  if(b=t.closest("[data-c231]")){setCommit(+b.dataset.c231);OWN=false;try{toast("Committed",b.dataset.c231+" sessions in "+mname(ym()))}catch(x){}put();return}
@@ -24183,9 +24184,9 @@ function clubCard(){if(!staff()||typeof clubState==="undefined"||!clubState.club
   (V?'<div class="v228c" style="margin-top:10px"><div class="v228h"><span>Check-ins by month</span><b>'+e(y)+'</b></div>'+V.bars({vals:mon.map(function(v,i){return (y===Y()&&i>+TODAY.slice(5,7)-1)?null:v}),labels:MON.map(function(m){return m.charAt(0)}),tips:mon.map(function(v,i){return MON[i]+": "+v+" check-ins"}),hi:best,col:"#4DA3FF",lab:"Class check-ins each month this year"})+'</div>':'')+
   (top.length?'<div class="v228c" style="margin-top:10px"><div class="v228h"><span>Busiest classes</span><b>check-ins</b></div><div class="v228hb">'+top.map(function(t){return '<div><span>'+e(t[0])+'</span><i><em style="width:'+Math.round(t[1]/mx*100)+'%"></em></i><b>'+t[1]+'</b></div>'}).join("")+'</div></div>':'')+
   '<p class="muted small" style="margin:8px 0 0">From class check-ins only. A members\' version of this is a great end-of-year post (no names).</p>'}
-function put(id,host,h,before,order){if(!host)return;var el=document.getElementById(id);if(!h){if(el)el.remove();return}if(!el){el=document.createElement("div");el.id=id;el.className="fb-card f149keep r232";el.dataset.sig="";if(order!=null)el.style.order=order;if(before&&before.parentNode===host)host.insertBefore(el,before);else host.insertBefore(el,host.firstChild)}if(el.dataset.sig!==h){el.innerHTML=h;el.dataset.sig=h}}
+function put(id,host,h,before,order){if(!host)return;var el=document.getElementById(id);if(!h){if(el)el.remove();return}if(!el){el=document.createElement("div");el.id=id;el.className="fb-card f149keep r232";el.dataset.sig="";if(order!=null)el.style.order=order;if(before==="end")host.appendChild(el);else if(before&&before.parentNode===host)host.insertBefore(el,before);else host.insertBefore(el,host.firstChild)}if(el.dataset.sig!==h){el.innerHTML=h;el.dataset.sig=h}}
 function tick(){var vis=document.querySelector("section[id^=tab-]:not([hidden])");if(!vis)return;var t=vis.id.slice(4);
- try{if(t==="engine")put("r232m",vis,memberCard(),vis.firstChild,-30);if(t==="today")put("r232t",vis,teaser(),null,-45);if(t==="hubover"){var hb=document.getElementById("huboverBody");put("r232c",hb,clubCard(),null,null)}}catch(x){try{console.warn("r232",x)}catch(_){}}}
+ try{if(t==="engine")put("r232m",vis,memberCard(),vis.firstChild,-30);if(t==="today")put("r232t",vis,teaser(),null,-45);if(t==="hubover"){var hb=document.getElementById("huboverBody");put("r232c",hb,clubCard(),"end",null)}}catch(x){try{console.warn("r232",x)}catch(_){}}}
 document.addEventListener("click",function(ev){if(ev.target.closest&&ev.target.closest("[data-r232go]")){try{showTab("engine")}catch(x){}}});
 setInterval(tick,2500);setTimeout(tick,1000);
 var st0=showTab;showTab=function(tab){var r=st0.apply(this,arguments);setTimeout(tick,170);return r};
