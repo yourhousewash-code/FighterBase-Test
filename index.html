@@ -24675,7 +24675,57 @@ var css=document.createElement("style");css.textContent=
 document.head.appendChild(css);
 if(document.body)defs();else document.addEventListener("DOMContentLoaded",defs);
 setInterval(watch,1500);setTimeout(watch,1200);
-return {bell:bell,ching:ching,thump:thump,celebrate:celebrate,boost:boost,party:party,replay:function(){introDone=false;intro()}}})();
+return {note:function(f,d,g,ty,delay){var c=on();if(!c)return;tone(c,f,c.currentTime+0.005+(delay||0),d,g,ty)},bell:bell,ching:ching,thump:thump,celebrate:celebrate,boost:boost,party:party,replay:function(){introDone=false;intro()}}})();
+
+/* v336 (Steve, 11 Nov 2026 19:40), site-wide:
+   1. TOUCH NOTES. He likes the key notes when touching buttons and completing things and wants a little more of it, still subtle, with
+      differing notes. Every tap now has a quiet note from one pentatonic scale (so nothing ever clashes), chosen by what was touched:
+        menu and tabs = a soft low note that steps up the scale along the bar; chips and switches = up when switched on, down when off;
+        tick boxes the same; add / log / book / save = two rising notes; done / finish / confirm = three rising notes;
+        remove / cancel / not now / skip = two falling notes; help buttons = one high soft chime; anything else = a short soft tick whose
+        pitch depends on the button, so neighbouring buttons sound different. Very quiet (about a tenth of the bell), never on page load,
+        off with "Sounds and vibration" in Edit my page. Typing makes no sound.
+   2. HELP LOOKS LIKE HELP. Every help thing has one colour theme (violet, used for nothing else) and a "?" badge: the "New here" walk-through
+      box, the "2-minute guide" strip, guided-tour steps, hover hints, welcome tips, help notes and tip strips. Their buttons are violet too,
+      so gold and red stay for real actions. Identity never rests on colour alone: the badge and the word Help travel with it. */
+(function(){
+var HELP="#A78BFA",HELP2="#C4B5FD",HSEL="#fb148,.g158chip,.c158,#fb153,.t-tip,.fb-help,.wl-tip,.s192tips,#fb158hub";
+var SC=[196,220,247,294,330,392,440,494,587,659,784,880,988,1175];/* G major pentatonic, G3 up */
+function P(){return (typeof S!=="undefined"&&S.profile)||{}}
+function okSnd(){return window.FBX&&((P().h233||{}).snd!==0)}
+function n(i,d,g,ty,delay){try{FBX.note(SC[Math.max(0,Math.min(SC.length-1,i))],d||0.12,g||0.035,ty||"sine",delay||0)}catch(x){}}
+function hash(s){var h=0;s=String(s||"");for(var i=0;i<s.length;i++)h=(h*31+s.charCodeAt(i))>>>0;return h}
+var last=0;
+document.addEventListener("click",function(ev){if(!okSnd())return;var t=ev.target;if(!t||!t.closest)return;var now=Date.now();if(now-last<70)return;
+ var el=t.closest("button,a,[role=button],[role=tab],summary,label,input[type=checkbox],input[type=radio],select");if(!el)return;
+ if(el.closest("[data-h233g],[data-h233bk]"))return;/* these get the cymbals */
+ last=now;var tx=(el.innerText||el.getAttribute("aria-label")||el.value||"").trim().toLowerCase().slice(0,40);
+ if(el.closest(HSEL)){n(11,0.22,0.03,"sine");n(13,0.3,0.018,"sine",0.07);return}
+ var nav=el.closest("nav,.tabbar,.bn,[role=tablist],.side,.hgs");
+ if(nav){var sib=[].slice.call(nav.querySelectorAll("button,a,[role=tab]")),ix=Math.max(0,sib.indexOf(el));n(2+(ix%6),0.14,0.04,"triangle");return}
+ if(el.matches("input[type=checkbox],input[type=radio]")||el.querySelector&&el.querySelector("input[type=checkbox],input[type=radio]")){var inp=el.matches("input")?el:el.querySelector("input");var onn=inp&&inp.checked;n(onn?7:4,0.1,0.035);if(onn)n(9,0.12,0.025,"sine",0.06);return}
+ if(el.hasAttribute("aria-pressed")){var was=el.getAttribute("aria-pressed")==="true";n(was?4:6,0.1,0.035);if(!was)n(8,0.12,0.025,"sine",0.06);return}
+ if(/^(done|finish|finished|confirm|complete|lock in|save my|submit)/.test(tx)||/\b(all done|mark done|completed)\b/.test(tx)){n(5,0.1,0.04);n(7,0.1,0.04,"sine",0.08);n(9,0.2,0.04,"sine",0.16);return}
+ if(/^(add|log|save|book|i.m coming|request|join|start|set|create|yes|ok|next|keep|link)/.test(tx)||tx==="+"){n(5,0.1,0.04);n(8,0.16,0.035,"sine",0.08);return}
+ if(/^(remove|delete|cancel|not now|not coming|skip|close|exit|no\b|back|hide|undo|clear)/.test(tx)||tx==="×"||tx==="x"||tx==="-"){n(6,0.09,0.035);n(3,0.14,0.03,"sine",0.07);return}
+ n(3+hash(tx||el.className)%7,0.07,0.028,"triangle")},true);
+document.addEventListener("change",function(ev){if(!okSnd())return;var t=ev.target;if(t&&t.tagName==="SELECT")n(4+hash(t.value)%5,0.09,0.03)},true);
+/* ---------- help theme ---------- */
+var Q="url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%231a1230' stroke-width='2.6' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M9 9a3 3 0 1 1 4.5 2.6c-.9.5-1.5 1.2-1.5 2.4M12 18h.01'/%3E%3C/svg%3E\")";
+var css=document.createElement("style");css.textContent=
+"html body #fb148,html body .g158chip,html body .c158,html body .t-tip,html body .fb-help,html body .wl-tip,html body .s192tips{background:linear-gradient(180deg,rgba(167,139,250,.16),rgba(167,139,250,.07)),#14121d!important;border:1px solid rgba(167,139,250,.55)!important;border-left:4px solid "+HELP+"!important;color:#F1EDFF!important;box-shadow:0 10px 30px -14px rgba(167,139,250,.55)}"+
+"html body .g158chip{border-style:solid!important}"+
+"html body #fb148 .k,html body .c158 .k158{color:"+HELP2+"!important;opacity:1!important}"+
+"html body #fb148 .k::before,html body .c158 .k158::before,html body .g158chip .t158::before,html body .fb-help::before,html body .wl-tip::before{content:'';display:inline-block;width:18px;height:18px;margin-right:7px;vertical-align:-4px;border-radius:50%;background:"+HELP+" "+Q+" center/13px no-repeat;flex:none}"+
+"html body .g158chip .t158::before{margin-right:8px}"+
+"html body #fb148 .btn,html body .g158chip .btn,html body .c158 .btn,html body .t-tip .btn{background:"+HELP+"!important;background-image:none!important;color:#1a1230!important;border-color:"+HELP+"!important;box-shadow:none!important}"+
+"html body #fb148 .linkbtn,html body #fb148 .off,html body .g158chip .linkbtn,html body .c158 .linkbtn,html body .t-tip .linkbtn{color:"+HELP2+"!important}"+
+"html body #fb153{background:#EDE9FE!important;color:#1a1230!important;border:1px solid "+HELP+"!important;box-shadow:0 8px 22px -10px rgba(167,139,250,.7)}"+
+"html body .h158{outline-color:"+HELP+"!important}"+
+"body:has(#fb158) #fb148{display:none!important}"+
+"html body #fb158hub .l158 .btn{border-color:rgba(167,139,250,.55)!important}";
+document.head.appendChild(css);
+})();
 
 /* FighterBase v44: always a way back, always a next step. */
 var N31=N31||false;
