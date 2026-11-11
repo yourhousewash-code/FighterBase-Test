@@ -24650,7 +24650,25 @@ function tone(c,f,t0,dur,g,type){var o=c.createOscillator(),a=c.createGain();o.t
 function noise(c,t0,dur,g,lo,hi){var n=Math.floor(c.sampleRate*dur),b=c.createBuffer(1,n,c.sampleRate),d=b.getChannelData(0);for(var i=0;i<n;i++)d[i]=(Math.random()*2-1)*Math.pow(1-i/n,2);
  var s=c.createBufferSource();s.buffer=b;var f=c.createBiquadFilter();f.type="bandpass";f.frequency.value=(lo+hi)/2;f.Q.value=0.8;var a=c.createGain();a.gain.value=g;s.connect(f);f.connect(a);a.connect(c.destination);s.start(t0)}
 /* ring bell: inharmonic brass partials, long ring */
-function bell(times){var c=on();if(!c)return;var t=c.currentTime+0.02;for(var k=0;k<(times||2);k++){var t0=t+k*0.32;[[1,0.16,2.2],[2.76,0.07,1.4],[5.4,0.04,0.8],[8.93,0.02,0.5]].forEach(function(q){tone(c,640*q[0],t0,q[2],q[1])});noise(c,t0,0.03,0.08,3000,6000)}}
+function bell(times){var c=on();if(!c)return;var t=c.currentTime+0.02;for(var k=0;k<(times||1);k++){var t0=t+k*0.4;[[1,0.055,2.4],[2.76,0.022,1.5],[5.4,0.012,0.9],[8.93,0.006,0.5]].forEach(function(q){tone(c,640*q[0],t0,q[2],q[1])});noise(c,t0,0.02,0.02,3000,6000)}}/* v340: one soft bell, about a third of the old volume */
+/* a swept band of noise: the air being cut */
+function sweep(c,t0,dur,g,f0,f1,q){var n=Math.floor(c.sampleRate*dur),b=c.createBuffer(1,n,c.sampleRate),d=b.getChannelData(0);for(var i=0;i<n;i++){var x=i/n;d[i]=(Math.random()*2-1)*Math.sin(Math.PI*x)*Math.sin(Math.PI*x)}var s2=c.createBufferSource();s2.buffer=b;var f=c.createBiquadFilter();f.type="bandpass";f.Q.value=q||1.4;f.frequency.setValueAtTime(f0,t0);f.frequency.exponentialRampToValueAtTime(f1,t0+dur);var a=c.createGain();a.gain.value=g;s2.connect(f);f.connect(a);a.connect(c.destination);s2.start(t0)}
+/* THE SIGNATURE (opening screen; Steve 11 Nov 23:24 and 23:25): our own two seconds of music, classy and not loud. A soft bell, then a quick
+   upbeat hand-drum figure with the small cymbals (the feel of fight music played before a bout, at a brisk tempo), a four-note rise, and it
+   lands: a kick cutting the air onto leather with the faintest ring after it. All synthesised here, so it is ours and nothing is downloaded.
+   sigOn(c,t) draws it on any audio context (also used to render a preview file). */
+function drum(c,t,f,g,d){var o=c.createOscillator(),a=c.createGain();o.frequency.setValueAtTime(f*1.6,t);o.frequency.exponentialRampToValueAtTime(f,t+0.05);a.gain.setValueAtTime(0.0001,t);a.gain.exponentialRampToValueAtTime(g,t+0.006);a.gain.exponentialRampToValueAtTime(0.0001,t+(d||0.16));o.connect(a);a.connect(c.destination);o.start(t);o.stop(t+(d||0.16)+0.05);noise(c,t,0.012,g*0.25,900,2400)}
+function sigOn(c,t){var st=0.1;/* 150 beats a minute in sixteenths */
+ [[1,0.045,1.8],[2.76,0.018,1.1],[5.4,0.008,0.6]].forEach(function(q){tone(c,640*q[0],t,q[2],q[1])});
+ [0,3,6,8,11,14].forEach(function(k){drum(c,t+0.12+k*st,82,0.11,0.2)});
+ [2,5,7,10,13,15].forEach(function(k){drum(c,t+0.12+k*st,168,0.06,0.11)});
+ [4,12].forEach(function(k){[[2637,0.014,0.3],[3951,0.009,0.25]].forEach(function(q){tone(c,q[0],t+0.12+k*st,q[2],q[1],"triangle")})});
+ [[0,392],[6,494],[10,587],[14,784]].forEach(function(n){tone(c,n[1],t+0.12+n[0]*st,0.34,0.03,"triangle");tone(c,n[1]*2,t+0.12+n[0]*st,0.2,0.008)});
+ var e=t+0.12+16*st;sweep(c,e-0.3,0.34,0.06,500,4200,1.6);sweep(c,e-0.28,0.3,0.025,1800,7000,2.5);
+ drum(c,e+0.03,60,0.17,0.32);noise(c,e+0.03,0.035,0.06,1200,3200);[[1,0.04,2.2],[2.76,0.016,1.4],[5.4,0.007,0.8]].forEach(function(q){tone(c,784*q[0]/1.225,e+0.05,q[2],q[1])})}
+function signature(){var c=ctx();if(!c||H().snd===0)return false;if(c.state!=="running"){try{c.resume()}catch(x){}}if(c.state!=="running")return false;sigOn(c,c.currentTime+0.04);return true}
+/* a quiet rising shimmer while bars and rings fill */
+function rise(){var c=on();if(!c)return;var t=c.currentTime+0.02;sweep(c,t,0.7,0.012,700,2600,1.2);[392,494,587,784].forEach(function(f,i){tone(c,f,t+0.12+i*0.11,0.26,0.014)})}
 /* ching: small Muay Thai cymbals, bright and short */
 function ching(){var c=on();if(!c)return;var t=c.currentTime+0.01;[[2637,0.05,0.5],[3951,0.035,0.4],[5274,0.02,0.3],[7040,0.012,0.25]].forEach(function(q){tone(c,q[0],t,q[2],q[1],"triangle")});noise(c,t,0.05,0.05,6000,10000)}
 /* klong: low drum thump with a pitch drop */
@@ -24660,7 +24678,7 @@ function buzz(p){try{if(H().snd!==0&&navigator.vibrate)navigator.vibrate(p)}catc
    So a moment is now quiet and in place: the sound (cymbals, or the bell for a big one), a short vibration, and the affected card
    fills up again from empty ("boosted up"). No overlay, no text, no burst. */
 function boost(ids){if(RM)return;try{FH233.paint()}catch(x){}(ids||["h233"]).forEach(function(id){var el=document.getElementById(id);if(!el)return;el.classList.remove("boost");void el.offsetWidth;el.classList.add("boost");setTimeout(function(){el.classList.remove("boost")},2400)});try{countUp(document.getElementById("h233")||document.body)}catch(x){}}
-function celebrate(o){o=o||{};if(o.big){bell(2);setTimeout(thump,40);buzz([40,60,40,60,120])}else{ching();buzz(25)}boost(o.ids)}
+function celebrate(o){o=o||{};if(o.big){bell(1);buzz(30)}else{ching();buzz(25)}setTimeout(rise,140);boost(o.ids)}
 /* ---------- the walk-out (once per visit) ---------- */
 var introDone=false;
 function countUp(root){root.querySelectorAll("[data-count]").forEach(function(b){var to=+b.dataset.count;if(!(to>0))return;var t0=performance.now(),d=900;
@@ -24674,7 +24692,7 @@ function watch(){try{intro()}catch(x){}
  try{var n=sessToday();if(lastSess!=null&&n>lastSess){celebrate({ids:["c233_index","c233_week","c233_goals"]})}lastSess=n}catch(x){}
  try{document.querySelectorAll(".ms-ov,.gr-tour[role=dialog],[role=dialog]").forEach(function(d){if(d.dataset.fx234||d.offsetParent===null&&getComputedStyle(d).position!=="fixed")return;var tx=(d.innerText||"").slice(0,200);if(!/Achievement earned|Goal achieved|Well done|Stripe|Milestone/i.test(tx))return;d.dataset.fx234="1";party()})}catch(x){}}
 /* the ring bell over the app's own achievement moments (fh74, fh215); no visual layer (v334) */
-function party(){bell(2);setTimeout(thump,40);buzz([40,60,40,60,120])}
+function party(){bell(1);buzz(30)}
 document.addEventListener("click",function(ev){var t=ev.target;if(!t||!t.closest)return;
  if(t.closest("[data-h233g]"))setTimeout(function(){celebrate({ids:["c233_goals"]})},120)},false);
 /* ---------- ink filter and styles ---------- */
@@ -24734,7 +24752,7 @@ var css=document.createElement("style");css.textContent=
 document.head.appendChild(css);
 if(document.body)defs();else document.addEventListener("DOMContentLoaded",defs);
 setInterval(watch,1500);setTimeout(watch,1200);
-return {note:function(f,d,g,ty,delay){var c=on();if(!c)return;tone(c,f,c.currentTime+0.005+(delay||0),d,g,ty)},bell:bell,ching:ching,thump:thump,celebrate:celebrate,boost:boost,party:party,replay:function(){introDone=false;intro()}}})();
+return {signature:signature,sigOn:sigOn,rise:rise,note:function(f,d,g,ty,delay){var c=on();if(!c)return;tone(c,f,c.currentTime+0.005+(delay||0),d,g,ty)},bell:bell,ching:ching,thump:thump,celebrate:celebrate,boost:boost,party:party,replay:function(){introDone=false;intro()}}})();
 
 /* v336 (Steve, 11 Nov 2026 19:40), site-wide:
    1. TOUCH NOTES. He likes the key notes when touching buttons and completing things and wants a little more of it, still subtle, with
@@ -24801,23 +24819,32 @@ function P(){return (typeof S!=="undefined"&&S.profile)||{}}
 function H(){var p=P();if(!p.h233)p.h233={};return p.h233}
 var RM=false,SD=false;try{RM=matchMedia("(prefers-reduced-motion: reduce)").matches}catch(x){}try{SD=!!(navigator.connection&&navigator.connection.saveData)}catch(x){}
 function allowed(){return !RM&&!SD&&H().bg!==0&&CLIPS.length>0}
-var root=null,V=[],cur=0,order=[],oi=0,timer=null,dead=false;
-function next(){if(!order.length||oi>=order.length){order=CLIPS.slice().sort(function(){return Math.random()-.5});if(order.length>1&&order[0]===V.last)order.push(order.shift());oi=0}V.last=order[oi];return order[oi++]}
-function play(){if(dead||!root)return;var v=V[cur^1],old=V[cur],id=next();v.src=DIR+"fb-clip-"+id+".mp4";v.currentTime=0;
+/* v340 (Steve, 11 Nov 23:24): not a permanent motion behind the app ("googly eyes"). It is an opening: when the app opens, three clips
+   (about 8 seconds each, in a different order and from a different point in each clip every time), then a long 7-second fade back to the
+   normal background. After that nothing moves. It plays again only on a fresh open, or when they come back after 20 minutes away. */
+var SEGS=3,SEG_MS=8000,FADE_MS=7000,AWAY_MS=20*60*1000;
+var root=null,V=[],cur=0,order=[],oi=0,seg=0,timer=null,dead=false,fails=0,ran=false,hidAt=0,live=false;
+function next(){if(!order.length||oi>=order.length){var last=V.last;order=CLIPS.slice().sort(function(){return Math.random()-.5});if(order.length>1&&order[0]===last)order.push(order.shift());oi=0}V.last=order[oi];return order[oi++]}
+function play(){if(dead||!live)return;if(seg>=SEGS){finish();return}seg++;var v=V[cur^1],old=V[cur],id=next();v.src=DIR+"fb-clip-"+id+".mp4";
+ v.onloadedmetadata=function(){v.onloadedmetadata=null;try{var room=Math.max(0,(v.duration||0)-SEG_MS/1000-0.5);v.currentTime=Math.random()*room}catch(x){}};
  var p=v.play();if(p&&p.catch)p.catch(function(){});
- v.onplaying=function(){v.onplaying=null;v.classList.add("on");old.classList.remove("on");cur^=1;setTimeout(function(){try{old.pause();old.removeAttribute("src");old.load()}catch(x){}},1900)};
- v.onerror=function(){fails++;if(fails>3){dead=true;stop()}}}
-var fails=0;
-function start(){if(root||dead||!allowed()||!document.body)return;root=document.createElement("div");root.id="bg236";root.setAttribute("aria-hidden","true");
+ v.onplaying=function(){v.onplaying=null;v.classList.add("on");old.classList.remove("on");cur^=1;setTimeout(function(){try{old.pause();old.removeAttribute("src");old.load()}catch(x){}},1900);
+  clearTimeout(timer);timer=setTimeout(play,SEG_MS)};
+ v.onerror=function(){fails++;if(fails>3){dead=true;stop()}else{clearTimeout(timer);timer=setTimeout(play,400)}}}
+function finish(){if(!live)return;root.classList.add("out");clearTimeout(timer);timer=setTimeout(stop,FADE_MS+200)}
+function start(){if(live||dead||ran||!allowed()||!document.body)return;ran=true;seg=0;live=true;if(root){root.style.display="";root.classList.remove("out");play();return}/* the layer stays in the page once made, so nothing is torn down (steady pages, rule 23) */
+ root=document.createElement("div");root.id="bg236";root.setAttribute("aria-hidden","true");
  root.innerHTML='<video muted playsinline preload="none" disablepictureinpicture tabindex="-1"></video><video muted playsinline preload="none" disablepictureinpicture tabindex="-1"></video><i></i>';
- document.body.insertBefore(root,document.body.firstChild);V=[].slice.call(root.querySelectorAll("video"));V.forEach(function(v){v.muted=true;v.addEventListener("ended",function(){if(v.classList.contains("on"))play()})});
+ document.body.insertBefore(root,document.body.firstChild);V=[].slice.call(root.querySelectorAll("video"));V.forEach(function(v){v.muted=true;v.loop=true});
  document.documentElement.classList.add("bg236on");play()}
-function stop(){if(timer)clearTimeout(timer);if(root){V.forEach(function(v){try{v.pause()}catch(x){}});root.remove();root=null}document.documentElement.classList.remove("bg236on")}
-function sync(){if(allowed()&&!document.hidden){if(!root)start();else{var v=V[cur];if(v&&v.paused&&v.src){var p=v.play();if(p&&p.catch)p.catch(function(){})}}}else if(root){if(!allowed())stop();else V.forEach(function(v){try{v.pause()}catch(x){}})}}
+function stop(){clearTimeout(timer);live=false;if(root){V.forEach(function(v){try{v.pause();v.classList.remove("on");v.removeAttribute("src");v.load()}catch(x){}});root.style.display="none";root.classList.remove("out")}document.documentElement.classList.remove("bg236on")}
+function sync(){if(document.hidden){if(!hidAt)hidAt=Date.now();if(live)stop();return}
+ if(hidAt){if(Date.now()-hidAt>AWAY_MS)ran=false;hidAt=0}
+ if(!allowed()){if(live)stop();return}if(!live&&!ran)start()}
 document.addEventListener("visibilitychange",sync);setInterval(sync,3000);setTimeout(sync,1500);
-document.addEventListener("change",function(ev){var t=ev.target;if(t&&t.dataset&&t.dataset.h236bg){H().bg=t.checked?1:0;try{profChanged()}catch(x){}dead=false;fails=0;sync()}});
+document.addEventListener("change",function(ev){var t=ev.target;if(t&&t.dataset&&t.dataset.h236bg){H().bg=t.checked?1:0;try{profChanged()}catch(x){}dead=false;fails=0;if(t.checked){ran=false}sync()}});
 /* the switch in Edit my page */
-setInterval(function(){try{var ed=document.getElementById("c233_edit");if(!ed||ed.querySelector("[data-h236bg]"))return;var l=document.createElement("label");l.className="ed233f";l.innerHTML='<input type="checkbox" data-h236bg="1"'+(H().bg===0?"":" checked")+'> Moving background (faded fight clips behind the page)'+(RM?" · off because your phone is set to reduce motion":SD?" · off because data saver is on":"");var btn=ed.querySelector("button[data-h233edit]");ed.insertBefore(l,btn)}catch(x){}},700);
+setInterval(function(){try{var ed=document.getElementById("c233_edit");if(!ed||ed.querySelector("[data-h236bg]"))return;var l=document.createElement("label");l.className="ed233f";l.innerHTML='<input type="checkbox" data-h236bg="1"'+(H().bg===0?"":" checked")+'> Fight clips when the app opens (faded, about 25 seconds, then they fade away)'+(RM?" · off because your phone is set to reduce motion":SD?" · off because data saver is on":"");var btn=ed.querySelector("button[data-h233edit]");ed.insertBefore(l,btn)}catch(x){}},700);
 /* ---------- fills as you scroll ---------- */
 var seen={},t0=Date.now();
 function scan(){if(RM||!window.FBX)return;var h=document.getElementById("h233");if(!h||h.offsetParent===null)return;var vh=innerHeight;
@@ -24829,12 +24856,22 @@ document.addEventListener("pointerdown",function(ev){if(RM)return;var t=ev.targe
  d.style.left=ev.clientX+"px";d.style.top=ev.clientY+"px";d.style.background=col;document.body.appendChild(d);setTimeout(function(){d.remove()},520)},true);
 var css=document.createElement("style");css.textContent=
 "#bg236{position:fixed;inset:0;z-index:3;pointer-events:none;overflow:hidden;mix-blend-mode:screen;opacity:.13}"+
+"#bg236{transition:opacity 7s ease-in-out}#bg236.out{opacity:0}"+
 "#bg236 video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:50% 40%;opacity:0;transition:opacity 1.8s ease;filter:grayscale(.35) contrast(1.15)}#bg236 video.on{opacity:1}"+
 "#bg236 i{position:absolute;inset:0;background:radial-gradient(120% 80% at 50% 45%,transparent 35%,rgba(0,0,0,.85) 100%)}"+
 ".ink236{position:fixed;z-index:2147483600;width:14px;height:14px;margin:-7px 0 0 -7px;border-radius:47% 53% 44% 56%/52% 45% 55% 48%;pointer-events:none;opacity:.34;filter:url(#fbInkS);animation:ink236 .5s cubic-bezier(.2,.7,.2,1) forwards}"+
 "@keyframes ink236{to{transform:scale(6.5) rotate(25deg);opacity:0}}";
 document.head.appendChild(css);
-return {clips:CLIPS,sync:sync,stop:stop}})();
+return {clips:CLIPS,sync:sync,stop:stop,replay:function(){stop();ran=false;sync()}}})();
+
+/* v340 (Steve, 11 Nov 2026 23:24): the opening screen (the "splash screen") gets a glimmer through the logo and our signature sound
+   (FBX.signature: soft bell, quick upbeat drum figure, a kick landing). Browsers only allow sound before the first tap in some cases
+   (the installed app, or a site the person uses often), so on a first visit in a browser the opening is silent; the phone app always plays it
+   (MainActivity allows it). Honours "Sounds and vibration" and reduce motion. */
+(function(){var sp=document.getElementById("fbSplash");if(!sp)return;
+ var css=document.createElement("style");css.textContent="#fbSplash .fbs-in{position:relative;overflow:hidden}#fbSplash .fbs-in::after{content:'';position:absolute;top:-20%;bottom:-20%;left:-60%;width:45%;background:linear-gradient(100deg,transparent,rgba(255,255,255,.55),transparent);transform:skewX(-20deg);mix-blend-mode:overlay;animation:gl237 .9s 1.55s cubic-bezier(.3,.6,.2,1) both}@keyframes gl237{to{left:130%}}";
+ document.head.appendChild(css);
+ setTimeout(function(){try{if(window.FBX)FBX.signature()}catch(x){}},120)})();
 
 /* FighterBase v44: always a way back, always a next step. */
 var N31=N31||false;
