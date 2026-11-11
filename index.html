@@ -24399,11 +24399,43 @@ function weekItems(){var o=[],c=club(),rs=P().rsvp||{},ps=P().psched||[];
   if(c&&inClub()){try{(classesOn(c,k)||[]).forEach(function(cl){if(rs[k+"_"+cl.id])o.push({k:k,t:cl.time||"",title:cl.title||cl.name||"Class",kind:"Booked"})})}catch(x){}}
   ps.filter(function(x){return x.date===k&&x.st!=="skip"&&x.st!=="done"}).forEach(function(x){o.push({k:k,t:x.time||"",title:x.title||"Session",kind:"Planned"})})}
  return o.sort(function(a,b){return a.k===b.k?(a.t<b.t?-1:1):(a.k<b.k?-1:1)})}
+/* v335 (Steve, 11 Nov 18:46): if they have no class booked, suggest one. Next available classes and open PT slots at their club,
+   with a class that fits one of their goals first when there is one. Shown when nothing is booked in the next 7 days, or when
+   a weekly sessions goal still needs more sessions than they have booked. One tap books a class (the app's own "I'm coming"). */
+var STOP={train:1,times:1,week:1,weeks:1,more:1,with:1,session:1,sessions:1,class:1,classes:1,every:1,this:1,that:1,goal:1,from:1,your:1,each:1};
+function hmNow(){var d=new Date();return ("0"+d.getHours()).slice(-2)+":"+("0"+d.getMinutes()).slice(-2)}
+function goalFor(title,goals){var t=String(title||"").toLowerCase();for(var i=0;i<goals.length;i++){var x=goals[i];
+  if(x.type==="sessions"&&x.re&&x.re!=="."&&x.re!=="x^"){try{if(new RegExp(x.re,"i").test(title))return x}catch(z){}}
+  var w=String(x.title||"").toLowerCase().split(/[^a-z]+/).filter(function(q){return q.length>=3&&!STOP[q]});
+  if(w.some(function(q){return t.indexOf(q)>=0}))return x}return null}
+function needMore(it){var G=null;try{G=FH87.G()}catch(x){}if(!G)return null;var best=null;
+ (G.goals||[]).filter(function(x){return !x.done&&x.type==="sessions"&&+x.target>0}).forEach(function(x){var p=null;try{p=FH87.prog(x)}catch(z){}if(!p||p.pct==null)return;
+  var done=Math.round(p.pct*(+x.target)),sun=addDays(TODAY,6-((new Date(TODAY+"T12:00").getDay()+6)%7)),bk=it.filter(function(q){return q.k<=sun}).length,n=(+x.target)-done-bk;if(n>0&&(!best||n>best.n))best={n:n,g:x}});
+ return best}
+function suggestions(it){var c=club();if(!c||!inClub())return "";var need=needMore(it);if(it.length&&!need)return "";
+ var G=[];try{G=(FH87.G().goals||[]).filter(function(x){return !x.done})}catch(x){}
+ var rs=P().rsvp||{},now=hmNow(),C=[];
+ for(var i=0;i<7;i++){var k=addDays(TODAY,i),L=[];try{L=classesOn(c,k)||[]}catch(x){}
+  L.forEach(function(cl){if(cl.kids)return;var key=k+"_"+cl.id;if(rs[key])return;if(i===0&&(cl.time||"")<=now)return;var left=null;
+   try{var cap=+cl.cap||0;if(cap){left=cap-rsvpUids(c,key).length;if(left<=0)return}}catch(x){}
+   C.push({k:k,key:key,cl:cl,left:left,g:goalFor(cl.title||cl.name,G)})})}
+ var pick=[],fit=C.filter(function(q){return q.g})[0];if(fit)pick.push(fit);C.forEach(function(q){if(pick.length<2&&pick.indexOf(q)<0)pick.push(q)});
+ pick.sort(function(a,b){return a.g&&!b.g?-1:b.g&&!a.g?1:(a.k+a.cl.time<b.k+b.cl.time?-1:1)});
+ var when=function(k,t){return (k===TODAY?"Today":k===addDays(TODAY,1)?"Tomorrow":dn(k,{weekday:"long"}))+(t?", "+t:"")};
+ var rows=pick.map(function(q){return '<div class="sg7'+(q.g?" fit":"")+'">'+FBK.dot(q.g?"goals":"sessions",26)+'<span><b>'+e(q.cl.title||q.cl.name||"Class")+'</b><small>'+e(when(q.k,q.cl.time))+(q.left!=null?", "+q.left+" place"+(q.left===1?"":"s")+" left":"")+'</small>'+(q.g?'<small class="why7">Fits your goal: '+e(q.g.title)+'</small>':'')+'</span><button type="button" class="btn gold sm" data-rsvp="'+e(q.key)+'" data-h233bk="1">I’m coming</button></div>'}).join("");
+ /* next open PT slot */
+ try{var T=(c.teachers||[]).filter(function(t){return t.pt&&t.pt.on}),req=P().ptReq||[],sl=(c.ptSlots||[]).filter(function(s){return s.status!=="booked"&&(s.d>TODAY||(s.d===TODAY&&s.time>now))&&s.d<=addDays(TODAY,13)&&!req.some(function(r){return r.slot===s.id})&&T.some(function(t){return t.id===s.tid})}).sort(function(a,b){return (a.d+a.time).localeCompare(b.d+b.time)});
+  var seen={},pts=sl.filter(function(s){if(seen[s.tid])return false;seen[s.tid]=1;return true}).slice(0,pick.length?1:2);
+  pts.forEach(function(s){var t=T.filter(function(q){return q.id===s.tid})[0],pr=+((s.cap>1?s.each:t.pt.price)||0);
+   rows+='<div class="sg7">'+FBK.dot("corner",26)+'<span><b>One-to-one with '+e(t.name)+'</b><small>'+e(when(s.d,s.time))+', '+(+s.mins||+t.pt.mins||60)+' min'+(pr?", £"+(pr/100).toFixed(2).replace(/\.00$/,""):"")+'</small></span><button type="button" class="btn ghost sm" data-goto="schedule">See PT</button></div>'})}catch(x){}
+ if(!rows)return "";
+ var head=need?(need.n+" more session"+(need.n===1?"":"s")+" this week to hit “"+need.g.title+"”"):"Nothing booked yet. Next up at your club";
+ return '<div class="sgw7"><span class="sgh7">'+FBK.icon(need?"goals":"club",15)+e(head)+'</span>'+rows+'</div>'}
 function weekCard(){var it=weekItems(),strip="";
  for(var i=0;i<7;i++){var k=addDays(TODAY,i),its=it.filter(function(x){return x.k===k}),n=its.length,bk=its.some(function(x){return x.kind==="Booked"});
   strip+='<span class="tk'+(i===0?" now":"")+(n?(bk?" bk":" pl"):"")+'" style="--i:'+i+'"><small>'+e(i===0?"Today":dn(k))+'</small><b>'+e(dn(k,{day:"numeric"}))+'</b><i>'+(n?FBK.icon("sessions",16)+(n>1?'<em>×'+n+'</em>':''):'')+'</i></span>'}
  var list=it.slice(0,3).map(function(x){return '<div class="wi233">'+FBK.dot("sessions",26)+'<span><b>'+e(x.title)+'</b><small>'+e((x.k===TODAY?"Today":x.k===addDays(TODAY,1)?"Tomorrow":dn(x.k,{weekday:"long"}))+(x.t?", "+x.t:""))+'</small></span><span class="kb233 '+(x.kind==="Booked"?"b":"p")+'">'+e(x.kind)+'</span></div>'}).join("");
- var body='<div class="ws233 card7">'+strip+'</div>'+(list||'<p class="p233">'+(inClub()?"Nothing on your card yet this week.":"Nothing planned yet this week.")+'</p>');
+ var body='<div class="ws233 card7">'+strip+'</div>'+(list||(inClub()?'':'<p class="p233">Nothing planned yet this week.</p>'));var sg="";try{sg=suggestions(it)}catch(x){try{console.warn("h233 sug",x)}catch(_){}}body+=sg||(list?"":'<p class="p233">Nothing on your card yet this week.</p>');
  return card("week","week",it.length?"This week’s card: "+it.length+" session"+(it.length===1?"":"s"):"This week’s card",body,inClub()?'data-goto="schedule"':'data-goto="train"',inClub()?"Book a class":"Plan a session")}
 
 /* ---------- Nutrition (only if they log food) ---------- */
@@ -24493,6 +24525,7 @@ document.addEventListener("click",function(ev){var t=ev.target,b;if(!t.closest)r
  if(b=t.closest("[data-h233g]")){var s=(window.__s233||[])[+b.dataset.h233g];if(!s)return;try{var G=FH87.G(),d={id:Date.now().toString(36)+Math.random().toString(36).slice(2,6),type:s.t,title:s.title,origin:"home",at:TODAY,target:s.target};
   if(s.t==="sessions")d.re=".";if(s.t==="daily"){d.metric=s.metric;d.days=s.days;d.unit=s.unit}G.goals.push(d);save();try{toast("Goal set: "+s.title)}catch(z){}}catch(x){}paint();return}
  if(b=t.closest("[data-h233x]")){var tab=document.getElementById("tab-today");if(tab){var c="x"+b.dataset.h233x;tab.classList.toggle(c);var tg=document.getElementById(b.dataset.h233x==="139"?"fb139":"trkCard");if(tab.classList.contains(c)&&tg)setTimeout(function(){try{tg.scrollIntoView({behavior:"smooth",block:"start"})}catch(z){}},60)}return}
+ if(t.closest("[data-h233bk]")){setTimeout(function(){paint();try{FBX.celebrate({ids:["c233_week","c233_goals"]})}catch(z){}},380);return}
  if(b=t.closest("[data-h233tip]")){H().tip=(+H().tip||0)+1;save();paint();return}
  if(b=t.closest("[data-h233wear]")){H().wearAsk=TODAY;save();paint();return}
  if(b=t.closest("[data-h233add]")){var id=b.dataset.h233add,p=P();try{FHT.enabled()}catch(x){}if(!Array.isArray(p.trk))p.trk=[];if(p.trk.indexOf(id)<0)p.trk.push(id);save();var tb=document.getElementById("tab-today");if(tb)tb.classList.add("x34");try{FHT.draw()}catch(x){}setTimeout(function(){var tc=document.getElementById("trkCard");if(tc)try{tc.scrollIntoView({behavior:"smooth",block:"start"})}catch(z){}},120);paint();return}
@@ -24520,6 +24553,7 @@ var css=document.createElement("style");css.textContent=
 ".gr233{display:flex;align-items:center;gap:12px;padding:8px 0;border-top:1px solid rgba(255,255,255,.06)}.gr233:first-of-type{border-top:0}.grr{position:relative;display:inline-grid;place-items:center;flex:none}.grr>span{position:absolute;font-size:11px;font-weight:800}.grt{display:flex;flex-direction:column;flex:1;min-width:0}.grt small{opacity:.75}.won233{margin:8px 0 0;display:flex;gap:6px;align-items:center;font-weight:700}"+
 ".ws233{display:grid;grid-template-columns:repeat(7,1fr);gap:6px;margin-bottom:10px}.wd233{display:flex;flex-direction:column;align-items:center;gap:2px;padding:6px 2px;border-radius:12px;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.06)}.wd233 small{font-size:11px;opacity:.7}.wd233 b{font-size:15px}.wd233 i{font-style:normal;min-height:18px;display:flex;align-items:center;gap:2px;opacity:.5}.wd233.on{border-color:rgba(63,197,126,.45);background:rgba(63,197,126,.08)}.wd233.on i{opacity:1}.wd233 em{font-style:normal;font-size:11px;font-weight:800}.wd233.now{box-shadow:inset 0 0 0 1px rgba(255,255,255,.35)}"+
 ".wi233{display:flex;align-items:center;gap:10px;padding:6px 0}.wi233>span:nth-child(2){display:flex;flex-direction:column;flex:1;min-width:0}.wi233 small{opacity:.75}.kb233{font-size:11px;font-weight:800;padding:3px 8px;border-radius:999px}.kb233.b{background:rgba(63,197,126,.15);color:#7BE0A6}.kb233.p{background:rgba(255,255,255,.08)}"+
+".sgw7{margin-top:10px;padding-top:10px;border-top:1px dashed rgba(255,255,255,.14);display:flex;flex-direction:column;gap:8px}.sgh7{display:flex;gap:6px;align-items:center;font-weight:800;font-size:13px}.sg7{display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:12px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08)}.sg7.fit{border-color:rgba(163,230,53,.45);background:rgba(163,230,53,.07)}.sg7>span:nth-child(2){display:flex;flex-direction:column;flex:1;min-width:0}.sg7 small{opacity:.78}.sg7 .why7{color:#C5F36B;opacity:1;font-weight:700}.sg7 .btn{white-space:nowrap;flex:none}"+
 ".mx233{display:flex;flex-direction:column;gap:8px;margin-top:10px}.mc233{display:grid;grid-template-columns:18px 70px 1fr auto;align-items:center;gap:8px;font-size:13px}.mcb{height:8px;border-radius:99px;background:rgba(255,255,255,.08);overflow:hidden}.mcb i{display:block;height:100%;border-radius:99px}.mc233 small{opacity:.6;font-weight:600}"+
 ".tip233{display:flex;gap:12px;align-items:center;border-color:rgba(250,204,21,.25)}.tip233 p{margin:0;flex:1}"+
 ".wear233{display:flex;gap:12px;align-items:flex-start;border-color:rgba(46,196,182,.35)}.row233{display:flex;gap:10px;align-items:center;flex-wrap:wrap}"+
