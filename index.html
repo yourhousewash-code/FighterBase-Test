@@ -24477,21 +24477,77 @@ function trackCard(){var m=lm(),tiles=[],fOn=foodOn(m)&&!hid("food");
  return card("track","goals","What you track",'<div class="g233">'+tiles.join("")+'</div>','data-h233x="34"',"Log today")}
 
 /* ---------- Tip, linked to what they track ---------- */
-var TIPS={
- train:["Two quality sessions beat four tired ones. Plan rest days like you plan training.","After a hard session, write one thing that worked. It turns training into progress.","Finish each week by booking next week's classes: turning up is easier when it's decided."],
- sleep:["Same bedtime most nights helps more than one long lie-in.","Screens off 30 minutes before bed and your sleep starts sooner.","A short walk in daylight in the morning helps you sleep better at night."],
- water:["Drink a glass with every meal and one before training: that's most of the day done.","Pale straw-coloured pee is a good sign you're drinking enough.","Hot day or sweaty session? Add a glass for every 20 minutes of hard work."],
- steps:["A 10-minute walk after meals adds about 3,000 steps a day.","Steps count as recovery: easy walking helps sore legs after hard sessions."],
- food:["Protein at every meal helps recovery: a palm-sized portion is a good guide.","Eat your carbs around training and you'll have more in the tank.","Logging just today's main meal still tells you a lot. Don't wait for a perfect day."],
- goals:["Make goals you'll hit 4 weeks out of 5. Raise them when they feel easy.","A goal you can count (sessions, litres, nights) is easier to win than a feeling."],
- club:["Classes booked are classes done: book the week on Sunday.","Ask your coach for one thing to work on this month and add it as a goal."],
- weight:["Weigh at the same time each day: first thing, after the toilet, before food.","Day-to-day weight jumps are mostly water. Look at the weekly trend, not one day."]};
-function tipCard(){var keys=["train","goals"],m=lm();if(foodOn(m))keys.push("food");if(inClub())keys.push("club");
- try{FHT.enabled().forEach(function(d){if(TIPS[d.id])keys.push(d.id)})}catch(x){}
- if(back(14).some(function(k){return dayOf(k,m).steps!=null}))keys.push("steps");if(kid())keys=keys.filter(function(k){return k!=="weight"});
- var pool=[];keys.forEach(function(k){(TIPS[k]||[]).forEach(function(t){pool.push(t)})});if(!pool.length)return "";
- var seed=(parseInt(TODAY.replace(/-/g,""),10)+(+H().tip||0))%pool.length;
- return '<section class="c233 tip233 corner233" id="c233_tip"><span class="towel" aria-hidden="true"></span>'+FBK.dot("corner",30)+'<div class="cw"><span class="cwl">From your corner</span><p>'+e(pool[seed])+'</p></div><button type="button" class="linkbtn" data-h233tip="1" aria-label="Another tip from your corner">Another</button></section>'}
+/* v339 (Steve, 11 Nov 22:58): "it is a combat sports app": the corner talks like a corner. Every card is a line to fire you up plus
+   one thing to do, about fighting and training: consistency, striking, grappling, sparring, conditioning, recovery, fuel, fight camp.
+   Chosen by what is true today (class tonight, trained today, a few days off, fight booked, behind on a goal), then by what they track.
+   All our own words (no quotes from real people). No guilt (rule 10), no medical or weight-cut advice (rule 14). [tag, line, do] */
+var CORNER={
+ tonight:[["Tonight","You’re on the card tonight.","Pick one thing to sharpen before you walk in: your jab, your guard, your first step. One focus beats ten."],
+  ["Tonight","Bag packed, mind made up.","Pack your kit now: wraps, mouthguard, water. The session is half won when the bag is by the door."],
+  ["Tonight","Show up and the rest follows.","Get there ten minutes early and shadow box two easy rounds. You’ll drill better warm."],
+  ["Tonight","Train with intent tonight.","Ask your coach one question about the thing you keep getting wrong. That answer is worth a week of rounds."]],
+ after:[["After training","Round in the bank.","Write one line while it’s fresh: what landed tonight, and what you’d fix. That note is your next session’s plan."],
+  ["After training","Work done. Now recover like you mean it.","Eat a proper meal with protein within a couple of hours and get to bed on time. That’s where tonight turns into progress."],
+  ["After training","That’s how fighters are built: one session at a time.","Stretch hips and shoulders for five minutes before you sit down. Tomorrow’s you will be quicker for it."]],
+ comeback:[["Back to it","The mat hasn’t gone anywhere.","Book the next class now, while you’re reading this. The first one back is the hardest and the most important."],
+  ["Back to it","Every fighter has gaps. The good ones close them.","Make the next session an easy one: turn up, move, sweat. You’re rebuilding the habit, not proving anything."],
+  ["Back to it","One round restarts everything.","Can’t get to the gym today? Three rounds of shadow boxing at home counts. Log it."],
+  ["Back to it","Rhythm beats talent that trains now and then.","Pick two fixed days this week and treat them like a fight date. Same days every week does the work for you."]],
+ camp:[["Fight camp","The fight is won in the weeks nobody sees.","Today, do the boring thing well: roadwork, sleep, your food plan. Camp is discipline stacked day on day."],
+  ["Fight camp","Train the fight you’re going to have.","Ask your coach for one round today at fight pace with fight rules. Then note how your gas tank felt."],
+  ["Fight camp","Sharp, not shattered.","If you’re carrying a knock, tell your corner today. Smart camps get you to the ring healthy."],
+  ["Fight camp","Calm is a weapon.","Spend two minutes tonight walking through your first round in your head: the walk, the bell, your first exchange."]],
+ goal:[["Consistency","Goals are just rounds you haven’t done yet.","You’re close this week. Book the session that gets you there before you put the phone down."],
+  ["Consistency","Stripes are earned on ordinary days.","Put this week’s remaining sessions in your calendar with a time. A plan with a time gets done."]],
+ mindset:[["Mindset","Discipline is choosing what you want most over what you want now.","Decide your training days on Sunday. Decisions made in advance don’t get argued with."],
+  ["Mindset","Nobody is born with a guard. It’s built.","Stay a beginner at something: ask to drill the technique you avoid. That’s where the fastest gains are."],
+  ["Mindset","Pressure makes fighters. So does patience.","Measure yourself against last month, not against the person next to you."],
+  ["Mindset","Tired is when the training starts.","In the last round, set one small target: hands up, breathe out on every shot. Finish clean, not wild."],
+  ["Mindset","Respect the grind and it pays you back.","Thank your training partner after every round. Good partners are how you get good."],
+  ["Mindset","Small, every day, beats heroic, now and then.","Ten minutes of skipping or shadow work on a rest day keeps the rhythm alive."]],
+ striking:[["Striking","Everything starts with the jab.","Three rounds on the bag this week with the jab only: single, double, to the body. Make it your best punch."],
+  ["Striking","Hands up, chin down, eyes open.","Film one round of shadow boxing on your phone and watch where your rear hand goes after you punch."],
+  ["Striking","Power comes from the floor.","On every cross and every kick this week, think: turn the hip, pivot the foot. Slow first, then fast."],
+  ["Striking","Kick with your shin, land with your hip.","Ten slow roundhouses each side before class, pausing at full extension. Balance first, power second."],
+  ["Striking","The best defence is not being there.","Add a step off the line after every combination on the bag. Hit, then move."],
+  ["Striking","Breathe out when you hit.","A sharp breath out on every strike keeps you loose and stops you gassing. Practise it on the pads until it’s automatic."],
+  ["Striking","A good teep stops a fight before it starts.","Use the teep as your jab for a round: range, rhythm, reset."]],
+ grappling:[["Grappling","Position before submission.","Roll one round this week where you only hunt for position: pass, hold, advance. No submissions."],
+  ["Grappling","Frames and hips win from the bottom.","Twenty hip escapes each side before class. The boring drill is the one that saves you."],
+  ["Grappling","Grips decide the exchange.","Start a round by winning the grip fight first, every time. Notice how much easier the rest gets."],
+  ["Grappling","Tap early, train tomorrow.","There are no medals in the gym. Tap, reset, ask how they got it."],
+  ["Grappling","Breathe, then move.","When you’re stuck underneath, slow your breathing before you try to escape. Calm escapes work; panic ones don’t."]],
+ sparring:[["Sparring","Spar to learn, not to win.","Pick one thing to work on each round and tell your partner. You’ll both get better."],
+  ["Sparring","Light and sharp beats hard and sloppy.","Go at a pace where you can still think. If you can’t see the shots coming, slow it down."],
+  ["Sparring","Protect your training partners and they’ll make you better.","Mouthguard in, control on. The best gyms are full of people who can spar tomorrow."]],
+ conditioning:[["Conditioning","Fights are won in the last minute of the round.","Finish one session this week with three hard 30-second bursts on the bag, 30 seconds off. Empty the tank safely."],
+  ["Conditioning","Roadwork builds the engine.","One steady run or brisk walk this week at a pace you could talk at. The base is what the hard rounds sit on."],
+  ["Conditioning","Strong legs, strong fighter.","Skip for three rounds before class this week. Feet light, shoulders loose."],
+  ["Conditioning","Your core carries every punch and every kick.","Add a two-minute plank circuit after training: front, each side. Short and every week."]],
+ recovery:[["Recovery","Rest is part of the plan, not a break from it.","Sleep is the cheapest recovery there is: same bedtime tonight as last night."],
+  ["Recovery","You don’t get better in the gym. You get better recovering from it.","After hard rounds, walk for ten easy minutes and drink. Sore legs clear faster when they move."],
+  ["Recovery","Listen to the body before it shouts.","A niggle that’s there two sessions running is worth telling your coach about."]],
+ fuel:[["Fuel","You can’t out-train an empty tank.","Eat a proper meal two to three hours before training, and bring water. Notice the difference in round three."],
+  ["Fuel","Fighters eat to train.","Protein with every meal today: a palm-sized portion is a good guide."],
+  ["Fuel","Water is the easiest round you’ll win today.","A glass with every meal and a bottle at training covers most of it."]],
+ club:[["Your club","Iron sharpens iron.","Turn up for your team this week: the class is better with you in it."],
+  ["Your club","The gym is the only place the work gets done.","Book next week’s classes on Sunday. Booked sessions get done."]]};
+function daysOff(m){for(var i=0;i<60;i++){var l=m[addDays(TODAY,-i)];if(l&&(l.sessions||[]).length)return i}return 99}
+function cornerPool(){var m=lm(),P1=[],P2=[],off=daysOff(m),it=[];try{it=weekItems()}catch(x){}
+ var tonight=it.some(function(q){return q.k===TODAY}),tx=it.map(function(q){return q.title}).join(" ").toLowerCase();try{var c=club();if(c&&inClub())tx+=" "+((c.timetable||[]).map(function(q){return q.title}).join(" ")).toLowerCase()}catch(x){}
+ if(off===0)P1=P1.concat(CORNER.after);else if(tonight)P1=P1.concat(CORNER.tonight);
+ if(off>=4)P1=P1.concat(CORNER.comeback);
+ if(document.getElementById("fb115")&&!kid())P1=P1.concat(CORNER.camp);
+ try{if(needMore(it))P1=P1.concat(CORNER.goal)}catch(x){}
+ P2=P2.concat(CORNER.mindset,CORNER.conditioning,CORNER.recovery);
+ var strike=/muay|thai|box|kick|k1|mma|striking|pads|bag/.test(tx),grap=/bjj|jiu|grappl|wrestl|judo|mma|no.?gi|\bgi\b/.test(tx);if(!strike&&!grap)strike=true;
+ if(strike)P2=P2.concat(CORNER.striking);if(grap)P2=P2.concat(CORNER.grappling);
+ if(!kid())P2=P2.concat(CORNER.sparring);if(foodOn(m)||!kid())P2=P2.concat(CORNER.fuel);if(inClub())P2=P2.concat(CORNER.club);
+ return {a:P1,b:P2}}
+function tipCard(){var pl=cornerPool(),n=(+H().tip||0),day=parseInt(TODAY.replace(/-/g,""),10),t;
+ /* the first card of the day speaks to today; "Another" walks through the rest */
+ if(pl.a.length&&n%3===0)t=pl.a[(day+Math.floor(n/3))%pl.a.length];else if(pl.b.length)t=pl.b[(day*7+n)%pl.b.length];else return "";
+ return '<section class="c233 tip233 corner233" id="c233_tip"><span class="towel" aria-hidden="true"></span>'+FBK.dot("corner",30)+'<div class="cw"><span class="cwl">From your corner · '+e(t[0])+'</span><b class="cwq">'+e(t[1])+'</b><p>'+e(t[2])+'</p></div><button type="button" class="linkbtn" data-h233tip="1" aria-label="Another from your corner">Another</button></section>'}
 
 /* ---------- Wearable question (every 30 days) and "Add to my page" ---------- */
 function stepsKnown(){var m=lm();return back(14).some(function(k){return dayOf(k,m).steps!=null})}
@@ -24557,6 +24613,7 @@ var css=document.createElement("style");css.textContent=
 ".wi233{display:flex;align-items:center;gap:10px;padding:6px 0}.wi233>span:nth-child(2){display:flex;flex-direction:column;flex:1;min-width:0}.wi233 small{opacity:.75}.kb233{font-size:11px;font-weight:800;padding:3px 8px;border-radius:999px}.kb233.b{background:rgba(63,197,126,.15);color:#7BE0A6}.kb233.p{background:rgba(255,255,255,.08)}"+
 ".sgw7{margin-top:10px;padding-top:10px;border-top:1px dashed rgba(255,255,255,.14);display:flex;flex-direction:column;gap:8px}.sgh7{display:flex;gap:6px;align-items:center;font-weight:800;font-size:13px}.sg7{display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:12px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08)}.sg7.fit{border-color:rgba(163,230,53,.45);background:rgba(163,230,53,.07)}.sg7>span:nth-child(2){display:flex;flex-direction:column;flex:1;min-width:0}.sg7 small{opacity:.78}.sg7 .why7{color:#C5F36B;opacity:1;font-weight:700}.sg7 .btn{white-space:nowrap;flex:none}"+
 ".mx233{display:flex;flex-direction:column;gap:8px;margin-top:10px}.mc233{display:grid;grid-template-columns:18px 70px 1fr auto;align-items:center;gap:8px;font-size:13px}.mcb{height:8px;border-radius:99px;background:rgba(255,255,255,.08);overflow:hidden}.mcb i{display:block;height:100%;border-radius:99px}.mc233 small{opacity:.6;font-weight:600}"+
+".cwq{font:800 19px/1.15 var(--display,inherit);letter-spacing:.01em;margin:1px 0 3px}.corner233 p{font-size:14px;opacity:.9}"+
 ".tip233{display:flex;gap:12px;align-items:center;border-color:rgba(250,204,21,.25)}.tip233 p{margin:0;flex:1}"+
 ".wear233{display:flex;gap:12px;align-items:flex-start;border-color:rgba(46,196,182,.35)}.row233{display:flex;gap:10px;align-items:center;flex-wrap:wrap}"+
 ".add233{display:flex;flex-direction:column;gap:6px}.ad233{display:flex;gap:8px;flex-wrap:wrap}.adb{all:unset;box-sizing:border-box;cursor:pointer;display:inline-flex;align-items:center;gap:6px;padding:8px 12px;border-radius:999px;border:1px dashed rgba(255,255,255,.25);font-weight:700;font-size:13px;min-height:40px}.adb:hover{background:rgba(255,255,255,.06)}.adb:focus-visible{outline:2px solid #fff}"+
