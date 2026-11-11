@@ -14051,7 +14051,7 @@ function html(){
  return h}
 function draw(){var host=document.getElementById("huboverBody");if(!host||!staff())return;var c=club();if(!c)return;
  var el=document.getElementById("fb113");if(!el){el=document.createElement("div");el.id="fb113";el.className="fb-card d112"}
- if(host.firstChild!==el)host.insertBefore(el,host.firstChild);
+ if(el.parentNode!==host)host.insertBefore(el,host.firstChild)/* v337: placed once; CSS order keeps it first, so cards stop swapping places (steady pages, rule 23) */;
  var h=html();if(el.dataset.sig!==h){el.innerHTML=h;el.dataset.sig=h}}
 function safe(){try{draw()}catch(x){try{console.warn("f113",x)}catch(_){}}}
 var st=showTab;showTab=function(t){var r=st.apply(this,arguments);try{if(t==="hubover")setTimeout(safe,60)}catch(x){}return r};
@@ -14060,6 +14060,7 @@ document.addEventListener("click",function(ev){var t=ev.target;if(t.closest&&t.c
 setInterval(function(){try{var o=document.getElementById("tab-hubover");if(o&&!o.hidden)safe()}catch(x){}},2500);
 window.FH113={draw:safe};
 })();
+(function(){var c=document.createElement("style");c.textContent="html body #huboverBody>#fb113{order:-100!important}html body #huboverBody>#fb207{order:-99!important}html body #huboverBody>#fb210{order:-98!important}";document.head.appendChild(c)})();
 
 /* FighterBase v136: colour themes. Crimson is the neutral default (the build swaps the original red and gold for Crimson and Bone).
    Members can switch to Red corner or Blue corner at any time with the three dots at the top of the page; the choice is saved on their profile.
@@ -22644,7 +22645,7 @@ function page(){var el=document.getElementById("hubdocsBody"),c=club();if(!el||!
 function dbsLine(){try{var P=FH199.people()||[];return '<div class="d207r"><div class="d207h"><span><b>DBS checks</b><br><span class="small muted">Kept in the DBS register (Safeguarding), not as uploaded certificates. '+P.length+' on the register.</span></span><button type="button" class="btn ghost sm" data-d207dbs>Open DBS register</button></div></div>'}catch(x){return ""}}
 /* ---------- club overview card ---------- */
 function card(){var host=document.getElementById("huboverBody"),w=document.getElementById("fb207");if(!host||!club()||!isCoach()){if(w)w.remove();return}var sm=summary();if(!sm.imp&&!sm.expired&&!sm.soon){if(w)w.remove();return}
- if(!w){w=document.createElement("div");w.id="fb207";w.className="panel fb207"}var f=document.getElementById("fb113");if(f&&f.parentNode===host){if(f.nextSibling!==w)host.insertBefore(w,f.nextSibling)}else if(host.firstChild!==w)host.insertBefore(w,host.firstChild);
+ if(!w){w=document.createElement("div");w.id="fb207";w.className="panel fb207"}var f=document.getElementById("fb113");if(w.parentNode!==host){if(f&&f.parentNode===host)host.insertBefore(w,f.nextSibling);else host.insertBefore(w,host.firstChild)}/* v337: placed once */;
  var h='<div class="sec-h"><h3>Club documents</h3><button type="button" class="btn sm" data-d207go>Open</button></div><p class="small" style="margin:0">'+[sm.imp?'<span class="d207bad"><b>'+sm.imp+' important missing</b></span>':'',sm.expired?'<span class="d207bad"><b>'+sm.expired+' expired or overdue</b></span>':'',sm.soon?'<span class="d207warn"><b>'+sm.soon+' due soon</b></span>':''].filter(Boolean).join(" · ")+'</p><ul class="small" style="margin:6px 0 0;padding-left:18px">'+sm.list.slice(0,5).map(function(x){return '<li>'+e(x)+'</li>'}).join("")+'</ul>'+(sm.list.length>5?'<p class="small muted" style="margin:4px 0 0">and '+(sm.list.length-5)+' more</p>':'');
  if(w.dataset.sig!==h){w.innerHTML=h;w.dataset.sig=h}}
 /* ---------- saving ---------- */
@@ -22827,7 +22828,7 @@ function download(){if(!can()){toast("Only the owner or safeguarding lead can do
 /* ---------- where it shows ---------- */
 function panelHTML(){var l=last();return '<div class="sec-h"><h3>Keep a copy of your records</h3><button type="button" class="btn sm" data-x210>Download</button></div><p class="small" style="margin:0">One file with your members, injury book, kids and families, registers, DBS checks, photo consents and club documents. Open it in any browser to read or print. Take a copy each month and keep it somewhere safe and private.'+(isLead()?' As safeguarding lead, your copy includes concerns and children\'s health details.':' Safeguarding concerns and children\'s health details are only in the safeguarding lead\'s copy.')+'</p><p class="muted small" style="margin:6px 0 0">'+(l?'Last copy: '+e(fmt(l.at))+' by '+e(l.byName||""):'No copy taken yet.')+'</p>'}
 function docsPanel(){var body=document.getElementById("hubdocsBody");if(!body||!can())return;var el=document.getElementById("x210p");if(!el){el=document.createElement("div");el.id="x210p";el.className="panel";el.style.gridColumn="1/-1"}var plate=body.querySelector(".plate");if(plate&&plate.nextSibling!==el)body.insertBefore(el,plate.nextSibling);else if(!plate&&body.firstChild!==el)body.insertBefore(el,body.firstChild);var h=panelHTML();if(el.dataset.sig!==h){el.innerHTML=h;el.dataset.sig=h}}
-function card(){var host=document.getElementById("huboverBody"),w=document.getElementById("fb210");if(!host||!can()||!due()){if(w)w.remove();return}if(!w){w=document.createElement("div");w.id="fb210";w.className="panel"}var anchor=document.getElementById("fb207")||document.getElementById("fb113");if(anchor&&anchor.parentNode===host){if(anchor.nextSibling!==w)host.insertBefore(w,anchor.nextSibling)}else if(host.firstChild!==w)host.insertBefore(w,host.firstChild);
+function card(){var host=document.getElementById("huboverBody"),w=document.getElementById("fb210");if(!host||!can()||!due()){if(w)w.remove();return}if(!w){w=document.createElement("div");w.id="fb210";w.className="panel"}var anchor=document.getElementById("fb207")||document.getElementById("fb113");if(w.parentNode!==host){if(anchor&&anchor.parentNode===host)host.insertBefore(w,anchor.nextSibling);else host.insertBefore(w,host.firstChild)}/* v337: placed once */
  var l=last(),h='<div class="sec-h"><h3>Monthly copy of your records</h3><button type="button" class="btn ghost sm" data-x210>Download</button></div><p class="small" style="margin:0">'+(l?'Your last copy was '+e(fmt(l.at))+'. Take this month\'s copy and keep it somewhere safe and private.':'Take a copy of your club\'s records and keep it somewhere safe and private. It takes one tap.')+'</p>';if(w.dataset.sig!==h){w.innerHTML=h;w.dataset.sig=h}}
 function re(){["x210p","fb210"].forEach(function(id){var x=document.getElementById(id);if(x)x.dataset.sig=""});tick()}
 document.addEventListener("click",function(ev){var t=ev.target.closest&&ev.target.closest("[data-x210]");if(!t)return;download()});
@@ -24726,6 +24727,56 @@ var css=document.createElement("style");css.textContent=
 "html body #fb158hub .l158 .btn{border-color:rgba(167,139,250,.55)!important}";
 document.head.appendChild(css);
 })();
+
+/* v337 (Steve, 11 Nov 2026 18:15 and 20:07): "I like the background of the site so want to keep that. Behind that I'd like faded or
+   watermarked fight clips... like a never-ending scroll of fight videos."  And: one more visual step.
+   1. LIVING BACKDROP. Slow-motion fight and training clips play behind the whole app, faded (about 16 percent) and blended so only the lit
+      shapes show through the existing background. One clip is loaded at a time, they cross-fade in a shuffled, endless order, pause when the
+      app is not on screen, and are replaced by nothing at all on data-saver, reduce-motion or when switched off (Edit my page, "Moving background").
+      Clips: media/bg/fb-clip-NNN.mp4 (silent, half speed, darkened, about 130 KB each), served as bg/ next to the page. Add a number to CLIPS
+      when a new clip is accepted in the quality log.
+   2. FILLS AS YOU SCROLL. Each My page card fills its bars and rings the first time it comes into view, not only at the top of the page.
+   3. INK PRESS. A small ink dab spreads from the fingertip on every button press (no words, no overlay). */
+var FBG=(function(){
+var CLIPS=["001","007"],DIR="bg/";
+function P(){return (typeof S!=="undefined"&&S.profile)||{}}
+function H(){var p=P();if(!p.h233)p.h233={};return p.h233}
+var RM=false,SD=false;try{RM=matchMedia("(prefers-reduced-motion: reduce)").matches}catch(x){}try{SD=!!(navigator.connection&&navigator.connection.saveData)}catch(x){}
+function allowed(){return !RM&&!SD&&H().bg!==0&&CLIPS.length>0}
+var root=null,V=[],cur=0,order=[],oi=0,timer=null,dead=false;
+function next(){if(!order.length||oi>=order.length){order=CLIPS.slice().sort(function(){return Math.random()-.5});if(order.length>1&&order[0]===V.last)order.push(order.shift());oi=0}V.last=order[oi];return order[oi++]}
+function play(){if(dead||!root)return;var v=V[cur^1],old=V[cur],id=next();v.src=DIR+"fb-clip-"+id+".mp4";v.currentTime=0;
+ var p=v.play();if(p&&p.catch)p.catch(function(){});
+ v.onplaying=function(){v.onplaying=null;v.classList.add("on");old.classList.remove("on");cur^=1;setTimeout(function(){try{old.pause();old.removeAttribute("src");old.load()}catch(x){}},1900)};
+ v.onerror=function(){fails++;if(fails>3){dead=true;stop()}}}
+var fails=0;
+function start(){if(root||dead||!allowed()||!document.body)return;root=document.createElement("div");root.id="bg236";root.setAttribute("aria-hidden","true");
+ root.innerHTML='<video muted playsinline preload="none" disablepictureinpicture tabindex="-1"></video><video muted playsinline preload="none" disablepictureinpicture tabindex="-1"></video><i></i>';
+ document.body.insertBefore(root,document.body.firstChild);V=[].slice.call(root.querySelectorAll("video"));V.forEach(function(v){v.muted=true;v.addEventListener("ended",function(){if(v.classList.contains("on"))play()})});
+ document.documentElement.classList.add("bg236on");play()}
+function stop(){if(timer)clearTimeout(timer);if(root){V.forEach(function(v){try{v.pause()}catch(x){}});root.remove();root=null}document.documentElement.classList.remove("bg236on")}
+function sync(){if(allowed()&&!document.hidden){if(!root)start();else{var v=V[cur];if(v&&v.paused&&v.src){var p=v.play();if(p&&p.catch)p.catch(function(){})}}}else if(root){if(!allowed())stop();else V.forEach(function(v){try{v.pause()}catch(x){}})}}
+document.addEventListener("visibilitychange",sync);setInterval(sync,3000);setTimeout(sync,1500);
+document.addEventListener("change",function(ev){var t=ev.target;if(t&&t.dataset&&t.dataset.h236bg){H().bg=t.checked?1:0;try{profChanged()}catch(x){}dead=false;fails=0;sync()}});
+/* the switch in Edit my page */
+setInterval(function(){try{var ed=document.getElementById("c233_edit");if(!ed||ed.querySelector("[data-h236bg]"))return;var l=document.createElement("label");l.className="ed233f";l.innerHTML='<input type="checkbox" data-h236bg="1"'+(H().bg===0?"":" checked")+'> Moving background (faded fight clips behind the page)'+(RM?" · off because your phone is set to reduce motion":SD?" · off because data saver is on":"");var btn=ed.querySelector("button[data-h233edit]");ed.insertBefore(l,btn)}catch(x){}},700);
+/* ---------- fills as you scroll ---------- */
+var seen={},t0=Date.now();
+function scan(){if(RM||!window.FBX)return;var h=document.getElementById("h233");if(!h||h.offsetParent===null)return;var vh=innerHeight;
+ [].forEach.call(h.querySelectorAll(":scope>section.c233"),function(s){if(!s.id||seen[s.id])return;var r=s.getBoundingClientRect();if(r.top<vh*0.86&&r.bottom>0){seen[s.id]=1;if(Date.now()-t0>3200&&r.top>60)try{FBX.boost([s.id])}catch(x){}}})}
+addEventListener("scroll",function(){if(scan.q)return;scan.q=1;requestAnimationFrame(function(){scan.q=0;scan()})},{passive:true});setInterval(scan,1200);
+/* ---------- ink press ---------- */
+document.addEventListener("pointerdown",function(ev){if(RM)return;var t=ev.target;if(!t||!t.closest)return;var el=t.closest("button,a,[role=button],.chip,summary,.tk,.fbm-t");if(!el)return;
+ var d=document.createElement("i");d.className="ink236";var cs=getComputedStyle(el),col=cs.borderLeftColor&&!/rgba?\(0, 0, 0, 0\)|transparent/.test(cs.borderLeftColor)?cs.borderLeftColor:cs.color;
+ d.style.left=ev.clientX+"px";d.style.top=ev.clientY+"px";d.style.background=col;document.body.appendChild(d);setTimeout(function(){d.remove()},520)},true);
+var css=document.createElement("style");css.textContent=
+"#bg236{position:fixed;inset:0;z-index:3;pointer-events:none;overflow:hidden;mix-blend-mode:screen;opacity:.13}"+
+"#bg236 video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:50% 40%;opacity:0;transition:opacity 1.8s ease;filter:grayscale(.35) contrast(1.15)}#bg236 video.on{opacity:1}"+
+"#bg236 i{position:absolute;inset:0;background:radial-gradient(120% 80% at 50% 45%,transparent 35%,rgba(0,0,0,.85) 100%)}"+
+".ink236{position:fixed;z-index:2147483600;width:14px;height:14px;margin:-7px 0 0 -7px;border-radius:47% 53% 44% 56%/52% 45% 55% 48%;pointer-events:none;opacity:.34;filter:url(#fbInkS);animation:ink236 .5s cubic-bezier(.2,.7,.2,1) forwards}"+
+"@keyframes ink236{to{transform:scale(6.5) rotate(25deg);opacity:0}}";
+document.head.appendChild(css);
+return {clips:CLIPS,sync:sync,stop:stop}})();
 
 /* FighterBase v44: always a way back, always a next step. */
 var N31=N31||false;
