@@ -24386,13 +24386,13 @@ function belt(p,ic,done){var st=Math.max(0,Math.min(4,(p||0)*4)),full=Math.floor
  for(var i=0;i<4;i++)t+='<i class="tp" style="--p:'+(i<full?1:i===full?part.toFixed(2):0)+';--i:'+i+'"></i>';
  return '<div class="belt'+(done?" won":"")+'" style="--bc:'+FBK.col(ic)+'" aria-hidden="true"><span class="band"></span><span class="bbar">'+t+'</span><span class="tail"></span></div>'}
 function goalsCard(){var G=null;try{G=FH87.G()}catch(x){}if(!G)return "";var act=(G.goals||[]).filter(function(x){return !x.done}),won=0;
- try{var mk=TODAY.slice(0,7);won=FH87.achieved().filter(function(a){return a.at.slice(0,7)===mk}).length}catch(x){}
+ try{var w0=addDays(TODAY,-29);won=FH87.achieved().filter(function(a){return a.at>=w0}).length}catch(x){}
  if(!act.length){var S2=suggest();window.__s233=S2;
   return card("goals","goals","Tie on your first goal",'<p class="p233">Pick one you will hit. Small and steady wins; raise it when it feels easy.</p><div class="sg233">'+S2.map(function(s,i){var ic=s.t==="sessions"?"sessions":s.metric;return '<button type="button" class="sgb" data-h233g="'+i+'" style="--bc:'+FBK.col(ic)+'">'+FBK.dot(ic,26)+'<span><b>'+e(s.title)+'</b><small>'+e(s.why)+'</small>'+belt(0,ic,false)+'</span><span class="sgp">'+FBK.icon("plus",16)+'</span></button>'}).join("")+'</div>','data-goto="goals2"',"Make my own")}
  var rows=act.slice(0,3).map(function(x){var p={txt:"",pct:null};try{p=FH87.prog(x)}catch(z){}var ic=goalIcon(x),st=null;
   try{if(p.pct!=null)st=p.done?"hit":FBSAY.target(p.pct,1,(x.type==="sessions"||x.type==="frequency"||x.type==="daily")?weekShare():1)}catch(z){}
   return '<div class="gb233"><div class="gbt">'+FBK.dot(ic,26)+'<span class="gbn"><b>'+e(x.title)+'</b><small>'+e(p.txt||"")+'</small></span>'+(st?say(st,x.id):"")+'</div>'+(p.pct!=null?belt(p.pct,ic,p.done):'')+'</div>'}).join("");
- return card("goals","goals","Your goals",rows+(won?'<p class="won233">'+FBK.icon("trophy",16)+' '+won+' goal'+(won===1?"":"s")+' won this month</p>':''),'data-goto="goals2"',act.length>3?"All "+act.length:"All goals")}
+ return card("goals","goals","Your goals",rows+(won?'<p class="won233">'+FBK.icon("trophy",16)+' '+won+' goal'+(won===1?"":"s")+' won in the last 30 days</p>':''),'data-goto="goals2"',act.length>3?"All "+act.length:"All goals")}
 
 /* ---------- Next 7 days ---------- */
 function weekItems(){var o=[],c=club(),rs=P().rsvp||{},ps=P().psched||[];
@@ -24452,12 +24452,13 @@ function foodCard(){var m=lm();if(!foodOn(m))return "";var l=m[TODAY]||{},ea=l.e
  return card("food","food","Your nutrition",body,'data-goto="diary"',"Food diary")}
 
 /* ---------- Club ---------- */
-function clubCard(){var c=club();if(!c||!inClub())return "";var at=P().att||{},mk=TODAY.slice(0,7),pm=addDays(TODAY.slice(0,7)+"-01",-1).slice(0,7);
- var n=Object.keys(at).filter(function(k){return k.slice(0,7)===mk}).length,dd=TODAY.slice(8,10),np=Object.keys(at).filter(function(k){return k.slice(0,7)===pm&&k.slice(8,10)<=dd}).length,cm=null;
- try{var cmt=P().commit;cm=cmt&&cmt.m===mk?+cmt.n:null}catch(x){}
+function clubCard(){var c=club();if(!c||!inClub())return "";var at=P().att||{},d0=addDays(TODAY,-29),p0=addDays(TODAY,-59),keys=Object.keys(at).map(function(k){return k.slice(0,10)});
+ /* v338 (Steve, 11 Nov 22:56): the last 30 days, not "this month", so the number means the same on the 2nd as on the 28th */
+ var n=keys.filter(function(d){return d>=d0&&d<=TODAY}).length,np=keys.filter(function(d){return d>=p0&&d<d0}).length,bk=[0,0,0,0,0,0];
+ keys.forEach(function(d){if(d<d0||d>TODAY)return;var i=Math.floor((new Date(d+"T12:00")-new Date(d0+"T12:00"))/864e5/5);bk[Math.max(0,Math.min(5,i))]++});
  var today=[];try{today=(classesOn(c,TODAY)||[]).slice().sort(function(a,b){return (a.time||"")<(b.time||"")?-1:1})}catch(x){}
  var rs=P().rsvp||{},nx=today.filter(function(x){return rs[TODAY+"_"+x.id]})[0];
- var body='<div class="g233">'+FBK.stat("checkins",{label:"Check-ins this month",sub:"vs same days last month",v:n,unit:cm?"of "+cm:"",raw:n,prev:np,frac:cm?n/cm:null,small:1})+
+ var body='<div class="g233">'+FBK.stat("checkins",{label:"Check-ins, last 30 days",sub:np?"vs the 30 days before ("+np+")":"",v:n,raw:n,prev:np||null,spark:bk.map(function(v){return v||null}),small:1})+
   FBK.stat("club",{label:"Classes at the club today",v:today.length,sub:nx?"You're booked: "+(nx.time||""):(today.length?"Tap to book":"None today"),goto:"schedule",small:1})+'</div>';
  return card("club","club",c.name||"Your club",body,'data-goto="mygym"',"My club")}
 
