@@ -24657,15 +24657,40 @@ function sweep(c,t0,dur,g,f0,f1,q){var n=Math.floor(c.sampleRate*dur),b=c.create
    upbeat hand-drum figure with the small cymbals (the feel of fight music played before a bout, at a brisk tempo), a four-note rise, and it
    lands: a kick cutting the air onto leather with the faintest ring after it. All synthesised here, so it is ours and nothing is downloaded.
    sigOn(c,t) draws it on any audio context (also used to render a preview file). */
-function drum(c,t,f,g,d){var o=c.createOscillator(),a=c.createGain();o.frequency.setValueAtTime(f*1.6,t);o.frequency.exponentialRampToValueAtTime(f,t+0.05);a.gain.setValueAtTime(0.0001,t);a.gain.exponentialRampToValueAtTime(g,t+0.006);a.gain.exponentialRampToValueAtTime(0.0001,t+(d||0.16));o.connect(a);a.connect(c.destination);o.start(t);o.stop(t+(d||0.16)+0.05);noise(c,t,0.012,g*0.25,900,2400)}
-function sigOn(c,t){var st=0.1;/* 150 beats a minute in sixteenths */
- [[1,0.045,1.8],[2.76,0.018,1.1],[5.4,0.008,0.6]].forEach(function(q){tone(c,640*q[0],t,q[2],q[1])});
- [0,3,6,8,11,14].forEach(function(k){drum(c,t+0.12+k*st,82,0.11,0.2)});
- [2,5,7,10,13,15].forEach(function(k){drum(c,t+0.12+k*st,168,0.06,0.11)});
- [4,12].forEach(function(k){[[2637,0.014,0.3],[3951,0.009,0.25]].forEach(function(q){tone(c,q[0],t+0.12+k*st,q[2],q[1],"triangle")})});
- [[0,392],[6,494],[10,587],[14,784]].forEach(function(n){tone(c,n[1],t+0.12+n[0]*st,0.34,0.03,"triangle");tone(c,n[1]*2,t+0.12+n[0]*st,0.2,0.008)});
- var e=t+0.12+16*st;sweep(c,e-0.3,0.34,0.06,500,4200,1.6);sweep(c,e-0.28,0.3,0.025,1800,7000,2.5);
- drum(c,e+0.03,60,0.17,0.32);noise(c,e+0.03,0.035,0.06,1200,3200);[[1,0.04,2.2],[2.76,0.016,1.4],[5.4,0.007,0.8]].forEach(function(q){tone(c,784*q[0]/1.225,e+0.05,q[2],q[1])})}
+/* v341 (Steve, 11 Nov 23:41: the first draft "sounds like a 5-year-old's game"; wants thought, flair, reverb or echo, a whoosh or sheen,
+   a beat behind it, atmosphere). Rebuilt as a small piece of sound design, everything through a hall reverb and a tempo echo:
+     atmosphere: a dark low drone (detuned saws on D and A) that opens up into the hit;
+     beat:       deep skin drums, "dum .. dum-dum, tak", each with body, slap and room;
+     whoosh:     a reverse-cymbal riser pulling into the hit;
+     the hit:    a sub drop you feel, a leather impact, and a metallic sheen that rings out in the hall. About 3.5 seconds with the tail. */
+function sigOn(c,t){var out=c.createGain();out.gain.value=0.9;
+ var comp=c.createDynamicsCompressor();comp.threshold.value=-14;comp.ratio.value=4;comp.attack.value=0.004;comp.release.value=0.25;comp.connect(c.destination);
+ var dry=c.createGain();dry.gain.value=0.82;out.connect(dry);dry.connect(comp);
+ /* hall: 2.6 s of decaying stereo noise, darker towards the end */
+ var len=Math.floor(c.sampleRate*2.6),ir=c.createBuffer(2,len,c.sampleRate);for(var ch=0;ch<2;ch++){var d=ir.getChannelData(ch),lp=0;for(var i=0;i<len;i++){var x=i/len,n=(Math.random()*2-1)*Math.pow(1-x,2.6);lp+=(n-lp)*(0.55-0.4*x);d[i]=lp*(i<400?i/400:1)}}
+ var rev=c.createConvolver();rev.buffer=ir;var wet=c.createGain();wet.gain.value=0.5;out.connect(rev);rev.connect(wet);wet.connect(comp);
+ /* echo: dotted repeats, fed only by what is sent to it */
+ var send=c.createGain(),dl=c.createDelay(1),fb=c.createGain(),dlp=c.createBiquadFilter();dl.delayTime.value=0.225;fb.gain.value=0.38;dlp.type="lowpass";dlp.frequency.value=2400;send.connect(dl);dl.connect(dlp);dlp.connect(fb);fb.connect(dl);dlp.connect(out);
+ function env(g,t0,a,pk,dur){g.gain.setValueAtTime(0.0001,t0);g.gain.exponentialRampToValueAtTime(pk,t0+a);g.gain.exponentialRampToValueAtTime(0.0001,t0+dur)}
+ function nz(dur,shape){var n=Math.floor(c.sampleRate*dur),b=c.createBuffer(1,n,c.sampleRate),d=b.getChannelData(0);for(var i=0;i<n;i++)d[i]=(Math.random()*2-1)*(shape?shape(i/n):1);var s2=c.createBufferSource();s2.buffer=b;return s2}
+ var HIT=t+1.2;
+ /* atmosphere */
+ var pad=c.createGain(),plp=c.createBiquadFilter();plp.type="lowpass";plp.Q.value=0.8;plp.frequency.setValueAtTime(140,t);plp.frequency.exponentialRampToValueAtTime(420,HIT);plp.frequency.exponentialRampToValueAtTime(1500,HIT+0.08);plp.frequency.exponentialRampToValueAtTime(260,HIT+2.2);
+ pad.gain.setValueAtTime(0.0001,t);pad.gain.exponentialRampToValueAtTime(0.09,HIT-0.1);pad.gain.exponentialRampToValueAtTime(0.16,HIT+0.05);pad.gain.exponentialRampToValueAtTime(0.0001,HIT+2.4);plp.connect(pad);pad.connect(out);
+ [[73.42,-7],[73.42,8],[110,-5],[110.0,6],[146.83,3]].forEach(function(q){var o=c.createOscillator();o.type="sawtooth";o.frequency.value=q[0];o.detune.value=q[1];o.connect(plp);o.start(t);o.stop(HIT+2.5)});
+ /* drums */
+ function skin(t0,f,g,long){var o=c.createOscillator(),a=c.createGain();o.frequency.setValueAtTime(f*2.1,t0);o.frequency.exponentialRampToValueAtTime(f,t0+0.07);env(a,t0,0.004,g,long||0.42);o.connect(a);a.connect(out);o.start(t0);o.stop(t0+(long||0.42)+0.05);
+  var s2=nz(0.09,function(x){return Math.pow(1-x,3)}),f2=c.createBiquadFilter(),a2=c.createGain();f2.type="lowpass";f2.frequency.value=1700;a2.gain.value=g*0.55;s2.connect(f2);f2.connect(a2);a2.connect(out);s2.start(t0)}
+ function tak(t0,g){var s2=nz(0.06,function(x){return Math.pow(1-x,4)}),f2=c.createBiquadFilter(),a2=c.createGain();f2.type="bandpass";f2.frequency.value=1900;f2.Q.value=2.2;a2.gain.value=g;s2.connect(f2);f2.connect(a2);a2.connect(out);a2.connect(send);s2.start(t0);
+  var o=c.createOscillator(),a=c.createGain();o.type="triangle";o.frequency.value=330;env(a,t0,0.002,g*0.5,0.09);o.connect(a);a.connect(out);o.start(t0);o.stop(t0+0.12)}
+ skin(t+0.05,62,0.32);skin(t+0.5,62,0.26);skin(t+0.725,74,0.3);tak(t+0.95,0.2);
+ /* whoosh: reverse-cymbal riser into the hit */
+ var r=nz(1.15,function(x){return Math.pow(x,2.4)}),rf=c.createBiquadFilter(),rg=c.createGain();rf.type="bandpass";rf.Q.value=0.9;rf.frequency.setValueAtTime(350,HIT-1.15);rf.frequency.exponentialRampToValueAtTime(7500,HIT);rg.gain.value=0.3;r.connect(rf);rf.connect(rg);rg.connect(out);r.start(HIT-1.15);
+ /* the hit */
+ var sub=c.createOscillator(),sg=c.createGain();sub.frequency.setValueAtTime(98,HIT);sub.frequency.exponentialRampToValueAtTime(36,HIT+0.5);env(sg,HIT,0.005,0.6,1.1);sub.connect(sg);sg.connect(dry);sub.start(HIT);sub.stop(HIT+1.2);
+ var im=nz(0.3,function(x){return Math.pow(1-x,2.5)}),imf=c.createBiquadFilter(),img=c.createGain();imf.type="lowpass";imf.frequency.setValueAtTime(3200,HIT);imf.frequency.exponentialRampToValueAtTime(300,HIT+0.28);img.gain.value=0.5;im.connect(imf);imf.connect(img);img.connect(out);im.start(HIT);
+ var sh=nz(1.6,function(x){return Math.pow(1-x,2.2)}),shf=c.createBiquadFilter(),shg=c.createGain();shf.type="highpass";shf.frequency.value=5200;shg.gain.value=0.11;sh.connect(shf);shf.connect(shg);shg.connect(out);shg.connect(send);sh.start(HIT);
+ [[587.3,0.05,2.2],[1108.7,0.03,1.8],[1661.2,0.022,1.4],[2349.3,0.014,1.1],[3520,0.008,0.8]].forEach(function(q){var o=c.createOscillator(),a=c.createGain();o.frequency.value=q[0];env(a,HIT,0.006,q[1],q[2]);o.connect(a);a.connect(out);o.start(HIT);o.stop(HIT+q[2]+0.05)})}
 function signature(){var c=ctx();if(!c||H().snd===0)return false;if(c.state!=="running"){try{c.resume()}catch(x){}}if(c.state!=="running")return false;sigOn(c,c.currentTime+0.04);return true}
 /* a quiet rising shimmer while bars and rings fill */
 function rise(){var c=on();if(!c)return;var t=c.currentTime+0.02;sweep(c,t,0.7,0.012,700,2600,1.2);[392,494,587,784].forEach(function(f,i){tone(c,f,t+0.12+i*0.11,0.26,0.014)})}
@@ -24869,7 +24894,7 @@ return {clips:CLIPS,sync:sync,stop:stop,replay:function(){stop();ran=false;sync(
    (the installed app, or a site the person uses often), so on a first visit in a browser the opening is silent; the phone app always plays it
    (MainActivity allows it). Honours "Sounds and vibration" and reduce motion. */
 (function(){var sp=document.getElementById("fbSplash");if(!sp)return;
- var css=document.createElement("style");css.textContent="#fbSplash .fbs-in{position:relative;overflow:hidden}#fbSplash .fbs-in::after{content:'';position:absolute;top:-20%;bottom:-20%;left:-60%;width:45%;background:linear-gradient(100deg,transparent,rgba(255,255,255,.55),transparent);transform:skewX(-20deg);mix-blend-mode:overlay;animation:gl237 .9s 1.55s cubic-bezier(.3,.6,.2,1) both}@keyframes gl237{to{left:130%}}";
+ var css=document.createElement("style");css.textContent="#fbSplash .fbs-in{position:relative;overflow:hidden}#fbSplash .fbs-in::after{content:'';position:absolute;top:-20%;bottom:-20%;left:-60%;width:45%;background:linear-gradient(100deg,transparent,rgba(255,255,255,.55),transparent);transform:skewX(-20deg);mix-blend-mode:overlay;animation:gl237 .9s 1.2s cubic-bezier(.3,.6,.2,1) both}@keyframes gl237{to{left:130%}}";
  document.head.appendChild(css);
  setTimeout(function(){try{if(window.FBX)FBX.signature()}catch(x){}},120)})();
 
