@@ -1,4 +1,4 @@
-<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="robots" content="noindex"><style>html.fbboot section[id^=tab-]{visibility:hidden}</style><script>document.documentElement.classList.add("fbboot");setTimeout(function(){document.documentElement.classList.remove("fbboot")},4000)</script><link rel="icon" type="image/png" href="icon-64.png"><link rel="manifest" href="manifest.webmanifest"><link rel="apple-touch-icon" href="icon-192.png"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="FighterBase"><meta name="theme-color" content="#0A0B0D"><script>window.FH_CONFIG={vapidPublicKey:"BAd9E46l1jiean39yxVlA4J7MYH6WT4A4uCLk37gsDd1NGGGa9HK1Ic-GTUqW5m1JGr3aORIHZXI7X-i2aWxZEg"};</script><title>FighterBase</title></head><body><title>FighterBase</title>
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="robots" content="noindex"><style>html.fbboot section[id^=tab-]{visibility:hidden}</style><script>document.documentElement.classList.add("fbboot");setTimeout(function(){document.documentElement.classList.remove("fbboot")},4000)</script><link rel="icon" type="image/png" href="icon-64.png"><link rel="manifest" href="manifest.webmanifest"><link rel="apple-touch-icon" href="icon-192.png"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="FighterBase"><meta name="theme-color" content="#101113"><script>window.FH_CONFIG={vapidPublicKey:"BAd9E46l1jiean39yxVlA4J7MYH6WT4A4uCLk37gsDd1NGGGa9HK1Ic-GTUqW5m1JGr3aORIHZXI7X-i2aWxZEg"};</script><title>FighterBase</title></head><body><title>FighterBase</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@700;800;900&family=Barlow:wght@400;500;600;700&family=Barlow+Condensed:wght@500;600;700&family=IBM+Plex+Mono:wght@500;600&display=swap">
 <style>
@@ -19945,7 +19945,9 @@ var css=document.createElement("style");css.textContent="#dict178{position:fixed
 document.head.appendChild(css);
 return {on:true}})();
 
-/* FighterBase v232: "Add to home screen". Recommended, never forced (a website cannot force an install).
+/* v329 (FB-024, Steve 8 Nov): also on desktop and tablet (Chrome, Edge, Mac Safari "Add to Dock") and on the club side (Overview), so a club can
+   install FighterBase on the front-desk computer or a tablet. The installed app opens in its own window; club logins open on the club side (viewMode).
+   FighterBase v232: "Add to home screen". Recommended, never forced (a website cannot force an install).
    Android/Chrome: one tap using the browser's own install prompt. iPhone: three short steps (Share, Add to Home Screen).
    Shown on Today until the app is installed or the member taps Not now (asked again after 14 days).
    Only appears on the real web address (where the install files are present). Also registers the service worker (https only)
@@ -19955,6 +19957,7 @@ function P(){return S.profile||{}}
 function esc(s){return String(s==null?"":s).replace(/[&<>"']/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]})}
 var ua=navigator.userAgent||"",IOS=/iPhone|iPad|iPod/.test(ua)||(navigator.platform==="MacIntel"&&navigator.maxTouchPoints>1),
  SAF=IOS&&/Safari/.test(ua)&&!/CriOS|FxiOS|EdgiOS|OPiOS|GSA/.test(ua),AND=/Android/.test(ua),DEF=null,open=false;
+var MACSAF=!IOS&&/Macintosh/.test(ua)&&/Safari/.test(ua)&&!/Chrome|Chromium|Edg|Firefox|OPR/.test(ua),EDGE=/Edg\//.test(ua),FF=/Firefox/.test(ua);
 function standalone(){return (window.matchMedia&&matchMedia("(display-mode: standalone)").matches)||navigator.standalone===true}
 function real(){return (location.protocol==="https:"||location.hostname==="localhost")&&!!document.querySelector('link[rel=manifest]')}
 if(real()&&"serviceWorker" in navigator){try{navigator.serviceWorker.register("sw.js").catch(function(){})}catch(e){}}
@@ -19962,15 +19965,18 @@ window.addEventListener("beforeinstallprompt",function(e){e.preventDefault();DEF
 window.addEventListener("appinstalled",function(){DEF=null;try{P().instDone=1;profChanged()}catch(e){}paint()});
 function dayNum(){return Math.floor(Date.now()/864e5)}
 function snoozed(){var d=P().instNo;return d&&dayNum()-d<14}
-function want(){return real()&&!standalone()&&!P().instDone&&!snoozed()&&(DEF||IOS||AND)}
+function want(){return real()&&!standalone()&&!P().instDone&&!snoozed()&&!FF}/* v329: every browser that can install (Firefox on a computer cannot) */
 function steps(){if(SAF)return '<ol class="in179s"><li>Tap the <b>Share</b> button (square with an arrow, at the bottom of Safari).</li><li>Scroll and tap <b>Add to Home Screen</b>.</li><li>Tap <b>Add</b>. FighterBase now opens like any other app.</li></ol>';
  if(IOS)return '<p class="muted small" style="margin:0">On iPhone this only works in <b>Safari</b>. Open this same address in Safari, then tap Share, then Add to Home Screen.</p>';
+ if(MACSAF)return '<p class="muted small" style="margin:0">In Safari on a Mac: open the <b>File</b> menu and choose <b>Add to Dock</b>. FighterBase then opens in its own window.</p>';
+ if(!AND)return '<p class="muted small" style="margin:0">'+(EDGE?'In Edge: click the <b>App available</b> icon at the right of the address bar, or open the menu (three dots), <b>Apps</b>, <b>Install this site as an app</b>.':'In Chrome: click the <b>install</b> icon at the right of the address bar (a screen with a down arrow), or open the menu (three dots), <b>Cast, save and share</b>, <b>Install page as app</b>.')+' FighterBase then opens in its own window, like any other program.</p>';
  return '<p class="muted small" style="margin:0">Open your browser menu (three dots) and choose <b>Add to Home screen</b> or <b>Install app</b>.</p>'}
-function html(){return '<div class="in179" role="region" aria-label="Add to home screen"><div class="in179h"><img src="icon-192.png" alt="" width="44" height="44"><div><b>Put FighterBase on your home screen</b><span class="muted small">It opens full screen like any other app, and gets you gym and training reminders.</span></div></div>'+
- (DEF?'<button type="button" class="btn gold" data-in179="go">Add to home screen</button>':(open||!SAF&&!IOS&&!DEF?steps():(IOS?'<button type="button" class="btn gold" data-in179="how">'+(open?'Hide the steps':'Show me how')+'</button>'+(open?steps():''):steps())))+
+function html(){return '<div class="in179 f149keep" role="region" aria-label="Install FighterBase"><div class="in179h"><img src="icon-192.png" alt="" width="44" height="44"><div><b>'+(document.body.classList.contains('hubview')?(IOS||AND?'Put FighterBase on this phone or tablet':'Install FighterBase on this computer'):(IOS||AND?'Put FighterBase on your home screen':'Install FighterBase on this computer'))+'</b><span class="muted small">'+(IOS||AND?(document.body.classList.contains('hubview')?'Opens straight to your club, full screen like any other app. Good for a front-desk tablet.':'It opens full screen like any other app, and gets you gym and training reminders.'):(document.body.classList.contains('hubview')?'Opens straight to your club in its own window, one click from the desktop. Good for the front-desk computer.':'It opens in its own window, one click from your desktop, and gets you gym and training reminders.'))+'</span></div></div>'+
+ (DEF?'<button type="button" class="btn gold" data-in179="go">'+(IOS||AND?'Add to home screen':'Install FighterBase')+'</button>':(open||!SAF&&!IOS&&!DEF?steps():(IOS?'<button type="button" class="btn gold" data-in179="how">'+(open?'Hide the steps':'Show me how')+'</button>'+(open?steps():''):steps())))+
  '<button type="button" class="linkbtn" data-in179="no">Not now</button></div>'}
-function paint(){try{var tab=document.getElementById("tab-today"),ex=tab&&tab.querySelector(":scope>.in179");
- if(!tab||tab.hidden||!P().onboarded||document.body.classList.contains("hubview")||!want()){if(ex)ex.remove();return}
+function paint(){try{var hub=document.body.classList.contains("hubview"),tab=hub?document.getElementById("huboverBody"):document.getElementById("tab-today"),sec=hub?document.getElementById("tab-hubover"):tab;
+ document.querySelectorAll(".in179").forEach(function(x){if(x.parentNode!==tab)x.remove()});var ex=tab&&tab.querySelector(":scope>.in179");
+ if(!tab||!sec||sec.hidden||!P().onboarded||!want()){if(ex)ex.remove();return}
  var h=html();if(ex&&ex.dataset.sig===h)return;var d=document.createElement("div");d.innerHTML=h;var n=d.firstChild;n.dataset.sig=h;if(ex)ex.replaceWith(n);else tab.appendChild(n)}catch(x){}}
 document.addEventListener("click",function(e){var b=e.target.closest&&e.target.closest("[data-in179]");if(!b)return;var a=b.dataset.in179;
  if(a==="go"&&DEF){DEF.prompt();DEF.userChoice.then(function(c){if(c&&c.outcome==="accepted"){P().instDone=1;try{profChanged()}catch(x){}}DEF=null;paint()}).catch(function(){})}
