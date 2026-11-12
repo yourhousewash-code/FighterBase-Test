@@ -25130,8 +25130,11 @@ async function pushConfirms(cid,c){if(confOff)return;var res=c.claimRes||{},cash
   try{await rpc("doc_patch",{p_path:"league/"+su,p_part:"club",p_patch:part,p_remove:[],p_club:cid});last[key]=JSON.parse(J(part))}catch(e){if(/not allowed|only your own card|check constraint|violates/i.test(e.message||""))confOff=true;return}}}
 async function push(){if(!on()||busy)return;var ps=Object.keys(dirty).filter(mine);Object.keys(dirty).forEach(function(p){if(!mine(p))delete dirty[p]});if(!ps.length)return;busy=true;
  var bad="";/* v350: one document failing (for example a partner card before the database knows partner cards) never holds up the others */
- for(var i=0;i<ps.length;i++){try{await pushOne(ps[i]);delete dirty[ps[i]]}catch(e){if(ps[i].indexOf("partners/")===0)delete dirty[ps[i]];else bad=bad||e.message}}
- msg=bad?"Club not synced yet: "+bad:"";busy=false;paint()}
+ var wait=false;for(var i=0;i<ps.length;i++){try{await pushOne(ps[i]);delete dirty[ps[i]]}catch(e){if(ps[i].indexOf("partners/")===0)delete dirty[ps[i]];
+  /* v355: a coach whose request is with the owner isn't in the club yet; their card goes up once approved (fh246) */
+  else if(/not linked to this club/i.test(e.message||"")&&pendingCoach())wait=true;else bad=bad||e.message}}
+ msg=bad?"Club not synced yet: "+bad:(wait?"Waiting for the owner to approve you as a coach.":"");busy=false;paint()}
+function pendingCoach(){try{var r=S.profile&&S.profile.coachReq,c=clubId();return !!(r&&r.club===c&&!roleOf[c])}catch(e){return false}}
 /* ---------- pull ---------- */
 async function role(cid){try{roleOf[cid]=await rpc("my_club_role",{c:cid})}catch(e){}return roleOf[cid]}
 function q(s){return encodeURIComponent(s)}
@@ -25414,6 +25417,57 @@ document.addEventListener("click",function(e){var h=e.target.closest&&e.target.c
  var o=e.target.closest&&e.target.closest("[data-out245]");if(o&&window.FH181&&FH181.doOut){e.preventDefault();FH181.doOut(o).then(function(){apply()})}});
 document.addEventListener("keydown",function(e){if(e.key!=="Enter"&&e.key!==" ")return;var h=e.target.closest&&e.target.closest("#fbSide .sd-h[data-k245]");if(h){e.preventDefault();h.click()}});
 setInterval(apply,800);setTimeout(apply,300);
+})();
+
+/* FighterBase v355 (star run 12 Nov 2026, test-site check row 9 "coach link"): a coach joins a LIVE club from their own phone.
+   Before: the owner's coach link (Club, Overview, Your team) only worked on the owner's phone, because the coach code was looked up in
+   that phone's own copy of the club. Now, when signed in (fh181):
+   1. Coach's phone: opening the coach link (or typing the code) asks the database (staff_request, db/m7_coach_link.sql). If the code
+      matches a live club, the request goes on the coach's club card, and the coach sees "Your request is with the owner".
+   2. Owner's phone: "Asking to coach" lists the request as before. Approve, Remove and the Accounts tick now also change who the
+      database treats as staff (club_staff; only the owner may). The coach's phone then loads the club side on its next refresh.
+   Only changes the owner made on this phone are carried out: a coach is removed from club_staff only when this phone saw them in the
+   team list and then saw them taken out. Test database, made-up data. */
+var FH246=(function(){
+var A=window.FH181,D=window.__FB_DEMO;if(!A||!A.on||!A.api||!D||!D.store||!D.db)return {on:false};
+var store=D.store,LU=A.local,UUID=/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+var prev=null,prevClub=null,busy=false,msg="",nReq=0,nIns=0,nDel=0,nAcc=0;
+function me(){return A.me()}
+function rpc(fn,a){return A.api("POST","rpc/"+fn,a||{})}
+function clubId(){try{return S&&S.profile&&S.profile.clubId||null}catch(x){return null}}
+function srv(u){return u===LU?me():u}
+/* ---------- 1. coach side: the coach code is checked by the database ---------- */
+var col0=D.db.collection;
+D.db.collection=function(p){var c=col0.apply(this,arguments);if(p!=="clubs"||!c||!c.where)return c;var w0=c.where;
+ c.where=function(f,op,v){var q=w0.apply(this,arguments);if(f!=="coachCode"||op!=="=="||!me())return q;var lim=q.limit,cd=String(v||"").trim().toUpperCase();
+  function wrap(qq){var g=qq.get;qq.get=async function(){try{var nm=((typeof S!=="undefined"&&S.profile&&S.profile.name)||"").slice(0,60);
+     var r=await rpc("staff_request",{p_code:cd,p_name:nm});
+     if(r&&r.club&&UUID.test(r.club)){nReq++;var k="clubs/"+r.club,cur=store[k];
+      /* the coach can't read the club yet: keep just enough here for the request to go through (name and code); the real club
+         replaces this once the owner approves */
+      if(!cur||cur.coachCode!==cd)await D.db.doc(k).set(Object.assign({},cur||{name:r.name||"Club",coaches:[]},{coachCode:cd}))}}catch(e){msg="Coach link not checked: "+e.message}
+     return g.apply(qq,arguments)};return qq}
+  if(lim)q.limit=function(n){return wrap(lim.apply(q,arguments))};wrap(q);return q};
+ return c};
+/* ---------- 2. owner side: the team list decides who the database treats as a coach ---------- */
+function role(){try{var s=window.FH240&&FH240.state&&FH240.state();return s&&s.club===clubId()?s.role:null}catch(e){return null}}
+async function reconcile(){var cid=clubId();if(!me()||busy||!UUID.test(cid||"")||role()!=="owner")return;var cd=store["clubs/"+cid];if(!cd)return;
+ if(prevClub!==cid){prev=null;prevClub=cid}busy=true;
+ try{var perm=cd.coachPerm||{},own=srv(cd.ownerUid||""),co=(cd.coaches||[]).map(srv).filter(function(u){return UUID.test(u)&&u!==me()&&u!==own});
+  var rows=await A.api("GET","club_staff?select=user_id,role,can_accounts&club_id=eq."+cid)||[],have={};rows.forEach(function(r){have[r.user_id]=r});
+  for(var i=0;i<co.length;i++){var u=co[i],acc=!!((perm[u]||{}).acc);
+   if(!have[u]){await A.api("POST","club_staff",{club_id:cid,user_id:u,role:"coach",can_accounts:acc},{Prefer:"resolution=ignore-duplicates,return=minimal"});nIns++}
+   else if(have[u].role==="coach"&&!!have[u].can_accounts!==acc){await A.api("PATCH","club_staff?club_id=eq."+cid+"&user_id=eq."+u+"&role=eq.coach",{can_accounts:acc},{Prefer:"return=minimal"});nAcc++}}
+  if(prev)for(var j=0;j<prev.length;j++){var x=prev[j];if(co.indexOf(x)<0&&have[x]&&have[x].role==="coach"){await A.api("DELETE","club_staff?club_id=eq."+cid+"&user_id=eq."+x+"&role=eq.coach",null,{Prefer:"return=minimal"});nDel++}}
+  prev=co;msg=""}catch(e){msg="Coach changes not saved yet: "+e.message}
+ busy=false;paint()}
+/* a short line under the team panel when something didn't save */
+function paint(){var w=document.getElementById("tmPanel");if(!w)return;var p=document.getElementById("tm246");
+ if(!msg){if(p)p.remove();return}if(!p){p=document.createElement("p");p.id="tm246";p.className="muted small";p.style.margin="8px 0 0"}
+ if(p.parentNode!==w)w.appendChild(p);if(p.textContent!==msg)p.textContent=msg}
+setInterval(function(){if(!document.hidden)reconcile()},8000);
+setTimeout(reconcile,3000);
+return {on:true,reconcile:reconcile,state:function(){return {role:role(),msg:msg,requests:nReq,added:nIns,removed:nDel,accounts:nAcc}}}
 })();
 
 /* FighterBase v44: always a way back, always a next step. */
