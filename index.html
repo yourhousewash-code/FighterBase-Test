@@ -3436,7 +3436,7 @@ var FBK=(function(){
 var M={
  index:{n:"Training Index",c:"#E5484D",i:"M13 2 4 14h7l-1 8 9-12h-7z"},
  minutes:{n:"Training time",c:"#FF8A3D",i:"M12 21a8 8 0 1 0 0-16 8 8 0 0 0 0 16zM12 9v4l3 2M9 2h6"},
- sessions:{n:"Sessions",c:"#3FC57E",i:"M7 10a5 5 0 0 1 10 0v4a5 5 0 0 1-5 5H9a2 2 0 0 1-2-2zM7 12H5a2 2 0 0 0 0 4h2M10 8h4"},
+ sessions:{n:"Sessions",c:"#3FC57E",i:"M6.5 6v12M3.5 9v6M17.5 6v12M20.5 9v6M6.5 12h11"},/* v344: a dumbbell, the sign for training everywhere (was a small glove that was hard to read) */
  checkins:{n:"Check-ins",c:"#3FC57E",i:"M12 21s-7-6-7-11a7 7 0 0 1 14 0c0 5-7 11-7 11zM12 12.5a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5z"},
  effort:{n:"Effort points",c:"#FF5FA2",i:"m12 2 2.6 6.4L21 9l-5 4.4L17.5 21 12 17.3 6.5 21 8 13.4 3 9l6.4-.6z"},
  steps:{n:"Steps",c:"#2EC4B6",i:"M8 3c-2 0-3 2.5-3 5s1 4 2.5 4S10 10.5 10 8 9.5 3 8 3zM6 14.5h4l-.5 3a2 2 0 0 1-3 0zM16 7c-1.5 0-2.5 2.5-2.5 5s1 4 2.5 4 2.5-1.5 2.5-4S17.5 7 16 7zM14 18h4l-.5 2.5a2 2 0 0 1-3 0z"},
@@ -3459,6 +3459,7 @@ var M={
  tip:{n:"Tip",c:"#FACC15",i:"M9 18h6M10 21h4M12 3a6 6 0 0 0-4 10.5V16h8v-2.5A6 6 0 0 0 12 3z"},
  watch:{n:"Phone or watch",c:"#2EC4B6",i:"M8 6h8a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1H8a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1zM9 6l1-3h4l1 3M9 18l1 3h4l1-3"},
  food:{n:"Food diary",c:"#F5A524",i:"M7 3v8a2 2 0 0 0 2 2v8M7 3v5M10 3v5M17 3c-2 2-2 5-2 8h2v10"},
+ tick:{n:"Daily check-in",c:"#A3E635",i:"M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18zM7.5 12.5l3 3 6-6.5"},
  plus:{n:"Add",c:"#CBD5E1",i:"M12 5v14M5 12h14"}
 };
 function e(s){return String(s==null?"":s).replace(/[&<>"']/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]})}
@@ -24384,7 +24385,7 @@ function suggest(){var m=lm(),o=[],W=[0,1,2,3].map(function(w){return sum(back(7
 /* goals are belts: four tape stripes on the bar fill as the goal fills; a hit goal gets a brass knot */
 function belt(p,ic,done){var st=Math.max(0,Math.min(4,(p||0)*4)),full=Math.floor(st+1e-9),part=st-full,t="";
  for(var i=0;i<4;i++)t+='<i class="tp" style="--p:'+(i<full?1:i===full?part.toFixed(2):0)+';--i:'+i+'"></i>';
- return '<div class="belt'+(done?" won":"")+'" style="--bc:'+FBK.col(ic)+'" aria-hidden="true"><span class="band"></span><span class="bbar">'+t+'</span><span class="tail"></span></div>'}
+ return '<div class="belt'+(done?" won":"")+'" style="--bc:'+FBK.col(ic)+'" aria-hidden="true"><span class="band"><i style="width:'+Math.round(Math.max(0,Math.min(1,p||0))*100)+'%"></i></span><span class="bbar">'+t+'</span><span class="tail"></span></div>'}
 function goalsCard(){var G=null;try{G=FH87.G()}catch(x){}if(!G)return "";var act=(G.goals||[]).filter(function(x){return !x.done}),won=0;
  try{var w0=addDays(TODAY,-29);won=FH87.achieved().filter(function(a){return a.at>=w0}).length}catch(x){}
  if(!act.length){var S2=suggest();window.__s233=S2;
@@ -24562,13 +24563,14 @@ function addRow(){var m=lm(),have={};try{FHT.enabled().forEach(function(d){have[
  return '<section class="add233" id="c233_add"><span class="muted small">Add to my page</span><div class="ad233">'+o.map(function(q){return '<button type="button" class="adb" '+(q[2]==="add"?'data-h233add="'+q[0]+'"':'data-goto="'+q[2]+'"')+'>'+FBK.icon(q[0],16)+e(q[1])+'</button>'}).join("")+'</div></section>'}
 
 /* ---------- Edit my page ---------- */
+/* v344: the belt cloth now fills with progress (it was always full, so 0 of 1 looked nearly done) */
 var CARDS=[["index","Training Index"],["goals","Goals"],["week","Next 7 days"],["food","Nutrition"],["club","Club"],["track","What you track"],["tip","Tip"]],EDIT=false;
 function editPanel(){if(!EDIT)return "";return '<section class="c233 ed233" id="c233_edit"><h3>Edit my page</h3><p class="p233">Untick anything you don’t want on your page. It stays in its own section.</p><div class="ed233g">'+CARDS.map(function(c){return '<label><input type="checkbox" data-h233hide="'+c[0]+'"'+(hid(c[0])?"":" checked")+'> '+e(c[1])+'</label>'}).join("")+'</div><label class="ed233f"><input type="checkbox" data-h233full="1"'+(simple()?"":" checked")+'> Show everything on Home (the full, older view, for people who want all the detail)</label><label class="ed233f"><input type="checkbox" data-h233snd="1"'+(H().snd===0?"":" checked")+'> Sounds and vibration for your wins (bell, cymbals)</label><button type="button" class="btn sm" data-h233edit="1">Done</button></section>'}
 
 function html(){var n=P().name||"",hr=new Date().getHours(),hi=hr<12?"Good morning":hr<18?"Good afternoon":"Good evening",parts=[];
  var all=0;try{var M2=lm();Object.keys(M2).forEach(function(k){all+=((M2[k]||{}).sessions||[]).length})}catch(x){}
- var top='<div class="top233 poster"><div class="pst"><span class="pdate">'+e(new Date(TODAY+"T12:00").toLocaleDateString("en-GB",{weekday:"long",day:"numeric",month:"long"}))+'</span><h2>'+e(hi+(n?", "+n.split(" ")[0]:""))+'</h2><svg class="brush" viewBox="0 0 220 14" preserveAspectRatio="none" aria-hidden="true"><path d="M3 9 C 50 3, 120 2, 216 6 C 150 9, 80 12, 3 9 Z"/></svg><p class="nx">'+FBK.icon("sessions",16)+(all?'Session '+(all+1)+' is next. Every one counts.':'Your first session is the hardest. Let’s go.')+'</p></div><button type="button" class="linkbtn" data-h233edit="1">Edit my page</button></div>';
- var qa='<div class="qa233"><span class="qal">Log</span><button type="button" data-goto="train">'+FBK.icon("sessions",18)+'Training</button>'+(kid()?'':'<button type="button" data-goto="diary">'+FBK.icon("food",18)+'Food</button>')+'<button type="button" data-h233x="34">'+FBK.icon("goals",18)+'Check-in</button></div>';
+ var top='<div class="top233 poster"><div class="pst"><span class="pdate">'+e(new Date(TODAY+"T12:00").toLocaleDateString("en-GB",{weekday:"long",day:"numeric",month:"long"}))+'</span><h2>'+e(hi+(n?", "+n.split(" ")[0]:""))+'</h2><svg class="brush" viewBox="0 0 220 14" preserveAspectRatio="none" aria-hidden="true"><path d="M3 9 C 50 3, 120 2, 216 6 C 150 9, 80 12, 3 9 Z"/></svg><p class="nx">'+FBK.icon("sessions",20)+(all?'Session '+(all+1)+' is next. Every one counts.':'Your first session is the hardest. Let’s go.')+'</p></div><button type="button" class="linkbtn" data-h233edit="1">Edit my page</button></div>';
+ var qa='<div class="qa233"><span class="qal">Log</span><button type="button" data-goto="train">'+FBK.icon("sessions",22)+'Training</button>'+(kid()?'':'<button type="button" data-goto="diary">'+FBK.icon("food",22)+'Food</button>')+'<button type="button" data-h233x="34">'+FBK.icon("tick",22)+'Check-in</button></div>';
  [["index",idxCard],["goals",goalsCard],["week",weekCard],["food",foodCard],["club",clubCard],["track",trackCard],["tip",tipCard]].forEach(function(c){if(hid(c[0]))return;var h="";try{h=c[1]()}catch(x){try{console.warn("h233",c[0],x)}catch(_){}}if(h)parts.push(h)});
  return top+editPanel()+qa+parts.join("")+wearCard()+addRow()}
 
@@ -24765,7 +24767,7 @@ var css=document.createElement("style");css.textContent=
 ".b-sub{margin:2px 0 0;font-size:13px}"+
 "@media (max-width:600px){.bout{grid-template-columns:1fr;justify-items:center}.b-sc{width:100%}.rd{grid-template-columns:minmax(78px,auto) auto 1fr auto;font-size:12px;gap:6px}}"+
 /* belts */
-".belt{position:relative;display:flex;align-items:center;height:16px;margin:8px 0 2px}.belt .band{flex:1;height:100%;border-radius:3px 0 0 3px;background:repeating-linear-gradient(90deg,rgba(255,255,255,.08) 0 2px,transparent 2px 5px),linear-gradient(180deg,color-mix(in srgb,var(--bc) 85%,#fff),var(--bc) 55%,color-mix(in srgb,var(--bc) 70%,#000));box-shadow:inset 0 -2px 0 rgba(0,0,0,.25)}"+
+".belt{position:relative;display:flex;align-items:center;height:16px;margin:8px 0 2px}.belt .band{flex:1;height:100%;border-radius:3px 0 0 3px;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.1);border-right:0;overflow:hidden}.belt .band>i{display:block;height:100%;min-width:0;background:repeating-linear-gradient(90deg,rgba(255,255,255,.08) 0 2px,transparent 2px 5px),linear-gradient(180deg,color-mix(in srgb,var(--bc) 85%,#fff),var(--bc) 55%,color-mix(in srgb,var(--bc) 70%,#000));box-shadow:inset 0 -2px 0 rgba(0,0,0,.25);transition:width .9s cubic-bezier(.2,.7,.2,1)}.belt.won .band>i{width:100%!important}.belt:not(.won) .tail{opacity:.35}"+
 ".belt .bbar{display:flex;gap:4px;align-items:center;height:100%;padding:0 7px;background:#0d0d0f;border:1px solid rgba(255,255,255,.12)}.belt .tp{position:relative;width:7px;height:12px;background:rgba(255,255,255,.1);border-radius:1px;overflow:hidden}.belt .tp::after{content:'';position:absolute;inset:0;background:#F4EFE6;transform:scaleX(var(--p,0));transform-origin:left;box-shadow:0 0 6px rgba(255,255,255,.35)}"+
 ".belt .tail{width:22px;height:100%;border-radius:0 3px 3px 0;background:linear-gradient(180deg,color-mix(in srgb,var(--bc) 85%,#fff),var(--bc) 55%,color-mix(in srgb,var(--bc) 70%,#000));clip-path:polygon(0 0,100% 0,82% 50%,100% 100%,0 100%)}"+
 ".belt.won .bbar{background:linear-gradient(180deg,#F0CF78,"+BRASS+" 60%,#8E6A22);border-color:#F0CF78}.belt.won .tp{background:rgba(0,0,0,.25)}"+
@@ -24793,6 +24795,17 @@ var css=document.createElement("style");css.textContent=
 "#h233 .boost .en-p,#h233 .boost .en-p2{stroke-dasharray:100;animation:ink234 1.1s .1s cubic-bezier(.3,.7,.2,1) both}#h233 .boost .rdb i{animation:grow234 .7s calc(.2s + var(--i)*.09s) cubic-bezier(.2,.8,.2,1) both}#h233 .boost .rdb .rr{transform-origin:right}#h233 .boost .rdb .rb{transform-origin:left}#h233 .boost .belt .tp::after{animation:tape234 .5s calc(.3s + var(--i)*.12s) ease-out both}#h233 .boost .tk{animation:tick234 .45s calc(.1s + var(--i)*.05s) cubic-bezier(.2,.9,.3,1.3) both}"+
 "@keyframes gy234{from{transform:scaleY(0)}}@keyframes rf234{from{stroke-dashoffset:var(--len,0)}}"+
 "@media (prefers-reduced-motion:reduce){#h233 *{animation:none!important}}";
+css.textContent+=
+/* v344 (Steve, 12 Nov 07:24: "some of the text is a bit hard to read; bigger, a different style, or clear standard icons"). Rule 28 on My page:
+   card titles and figures in the plain body face (the tall narrow display face stays for the greeting only), nothing under 13px, stronger
+   contrast on small grey text, bigger icons. */
+"#h233 .h233c h3{font-family:var(--body,inherit);font-weight:800;font-size:19px;line-height:1.2;letter-spacing:0;text-transform:none}"+
+"#h233 .poster .pdate{font-size:15px;opacity:.9}#h233 .poster .nx{font-size:17px;line-height:1.35}"+
+"#h233 .p233{font-size:16px;line-height:1.45;opacity:.95}#h233 small{font-size:14px;opacity:.88!important}#h233 .gbn b,#h233 .wi233 b,#h233 .sg7 b{font-size:17px}"+
+"#h233 .l233,#h233 .linkbtn{font-size:15px}#h233 .qa233 button{font-size:17px;padding:11px 16px;min-height:48px}#h233 .qal{font-size:13px;opacity:.8}"+
+"#h233 .tk small{font-size:13px;opacity:.9!important}#h233 .tk b{font-family:var(--body,inherit);font-weight:800;font-size:19px}#h233 .tk em,#h233 .wd233 em,#h233 .kb233,#h233 .cn,#h233 .b-n small,#h233 .ixn small{font-size:13px}"+
+"#h233 .rd{font-size:14px}#h233 .mc233{font-size:14px}#h233 .corner233 .cwl{font-size:13px}#h233 .corner233 p{font-size:15px}#h233 .cwq{font-family:var(--body,inherit);font-size:19px;line-height:1.25}#h233 .sgh7,#h233 .adb{font-size:14px}"+
+"#h233 .fbm-l,#h233 .fbm-sub{font-size:14px;opacity:.9}#h233 .fbm-a{font-size:13px}#h233 .b-n small{max-width:74px;text-align:center;line-height:1.05}#h233 .belt{height:18px}";
 document.head.appendChild(css);
 if(document.body)defs();else document.addEventListener("DOMContentLoaded",defs);
 setInterval(watch,1500);setTimeout(watch,1200);
