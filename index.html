@@ -24663,34 +24663,39 @@ function sweep(c,t0,dur,g,f0,f1,q){var n=Math.floor(c.sampleRate*dur),b=c.create
      beat:       deep skin drums, "dum .. dum-dum, tak", each with body, slap and room;
      whoosh:     a reverse-cymbal riser pulling into the hit;
      the hit:    a sub drop you feel, a leather impact, and a metallic sheen that rings out in the hall. About 3.5 seconds with the tail. */
-function sigOn(c,t){var out=c.createGain();out.gain.value=0.9;
+/* v342 (Steve, 12 Nov 00:02: "much better"; now a very slight martial arts vibe, not too oriental; a little slimmer; 5% quieter;
+   a more gradual fade that carries into the Home page). So: the snap is two wooden sticks (a dojo clapper), a low gong blooms quietly
+   under the hit, the lows are thinned (less sub, less drone, a low cut), the level is down 5%, and the hall and tail are longer (about 5 s). */
+function sigOn(c,t){var out=c.createGain(),thin=c.createBiquadFilter();thin.type="highpass";thin.frequency.value=70;thin.Q.value=0.5;out.gain.value=0.855;
  var comp=c.createDynamicsCompressor();comp.threshold.value=-14;comp.ratio.value=4;comp.attack.value=0.004;comp.release.value=0.25;comp.connect(c.destination);
- var dry=c.createGain();dry.gain.value=0.82;out.connect(dry);dry.connect(comp);
+ var dry=c.createGain();dry.gain.value=0.82;out.connect(thin);thin.connect(dry);dry.connect(comp);
  /* hall: 2.6 s of decaying stereo noise, darker towards the end */
- var len=Math.floor(c.sampleRate*2.6),ir=c.createBuffer(2,len,c.sampleRate);for(var ch=0;ch<2;ch++){var d=ir.getChannelData(ch),lp=0;for(var i=0;i<len;i++){var x=i/len,n=(Math.random()*2-1)*Math.pow(1-x,2.6);lp+=(n-lp)*(0.55-0.4*x);d[i]=lp*(i<400?i/400:1)}}
- var rev=c.createConvolver();rev.buffer=ir;var wet=c.createGain();wet.gain.value=0.5;out.connect(rev);rev.connect(wet);wet.connect(comp);
+ var len=Math.floor(c.sampleRate*3.8),ir=c.createBuffer(2,len,c.sampleRate);for(var ch=0;ch<2;ch++){var d=ir.getChannelData(ch),lp=0;for(var i=0;i<len;i++){var x=i/len,n=(Math.random()*2-1)*Math.pow(1-x,3.1);lp+=(n-lp)*(0.55-0.4*x);d[i]=lp*(i<400?i/400:1)}}
+ var rev=c.createConvolver();rev.buffer=ir;var wet=c.createGain();wet.gain.value=0.52;thin.connect(rev);rev.connect(wet);wet.connect(comp);
  /* echo: dotted repeats, fed only by what is sent to it */
  var send=c.createGain(),dl=c.createDelay(1),fb=c.createGain(),dlp=c.createBiquadFilter();dl.delayTime.value=0.225;fb.gain.value=0.38;dlp.type="lowpass";dlp.frequency.value=2400;send.connect(dl);dl.connect(dlp);dlp.connect(fb);fb.connect(dl);dlp.connect(out);
  function env(g,t0,a,pk,dur){g.gain.setValueAtTime(0.0001,t0);g.gain.exponentialRampToValueAtTime(pk,t0+a);g.gain.exponentialRampToValueAtTime(0.0001,t0+dur)}
  function nz(dur,shape){var n=Math.floor(c.sampleRate*dur),b=c.createBuffer(1,n,c.sampleRate),d=b.getChannelData(0);for(var i=0;i<n;i++)d[i]=(Math.random()*2-1)*(shape?shape(i/n):1);var s2=c.createBufferSource();s2.buffer=b;return s2}
  var HIT=t+1.2;
  /* atmosphere */
- var pad=c.createGain(),plp=c.createBiquadFilter();plp.type="lowpass";plp.Q.value=0.8;plp.frequency.setValueAtTime(140,t);plp.frequency.exponentialRampToValueAtTime(420,HIT);plp.frequency.exponentialRampToValueAtTime(1500,HIT+0.08);plp.frequency.exponentialRampToValueAtTime(260,HIT+2.2);
- pad.gain.setValueAtTime(0.0001,t);pad.gain.exponentialRampToValueAtTime(0.09,HIT-0.1);pad.gain.exponentialRampToValueAtTime(0.16,HIT+0.05);pad.gain.exponentialRampToValueAtTime(0.0001,HIT+2.4);plp.connect(pad);pad.connect(out);
- [[73.42,-7],[73.42,8],[110,-5],[110.0,6],[146.83,3]].forEach(function(q){var o=c.createOscillator();o.type="sawtooth";o.frequency.value=q[0];o.detune.value=q[1];o.connect(plp);o.start(t);o.stop(HIT+2.5)});
+ var pad=c.createGain(),plp=c.createBiquadFilter();plp.type="lowpass";plp.Q.value=0.8;plp.frequency.setValueAtTime(140,t);plp.frequency.exponentialRampToValueAtTime(420,HIT);plp.frequency.exponentialRampToValueAtTime(1500,HIT+0.08);plp.frequency.exponentialRampToValueAtTime(240,HIT+3.6);
+ pad.gain.setValueAtTime(0.0001,t);pad.gain.exponentialRampToValueAtTime(0.07,HIT-0.1);pad.gain.exponentialRampToValueAtTime(0.12,HIT+0.05);pad.gain.exponentialRampToValueAtTime(0.0001,HIT+3.9);plp.connect(pad);pad.connect(out);
+ [[73.42,-7],[73.42,8],[110,-5],[110.0,6],[146.83,3]].forEach(function(q){var o=c.createOscillator();o.type="sawtooth";o.frequency.value=q[0];o.detune.value=q[1];o.connect(plp);o.start(t);o.stop(HIT+4)});
  /* drums */
  function skin(t0,f,g,long){var o=c.createOscillator(),a=c.createGain();o.frequency.setValueAtTime(f*2.1,t0);o.frequency.exponentialRampToValueAtTime(f,t0+0.07);env(a,t0,0.004,g,long||0.42);o.connect(a);a.connect(out);o.start(t0);o.stop(t0+(long||0.42)+0.05);
   var s2=nz(0.09,function(x){return Math.pow(1-x,3)}),f2=c.createBiquadFilter(),a2=c.createGain();f2.type="lowpass";f2.frequency.value=1700;a2.gain.value=g*0.55;s2.connect(f2);f2.connect(a2);a2.connect(out);s2.start(t0)}
- function tak(t0,g){var s2=nz(0.06,function(x){return Math.pow(1-x,4)}),f2=c.createBiquadFilter(),a2=c.createGain();f2.type="bandpass";f2.frequency.value=1900;f2.Q.value=2.2;a2.gain.value=g;s2.connect(f2);f2.connect(a2);a2.connect(out);a2.connect(send);s2.start(t0);
-  var o=c.createOscillator(),a=c.createGain();o.type="triangle";o.frequency.value=330;env(a,t0,0.002,g*0.5,0.09);o.connect(a);a.connect(out);o.start(t0);o.stop(t0+0.12)}
- skin(t+0.05,62,0.32);skin(t+0.5,62,0.26);skin(t+0.725,74,0.3);tak(t+0.95,0.2);
+ function tak(t0,g){[[1180,9,1],[1790,12,0.7],[2650,8,0.35]].forEach(function(q){var s2=nz(0.05,function(x){return Math.pow(1-x,5)}),f2=c.createBiquadFilter(),a2=c.createGain();f2.type="bandpass";f2.frequency.value=q[0];f2.Q.value=q[1];a2.gain.value=g*q[2]*2.4;s2.connect(f2);f2.connect(a2);a2.connect(out);a2.connect(send);s2.start(t0)});
+  var o=c.createOscillator(),a=c.createGain();o.type="triangle";o.frequency.setValueAtTime(1250,t0);o.frequency.exponentialRampToValueAtTime(1120,t0+0.05);env(a,t0,0.001,g*0.45,0.07);o.connect(a);a.connect(out);o.start(t0);o.stop(t0+0.1)}
+ skin(t+0.05,62,0.28);skin(t+0.5,62,0.22);skin(t+0.725,74,0.26);tak(t+0.95,0.2);
  /* whoosh: reverse-cymbal riser into the hit */
  var r=nz(1.15,function(x){return Math.pow(x,2.4)}),rf=c.createBiquadFilter(),rg=c.createGain();rf.type="bandpass";rf.Q.value=0.9;rf.frequency.setValueAtTime(350,HIT-1.15);rf.frequency.exponentialRampToValueAtTime(7500,HIT);rg.gain.value=0.3;r.connect(rf);rf.connect(rg);rg.connect(out);r.start(HIT-1.15);
  /* the hit */
- var sub=c.createOscillator(),sg=c.createGain();sub.frequency.setValueAtTime(98,HIT);sub.frequency.exponentialRampToValueAtTime(36,HIT+0.5);env(sg,HIT,0.005,0.6,1.1);sub.connect(sg);sg.connect(dry);sub.start(HIT);sub.stop(HIT+1.2);
+ var sub=c.createOscillator(),sg=c.createGain();sub.frequency.setValueAtTime(98,HIT);sub.frequency.exponentialRampToValueAtTime(36,HIT+0.5);env(sg,HIT,0.005,0.44,0.9);sub.connect(sg);sg.connect(dry);sub.start(HIT);sub.stop(HIT+1.2);
  var im=nz(0.3,function(x){return Math.pow(1-x,2.5)}),imf=c.createBiquadFilter(),img=c.createGain();imf.type="lowpass";imf.frequency.setValueAtTime(3200,HIT);imf.frequency.exponentialRampToValueAtTime(300,HIT+0.28);img.gain.value=0.5;im.connect(imf);imf.connect(img);img.connect(out);im.start(HIT);
- var sh=nz(1.6,function(x){return Math.pow(1-x,2.2)}),shf=c.createBiquadFilter(),shg=c.createGain();shf.type="highpass";shf.frequency.value=5200;shg.gain.value=0.11;sh.connect(shf);shf.connect(shg);shg.connect(out);shg.connect(send);sh.start(HIT);
- [[587.3,0.05,2.2],[1108.7,0.03,1.8],[1661.2,0.022,1.4],[2349.3,0.014,1.1],[3520,0.008,0.8]].forEach(function(q){var o=c.createOscillator(),a=c.createGain();o.frequency.value=q[0];env(a,HIT,0.006,q[1],q[2]);o.connect(a);a.connect(out);o.start(HIT);o.stop(HIT+q[2]+0.05)})}
+ var sh=nz(2.6,function(x){return Math.pow(1-x,2.6)}),shf=c.createBiquadFilter(),shg=c.createGain();shf.type="highpass";shf.frequency.value=5200;shg.gain.value=0.11;sh.connect(shf);shf.connect(shg);shg.connect(out);shg.connect(send);sh.start(HIT);
+ [[587.3,0.05,3.2],[1108.7,0.03,2.6],[1661.2,0.022,2],[2349.3,0.014,1.5],[3520,0.008,1.1]].forEach(function(q){var o=c.createOscillator(),a=c.createGain();o.frequency.value=q[0];env(a,HIT,0.006,q[1],q[2]);o.connect(a);a.connect(out);o.start(HIT);o.stop(HIT+q[2]+0.05)});
+ /* a low gong blooming under the hit: slow to speak, slightly out of tune with itself, long and quiet */
+ [[146.83,0.034,4],[218.2,0.02,3.6],[307.6,0.014,3],[404.9,0.009,2.4]].forEach(function(q,i){var o=c.createOscillator(),a=c.createGain();o.frequency.setValueAtTime(q[0]*1.012,HIT);o.frequency.exponentialRampToValueAtTime(q[0],HIT+0.9);a.gain.setValueAtTime(0.0001,HIT);a.gain.exponentialRampToValueAtTime(q[1],HIT+0.22+i*0.05);a.gain.exponentialRampToValueAtTime(0.0001,HIT+q[2]);o.connect(a);a.connect(out);o.start(HIT);o.stop(HIT+q[2]+0.05)})}
 function signature(){var c=ctx();if(!c||H().snd===0)return false;if(c.state!=="running"){try{c.resume()}catch(x){}}if(c.state!=="running")return false;sigOn(c,c.currentTime+0.04);return true}
 /* a quiet rising shimmer while bars and rings fill */
 function rise(){var c=on();if(!c)return;var t=c.currentTime+0.02;sweep(c,t,0.7,0.012,700,2600,1.2);[392,494,587,784].forEach(function(f,i){tone(c,f,t+0.12+i*0.11,0.26,0.014)})}
