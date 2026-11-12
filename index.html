@@ -20160,6 +20160,20 @@ async function sign(kind,pre){pre=pre||"a181";var em=(document.getElementById(pr
 async function reset(pre){var em=((document.getElementById((pre||"a181")+"e")||{}).value||"").trim();if(!em){err="Type your email first.";paint();return}
  try{await auth("recover?redirect_to="+encodeURIComponent(location.origin+"/"),{email:em});msg="If that email has an account, a reset link is on its way.";err=""}catch(e){err=e.message}paint()}
 function out(){ses=null;sv();msg="Signed out. Your data stays on this phone.";err="";paint()}
+/* v353 (Steve 12 Nov 15:43: "Should a sign out option somewhere but would need to make sure save all their data"): sign out only after
+   everything on this phone is backed up to the account (and club, chat and payment-claim changes have gone up); if the backup fails,
+   stay signed in and say why. */
+async function safeOut(){if(!ses)return {ok:true};mine().forEach(function(p){dirty[p]=1});sd();msg="Saving your data before signing out...";paint();
+ for(var i=0;i<40&&up;i++)await new Promise(function(r){setTimeout(r,250)});
+ err="";await push();
+ if(err||Object.keys(dirty).length)return {ok:false,why:(err||"Some of your data isn't saved yet").replace(/^Not backed up yet: /,"")};
+ try{if(window.FH240&&FH240.push)await FH240.push()}catch(e){}try{if(window.FH242&&FH242.push)await FH242.push()}catch(e){}
+ out();msg="Signed out. Everything is saved to your account: sign in on any phone to get it back.";paint();return {ok:true}}
+async function doOut(btn){var t0=btn?btn.textContent:"";if(btn){btn.disabled=true;btn.textContent="Saving your data..."}
+ var r;try{r=await safeOut()}catch(e){r={ok:false,why:e.message}}
+ if(r.ok){try{toast("Signed out","Everything is saved to your account. Sign in on any phone to get it back.")}catch(e){}}
+ else{if(btn){btn.disabled=false;btn.textContent=t0||"Sign out"}try{toast("Not signed out yet",r.why+". Check your connection and try again.")}catch(e){}}
+ return r}
 /* ---- screen ---- */
 function html(){var h='<div id="acct181" class="cs-box" style="margin-bottom:14px"><b>Account and backup</b>';
  if(ses){h+='<p class="small" style="margin:6px 0">Signed in as <b>'+esc(ses.email)+'</b>.</p><p class="muted small" style="margin:0 0 8px">'+(Object.keys(dirty).length?"Backing up...":last?"Backed up "+new Date(last).toLocaleTimeString("en-GB",{hour:"2-digit",minute:"2-digit"})+". Your data follows you to any phone you sign in on.":"Your data is backed up when it changes.")+'</p>'+
@@ -20177,7 +20191,7 @@ var lastH="";function paint(){try{gate()}catch(e){console.error(e)}var p=documen
  var d=document.createElement("div");d.innerHTML=h;lastH=h;if(x)x.replaceWith(d.firstChild);else p.insertBefore(d.firstChild,p.firstChild);
  var e2=document.getElementById("a181e"),p2=document.getElementById("a181p");if(e2&&ev)e2.value=ev;if(p2&&pv)p2.value=pv;if(fa==="a181e"&&e2)e2.focus();if(fa==="a181p"&&p2)p2.focus()}
 document.addEventListener("click",function(e){var b=e.target.closest&&e.target.closest("[data-a181]");if(!b)return;var a=b.dataset.a181;
- if(a==="in"||a==="up")sign(a);else if(a==="out")out();else if(a==="reset")reset();else if(a==="sync")pull(false);else if(a==="google"||a==="apple")oauth(a)});
+ if(a==="in"||a==="up")sign(a);else if(a==="out")doOut(b);else if(a==="reset")reset();else if(a==="sync")pull(false);else if(a==="google"||a==="apple")oauth(a)});
 /* ---- alerts: let the member's alert address reach the server once signed in (needs db/push_v224.sql loaded) ---- */
 window.FH172UP=function(st){if(!ses)return;try{if(st&&st.on&&st.sub&&st.sub.endpoint){var k=st.sub.keys||{};api("POST","rpc/save_push_subscription",{p_endpoint:st.sub.endpoint,p_p256dh:k.p256dh,p_auth:k.auth,p_from:(st.q||[22,7])[0],p_to:(st.q||[22,7])[1],p_morning:st.m!==false,p_tz:(Intl.DateTimeFormat().resolvedOptions().timeZone||"Europe/London")}).catch(function(){})}
  else api("POST","rpc/delete_push_subscription",{}).catch(function(){})}catch(e){}};
@@ -20208,7 +20222,7 @@ setInterval(paint,2000);setTimeout(function(){if(ses)pull(false)},1500);
 document.addEventListener("visibilitychange",function(){if(!document.hidden&&ses&&!Object.keys(dirty).length)pull(false)});
 return {on:true,state:function(){return {signedIn:!!ses,dirty:Object.keys(dirty).length}},
  /* v346: for the club sync (fh240): signed-in calls to the database, my account id and this phone's local id */
- api:api,me:function(){return ses&&ses.uid||null},local:uid,
+ api:api,me:function(){return ses&&ses.uid||null},local:uid,doOut:doOut,signedIn:function(){return !!ses},
  /* v347: call one of our server functions (stripe-pay) as the signed-in member */
  fn:async function(name,body){var go=function(){return fetch(URL_+"/functions/v1/"+name,{method:"POST",headers:hdr(true),body:JSON.stringify(body||{})})};var r=await go();if(r.status===401&&await refresh())r=await go();var j={};try{j=await r.json()}catch(e){}if(!r.ok||(j&&j.ok===false))throw new Error((j&&(j.text||j.message))||("Request failed ("+r.status+")"));return j}}})();
 
@@ -25329,6 +25343,77 @@ function play(){var c=ctx();if(!c||!soundOn())return false;if(c.state!=="running
  return true}
 if(window.FBX&&FBX.signature){FBX._sig0=FBX.signature;FBX.signature=play}
 return {play:play,decode:function(){var c=ctx();return c?decode(c):Promise.reject("no audio")},gain:function(v){if(v!=null)GAIN=v;return GAIN}};
+})();
+
+/* FighterBase v353 (Steve, 12 Nov 2026 15:37, on a wide screen: "don't like the spaces things below should move up to the right position
+   to fill the space and have two panels in view"). On wide screens (1100px and up) Today could show the Fight camp card alone on the left
+   with nothing beside it (the desktop top row, fh226, was built for Fight camp | Your training | Your nutrition, and the last two are now
+   inside My page). When that happens, Today becomes one two-column grid: Fight camp on the left, and My page's greeting, quick buttons and
+   Training Index beside it on the right; the rest of My page fills both columns below with no gaps. Phones and narrow windows unchanged. The card heights are packed by fh152's masonry (each card spans rows by its height), so nothing overlaps. */
+(function(){
+var css=document.createElement("style");
+css.textContent="@media (min-width:1100px){"+
+ "html body #tab-today[data-w244]:not([hidden]){display:grid!important;grid-template-columns:minmax(0,1fr) minmax(0,1fr)!important;gap:14px;align-items:start;grid-auto-flow:row dense}"+
+ "html body #tab-today[data-w244]:not([hidden])>*{grid-column:1/-1}"+
+ "html body #tab-today[data-w244]:not([hidden])>#d226,html body #tab-today[data-w244]:not([hidden]) #d226l,html body #tab-today[data-w244]:not([hidden])>#h233{display:contents!important}"+
+ "html body #tab-today[data-w244]:not([hidden]) #d226l>*{grid-column:1;min-width:0}"+
+ "html body #tab-today[data-w244]:not([hidden]) #d226 #d226l>.camp233{order:-25;grid-row-end:var(--sp244,auto)!important}"+
+ "html body #tab-today[data-w244]:not([hidden]) #h233>*{min-width:0;order:-20}"+
+ "html body #tab-today[data-w244]:not([hidden]) #h233>.top233,html body #tab-today[data-w244]:not([hidden]) #h233>.qa233,html body #tab-today[data-w244]:not([hidden]) #h233>#c233_index,html body #tab-today[data-w244]:not([hidden]) #h233>#c233_edit{grid-column:2}"+
+ "html body #tab-today[data-w244]:not([hidden]) #h233>.tip233,html body #tab-today[data-w244]:not([hidden]) #h233>.wear233,html body #tab-today[data-w244]:not([hidden]) #h233>.add233{grid-column:1/-1}"+
+ "html body #tab-today[data-w244]:not([hidden]) #h233>.qa233{flex-wrap:wrap}"+
+ "}";
+document.head.appendChild(css);
+function vis(el){return !!(el&&!el.hidden&&el.offsetParent!==null)}
+function check(){var t=document.getElementById("tab-today");if(!t)return;
+ var wide=window.matchMedia&&matchMedia("(min-width:1100px)").matches,d=document.getElementById("d226"),h=document.getElementById("h233");
+ var camp=d&&d.querySelector("#d226l>.camp233"),others=d?[].slice.call(d.children).filter(function(x){return x.id!=="d226l"&&!x.hidden&&getComputedStyle(x).display!=="none"}):[];
+ var on=!!(wide&&h&&camp&&!camp.hidden&&!others.length);
+ if(on!==t.hasAttribute("data-w244")){if(on)t.setAttribute("data-w244","");else t.removeAttribute("data-w244")}
+ /* the Fight camp card sits inside fh226's box, whose rules stop fh152's masonry span; give it its own span from its height */
+ if(on&&camp){var v="span "+(Math.ceil(camp.getBoundingClientRect().height)+18);if(camp.style.getPropertyValue("--sp244")!==v)camp.style.setProperty("--sp244",v)}}
+setInterval(check,1200);window.addEventListener("resize",check);setTimeout(check,600);
+})();
+
+/* FighterBase v353 (Steve, 12 Nov 2026 15:43, on the desktop menu: "these drop down menu on the side don't shrink should be able to
+   minimise them" and "Should a sign out option somewhere but would need to make sure save all their data").
+   1. Each heading in the left menu (Today, Train, Food, Progress, Me, and the club side's headings) folds its section up or opens it.
+      The choice is remembered on this device; the section holding the screen you're on always stays open.
+   2. Sign out is easy to find: under your name at the bottom of the menu, and on the Me (Settings) page. It saves everything to your
+      account first and only signs out once that has worked (FH181.doOut). */
+(function(){
+var KEY="fb_sd245",st={};try{st=JSON.parse(localStorage.getItem(KEY)||"{}")||{}}catch(e){st={}}
+function save(){try{localStorage.setItem(KEY,JSON.stringify(st))}catch(e){}}
+var css=document.createElement("style");
+css.textContent="#fbSide .sd-h[data-k245]{cursor:pointer;display:flex;align-items:center;gap:8px;user-select:none;border-radius:8px}"+
+ "#fbSide .sd-h[data-k245]:hover{background:rgba(255,255,255,.05)}#fbSide .sd-h[data-k245]:focus-visible{outline:2px solid var(--gold,#E8DFC8);outline-offset:2px}"+
+ "#fbSide .sd-h[data-k245]::after{content:'';margin-left:auto;width:8px;height:8px;border-right:2px solid currentColor;border-bottom:2px solid currentColor;transform:rotate(45deg);opacity:.6;transition:transform .2s;margin-right:6px}"+
+ "#fbSide .sd-sec.c245 .sd-h[data-k245]::after{transform:rotate(-45deg)}"+
+ "#fbSide .sd-sec.c245>:not(.sd-h){display:none!important}"+
+ ".out245{margin-left:auto;background:none;border:1px solid rgba(255,255,255,.18);color:inherit;border-radius:999px;padding:5px 12px;font:600 13px var(--body,inherit);cursor:pointer;min-height:32px}"+
+ ".out245:hover{border-color:rgba(255,255,255,.4)}.out245[disabled]{opacity:.6;cursor:wait}"+
+ "@media (prefers-reduced-motion:reduce){#fbSide .sd-h[data-k245]::after{transition:none}}";
+document.head.appendChild(css);
+function keyOf(h){return (h.textContent||"").trim().toLowerCase().replace(/[^a-z0-9]+/g," ").trim()}
+function signedIn(){try{return !!(window.FH181&&FH181.signedIn&&FH181.signedIn())}catch(e){return false}}
+function apply(){var side=document.getElementById("fbSide");if(!side)return;
+ side.querySelectorAll(".sd-sec").forEach(function(sec){var h=sec.querySelector(".sd-h");if(!h)return;var k=keyOf(h);if(!k)return;
+  if(h.dataset.k245!==k){h.dataset.k245=k;h.setAttribute("role","button");h.tabIndex=0}
+  var here=!!sec.querySelector(".sd-i.on,[aria-current=page]"),shut=!!st[k]&&!here;
+  if(sec.classList.contains("c245")!==shut)sec.classList.toggle("c245",shut);
+  var ex=shut?"false":"true";if(h.getAttribute("aria-expanded")!==ex)h.setAttribute("aria-expanded",ex)});
+ var foot=side.querySelector(".sd-foot"),ob=foot&&foot.querySelector(".out245");
+ if(foot&&signedIn()&&!ob){var b=document.createElement("button");b.type="button";b.className="out245";b.dataset.out245="1";b.textContent="Sign out";foot.appendChild(b)}
+ else if(ob&&!signedIn())ob.remove();
+ /* the Me (Settings) page: next to "Redo my setup questions" */
+ var row=document.querySelector("#pmMenu .plate .row"),pb=row&&row.querySelector(".out245");
+ if(row&&signedIn()&&!pb){var c=document.createElement("button");c.type="button";c.className="btn ghost sm out245";c.style.marginLeft="0";c.dataset.out245="1";c.textContent="Sign out";row.appendChild(c)}
+ else if(pb&&!signedIn())pb.remove()}
+document.addEventListener("click",function(e){var h=e.target.closest&&e.target.closest("#fbSide .sd-h[data-k245]");
+ if(h){var k=h.dataset.k245,sec=h.closest(".sd-sec");if(sec&&sec.querySelector(".sd-i.on,[aria-current=page]")&&!st[k])return;st[k]=!st[k];if(!st[k])delete st[k];save();apply();return}
+ var o=e.target.closest&&e.target.closest("[data-out245]");if(o&&window.FH181&&FH181.doOut){e.preventDefault();FH181.doOut(o).then(function(){apply()})}});
+document.addEventListener("keydown",function(e){if(e.key!=="Enter"&&e.key!==" ")return;var h=e.target.closest&&e.target.closest("#fbSide .sd-h[data-k245]");if(h){e.preventDefault();h.click()}});
+setInterval(apply,800);setTimeout(apply,300);
 })();
 
 /* FighterBase v44: always a way back, always a next step. */
