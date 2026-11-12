@@ -25102,7 +25102,18 @@ if(window.__FB_LOCAL_HOOK)window.__FB_LOCAL_HOOK(mark);
 async function pushOne(path){var d=store[path];var parts=partsOf(path,d),sp=sPath(path),cid=path.indexOf("clubs/")===0?null:((d&&d.clubId)||clubId());
  for(var part in parts){var key=sp+"|"+part,prev=last[key]||{},cur=parts[part],patch={},rem=[],n=0;
   Object.keys(cur).forEach(function(x){if(J(cur[x])!==J(prev[x])){patch[x]=cur[x];n++}});Object.keys(prev).forEach(function(x){if(!(x in cur)){rem.push(x);n++}});
-  if(!n)continue;await rpc("doc_patch",{p_path:sp,p_part:part,p_patch:patch,p_remove:rem,p_club:live(cid)?cid:null});last[key]=JSON.parse(J(cur))}}
+  if(!n)continue;await rpc("doc_patch",{p_path:sp,p_part:part,p_patch:patch,p_remove:rem,p_club:live(cid)?cid:null});last[key]=JSON.parse(J(cur))}
+ if(path.indexOf("clubs/")===0)await pushConfirms(path.split("/")[1],d||{})}
+/* v352 (row 11): when the club confirms a member's "I've paid (cash or bank)", or records cash for them, that member's phone hears it.
+   Each member gets only their own: league/<member> part "club" (written by the club's accounts staff, read by that member and the staff;
+   db/m6_paid_claims.sql). Before that database change is applied this quietly does nothing. */
+var confOff=false;
+async function pushConfirms(cid,c){if(confOff)return;var res=c.claimRes||{},cash=c.cash||{},own={};
+ Object.keys(store).forEach(function(k){var a=k.split("/");if(a.length!==2||a[0]!=="league")return;var ms=(store[k]||{}).ms;((ms&&ms.claims)||[]).forEach(function(cl){if(cl&&cl.id)own[cl.id]=a[1]})});
+ var uids={};Object.keys(cash).forEach(function(u){uids[u]=1});Object.keys(res).forEach(function(id){if(own[id])uids[own[id]]=1});
+ for(var u in uids){var su=u===LU?me():u;if(!UUID.test(su))continue;var cr={};Object.keys(res).forEach(function(id){if(own[id]===u)cr[id]=res[id]});
+  var part=toServer({cash:cash[u]||[],claimRes:cr}),key="league/"+su+"|club";if(J(part)===J(last[key]))continue;
+  try{await rpc("doc_patch",{p_path:"league/"+su,p_part:"club",p_patch:part,p_remove:[],p_club:cid});last[key]=JSON.parse(J(part))}catch(e){if(/not allowed|only your own card|check constraint|violates/i.test(e.message||""))confOff=true;return}}}
 async function push(){if(!on()||busy)return;var ps=Object.keys(dirty).filter(mine);Object.keys(dirty).forEach(function(p){if(!mine(p))delete dirty[p]});if(!ps.length)return;busy=true;
  var bad="";/* v350: one document failing (for example a partner card before the database knows partner cards) never holds up the others */
  for(var i=0;i<ps.length;i++){try{await pushOne(ps[i]);delete dirty[ps[i]]}catch(e){if(ps[i].indexOf("partners/")===0)delete dirty[ps[i]];else bad=bad||e.message}}
@@ -25114,10 +25125,11 @@ async function pull(){var cid=clubId();if(!on()||busy||!live(cid))return;busy=tr
  try{await role(cid);var rows=await A.api("GET","shared_docs?select=path,part,data&club_id=eq."+cid)||[];
   var mineRows=await A.api("GET","shared_docs?select=path,part,data&owner=eq."+me())||[];
   var by={};rows.concat(mineRows).forEach(function(r){(by[r.path]=by[r.path]||{})[r.part]=r.data||{}});
-  applying=true;
+  applying=true;var myc=(by["league/"+me()]||{}).club,staffHere=roleOf[cid]==="owner"||roleOf[cid]==="coach";
   Object.keys(by).forEach(function(sp){var P=by[sp],lp=lPath(sp);if(dirty[lp])return;var m={};
    ["pub","staff","self"].forEach(function(pt){if(P[pt]){Object.assign(m,P[pt]);last[sp+"|"+pt]=JSON.parse(J(P[pt]))}});
    if(P.srv)m.srv=P.srv;if(sp.indexOf("clubs/")===0)m.id=sp.split("/")[1];
+   if(sp==="clubs/"+cid&&!staffHere&&myc){m.claimRes=Object.assign({},m.claimRes||{},myc.claimRes||{});m.cash=Object.assign({},m.cash||{});m.cash[me()]=myc.cash||[]}
    /* v347: in a live club only payments Stripe confirmed (srv) count as paid in the app; cash and bank go through the club's own confirm */
    if(sp.indexOf("league/")===0){var sv=(m.srv&&m.srv.pays)||[];m.ms=m.ms?Object.assign({},m.ms):m.ms;if(m.ms)m.ms.paid=sv.filter(function(x){return x.st==="paid"||x.st==="part-refunded"}).map(function(x){return {d:x.d,amt:(+x.amt||0)-(+x.refunded||0),m:"card"}})}
    m=toLocal(m);
