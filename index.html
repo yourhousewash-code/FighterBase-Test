@@ -24482,8 +24482,7 @@ function clubCard(){var c=club();if(!c||!inClub())return "";var at=P().att||{},d
  keys.forEach(function(d){if(d<d0||d>TODAY)return;var i=Math.floor((new Date(d+"T12:00")-new Date(d0+"T12:00"))/864e5/5);bk[Math.max(0,Math.min(5,i))]++});
  var today=[];try{today=(classesOn(c,TODAY)||[]).slice().sort(function(a,b){return (a.time||"")<(b.time||"")?-1:1})}catch(x){}
  var rs=P().rsvp||{},nx=today.filter(function(x){return rs[TODAY+"_"+x.id]})[0];
- var body='<div class="g233">'+FBK.stat("checkins",{label:"Check-ins, last 30 days",sub:np?"vs the 30 days before ("+np+")":"",v:n,raw:n,prev:np||null,spark:bk.map(function(v){return v||null}),small:1})+
-  FBK.stat("club",{label:"Classes at the club today",v:today.length,sub:nx?"You're booked: "+(nx.time||""):(today.length?"Tap to book":"None today"),goto:"schedule",small:1})+'</div>';
+ var body='<div class="g233">'+FBK.stat("checkins",{label:"Check-ins, last 30 days",sub:np?"vs the 30 days before ("+np+")":"",v:n,raw:n,prev:np||null,spark:bk.map(function(v){return v||null}),small:1})+'</div>';/* v357 (Steve, 12 Nov 17:25): "Classes at the club today, tap to book" removed: This week's card beside it already lists and books them */
  return card("club","club",c.name||"Your club",body,'data-goto="mygym"',"My club")}
 
 /* ---------- What they track (only with data) ---------- */
@@ -25489,6 +25488,28 @@ function paint(){var w=document.getElementById("tmPanel");if(!w)return;var p=doc
 setInterval(function(){if(!document.hidden)reconcile()},8000);
 setTimeout(reconcile,3000);
 return {on:true,reconcile:reconcile,state:function(){return {role:role(),msg:msg,requests:nReq,added:nIns,removed:nDel,accounts:nAcc}}}
+})();
+
+/* FighterBase v357 (Steve, 12 Nov 2026 17:25: "whenever warrior spirit is shown so should there logo be and this should be site wide as
+   standard for all clubs whenever linked to a member"). Wherever a heading, label or chip shows exactly the member's club name, the club's
+   logo sits in front of it. Places that already show the logo (the top bar, the club page header) are left alone. No logo set: nothing added. */
+(function(){
+var css=document.createElement("style");
+css.textContent=".lg247{width:1.5em;height:1.5em;border-radius:50%;object-fit:cover;vertical-align:-.35em;margin-right:.45em;background:#fff;flex:none;display:inline-block}";
+document.head.appendChild(css);
+function club(){try{return (typeof clubState!=="undefined"&&clubState.club)||null}catch(e){return null}}
+var SEL="h1,h2,h3,h4,b,strong,span,a,p,div.label,summary,button,td,th,li";
+function run(){var c=club(),lg=c&&c.brand&&c.brand.logo,nm=c&&String(c.name||"").trim();
+ if(!lg||!nm||nm.length<3){document.querySelectorAll(".lg247").forEach(function(x){x.remove()});return}
+ document.querySelectorAll(".lg247").forEach(function(x){if(x.getAttribute("src")!==lg)x.src=lg});
+ var tabs=document.querySelectorAll("section:not([hidden]),header,#fbSide,.ms-ov,dialog[open]");
+ tabs.forEach(function(root){root.querySelectorAll(SEL).forEach(function(el){
+  if(el.firstElementChild&&!(el.children.length===1&&el.firstElementChild.classList.contains("lg247")))return;
+  if((el.textContent||"").trim()!==nm)return;if(el.querySelector(".lg247"))return;
+  /* already beside a logo? (top bar, club page header, club cards) */
+  var p=el.parentNode,pp=p&&p.parentNode;if((p&&p.querySelector("img"))||(pp&&pp.children.length<=4&&pp.querySelector("img")))return;
+  var i=document.createElement("img");i.className="lg247";i.alt="";i.src=lg;el.insertBefore(i,el.firstChild)})})}
+setInterval(function(){if(!document.hidden)try{run()}catch(e){}},1500);
 })();
 
 /* FighterBase v44: always a way back, always a next step. */
