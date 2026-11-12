@@ -25103,20 +25103,27 @@ function rpc(fn,args){return A.api("POST","rpc/"+fn,args||{})}
 function J(v){return JSON.stringify(v===undefined?null:v)}
 /* ---------- split a local document into its server parts ---------- */
 function partsOf(path,d){d=toServer(d||{});var k=path.split("/")[0],o={};
- if(k==="partners"){var pp={};Object.keys(d).forEach(function(x){if(x!=="srv")pp[x]=d[x]});o.pub=pp}/* v350: a training-partner card is all "pub": it exists to be found by club-mates */
+ if(k==="clubmedia"){var cm={};Object.keys(d).forEach(function(x){if(x!=="id"&&x!=="srv")cm[x]=d[x]});o.pub=cm}/* v356: a club photo (banner or gallery) is read by the club's members */
+ else if(k==="partners"){var pp={};Object.keys(d).forEach(function(x){if(x!=="srv")pp[x]=d[x]});o.pub=pp}/* v350: a training-partner card is all "pub": it exists to be found by club-mates */
  else if(k==="clubs"){var pub={},stf={};Object.keys(d).forEach(function(x){if(x==="id")return;if(x==="pay"){var p=d.pay||{};pub.pay={plans:p.plans||[]};stf.pay=p;return}if(PUB[x])pub[x]=d[x];else stf[x]=d[x]});o.pub=pub;o.staff=stf}
  else{var lp={},ls={};Object.keys(d).forEach(function(x){if(x==="srv")return;if(LPUB[x]||(LOPT[x]&&d.optIn===true))lp[x]=d[x];else ls[x]=d[x]});o.pub=lp;o.self=ls}
  return o}
 function sPath(path){var a=path.split("/");return a[1]===LU?a[0]+"/"+me():path}
 function lPath(path){var a=path.split("/");return a[1]===me()?a[0]+"/"+LU:path}
 /* ---------- push ---------- */
-function mine(path){var a=path.split("/");if(a.length!==2)return false;if(a[0]==="clubs")return live(a[1])&&(roleOf[a[1]]==="owner"||roleOf[a[1]]==="coach");return (a[0]==="league"||a[0]==="props"||a[0]==="partners")&&a[1]===LU&&live((store[path]||{}).clubId||clubId())}
-function mark(p){if(applying||!on())return;var a=String(p).split("/");if(a.length!==2||!/^(clubs|league|props|partners)$/.test(a[0]))return;dirty[p]=1;clearTimeout(timer);timer=setTimeout(push,1500)}
+var cmClub={},cmSeen={},cmSince={},cmOff=false;/* v356 club photos: the club a photo belongs to (kept after a delete), photos this phone has seen on the server (kept on this phone) */
+try{cmSeen=JSON.parse(localStorage.getItem("fb240cm")||"{}")||{}}catch(x){cmSeen={}}
+function cmKeep(){try{localStorage.setItem("fb240cm",JSON.stringify(cmSeen))}catch(x){}}
+function mine(path){var a=path.split("/");if(a.length!==2)return false;if(a[0]==="clubmedia"){var mc=(store[path]||{}).clubId||cmClub[path];return live(mc)&&(roleOf[mc]==="owner"||roleOf[mc]==="coach")}if(a[0]==="clubs")return live(a[1])&&(roleOf[a[1]]==="owner"||roleOf[a[1]]==="coach");return (a[0]==="league"||a[0]==="props"||a[0]==="partners")&&a[1]===LU&&live((store[path]||{}).clubId||clubId())}
+function mark(p){if(applying||!on())return;var a=String(p).split("/");if(a.length!==2||!/^(clubs|league|props|partners|clubmedia)$/.test(a[0]))return;if(a[0]==="clubmedia"&&store[p]&&store[p].clubId)cmClub[p]=store[p].clubId;dirty[p]=1;clearTimeout(timer);timer=setTimeout(push,1500)}
 if(window.__FB_LOCAL_HOOK)window.__FB_LOCAL_HOOK(mark);
-async function pushOne(path){var d=store[path];var parts=partsOf(path,d),sp=sPath(path),cid=path.indexOf("clubs/")===0?null:((d&&d.clubId)||clubId());
+async function pushOne(path){var d=store[path];
+ if(path.indexOf("clubmedia/")===0){if(!d){await rpc("doc_drop",{p_path:path});delete last[path+"|pub"];delete cmSeen[path];cmKeep();return}cmClub[path]=d.clubId}
+ var parts=partsOf(path,d),sp=sPath(path),cid=path.indexOf("clubs/")===0?null:((d&&d.clubId)||clubId());
  for(var part in parts){var key=sp+"|"+part,prev=last[key]||{},cur=parts[part],patch={},rem=[],n=0;
   Object.keys(cur).forEach(function(x){if(J(cur[x])!==J(prev[x])){patch[x]=cur[x];n++}});Object.keys(prev).forEach(function(x){if(!(x in cur)){rem.push(x);n++}});
   if(!n)continue;await rpc("doc_patch",{p_path:sp,p_part:part,p_patch:patch,p_remove:rem,p_club:live(cid)?cid:null});last[key]=JSON.parse(J(cur))}
+ if(path.indexOf("clubmedia/")===0){cmSeen[path]=1;cmKeep()}
  if(path.indexOf("clubs/")===0)await pushConfirms(path.split("/")[1],d||{})}
 /* v352 (row 11): when the club confirms a member's "I've paid (cash or bank)", or records cash for them, that member's phone hears it.
    Each member gets only their own: league/<member> part "club" (written by the club's accounts staff, read by that member and the staff;
@@ -25131,6 +25138,8 @@ async function pushConfirms(cid,c){if(confOff)return;var res=c.claimRes||{},cash
 async function push(){if(!on()||busy)return;var ps=Object.keys(dirty).filter(mine);Object.keys(dirty).forEach(function(p){if(!mine(p))delete dirty[p]});if(!ps.length)return;busy=true;
  var bad="";/* v350: one document failing (for example a partner card before the database knows partner cards) never holds up the others */
  var wait=false;for(var i=0;i<ps.length;i++){try{await pushOne(ps[i]);delete dirty[ps[i]]}catch(e){if(ps[i].indexOf("partners/")===0)delete dirty[ps[i]];
+  /* v356: until the database knows club photos (db/m8_club_photos.sql) a photo waits quietly on this phone and goes up later */
+  else if(ps[i].indexOf("clubmedia/")===0&&/unknown document|not allowed|function|schema cache|violates/i.test(e.message||"")){cmOff=true}
   /* v355: a coach whose request is with the owner isn't in the club yet; their card goes up once approved (fh246) */
   else if(/not linked to this club/i.test(e.message||"")&&pendingCoach())wait=true;else bad=bad||e.message}}
  msg=bad?"Club not synced yet: "+bad:(wait?"Waiting for the owner to approve you as a coach.":"");busy=false;paint()}
@@ -25139,9 +25148,14 @@ function pendingCoach(){try{var r=S.profile&&S.profile.coachReq,c=clubId();retur
 async function role(cid){try{roleOf[cid]=await rpc("my_club_role",{c:cid})}catch(e){}return roleOf[cid]}
 function q(s){return encodeURIComponent(s)}
 async function pull(){var cid=clubId();if(!on()||busy||!live(cid))return;busy=true;
- try{await role(cid);var rows=await A.api("GET","shared_docs?select=path,part,data&club_id=eq."+cid)||[];
+ try{await role(cid);var rows=await A.api("GET","shared_docs?select=path,part,data&club_id=eq."+cid+"&path=not.like.clubmedia/*")||[];
+  /* v356: club photos are large, so only new or changed ones come down; the list of paths tells this phone what was deleted */
+  var cmp=null;try{cmp=await A.api("GET","shared_docs?select=path,updated_at&club_id=eq."+cid+"&path=like.clubmedia/*")||[]}catch(x){cmp=null}
+  var cmNew=[];if(cmp){var since=cmSince[cid]||"",chg=cmp.filter(function(r){return !(r.path in cmSeen)||r.updated_at>since});
+   if(chg.length){var inc=since&&chg.every(function(r){return r.updated_at>since});cmNew=await A.api("GET","shared_docs?select=path,part,data,updated_at&club_id=eq."+cid+"&path=like.clubmedia/*"+(inc?"&updated_at=gt."+encodeURIComponent(since):""))||[]}}
   var mineRows=await A.api("GET","shared_docs?select=path,part,data&owner=eq."+me())||[];
-  var by={};rows.concat(mineRows).forEach(function(r){(by[r.path]=by[r.path]||{})[r.part]=r.data||{}});
+  var by={};rows.concat(mineRows).concat(cmNew).forEach(function(r){(by[r.path]=by[r.path]||{})[r.part]=r.data||{}});
+  cmNew.forEach(function(r){cmSeen[r.path]=1;cmClub[r.path]=cid;if(!cmSince[cid]||r.updated_at>cmSince[cid])cmSince[cid]=r.updated_at});if(cmNew.length)cmKeep();
   applying=true;var myc=(by["league/"+me()]||{}).club,staffHere=roleOf[cid]==="owner"||roleOf[cid]==="coach";
   Object.keys(by).forEach(function(sp){var P=by[sp],lp=lPath(sp);if(dirty[lp])return;var m={};
    ["pub","staff","self"].forEach(function(pt){if(P[pt]){Object.assign(m,P[pt]);last[sp+"|"+pt]=JSON.parse(J(P[pt]))}});
@@ -25151,6 +25165,11 @@ async function pull(){var cid=clubId();if(!on()||busy||!live(cid))return;busy=tr
    if(sp.indexOf("league/")===0){var sv=(m.srv&&m.srv.pays)||[];m.ms=m.ms?Object.assign({},m.ms):m.ms;if(m.ms)m.ms.paid=sv.filter(function(x){return x.st==="paid"||x.st==="part-refunded"}).map(function(x){return {d:x.d,amt:(+x.amt||0)-(+x.refunded||0),m:"card"}})}
    m=toLocal(m);
    if(J(store[lp])!==J(m)){try{D.db.doc(lp).set(m)}catch(x){}}});
+  /* a photo the club deleted on another phone goes from this one too (only photos this phone saw on the server, never one waiting to go up) */
+  if(cmp){var on2={},up=0;cmp.forEach(function(r){on2[r.path]=1});Object.keys(store).forEach(function(k){if(k.indexOf("clubmedia/")!==0||on2[k]||dirty[k]||(store[k]||{}).clubId!==cid)return;
+    if(cmSeen[k]){delete cmSeen[k];cmKeep();try{D.db.doc(k).delete()}catch(x){}}
+    /* a photo made on this phone that never reached the server (made before the club went live or before the database knew photos) goes up now */
+    else if(staffHere&&!cmOff&&String(k.split("/")[1]).indexOf("demo")!==0){cmClub[k]=cid;dirty[k]=1;up=1}});if(up){clearTimeout(timer);timer=setTimeout(push,1500)}}
   applying=false;lastPull=Date.now();msg=""}
  catch(e){applying=false;msg="Club not loaded: "+e.message}busy=false;paint()}
 /* ---------- M2: make a club live, join a live club ---------- */
@@ -25159,7 +25178,9 @@ async function makeLive(){var c=(typeof clubState!=="undefined"&&clubState.club)
  var id=await rpc("create_club",{club_name:c.name||"My club",code:code});if(!live(id))throw new Error("The database did not return a club.");
  var d=JSON.parse(J(store["clubs/"+c.id]||c));d.ownerUid=LU;delete d.id;roleOf[id]="owner";
  D.db.doc("clubs/"+id).set(d);S.profile.clubId=id;if(typeof profChanged==="function")profChanged();
- dirty["clubs/"+id]=1;dirty["league/"+LU]=1;await push();if(typeof subscribeClub==="function")subscribeClub();return id}
+ dirty["clubs/"+id]=1;dirty["league/"+LU]=1;
+ Object.keys(store).forEach(function(k){if(k.indexOf("clubmedia/")===0&&store[k]&&store[k].clubId===c.id){var md=JSON.parse(J(store[k]));md.clubId=id;D.db.doc(k).set(md);cmClub[k]=id;dirty[k]=1}});/* v356: the club's photos go live with it */
+ await push();if(typeof subscribeClub==="function")subscribeClub();return id}
 async function join(code,dob){code=String(code||"").trim().toUpperCase();if(!code)throw new Error("Enter the club code.");
  if(dob){try{await A.api("POST","profiles?on_conflict=user_id",{user_id:me(),dob:dob,display_name:(S.profile.name||"").split(" ")[0]||null},{Prefer:"resolution=merge-duplicates,return=minimal"})}catch(e){}}
  var id=await rpc("join_club",{code:code});if(!live(id))throw new Error("Unknown club code.");
