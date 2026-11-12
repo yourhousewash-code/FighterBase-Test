@@ -25101,12 +25101,31 @@ function paint(){var c=(typeof clubState!=="undefined"&&clubState.club)||null;
   d.innerHTML='<label class="label" for="cs240dob">Date of birth (needed to join a live club)</label><input type="date" id="cs240dob">';var row=jb.closest(".row");if(row&&row.parentNode)row.parentNode.insertBefore(d,row.nextSibling)}
  var st=document.getElementById("cs240st"),cid=clubId();if(live(cid)&&on()){var hb=document.getElementById("hubsetupBody")||document.getElementById("clubBody");if(hb&&!st){st=document.createElement("p");st.id="cs240st";st.className="muted small";hb.appendChild(st)}
   if(st)st.textContent=msg||("Live club: shared with your members"+(lastPull?", last updated "+new Date(lastPull).toLocaleTimeString("en-GB",{hour:"2-digit",minute:"2-digit"}):"")+".")}}
-document.addEventListener("click",function(ev){var b=ev.target.closest&&ev.target.closest("[data-cs240]");
+/* v348 (star run): the real owner of a club that is built into the app (Warrior Spirit, code WARRIOR) sets up their club with that code and starts
+   from its real details (timetable, plans, teachers), then it goes live in one step. First come, first served on the test database. */
+async function claim(name,city,code,sports){var CL=window.FB_LOCAL_CLUBS||{},k=Object.keys(CL).filter(function(x){return String(CL[x].code||"").toUpperCase()===code})[0];if(!k)return false;
+ var d=JSON.parse(J(CL[k]));d.name=name||d.name;if(city)d.city=city;d.code=code;d.ownerUid=LU;if(sports&&sports.length)d.sports=sports;delete d.id;
+ var id=((typeof slug==="function"?slug(d.name):k)||k)+"-own";D.db.doc("clubs/"+id).set(d);
+ S.profile.clubId=id;S.profile.leagueOptIn=false;S.profile.clubConsent={at:TODAY,v:1,consistency:false,weight:false};S.profile.viewMode="club";if(typeof profChanged==="function")profChanged();if(typeof subscribeClub==="function")subscribeClub();
+ var sh=document.querySelector("[data-rscreate]");sh=sh&&sh.closest("[id]");if(sh&&sh.hidden===false&&sh.id!=="tab-today")sh.hidden=true;
+ if(on()){await new Promise(function(r){setTimeout(r,800)});await makeLive();if(typeof toast==="function")toast("Your club is live","Started from "+(CL[k].name||"your club")+"'s details. Members join with code "+code+".")}
+ else if(typeof toast==="function")toast("Your club is set up","Started from "+(CL[k].name||"your club")+"'s details. Sign in to make it live for your members.");
+ setTimeout(function(){try{FHC.setView("club")}catch(e){}},600);return true}
+document.addEventListener("click",function(ev){var rc=ev.target.closest&&ev.target.closest("[data-rscreate]");
+ if(rc){var code=((document.getElementById("rsCode")||{}).value||"").trim().toUpperCase().replace(/[^A-Z0-9]/g,""),CL=window.FB_LOCAL_CLUBS||{};
+  if(code&&Object.keys(CL).some(function(x){return String(CL[x].code||"").toUpperCase()===code})){ev.preventDefault();ev.stopImmediatePropagation();
+   var sp=[].slice.call(document.querySelectorAll("[data-rssp][aria-pressed=true]")).map(function(x){return x.getAttribute("data-rssp")});
+   claim(((document.getElementById("rsName")||{}).value||"").trim(),((document.getElementById("rsCity")||{}).value||"").trim(),code,sp).catch(function(x){var m=document.getElementById("rsMsg");if(m)m.textContent="Couldn't set up: "+x.message})}
+  return}
+ var b=ev.target.closest&&ev.target.closest("[data-cs240]");
  if(b){ev.preventDefault();b.disabled=true;makeLive().then(function(){msg="";if(typeof toast==="function")toast("Your club is live","Members can join with your code.")}).catch(function(x){msg=x.message}).finally(function(){b.disabled=false;paint()});return}
  var jb=ev.target.closest&&ev.target.closest("#joinBtn");if(!jb||!on())return;var code=((document.getElementById("joinCode")||{}).value||"").trim().toUpperCase();if(!code)return;
- var local=Object.keys(store).some(function(k){return k.indexOf("clubs/")===0&&k.split("/").length===2&&String((store[k]||{}).code||"").toUpperCase()===code});if(local)return;/* a club on this phone: the normal join handles it */
+ /* v348 (star run): signed in, a code joins the LIVE club first (Jay's real Warrior Spirit can use WARRIOR); only if no live club has that code
+    does the phone's own copy (the built-in demo clubs) take it, through the normal join */
  ev.preventDefault();ev.stopImmediatePropagation();var m=document.getElementById("joinMsg");if(m)m.textContent="Looking up…";
- join(code,(document.getElementById("cs240dob")||{}).value||"").then(function(){if(m)m.textContent="";if(typeof toast==="function")toast("You've joined","Your club's timetable and plans are on their way.")}).catch(function(x){if(m)m.textContent=/date of birth/.test(x.message)?"Add your date of birth above, then tap Join again.":/parent/.test(x.message)?"Under 18: a parent or guardian needs to link first.":/unknown club/i.test(x.message)?"No club with that code. Check with your coach.":"Couldn't join: "+x.message})},true);
+ join(code,(document.getElementById("cs240dob")||{}).value||"").then(function(){if(m)m.textContent="";if(typeof toast==="function")toast("You've joined","Your club's timetable and plans are on their way.")}).catch(function(x){
+  if(/unknown club/i.test(x.message)){var local=Object.keys(store).some(function(k){return k.indexOf("clubs/")===0&&k.split("/").length===2&&String((store[k]||{}).code||"").toUpperCase()===code});if(local&&typeof jb.onclick==="function"){if(m)m.textContent="";jb.onclick();return}}
+  if(m)m.textContent=/date of birth/.test(x.message)?"Add your date of birth above, then tap Join again.":/parent/.test(x.message)?"Under 18: a parent or guardian needs to link first.":/unknown club/i.test(x.message)?"No club with that code. Check with your coach.":"Couldn't join: "+x.message})},true);
 var css=document.createElement("style");css.textContent=".cs240h{font-family:var(--body,inherit);font-weight:800;text-transform:none;letter-spacing:0;font-size:20px}";document.head.appendChild(css);
 setInterval(function(){if(document.hidden||!on())return;if(Date.now()-lastPull>20000)pull();paint()},2000);
 document.addEventListener("visibilitychange",function(){if(!document.hidden&&on())pull()});
