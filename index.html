@@ -25089,21 +25089,24 @@ function rpc(fn,args){return A.api("POST","rpc/"+fn,args||{})}
 function J(v){return JSON.stringify(v===undefined?null:v)}
 /* ---------- split a local document into its server parts ---------- */
 function partsOf(path,d){d=toServer(d||{});var k=path.split("/")[0],o={};
- if(k==="clubs"){var pub={},stf={};Object.keys(d).forEach(function(x){if(x==="id")return;if(x==="pay"){var p=d.pay||{};pub.pay={plans:p.plans||[]};stf.pay=p;return}if(PUB[x])pub[x]=d[x];else stf[x]=d[x]});o.pub=pub;o.staff=stf}
+ if(k==="partners"){var pp={};Object.keys(d).forEach(function(x){if(x!=="srv")pp[x]=d[x]});o.pub=pp}/* v350: a training-partner card is all "pub": it exists to be found by club-mates */
+ else if(k==="clubs"){var pub={},stf={};Object.keys(d).forEach(function(x){if(x==="id")return;if(x==="pay"){var p=d.pay||{};pub.pay={plans:p.plans||[]};stf.pay=p;return}if(PUB[x])pub[x]=d[x];else stf[x]=d[x]});o.pub=pub;o.staff=stf}
  else{var lp={},ls={};Object.keys(d).forEach(function(x){if(x==="srv")return;if(LPUB[x]||(LOPT[x]&&d.optIn===true))lp[x]=d[x];else ls[x]=d[x]});o.pub=lp;o.self=ls}
  return o}
 function sPath(path){var a=path.split("/");return a[1]===LU?a[0]+"/"+me():path}
 function lPath(path){var a=path.split("/");return a[1]===me()?a[0]+"/"+LU:path}
 /* ---------- push ---------- */
-function mine(path){var a=path.split("/");if(a.length!==2)return false;if(a[0]==="clubs")return live(a[1])&&(roleOf[a[1]]==="owner"||roleOf[a[1]]==="coach");return (a[0]==="league"||a[0]==="props")&&a[1]===LU&&live((store[path]||{}).clubId||clubId())}
-function mark(p){if(applying||!on())return;var a=String(p).split("/");if(a.length!==2||!/^(clubs|league|props)$/.test(a[0]))return;dirty[p]=1;clearTimeout(timer);timer=setTimeout(push,1500)}
+function mine(path){var a=path.split("/");if(a.length!==2)return false;if(a[0]==="clubs")return live(a[1])&&(roleOf[a[1]]==="owner"||roleOf[a[1]]==="coach");return (a[0]==="league"||a[0]==="props"||a[0]==="partners")&&a[1]===LU&&live((store[path]||{}).clubId||clubId())}
+function mark(p){if(applying||!on())return;var a=String(p).split("/");if(a.length!==2||!/^(clubs|league|props|partners)$/.test(a[0]))return;dirty[p]=1;clearTimeout(timer);timer=setTimeout(push,1500)}
 if(window.__FB_LOCAL_HOOK)window.__FB_LOCAL_HOOK(mark);
 async function pushOne(path){var d=store[path];var parts=partsOf(path,d),sp=sPath(path),cid=path.indexOf("clubs/")===0?null:((d&&d.clubId)||clubId());
  for(var part in parts){var key=sp+"|"+part,prev=last[key]||{},cur=parts[part],patch={},rem=[],n=0;
   Object.keys(cur).forEach(function(x){if(J(cur[x])!==J(prev[x])){patch[x]=cur[x];n++}});Object.keys(prev).forEach(function(x){if(!(x in cur)){rem.push(x);n++}});
   if(!n)continue;await rpc("doc_patch",{p_path:sp,p_part:part,p_patch:patch,p_remove:rem,p_club:live(cid)?cid:null});last[key]=JSON.parse(J(cur))}}
 async function push(){if(!on()||busy)return;var ps=Object.keys(dirty).filter(mine);Object.keys(dirty).forEach(function(p){if(!mine(p))delete dirty[p]});if(!ps.length)return;busy=true;
- try{for(var i=0;i<ps.length;i++){await pushOne(ps[i]);delete dirty[ps[i]]}msg=""}catch(e){msg="Club not synced yet: "+e.message}busy=false;paint()}
+ var bad="";/* v350: one document failing (for example a partner card before the database knows partner cards) never holds up the others */
+ for(var i=0;i<ps.length;i++){try{await pushOne(ps[i]);delete dirty[ps[i]]}catch(e){if(ps[i].indexOf("partners/")===0)delete dirty[ps[i]];else bad=bad||e.message}}
+ msg=bad?"Club not synced yet: "+bad:"";busy=false;paint()}
 /* ---------- pull ---------- */
 async function role(cid){try{roleOf[cid]=await rpc("my_club_role",{c:cid})}catch(e){}return roleOf[cid]}
 function q(s){return encodeURIComponent(s)}
@@ -25225,6 +25228,73 @@ document.addEventListener("click",function(ev){var t=ev.target.closest&&ev.targe
 var css=document.createElement("style");css.textContent=".st241h{font-family:var(--body,inherit);font-weight:800;text-transform:none;letter-spacing:0;font-size:20px}#st241c a.btn{text-decoration:none}";document.head.appendChild(css);
 setInterval(function(){if(document.hidden||!live())return;if(Date.now()-at>60000)load().then(paint);else paint()},1500);
 return {on:true,load:load,state:function(){return st[cid()]||null}}})();
+
+/* FighterBase v350: crew chats and training-partner messages between phones (star run 12 Nov 2026, job "sync the rest of the shared lists").
+   Until now a crew, its messages and cheers, and partner messages lived only on the phone they were written on. For members of the same
+   LIVE club (fh240) this module mirrors the app's "chats" documents to the database table room_docs (db/m5_chats.sql):
+     chats/<crew>                 a crew (members, names, messages and cheers kept inside it)
+     chats/<a>_<b>/msgs/<id>      a partner conversation's messages (a and b: the two account ids, sorted)
+   The database lets only the people in a room read it, and only members of the same club be in one. Push: my own changes, 1.5 s after
+   they happen. Pull: every 15 seconds while the app is open (and when it comes back to the front). Crew messages and cheers from two
+   phones at once are merged, never overwritten. Joining a crew by its code asks the database first, then carries on as before.
+   My account id is swapped for this phone's local id on the way in, and back on the way out (as fh240). Test database, made-up data. */
+var FH242=(function(){
+var A=window.FH181,D=window.__FB_DEMO;if(!A||!A.on||!A.api||!D||!D.store||!D.db)return {on:false};
+var store=D.store,LU=A.local,UUID=/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+var dirty={},last={},applying=false,timer=null,busy=false,since="1970-01-01T00:00:00Z",msg="",nIn=0,nOut=0;
+function me(){return A.me()}
+function J(v){return JSON.stringify(v===undefined?null:v)}
+function swap(o,a,b){if(!a||!b||a===b)return o;return JSON.parse(JSON.stringify(o).split(a).join(b))}
+function clubId(){try{return S&&S.profile&&S.profile.clubId||null}catch(x){return null}}
+function live(){return UUID.test(clubId()||"")&&!!me()}
+function rpc(fn,args){return A.api("POST","rpc/"+fn,args||{})}
+/* ---------- ids: a partner conversation is named by both people, sorted ---------- */
+function pairOf(id,from,to){var p=String(id).split("_");if(p.length!==2)return null;return p.map(function(x){return x===from?to:x}).sort().join("_")}
+function sPath(path){var a=path.split("/"),q=pairOf(a[1],LU,me());if(q)a[1]=q;return a.join("/")}
+function lPath(path){var a=path.split("/"),q=pairOf(a[1],me(),LU);if(q)a[1]=q;return a.join("/")}
+function isPair(id){return String(id).split("_").length===2}
+/* ---------- which of my local documents go up ---------- */
+function want(path){var a=path.split("/"),d=store[path];if(a[0]!=="chats"||!d||!live())return false;
+ if(a.length===2)return d.type==="crew"&&(d.members||[]).indexOf(LU)>=0;
+ if(a.length===4&&a[2]==="msgs"){var p=a[1].split("_");return isPair(a[1])&&p.indexOf(LU)>=0&&p.some(function(x){return x!==LU&&UUID.test(x)})&&d.from===LU}
+ return false}
+function mark(p){if(applying)return;p=String(p);if(p.indexOf("chats/")!==0)return;dirty[p]=1;clearTimeout(timer);timer=setTimeout(push,1500)}
+if(window.__FB_LOCAL_HOOK)window.__FB_LOCAL_HOOK(mark);
+/* crew lists from two phones: keep everything either side has (same message never twice), oldest first, last 60 */
+function union(a,b,cap){var seen={},out=[];(a||[]).concat(b||[]).forEach(function(x){var k=J(x);if(!seen[k]){seen[k]=1;out.push(x)}});return cap?out.slice(-cap):out}
+function mergeCrew(srv,loc){var m=Object.assign({},loc||{},srv||{});m.msgs=union((srv||{}).msgs,(loc||{}).msgs,60);m.cheers=union((srv||{}).cheers,(loc||{}).cheers,200);return m}
+async function pushOne(path){var d=JSON.parse(J(store[path])),sp=sPath(path),a=path.split("/");
+ if(a.length===2){var sd=swap(d,LU,me()),base=last[sp];if(base)sd=mergeCrew(base,sd);
+  var mem=(sd.members||[]).filter(function(x){return UUID.test(x)}),bm=((base||{}).members||[]).filter(function(x){return UUID.test(x)});
+  /* people I removed since the database's last copy (leaving, or the owner removing someone); everyone else is kept, so a new member who
+     joined on another phone a moment ago is never dropped by my older copy */
+  var drop=bm.filter(function(x){return mem.indexOf(x)<0});if(mem.indexOf(me())<0&&drop.indexOf(me())<0)mem.push(me());
+  await rpc("room_put",{p_path:sp,p_data:sd,p_members:mem,p_club:clubId(),p_drop:drop});last[sp]=sd}
+ else{await rpc("room_put",{p_path:sp,p_data:swap(d,LU,me()),p_members:null,p_club:clubId()})}
+ nOut++}
+async function push(){if(busy||!live())return;var ps=Object.keys(dirty).filter(want);Object.keys(dirty).forEach(function(p){if(!want(p))delete dirty[p]});if(!ps.length)return;busy=true;
+ try{for(var i=0;i<ps.length;i++){await pushOne(ps[i]);delete dirty[ps[i]]}msg=""}catch(e){msg="Chats not synced yet: "+e.message}busy=false}
+/* ---------- pull ---------- */
+async function pull(){if(busy||!live())return;busy=true;
+ try{var rows=await A.api("GET","room_docs?select=path,data,updated_at&updated_at=gt."+encodeURIComponent(since)+"&order=updated_at.asc&limit=500")||[];
+  applying=true;
+  rows.forEach(function(r){if(r.updated_at>since)since=r.updated_at;var lp=lPath(r.path),a=lp.split("/");if(dirty[lp])return;var d=swap(r.data||{},me(),LU);
+   if(a.length===2){if(d.type!=="crew")return;last[r.path]=r.data;var loc=store[lp];d=mergeCrew(d,loc);if(loc&&loc.members&&(loc.members.indexOf(LU)<0))return}
+   if(J(store[lp])!==J(d)){try{D.db.doc(lp).set(d);nIn++}catch(x){}}});
+  msg=""}catch(e){msg="Chats not synced yet: "+e.message}
+ applying=false;busy=false}
+/* ---------- join a crew by its code: ask the database first ---------- */
+var col0=D.db.collection;
+D.db.collection=function(p){var c=col0.apply(this,arguments);if(p!=="chats"||!c||!c.where)return c;var w0=c.where;
+ c.where=function(f,op,v){var q=w0.apply(this,arguments);if(f!=="code"||op!=="=="||!live())return q;var lim=q.limit,g0=q.get;
+  function wrap(qq){var g=qq.get;qq.get=async function(){try{var rp=await rpc("room_join",{p_code:String(v||"")});if(rp){for(var i=0;i<40&&busy;i++)await new Promise(function(r){setTimeout(r,100)});since="1970-01-01T00:00:00Z";await pull()}}catch(e){}return g.apply(qq,arguments)};return qq}
+  if(lim)q.limit=function(n){return wrap(lim.apply(q,arguments))};wrap(q);return q};
+ return c};
+setInterval(function(){if(!document.hidden)pull()},15000);
+document.addEventListener("visibilitychange",function(){if(!document.hidden)pull()});
+setTimeout(pull,2500);
+return {on:true,pull:pull,push:push,state:function(){return {live:live(),since:since,dirty:Object.keys(dirty),msg:msg,in:nIn,out:nOut}},pairOf:pairOf,sPath:sPath,lPath:lPath}
+})();
 
 /* FighterBase v44: always a way back, always a next step. */
 var N31=N31||false;
