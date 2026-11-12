@@ -3460,6 +3460,11 @@ var M={
  watch:{n:"Phone or watch",c:"#2EC4B6",i:"M8 6h8a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1H8a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1zM9 6l1-3h4l1 3M9 18l1 3h4l1-3"},
  food:{n:"Food diary",c:"#F5A524",i:"M7 3v8a2 2 0 0 0 2 2v8M7 3v5M10 3v5M17 3c-2 2-2 5-2 8h2v10"},
  tick:{n:"Daily check-in",c:"#A3E635",i:"M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18zM7.5 12.5l3 3 6-6.5"},
+ people:{n:"People",c:"#93A5FF",i:"M16 19v-1a4 4 0 0 0-4-4H7a4 4 0 0 0-4 4v1M9.5 10a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7zM21 19v-1a4 4 0 0 0-3-3.8M15.5 3.2a3.5 3.5 0 0 1 0 6.6"},
+ money:{n:"Money",c:"#34D399",i:"M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18zM9 16h6M10 16c1-1 1-2.5.5-4S10 8.5 12 8s2.5 1.2 2.5 1.2M9 12.5h4"},
+ stats:{n:"Numbers",c:"#67E8F9",i:"M4 20V11M10 20V4M16 20v-6M22 20H2"},
+ learn:{n:"Learn",c:"#E0B0FF",i:"M4 5a2 2 0 0 1 2-2h13v16H6a2 2 0 0 0-2 2zM4 19V5M8 7h7"},
+ todo:{n:"To do",c:"#CBD5E1",i:"M4 6h2M4 12h2M4 18h2M9 6h11M9 12h11M9 18h11"},
  plus:{n:"Add",c:"#CBD5E1",i:"M12 5v14M5 12h14"}
 };
 function e(s){return String(s==null?"":s).replace(/[&<>"']/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]})}
@@ -24933,6 +24938,41 @@ return {clips:CLIPS,sync:sync,stop:stop,replay:function(){stop();ran=false;sync(
  var css=document.createElement("style");css.textContent="#fbSplash .fbs-in{position:relative;overflow:hidden}#fbSplash .fbs-in::after{content:'';position:absolute;top:-20%;bottom:-20%;left:-60%;width:45%;background:linear-gradient(100deg,transparent,rgba(255,255,255,.55),transparent);transform:skewX(-20deg);mix-blend-mode:overlay;animation:gl237 .9s .95s cubic-bezier(.3,.6,.2,1) both}@keyframes gl237{to{left:130%}}";
  document.head.appendChild(css);
  setTimeout(function(){try{if(window.FBX)FBX.signature()}catch(x){}},120)})();
+
+/* FighterBase v344 (rule 25 sweep, 12 Nov 2026, 01:00 run): every figure has a visual and an icon, site-wide (Steve, 11 Nov 16:25).
+   The older screens were built before the rule. This module works them down without rewriting each one:
+   1. Icon: a card that shows figures but has no icon gets the FBK icon for its kind, chosen from its heading words (one colour and icon per
+      kind, from the FBK registry). No match, no icon: we never add a meaningless one.
+   2. Visual: where a card states a share in words ("3 of 5", "60%") and has no chart of its own, a small bar is drawn beside the words from
+      those same two numbers. Nothing is invented: no bar where there is nothing to compare.
+   My page (#h233) has its own visuals and is left alone. Runs on the open screen only, after it changes; safe to run again. */
+(function(){if(!window.FBK)return;
+var MAP=[[/\b(camp|series)\b/,"camp"],[/\b(breakfast|lunch|dinner|snacks?|meals?|foods?|pre-training|post-training|during training|by hand)\b/,"food"],[/\bdrinks?\b/,"water"],
+ [/\b(payments?|owes|promotions?|offers?|perks?|plans?|membership|prices?|concession)/,"money"],
+ [/\b(timetable|events?|calendar|areas and rooms|schedule|review in|interclub|personal training)\b/,"week"],
+ [/\b(log a session|recent sessions|training menu|training options|workouts?|round timer|sparring|skills|fitness checks|muay thai|jiu-jitsu|mma|boxing)\b/,"sessions"],
+ [/\b(members?|teachers?|teaching|coach|nudge)\b/,"people"],
+ [/\b(numbers|snapshot|attendance|insights?|growth|best week|usual range|where you are|what you have built|by day)\b/,"stats"],
+ [/\b(guided tours?|learn)\b/,"learn"],[/\b(to do|what to do next|get set up|you choose|can see|preview)\b/,"todo"]];
+var CARD="section,.panel,.fb-card,.card",HEAD="h1,h2,h3,h4,.fb-kick,.label,.k154",VIS="svg:not(.fbm-i),canvas,progress,meter,.fbm-r,.fbm-s,.mcb,[class*=bar],[class*=ring],[class*=spark],[class*=chart]";
+function kind(t){t=(t||"").toLowerCase();try{var c=clubState&&clubState.club;if(c&&c.name&&t.indexOf(String(c.name).toLowerCase())>=0)return "club"}catch(x){}for(var i=0;i<MAP.length;i++)if(MAP[i][0].test(t))return MAP[i][1];return null}
+function figures(c){var tx=(c.textContent||"").replace(/\b\d{1,2}:\d{2}\b/g," ");var m=tx.match(/\b\d[\d,.]*/g);return m?m.length:0}
+function hasIcon(c){if(c.querySelector("svg,img,.fbm-d,[class*=icon]"))return true;var hs=c.querySelectorAll(HEAD);for(var i=0;i<hs.length;i++){try{var b=getComputedStyle(hs[i],"::before");if(b&&b.content&&b.content!=="none"&&parseFloat(b.width)>=12)return true}catch(x){}}return false}
+function bars(c){var seen={},w=document.createTreeWalker(c,NodeFilter.SHOW_TEXT,null),n,todo=[];while((n=w.nextNode())&&todo.length<6){var p=n.parentNode;if(!p||p.closest("button,select,textarea,input,svg,.r25bar,.r25w,[contenteditable]"))continue;
+  var len=n.nodeValue.replace(/\s+/g," ").trim().length;if(len>44)continue;/* a figure, not a sentence that happens to mention one */var m=/\b(\d{1,4})\s+of\s+(\d{1,4})\b/.exec(n.nodeValue),f=null;if(m&&+m[2]>0&&+m[1]<=+m[2]*1.5)f=Math.min(1,+m[1]/+m[2]);else{m=len<=24?/\b(\d{1,3})\s?%/.exec(n.nodeValue):null;if(m&&+m[1]<=100)f=+m[1]/100}
+  if(f!=null){var pc=Math.round(f*100);if(seen[pc])continue;seen[pc]=1;todo.push([n,m,f])}}
+ todo.forEach(function(q){var n=q[0],m=q[1],end=m.index+m[0].length;if(n.nodeValue.length-end<=12)end=n.nodeValue.length;/* keep a short phrase whole: "3 of 20 going", then the bar */var rest=n.splitText(end),b=document.createElement("span");b.className="r25bar";b.setAttribute("role","img");b.setAttribute("aria-label",m[0]);b.innerHTML='<i style="width:'+Math.round(q[2]*100)+'%"></i>';rest.parentNode.insertBefore(b,rest)})}
+function scan(){var tab=document.querySelector("section[id^=tab-]:not([hidden])");if(!tab)return;var cards=tab.querySelectorAll(CARD);for(var i=0;i<cards.length&&i<80;i++){var c=cards[i];
+  if(c.closest("#h233")||c.querySelector(CARD)||c.offsetParent===null)continue;if(figures(c)<2)continue;
+  try{if(!hasIcon(c)){var h=c.querySelector(HEAD),k=h&&kind(h.textContent);if(k&&!h.querySelector(".r25i")){var s=document.createElement("span");s.className="r25i";s.innerHTML=FBK.dot(k,22);h.insertBefore(s,h.firstChild)}}
+   if(!c.querySelector(VIS)&&!c.querySelector(".r25bar"))bars(c)}catch(x){}}}
+var css=document.createElement("style");css.textContent=".r25i{display:inline-block;vertical-align:middle;margin:-3px 8px -3px 0}.r25bar{display:inline-block;vertical-align:middle;width:46px;height:6px;margin:0 2px 0 8px;border-radius:3px;background:rgba(255,255,255,.12);overflow:hidden}.r25bar>i{display:block;height:100%;border-radius:3px;background:#3FC57E;transition:width .6s cubic-bezier(.2,.7,.2,1)}html[data-mode=light] .r25bar,html[data-mode=grey] .r25bar{background:rgba(0,0,0,.12)}";
+document.head.appendChild(css);
+var t=null;function soon(ms){clearTimeout(t);t=setTimeout(scan,ms||350)}
+document.addEventListener("click",function(){soon(450)},true);
+var cur="";setInterval(function(){if(document.hidden)return;var tb=document.querySelector("section[id^=tab-]:not([hidden])"),id=tb?tb.id:"";if(id!==cur){cur=id;soon(300)}},600);
+setTimeout(scan,1500);setTimeout(scan,4000);setInterval(function(){if(!document.hidden)scan()},5000);
+window.FH238={scan:scan}})();
 
 /* FighterBase v345: phone-aware set-up guide (Steve, 12 Nov 2026 07:39: "Can we detect what phone they have and say you have Google Pixel 10,
    click here?"). Works out the member's phone and shows steps written for that phone, with the right links, instead of one long generic guide.
