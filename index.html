@@ -20203,7 +20203,9 @@ setInterval(paint,2000);setTimeout(function(){if(ses)pull(false)},1500);
 document.addEventListener("visibilitychange",function(){if(!document.hidden&&ses&&!Object.keys(dirty).length)pull(false)});
 return {on:true,state:function(){return {signedIn:!!ses,dirty:Object.keys(dirty).length}},
  /* v346: for the club sync (fh240): signed-in calls to the database, my account id and this phone's local id */
- api:api,me:function(){return ses&&ses.uid||null},local:uid}})();
+ api:api,me:function(){return ses&&ses.uid||null},local:uid,
+ /* v347: call one of our server functions (stripe-pay) as the signed-in member */
+ fn:async function(name,body){var go=function(){return fetch(URL_+"/functions/v1/"+name,{method:"POST",headers:hdr(true),body:JSON.stringify(body||{})})};var r=await go();if(r.status===401&&await refresh())r=await go();var j={};try{j=await r.json()}catch(e){}if(!r.ok||(j&&j.ok===false))throw new Error((j&&(j.text||j.message))||("Request failed ("+r.status+")"));return j}}})();
 
 /* FighterBase v243: weight target by date, on Home. For anyone tracking weight with a target set: a calendar-style chart of weigh-ins against the target,
    with a line above and below the target (a 1 kg band), a straight "your plan" line from where they started to the target date, month markers and today.
@@ -25072,7 +25074,10 @@ async function pull(){var cid=clubId();if(!on()||busy||!live(cid))return;busy=tr
   applying=true;
   Object.keys(by).forEach(function(sp){var P=by[sp],lp=lPath(sp);if(dirty[lp])return;var m={};
    ["pub","staff","self"].forEach(function(pt){if(P[pt]){Object.assign(m,P[pt]);last[sp+"|"+pt]=JSON.parse(J(P[pt]))}});
-   if(P.srv)m.srv=P.srv;if(sp.indexOf("clubs/")===0)m.id=sp.split("/")[1];m=toLocal(m);
+   if(P.srv)m.srv=P.srv;if(sp.indexOf("clubs/")===0)m.id=sp.split("/")[1];
+   /* v347: in a live club only payments Stripe confirmed (srv) count as paid in the app; cash and bank go through the club's own confirm */
+   if(sp.indexOf("league/")===0){var sv=(m.srv&&m.srv.pays)||[];m.ms=m.ms?Object.assign({},m.ms):m.ms;if(m.ms)m.ms.paid=sv.filter(function(x){return x.st==="paid"||x.st==="part-refunded"}).map(function(x){return {d:x.d,amt:(+x.amt||0)-(+x.refunded||0),m:"card"}})}
+   m=toLocal(m);
    if(J(store[lp])!==J(m)){try{D.db.doc(lp).set(m)}catch(x){}}});
   applying=false;lastPull=Date.now();msg=""}
  catch(e){applying=false;msg="Club not loaded: "+e.message}busy=false;paint()}
@@ -25107,6 +25112,60 @@ setInterval(function(){if(document.hidden||!on())return;if(Date.now()-lastPull>2
 document.addEventListener("visibilitychange",function(){if(!document.hidden&&on())pull()});
 setTimeout(function(){if(on())pull()},1500);
 return {on:true,pull:pull,push:push,makeLive:makeLive,join:join,partsOf:partsOf,state:function(){return {signedIn:on(),club:clubId(),role:roleOf[clubId()]||null,lastPull:lastPull,msg:msg,dirty:Object.keys(dirty)}}}})();
+
+/* FighterBase v347: card payments for live clubs through Stripe (money path M3, Steve 12 Nov 2026).
+   Club side (Money, Accounts): "Take card payments" card. The owner (or staff with the accounts permission) taps Set up, fills in Stripe's own
+   sign-up and identity checks, and is paid straight into the club's bank; refunds and disputes are in the club's own Stripe Dashboard.
+   Member side (Club, Club membership): in a live club with card payments ready, "Pay by card" opens Stripe Checkout for their plan (monthly or
+   weekly plans become a subscription, others a one-off payment), and "Manage my payment" opens Stripe's page to change card, see receipts or cancel.
+   A payment only counts once Stripe has confirmed it to our server (stripe-webhook), which writes the member's payment record; fh240 then shows
+   it as paid to the member and the club. Test mode until Steve's go-live. Server: supabase/functions/stripe-pay, stripe-webhook. */
+var FH241=(function(){
+var A=window.FH181;if(!A||!A.on||!A.fn)return {on:false};
+var UUID=/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i,st={},busy=false,note="",at=0;
+function cid(){try{return S.profile.clubId||null}catch(x){return null}}
+function live(){var c=cid();return !!(c&&UUID.test(c)&&A.me())}
+function e(s){return String(s==null?"":s).replace(/[&<>"]/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]})}
+function back(){return location.origin+location.pathname}
+function staff(){try{var f=window.FH240&&FH240.state&&FH240.state();return f&&(f.role==="owner"||f.role==="coach")}catch(x){return false}}
+async function load(){var c=cid();if(!live())return null;try{var r=await A.api("GET","club_stripe?select=charges_enabled,payouts_enabled,details_submitted,due,livemode,updated_at&club_id=eq."+c);st[c]=(r&&r[0])||{none:true};at=Date.now()}catch(x){}return st[c]}
+function ready(){var s=st[cid()];return !!(s&&s.charges_enabled)}
+async function go(body,label){if(busy)return;busy=true;note=label||"Opening Stripe…";paint();try{var r=await A.fn("stripe-pay",Object.assign({club:cid(),back:back()},body));if(r&&r.url){location.href=r.url;return}if(r&&r.status)st[cid()]=r.status;note=""}catch(x){note=x.message}busy=false;paint()}
+/* ---------- club side ---------- */
+function clubCard(){var host=document.getElementById("hubaccBody");if(!host||!host.offsetParent||!live()||!staff())return;var el=document.getElementById("st241c");
+ if(!el){el=document.createElement("div");el.id="st241c";el.className="panel plate";host.insertBefore(el,host.children[0]||null)}
+ var s=st[cid()],h='<div class="sec-h"><h2 class="st241h">Take card payments</h2>'+(s&&s.charges_enabled?'<span class="badge" style="background:rgba(63,197,126,.15);color:#7BE0A6">Ready</span>':'')+'</div>';
+ if(!s||s.none)h+='<p class="small" style="margin:0 0 8px">Members pay by card, Apple Pay or Google Pay, monthly or one-off, and the money goes straight to your club\'s bank. Stripe checks your details and handles card fees, refunds and disputes in your own Stripe Dashboard. FighterBase never holds your money.</p><div class="row"><button type="button" class="btn" data-st241="onboard">Set up card payments with Stripe</button></div>';
+ else if(!s.charges_enabled)h+='<p class="small" style="margin:0 0 8px">Stripe needs a few more details before members can pay'+(s.due?' ('+s.due+' to go)':'')+'.</p><div class="row"><button type="button" class="btn" data-st241="onboard">Finish setting up with Stripe</button><button type="button" class="btn ghost" data-st241="status">Check again</button></div>';
+ else h+='<p class="small" style="margin:0 0 8px">Members can pay by card from their Club membership. Paid members are ticked off here by themselves'+(s.payouts_enabled?'':'; Stripe will start paying out to your bank once it has checked your bank details')+'. Refunds, receipts and payouts are in your Stripe Dashboard.</p><div class="row"><a class="btn ghost" href="https://dashboard.stripe.com/" target="_blank" rel="noopener">Open my Stripe Dashboard</a><button type="button" class="btn ghost" data-st241="status">Refresh</button></div>';
+ if(s&&s.livemode===false&&!s.none)h+='<p class="muted small" style="margin:6px 0 0">Test mode: use Stripe\'s test card 4242 4242 4242 4242; no real money moves.</p>';
+ if(note)h+='<p class="small" style="margin:6px 0 0">'+e(note)+'</p>';
+ if(el.innerHTML!==h)el.innerHTML=h}
+/* ---------- member side ---------- */
+function mine(){try{var m=(clubState.members||[]).filter(function(x){return x.uid===S.uid})[0];return m&&m.srv}catch(x){return null}}
+function memberBits(){if(!live())return;var b=document.querySelectorAll("[data-pypay]");var ms=S.profile.mship,pl=null;try{pl=(clubState.club.pay.plans||[]).filter(function(p){return p.id===(ms&&ms.planId)})[0]}catch(x){}
+ b.forEach(function(x){var t=ready()?"Pay "+(pl?"£"+(pl.amt/100).toFixed(2).replace(/\.00$/,""):"")+" by card":"Card payments not switched on yet";if(x.textContent!==t)x.textContent=t;x.classList.toggle("ghost",!ready())});
+ var sv=mine(),row=b[0]&&b[0].parentNode;if(row&&sv&&sv.sub&&sv.sub.status&&!row.querySelector("[data-st241=portal]")){var m=document.createElement("button");m.type="button";m.className="btn ghost";m.setAttribute("data-st241","portal");m.textContent="Manage my payment";row.appendChild(m)}
+ /* the old "Test mode" label on the membership card */document.querySelectorAll(".panel .sec-h .badge").forEach(function(g){if(g.textContent==="Test mode"&&g.closest(".panel").querySelector("[data-pypay],[data-pyjoin]"))g.textContent=ready()?"Card payments":"Live club"})}
+/* the member's own membership card follows the server's payment record, the same as the club sees it */
+function ownPaid(){var sv=mine(),ms=S.profile&&S.profile.mship;if(!sv||!ms||ms.clubId!==cid())return;var p=(sv.pays||[]).filter(function(x){return x.st==="paid"||x.st==="part-refunded"}).map(function(x){return {d:x.d,amt:(+x.amt||0)-(+x.refunded||0),m:"card"}});
+ if(JSON.stringify(ms.paid||[])!==JSON.stringify(p)){ms.paid=p;if(typeof profChanged==="function")profChanged()}}
+function paint(){clubCard();ownPaid();memberBits()}
+document.addEventListener("click",function(ev){var t=ev.target.closest&&ev.target.closest("[data-st241],[data-pypay]");if(!t||!live())return;
+ if(t.hasAttribute("data-pypay")){ev.preventDefault();ev.stopImmediatePropagation();if(!ready()){if(typeof toast==="function")toast("Card payments aren't on yet","Your club is still setting them up. Use \"I've paid (cash or bank)\" for now.");return}
+  var ms=S.profile.mship;if(!ms||!ms.planId)return;go({action:"checkout",plan:ms.planId},"Opening secure payment…");return}
+ ev.preventDefault();var a=t.getAttribute("data-st241");if(a==="onboard")go({action:"onboard"},"Opening Stripe…");else if(a==="status")go({action:"status"},"Checking…");else if(a==="portal")go({action:"portal"},"Opening…")},true);
+/* coming back from Stripe */
+(function(){var q="";try{q=new URLSearchParams(location.search).get("fbpay")||""}catch(x){}if(!q)return;
+ try{history.replaceState(null,"",location.pathname+location.hash)}catch(x){}
+ setTimeout(function(){if(q==="done"&&typeof toast==="function")toast("Payment received","Thank you. It shows as paid as soon as Stripe confirms it, usually within a minute.");
+  if(q==="cancel"&&typeof toast==="function")toast("Payment cancelled","Nothing was taken.");
+  if(q==="back")go({action:"status"},"Checking your Stripe set-up…");
+  if(q==="refresh")go({action:"onboard"},"Reopening Stripe…");
+  if(q==="done"&&window.FH240)[5000,20000,45000].forEach(function(ms){setTimeout(function(){FH240.pull()},ms)})},2500)})();
+var css=document.createElement("style");css.textContent=".st241h{font-family:var(--body,inherit);font-weight:800;text-transform:none;letter-spacing:0;font-size:20px}#st241c a.btn{text-decoration:none}";document.head.appendChild(css);
+setInterval(function(){if(document.hidden||!live())return;if(Date.now()-at>60000)load().then(paint);else paint()},1500);
+return {on:true,load:load,state:function(){return st[cid()]||null}}})();
 
 /* FighterBase v44: always a way back, always a next step. */
 var N31=N31||false;
