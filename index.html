@@ -25540,6 +25540,66 @@ if(window.FBX)FBX.round=round;
 return {round:round,ready:function(){return {ding:!!buf[2],dingding:!!buf[3]}}};
 })();
 
+/* FighterBase v363 (13 Nov 2026, test-site check row 9): the board clubs share with each other now goes between phones.
+   Shared workouts, coaching tips and events opened to other clubs (the app's "community" documents) used to live only on the phone that
+   made them. For signed-in people in a LIVE club (fh240) they are now mirrored to the database (db/m9_community.sql):
+     - a club's staff publish, change and remove their own club's items; nobody can change another club's item;
+     - copying a workout adds one to its count, a report is counted once per person, and "we're interested" adds the club's name;
+     - anyone signed in can read the board (clubs confirm "my own content with no member details" before publishing).
+   Pull: every 30 seconds while the app is open. Items the owner removed go from other phones too. The built-in demo items never go up.
+   Until the database change is applied this does nothing and shows no error. Test database, made-up data. */
+var FH249=(function(){
+var A=window.FH181,D=window.__FB_DEMO;if(!A||!A.on||!A.api||!D||!D.store||!D.db)return {on:false};
+var store=D.store,LU=A.local,UUID=/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+var dirty={},last={},seen={},applying=false,busy=false,off=false,timer=null,since="1970-01-01T00:00:00Z",msg="",nIn=0,nOut=0;
+try{seen=JSON.parse(localStorage.getItem("fb249seen")||"{}")||{}}catch(x){seen={}}
+function keep(){try{localStorage.setItem("fb249seen",JSON.stringify(seen))}catch(x){}}
+function me(){return A.me()}
+function J(v){return JSON.stringify(v===undefined?null:v)}
+function swap(o,a,b){if(!a||!b||a===b)return o;return JSON.parse(JSON.stringify(o).split(a).join(b))}
+function clubId(){try{return S&&S.profile&&S.profile.clubId||null}catch(x){return null}}
+function role(){try{var s=window.FH240&&FH240.state&&FH240.state();return s&&s.club===clubId()?s.role:null}catch(e){return null}}
+function staff(){var r=role();return r==="owner"||r==="coach"}
+function live(){return !off&&!!me()&&UUID.test(clubId()||"")}
+function rpc(fn,a){return A.api("POST","rpc/"+fn,a||{})}
+function idOf(p){return String(p).split("/")[1]||""}
+function demo(id){return /^(demo|evd)/.test(id)}
+function mark(p){if(applying)return;p=String(p);var a=p.split("/");if(a[0]!=="community"||a.length!==2||demo(a[1]))return;dirty[p]=1;clearTimeout(timer);timer=setTimeout(push,1500)}
+if(window.__FB_LOCAL_HOOK)window.__FB_LOCAL_HOOK(mark);
+function gone(e){return /community_|schema cache|function|does not exist|relation/i.test((e&&e.message)||"")}
+async function pushOne(p){var id=idOf(p),d=store[p],cid=clubId(),prev=last[id];
+ if(!d){if(seen[id]){await rpc("community_drop",{p_id:id});delete seen[id];delete last[id];keep()}return}
+ var sd=swap(JSON.parse(J(d)),LU,me());delete sd.id;
+ if(sd.clubId===cid&&staff()){await rpc("community_put",{p_id:id,p_data:sd,p_club:cid});seen[id]=1;keep();last[id]=sd;nOut++;return}
+ /* another club's item: only the three small changes are sent */
+ if(!prev)return;
+ if((+sd.uses||0)>(+prev.uses||0))await rpc("community_bump",{p_id:id,p_kind:"use",p_club:cid});
+ if((sd.rep||[]).indexOf(me())>=0&&(prev.rep||[]).indexOf(me())<0)await rpc("community_bump",{p_id:id,p_kind:"report",p_club:cid});
+ if((sd.interest||[]).length>(prev.interest||[]).length)await rpc("community_bump",{p_id:id,p_kind:"interest",p_club:cid});
+ nOut++}
+async function push(){if(busy||!live())return;var ps=Object.keys(dirty);if(!ps.length)return;busy=true;
+ for(var i=0;i<ps.length;i++){try{await pushOne(ps[i]);delete dirty[ps[i]]}catch(e){if(gone(e)){off=true;break}msg="Board not synced yet: "+e.message;if(/another club|staff only|unknown/i.test(e.message||""))delete dirty[ps[i]]}}
+ busy=false;if(!off)setTimeout(pull,300)}
+async function pull(){if(busy||!live())return;busy=true;
+ try{var ids=await A.api("GET","community_docs?select=id,updated_at")||[],on={};ids.forEach(function(r){on[r.id]=1});
+  var rows=ids.some(function(r){return r.updated_at>since})?(await A.api("GET","community_docs?select=id,data,updated_at&updated_at=gt."+encodeURIComponent(since)+"&order=updated_at.asc&limit=300")||[]):[];
+  applying=true;
+  rows.forEach(function(r){if(r.updated_at>since)since=r.updated_at;var p="community/"+r.id;last[r.id]=r.data||{};seen[r.id]=1;if(dirty[p])return;
+   var d=swap(r.data||{},me(),LU);if(J(store[p])!==J(d)){try{D.db.doc(p).set(d);nIn++}catch(x){}}});
+  if(rows.length)keep();
+  /* an item its club removed goes from this phone too (only items this phone saw on the board, never one waiting to go up) */
+  Object.keys(store).forEach(function(k){if(k.indexOf("community/")!==0)return;var id=idOf(k);if(demo(id)||on[id]||dirty[k])return;
+   if(seen[id]){delete seen[id];delete last[id];keep();try{D.db.doc(k).delete()}catch(x){}}
+   else if(staff()&&(store[k]||{}).clubId===clubId()){dirty[k]=1;clearTimeout(timer);timer=setTimeout(push,1500)}});
+  applying=false;msg=""}
+ catch(e){applying=false;if(gone(e))off=true;else msg="Board not loaded: "+e.message}
+ busy=false}
+setInterval(function(){if(!document.hidden)pull()},30000);
+document.addEventListener("visibilitychange",function(){if(!document.hidden)pull()});
+setTimeout(pull,4000);
+return {on:true,pull:pull,push:push,state:function(){return {live:live(),off:off,since:since,dirty:Object.keys(dirty),msg:msg,in:nIn,out:nOut}}};
+})();
+
 /* FighterBase v44: always a way back, always a next step. */
 var N31=N31||false;
 (function(){
