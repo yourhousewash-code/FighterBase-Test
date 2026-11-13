@@ -5005,7 +5005,7 @@ function tag(){var m={"About you":"about","Your diet":"diet","Fight camp and qui
  Object.keys(m).forEach(function(h){var p=panelBy(h);if(p)p.dataset.pv=m[h]});
  var t=document.getElementById("pTracksBox");if(t)t.dataset.pv="mine";
  /* v229: loose cards go inside the page they belong to, so Me is a short menu */
- ({wkSet:"remind",fb124s:"remind",ringSet:"about",fb122:"about",kcalSet:"targets",acctRole:"plan"}) && Object.keys({wkSet:1,fb124s:1,ringSet:1,fb122:1,kcalSet:1,acctRole:1}).forEach(function(id){var el=document.getElementById(id),to={wkSet:"remind",fb124s:"remind",ringSet:"about",fb122:"about",kcalSet:"targets",acctRole:"plan"}[id];if(el&&el.parentNode===tab&&!el.dataset.pv)el.dataset.pv=to});var pl=document.getElementById("pPlanBox");if(pl)pl.dataset.pv="plan";
+ ({wkSet:"remind",fb124s:"remind",ringSet:"about",fb122:"about",kcalSet:"targets"}) && Object.keys({wkSet:1,fb124s:1,ringSet:1,fb122:1,kcalSet:1}).forEach(function(id){var el=document.getElementById(id),to={wkSet:"remind",fb124s:"remind",ringSet:"about",fb122:"about",kcalSet:"targets"}[id];if(el&&el.parentNode===tab&&!el.dataset.pv)el.dataset.pv=to});var pl=document.getElementById("pPlanBox");if(pl)pl.dataset.pv="plan";
  var tp=document.getElementById("trophies");if(tp&&tp.parentNode===tab)tp.remove();
  ensureData().dataset.pv="data";var rs=document.getElementById("rsBox");if(rs)rs.dataset.pv="data";
  var rd=document.getElementById("redoSetup");if(rd&&rd.closest(".row"))rd.closest(".row").style.display="none"}
@@ -18600,7 +18600,11 @@ function mount(){var o=document.getElementById("fb158");if(o)return o;o=document
  o.innerHTML='<div class="b158"></div><div class="h158" aria-hidden="true"></div><div class="c158" tabindex="-1"></div>';document.body.appendChild(o);return o}
 function unmount(){var o=document.getElementById("fb158");if(o)o.remove();cancelAnimationFrame(raf);document.removeEventListener("keydown",key,true);window.removeEventListener("resize",place);window.removeEventListener("scroll",place,true);if(lastFocus&&lastFocus.focus)try{lastFocus.focus()}catch(x){}}
 function key(ev){if(!CUR)return;if(ev.key==="Escape"){ev.preventDefault();stop()}else if(ev.key==="ArrowRight"){ev.preventDefault();go(1)}else if(ev.key==="ArrowLeft"){ev.preventDefault();go(-1)}}
-function start(id){var g=GD.filter(function(x){return x.id===id})[0];if(!g)return;try{closeTips()}catch(x){}
+function busy158(){var ids=["fbSet","roleSheet","fbOb","ob","fbGate"];for(var i=0;i<ids.length;i++){var el=document.getElementById(ids[i]);if(el&&!el.hidden&&el.offsetParent!==null&&getComputedStyle(el).display!=="none")return true}return false}
+var WAIT158=0;
+function start(id){var g=GD.filter(function(x){return x.id===id})[0];if(!g)return;
+ /* v366 (Steve 13 Nov 17:59: a page guide popped up over Set up your club): guides wait until set-up screens and the questions are closed */
+ if(busy158()){if(WAIT158++<200)setTimeout(function(){start(id)},3000);return}WAIT158=0;try{closeTips()}catch(x){}
  lastFocus=document.activeElement;
  var sc=sect(g);if(!sc||!vis(sc)){try{showTab(g.tab)}catch(x){}}
  CUR=g;IDX=0;RETRY=0;mount();document.addEventListener("keydown",key,true);window.addEventListener("resize",place);window.addEventListener("scroll",place,true);setTimeout(draw,120)}
@@ -18709,7 +18713,7 @@ document.head.appendChild(s)})();
 /* v204 tidy: Settings opens with its menu; Recent sessions shows the latest 8; icon-only buttons get plain names. */
 (function(){
 var s=document.createElement("style");s.textContent=
-"section>.q155.pg{order:-26}#tab-profile>#pmHead{order:-25}#tab-profile>#pmMenu{order:-20}#tab-profile>#acctRole{order:50}#tab-profile>#l109link{order:60}"+
+"section>.q155.pg{order:-26}#tab-profile>#pmHead{order:-25}#tab-profile>#pmMenu{order:-20}#tab-profile>#acctRole{order:-22}#tab-profile>#l109link{order:60}"+
 "#sessList>.m160{display:none!important}.sm160{margin:8px 0}";
 document.head.appendChild(s);
 function sess(){try{var l=document.getElementById("sessList");if(!l)return;var kids=[].slice.call(l.children).filter(function(k){return !k.classList.contains("sm160")}),LIM=8,open=l.dataset.open==="1";
@@ -25191,7 +25195,7 @@ async function pull(){var cid=clubId();if(!on()||busy||!live(cid))return;busy=tr
   applying=false;lastPull=Date.now();msg=""}
  catch(e){applying=false;msg="Club not loaded: "+e.message}busy=false;paint()}
 /* ---------- M2: make a club live, join a live club ---------- */
-async function makeLive(){var c=(typeof clubState!=="undefined"&&clubState.club)||null;if(!c||live(c.id))throw new Error("No club to make live on this phone.");
+async function makeLive(){var c=(typeof clubState!=="undefined"&&clubState.club)||null;if(c&&live(c.id)){msg="";return c.id}/* v366: already live, nothing to do */if(!c)throw new Error("Set up your club first.");
  var code=String(c.code||"").trim().toUpperCase();if(!code)throw new Error("Give the club a join code first.");
  var id=await rpc("create_club",{club_name:c.name||"My club",code:code});if(!live(id))throw new Error("The database did not return a club.");
  var d=JSON.parse(J(store["clubs/"+c.id]||c));d.ownerUid=LU;delete d.id;roleOf[id]="owner";
@@ -25290,7 +25294,8 @@ document.addEventListener("click",function(ev){var t=ev.target.closest&&ev.targe
  try{history.replaceState(null,"",location.pathname+location.hash)}catch(x){}
  setTimeout(function(){if(q==="done"&&typeof toast==="function")toast("Payment received","Thank you. It shows as paid as soon as Stripe confirms it, usually within a minute.");
   if(q==="cancel"&&typeof toast==="function")toast("Payment cancelled","Nothing was taken.");
-  if(q==="back")go({action:"status"},"Checking your Stripe set-up…");
+  if(q==="back"){try{showTab("hubacc");window.scrollTo(0,0)}catch(x){}/* v366: back from Stripe lands on Accounts and says what happened */
+   Promise.resolve(go({action:"status"},"Checking your Stripe set-up…")).then(function(){if(typeof toast!=="function")return;if(ready())toast("Card payments are on","Members can now pay by card from their Club membership. Next: invite your members.");else toast("Nearly there","Stripe needs a few more details. Press Finish setting up with Stripe when you're ready.")})}
   if(q==="refresh")go({action:"onboard"},"Reopening Stripe…");
   if(q==="done"&&window.FH240)[5000,20000,45000].forEach(function(ms){setTimeout(function(){FH240.pull()},ms)})},2500)})();
 var css=document.createElement("style");css.textContent=".st241h{font-family:var(--body,inherit);font-weight:800;text-transform:none;letter-spacing:0;font-size:20px}#st241c a.btn{text-decoration:none}";document.head.appendChild(css);
@@ -25617,6 +25622,18 @@ setInterval(function(){if(!document.hidden)pull()},30000);
 document.addEventListener("visibilitychange",function(){if(!document.hidden)pull()});
 setTimeout(pull,4000);
 return {on:true,pull:pull,push:push,state:function(){return {live:live(),off:off,since:since,dirty:Object.keys(dirty),msg:msg,in:nIn,out:nOut}}};
+})();
+
+/* FighterBase v366 (Steve's after-test list, 13 Nov 2026): faults seen while making a club for the Stripe test.
+   1. The club side never shows a member page. Steve saw "CLUB SIDE · TODAY" with his own fight camp and training cards: the app
+      opened Today before it knew he ran the club, and nothing moved it on. Now, whenever the club side is showing a member-only
+      screen, it goes to the club Overview instead. */
+(function(){
+var MEMBER=["today","log","stats","journey","trophies","progress","meals","shop","foods","train","workouts","cut","growth","partners","challenges","invite","devices","learn","supps","coach","nutoff"];
+function cur(){var s=document.querySelector("section[id^=tab-]:not([hidden])");return s?s.id.slice(4):""}
+function guard(){try{if(!document.body.classList.contains("hubview"))return;var t=cur();if(MEMBER.indexOf(t)>=0&&typeof showTab==="function")showTab("hubover")}catch(e){}}
+setInterval(guard,1200);
+window.FH250={guard:guard};
 })();
 
 /* FighterBase v44: always a way back, always a next step. */
