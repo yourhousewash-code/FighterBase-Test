@@ -5804,10 +5804,11 @@ function chooser(){sheet.innerHTML='<div class="cs-in"><div><span class="label" 
  '<button class="btn gold" type="button" style="width:100%;justify-content:flex-start;flex-direction:column;align-items:flex-start;gap:4px;padding:16px" data-role="member"><b>I train</b><span class="small" style="font-weight:500;text-transform:none;letter-spacing:0">Log training and progress. Link to my club for classes, booking and payments.</span></button>'+
  '<button class="btn ghost" type="button" style="width:100%;justify-content:flex-start;flex-direction:column;align-items:flex-start;gap:4px;padding:16px" data-role="club"><b>I run a club</b><span class="small" style="font-weight:500;text-transform:none;letter-spacing:0">Muay Thai, BJJ or MMA gym. Set up your club page, timetable, members and payments. Includes your own personal account.</span></button></div>';sheet.hidden=false}
 /* ---------- club setup ---------- */
-function setup(msg){var n=$("#rsName")?$("#rsName").value:"",ci=$("#rsCity")?$("#rsCity").value:"",co=$("#rsCode")?$("#rsCode").value:"";
- sheet.innerHTML='<div class="cs-in"><div><span class="label" style="color:var(--gold,#E8DFC8)">Club account</span><h2 style="margin:4px 0 0">Set up your club</h2><p class="muted small" style="margin:6px 0 0">Members join with your club code or invite link. You can add your logo, colour, website and timetable next.</p></div>'+
+function setup(msg){var n=$("#rsName")?$("#rsName").value:"",ci=$("#rsCity")?$("#rsCity").value:"",co=$("#rsCode")?$("#rsCode").value:"",me=$("#rsMe")?$("#rsMe").value:((S.profile&&S.profile.name)||"");
+ sheet.innerHTML='<div class="cs-in"><div><span class="label" style="color:var(--gold,#E8DFC8)">Club account</span><h2 style="margin:4px 0 0">Set up your club</h2><p class="muted small" style="margin:6px 0 0">Step 1: your club\'s name, town and join code. When you press Create club it goes live, ready for members. Then a few short steps: logo, timetable, prices, card payments and inviting members.</p></div>'+
+ ((S.profile&&S.profile.name)?'':'<div class="field"><label class="label" for="rsMe">Your first name</label><input type="text" id="rsMe" maxlength="40" value="'+esc(me)+'" autocomplete="given-name"></div>')+
  '<div class="field"><label class="label" for="rsName">Club name</label><input type="text" id="rsName" maxlength="50" value="'+esc(n)+'" placeholder="e.g. Iron Temple Gym"></div>'+
- '<div class="grid2"><div class="field"><label class="label" for="rsCity">Town or city</label><input type="text" id="rsCity" maxlength="40" value="'+esc(ci)+'"></div><div class="field"><label class="label" for="rsCode">Club code</label><input type="text" id="rsCode" maxlength="12" value="'+esc(co)+'" placeholder="e.g. IRON26" style="text-transform:uppercase"></div></div>'+
+ '<div class="grid2"><div class="field"><label class="label" for="rsCity">Town or city</label><input type="text" id="rsCity" maxlength="40" value="'+esc(ci)+'"></div><div class="field"><label class="label" for="rsCode">Club code</label><input type="text" id="rsCode" maxlength="12" value="'+esc(co)+'" placeholder="e.g. IRON26" style="text-transform:uppercase"><small class="muted">Members type this to join. 4 to 12 letters or numbers.</small></div></div>'+
  '<div class="field"><span class="label">What you teach</span><div class="chips">'+SPORTS.map(function(x){var on=sel.indexOf(x)>=0;return '<button type="button" class="chip" data-rssp="'+esc(x)+'" aria-pressed="'+on+'">'+(on?"✓ ":"")+esc(x)+'</button>'}).join("")+'</div></div>'+
  '<p class="small" id="rsMsg" style="margin:0;color:var(--muted)">'+esc(msg||"")+'</p><div class="row"><button class="btn gold" type="button" data-rscreate>Create club</button><button class="linkbtn" type="button" data-rslater>Later</button></div></div>';sheet.hidden=false}
 async function create(){if(busy)return;var name=$("#rsName").value.trim(),city=$("#rsCity").value.trim(),code=($("#rsCode").value||"").trim().toUpperCase().replace(/[^A-Z0-9]/g,"");
@@ -5816,7 +5817,14 @@ async function create(){if(busy)return;var name=$("#rsName").value.trim(),city=$
  try{var ex=await db.collection("clubs").where("code","==",code).limit(1).get();if(!ex.empty){busy=false;setup("That code is taken. Try another.");return}
   var id=slug(name);await db.doc("clubs/"+id).set({name:name,city:city,code:code,posts:[],challenge:null,ownerUid:S.uid,sports:sel.slice()});
   S.profile.clubId=id;S.profile.leagueOptIn=false;S.profile.clubConsent={at:TODAY,v:1,consistency:false,weight:false};S.profile.viewMode="club";profChanged();subscribeClub();
-  sheet.hidden=true;busy=false;toast("Your club is live","Share code "+code+" with your members.");setTimeout(function(){try{FHC.setView("club")}catch(e){}},600)}
+  var me2=$("#rsMe")?$("#rsMe").value.trim():"";if(me2&&!S.profile.name){S.profile.name=me2.slice(0,40);profChanged()}
+  sheet.hidden=true;busy=false;
+  /* v367 (Steve 13 Nov 18:20: set-up should be one process): Create club makes it live straight away when signed in */
+  var signed=false;try{signed=!!(window.FH240&&FH240.state&&FH240.state().signedIn)}catch(x){}
+  if(signed){toast("Making your club live…","One moment.");try{for(var w=0;w<30&&!(typeof clubState!=="undefined"&&clubState.club&&clubState.club.id===id);w++)await new Promise(function(r){setTimeout(r,200)});await FH240.makeLive();try{sessionStorage.setItem("fb65welcome",JSON.stringify({name:name,code:code}))}catch(x){}toast("Your club is live","Welcome to FighterBase. Members can join with code "+code+".")}
+   catch(e2){toast("Saved, not live yet","Open Set up and press Make my club live. ("+(e2&&e2.message||"try again")+")")}}
+  else toast("Your club is set up","Share code "+code+" with your members.");
+  setTimeout(function(){try{FHC.setView("club")}catch(e){}},600)}
  catch(e){busy=false;setup("Couldn't create the club. In this test version only the app owner can create clubs.")}}
 function pickClub(){setRole("club");var p=S.profile;p.viewMode="club";try{profChanged();closeOnboarding()}catch(e){}
  if(S.profile.clubId){sheet.hidden=true;try{subscribeClub();FHC.setView("club")}catch(e){}}else setup()}
@@ -8854,12 +8862,19 @@ var club=function(){return (typeof clubState!=="undefined"&&clubState.club)||nul
 var SP=[["Muay Thai","Muay Thai"],["Kickboxing","Kickboxing / K1"],["Brazilian Jiu-Jitsu","BJJ"],["MMA","MMA"],["Boxing","Boxing"],["Bare knuckle boxing","Bare knuckle boxing (18+)"]];
 var DN=["Mon","Tue","Wed","Thu","Fri","Sat","Sun"];
 var COLS=["#E3141E","#C81E3A","#E8DFC8","#3FC57E","#2F7BFF","#55C7D9","#B78CFF","#F4EFE6"];
-var STEPS=[["club","Your club"],["brand","Logo and colour"],["tt","Timetable"],["price","Prices"],["mem","Members"],["coach","Coaches"],["inv","Invite members"]];
-var step=0,open=false,msg="";
+var STEPS=[["club","Your club"],["brand","Logo and colour"],["tt","Timetable"],["price","Prices"],["pay","Card payments"],["mem","Members"],["coach","Coaches"],["inv","Invite members"]];
+/* v367 (Steve 13 Nov 18:12 to 18:35): one process start to finish. Card payments is a step here (with Skip for now); Finish opens
+   a "Your club is ready" page (checklist, what each part of the club side is for, your own training is optional); the welcome
+   shows when the club has just gone live; class names to pick from and 5-minute start times. */
+var CLASSES=["Muay Thai","Muay Thai beginners","Kickboxing","BJJ Gi","BJJ No-Gi","MMA","Boxing","Kids","Sparring","Fitness and conditioning","Open mat"];
+var step=0,open=false,msg="",ready=false;
+function payOn(){try{var s=window.FH241&&FH241.state&&FH241.state();return !!(s&&s.charges_enabled)}catch(e){return false}}
+function liveClub(){try{var f=window.FH240&&FH240.state&&FH240.state();return !!(f&&f.signedIn&&club()&&/^[0-9a-f]{8}-[0-9a-f]{4}-/i.test(club().id))}catch(e){return false}}
+function welcome(){try{return JSON.parse(sessionStorage.getItem("fb65welcome")||"null")}catch(e){return null}}
 function own(){try{return window.FH64?FH64.isRealOwner():(window.FHC&&FHC.isOwner())}catch(e){return false}}
 function upd(o){var c=club();if(!c||!db)return Promise.resolve();Object.assign(c,o);return db.doc("clubs/"+c.id).update(o).catch(function(){toast("Couldn't save","Check your connection and try again")})}
 function su(){var c=club()||{};return c.setup||{}}
-function done(k){var c=club()||{},s=su();if(k==="club")return !!(c.name&&(c.sports||[]).length);if(k==="brand")return !!((c.brand||{}).logo||(c.brand||{}).color);if(k==="tt")return (c.timetable||[]).length>0;if(k==="price")return ((c.pay||{}).plans||[]).length>0;
+function done(k){var c=club()||{},s=su();if(k==="club")return !!(c.name&&(c.sports||[]).length);if(k==="brand")return !!((c.brand||{}).logo||(c.brand||{}).color);if(k==="tt")return (c.timetable||[]).length>0;if(k==="price")return ((c.pay||{}).plans||[]).length>0;if(k==="pay")return payOn()||!!(s.skip||{}).pay;
  if(k==="mem")return (c.roster||[]).length>0||!!(s.skip||{}).members;if(k==="coach")return (c.coaches||[]).length>0||!!(s.skip||{}).coaches;if(k==="inv")return !!s.invited||(clubState.members||[]).length>1;return false}
 function count(){return STEPS.filter(function(x){return done(x[0])}).length}
 function gbp(p){return "£"+((+p||0)/100).toFixed(2).replace(/\.00$/,"")}
@@ -8870,11 +8885,24 @@ function body(){var c=club()||{},k=STEPS[step][0],h="";
   '<div class="field"><span class="label">Club colour</span><div class="sw-cols">'+COLS.map(function(x){return '<button type="button" class="sw-col'+(x.toLowerCase()===col.toLowerCase()?" on":"")+'" style="background:'+x+'" data-swcol="'+x+'" aria-label="'+x+'"></button>'}).join("")+'<input type="color" value="'+esc(col)+'" data-swcolpick aria-label="Pick any colour"></div></div><div class="field"><label class="label" for="swTag">Strapline (optional)</label><input type="text" id="swTag" maxlength="60" value="'+esc(b.tagline||"")+'" placeholder="e.g. Train hard. Look after each other."></div>'}
  if(k==="tt"){var T=(c.timetable||[]).slice().sort(function(a,b){return a.dow-b.dow||String(a.time).localeCompare(b.time)});h='<h2>Timetable</h2><p class="ob-sub">Your classes. Members book in and check in against these, and it powers attendance.</p>'+
   (T.length?'<div class="sw-list">'+T.map(function(x){return '<div class="sw-li"><b>'+DN[x.dow]+' '+esc(x.time)+'</b><span>'+esc(x.title)+(x.level&&x.level!=="All levels"?' · '+esc(x.level):'')+(x.coach?' · '+esc(x.coach):'')+(x.cap?' · max '+x.cap:'')+'</span><button class="linkbtn" type="button" data-swdelc="'+esc(x.id)+'" aria-label="Remove">✕</button></div>'}).join("")+'</div>':'<p class="muted small" style="margin:0">No classes yet.</p>')+
-  '<div class="ob-rec"><div class="field"><span class="label">Days</span><div class="chips">'+DN.map(function(d,i){return '<button type="button" class="chip" data-swday="'+i+'" aria-pressed="false">'+d+'</button>'}).join("")+'</div></div><div class="field"><label class="label" for="swTime">Time</label><input type="time" id="swTime" value="18:30"></div><div class="field" style="flex:1;min-width:160px"><label class="label" for="swTitle">Class</label><input type="text" id="swTitle" maxlength="40" placeholder="e.g. Muay Thai beginners"></div><div class="field"><label class="label" for="swCap">Max (optional)</label><input type="number" id="swCap" min="0" max="500" style="max-width:90px"></div><div class="field"><label class="label" for="swCoach">Coach (optional)</label><input type="text" id="swCoach" maxlength="30" style="max-width:150px"></div><div class="field"><label class="label" for="swLvl">Level</label><select id="swLvl"><option>All levels</option><option>Beginners</option><option>Intermediate</option><option>Advanced</option><option>Fight team</option><option>Kids</option></select></div><button class="btn sm" type="button" data-swaddc>Add class</button></div><p class="ob-sub small">Pick several days to add the same class on each.</p>'}
+  '<div class="ob-rec"><div class="field"><span class="label">Days</span><div class="chips">'+DN.map(function(d,i){return '<button type="button" class="chip" data-swday="'+i+'" aria-pressed="false">'+d+'</button>'}).join("")+'</div></div><div class="field"><label class="label" for="swTime">Time</label><input type="time" id="swTime" value="18:30" step="300"></div><div class="field" style="flex:1;min-width:160px"><label class="label" for="swTitle">Class</label><input type="text" id="swTitle" maxlength="40" placeholder="Pick below or type your own"><div class="chips sw-sugg">'+CLASSES.map(function(x){return '<button type="button" class="chip" data-swsug="'+esc(x)+'">'+esc(x)+'</button>'}).join("")+'</div></div><div class="field"><label class="label" for="swCap">Max (optional)</label><input type="number" id="swCap" min="0" max="500" style="max-width:90px"></div><div class="field"><label class="label" for="swCoach">Coach (optional)</label><input type="text" id="swCoach" maxlength="30" style="max-width:150px"></div><div class="field"><label class="label" for="swLvl">Level</label><select id="swLvl"><option>All levels</option><option>Beginners</option><option>Intermediate</option><option>Advanced</option><option>Fight team</option><option>Kids</option></select></div><button class="btn sm" type="button" data-swaddc>Add class</button></div><p class="ob-sub small">Pick several days to add the same class on each.</p>'}
  if(k==="price"){var L=((c.pay||{}).plans||[]);h='<h2>Prices</h2><p class="ob-sub">Your membership options. They show on your club page and drive the Accounts tab.</p>'+
   (L.length?'<div class="sw-list">'+L.map(function(x){return '<div class="sw-li"><b>'+esc(x.name)+'</b><span>'+gbp(x.amt)+' a '+esc(x.per)+'</span><button class="linkbtn" type="button" data-swdelp="'+esc(x.id)+'" aria-label="Remove">✕</button></div>'}).join("")+'</div>':'<p class="muted small" style="margin:0">No prices yet.</p>')+
   '<div class="ob-rec"><div class="field" style="flex:1;min-width:150px"><label class="label" for="swPn">Name</label><input type="text" id="swPn" maxlength="40" placeholder="e.g. Unlimited"></div><div class="field"><label class="label" for="swPa">Price (£)</label><input type="number" id="swPa" min="0" step="0.5" style="max-width:110px"></div><div class="field"><span class="label">Per</span><div class="chips">'+[["month","Month"],["week","Week"],["session","Session"]].map(function(x,i){return '<button type="button" class="chip" data-swper="'+x[0]+'" aria-pressed="'+(i===0)+'">'+x[1]+'</button>'}).join("")+'</div></div><button class="btn sm" type="button" data-swaddp>Add price</button></div>'+
   '<div class="chips"><span class="muted small">Quick add:</span>'+[["Unlimited",55,"month"],["Student",39,"month"],["Pay as you go",8,"session"],["Kids",30,"month"]].map(function(x){return '<button type="button" class="chip" data-swqp="'+esc(JSON.stringify(x))+'">'+x[0]+' £'+x[1]+'</button>'}).join("")+'</div>'}
+ if(k==="pay"){var on=payOn(),lv=liveClub();h='<h2>Card payments</h2><p class="ob-sub">Members pay their membership by card, Apple Pay or Google Pay, and the money goes straight to your club\'s bank through Stripe. FighterBase never holds your money. Optional: you can also take cash or bank transfer and mark it paid.</p>'+
+  (on?'<div class="sw-ok">Card payments are on. Members can pay from their Club membership.</div>':
+   !lv?'<p class="small" style="margin:0">Your club needs to be live first (it goes live when you sign in and create it).</p>':
+   '<div class="row"><button class="btn gold" type="button" data-st241="onboard" data-swpay>Set up card payments with Stripe</button></div>'+
+   '<details class="sw-help"><summary>What Stripe will ask, and what to choose (2 minutes)</summary><ul>'+
+   '<li><b>Business type:</b> sole trader if you run the club yourself; company if it\'s a limited company.</li>'+
+   '<li><b>Your details and ID:</b> the person responsible for the club. Stripe checks them by law.</li>'+
+   '<li><b>Bank account:</b> where your membership money is paid.</li>'+
+   '<li><b>Description:</b> for example "Muay Thai and kickboxing classes for adults and kids. Members pay a monthly membership by card through our club app."</li>'+
+   '<li><b>Statement name:</b> your club\'s name, so members recognise it on their bank statement.</li>'+
+   '<li><b>Fraud protection, Climate and Tax:</b> the included fraud protection is enough for most clubs; Climate is optional; choose Tax only if you\'re VAT-registered.</li>'+
+   '<li>You don\'t need to make a separate Stripe log-in. When you finish, Stripe brings you back here.</li></ul></details>')+
+  (on?'':'<button class="linkbtn" type="button" data-swskip="pay">Skip for now</button>')}
  if(k==="mem"){var n=(c.roster||[]).length;h='<h2>Your members</h2><p class="ob-sub">Bring in your list from Excel, Google Sheets or a CSV, including people who never use the app. It sets up your Accounts and debtors list.</p>'+
   '<div class="sw-big"><b>'+n+'</b><span>on your list</span></div><div class="row"><button class="btn" type="button" data-swimp>Import from Excel or CSV</button><button class="btn ghost" type="button" data-swacc>Open Accounts</button></div>'+(n?'':'<button class="linkbtn" type="button" data-swskip="members">Skip for now</button>')}
  if(k==="coach"){var co=(c.coaches||[]).length;h='<h2>Coaches</h2><p class="ob-sub">Give your coaches the club side: members, insights, notifications. You choose whether they see Accounts.</p>'+
@@ -8883,10 +8911,19 @@ function body(){var c=club()||{},k=STEPS[step][0],h="";
   '<div class="sw-big"><b>'+esc(c.code||"–")+'</b><span>club code</span></div><div class="row"><button class="btn gold" type="button" data-swposter data-hbposter>Print QR poster</button><button class="btn" type="button" data-swcopy>Copy invite link</button></div><p class="ob-sub small" style="word-break:break-all">'+esc(l)+'</p>'}
  return h}
 function render(){var el=document.getElementById("fbSet");if(!el){el=document.createElement("div");el.id="fbSet";el.setAttribute("role","dialog");el.setAttribute("aria-modal","true");el.setAttribute("aria-label","Set up your club");document.body.appendChild(el)}
+ if(ready){el.innerHTML=readyHTML();el.hidden=false;document.body.style.overflow="hidden";return}
  var last=step===STEPS.length-1;el.innerHTML='<div class="ob-in"><div class="ob-top"><span class="ob-brand">Club <b>setup</b></span><div class="sw-steps">'+STEPS.map(function(x,i){return '<button type="button" class="sw-dot'+(i===step?" cur":"")+(done(x[0])?" ok":"")+'" data-swgo="'+i+'" title="'+esc(x[1])+'"></button>'}).join("")+'</div><button class="linkbtn" type="button" data-swx>Close</button></div>'+
-  '<div class="ob-body"><span class="label">Step '+(step+1)+' of '+STEPS.length+' · '+esc(STEPS[step][1])+'</span>'+body()+(msg?'<p class="small" style="color:#E8DFC8;margin:0">'+esc(msg)+'</p>':'')+'</div>'+
+  '<div class="ob-body">'+(function(){var w=welcome();return w?'<div class="sw-welcome"><b>'+esc(w.name||"Your club")+' is live. Welcome to FighterBase.</b><span>Members can join now with code '+esc(w.code||"")+'. A few short steps and you\'re ready to take members and payments. Every step can be skipped and done later from Overview.</span></div>':''})()+'<span class="label">Step '+(step+1)+' of '+STEPS.length+' · '+esc(STEPS[step][1])+'</span>'+body()+(msg?'<p class="small" style="color:#E8DFC8;margin:0">'+esc(msg)+'</p>':'')+'</div>'+
   '<div class="ob-foot">'+(step>0?'<button class="btn ghost" type="button" data-swback>Back</button>':'<span></span>')+'<button class="btn '+(last?"gold":"")+'" type="button" data-swnext>'+(last?"Finish":"Save and next")+'</button></div></div>';el.hidden=false;document.body.style.overflow="hidden";msg=""}
-function close(){var el=document.getElementById("fbSet");if(el)el.hidden=true;document.body.style.overflow="";open=false;card()}
+var TOURS=[["hubover","Overview","What needs you today: classes, who's training, requests and anything overdue."],["hubmem","Members","Everyone in the club, who's active, who's gone quiet and who to nudge."],["hubclasses","Classes and workouts","Your timetable, bookings and automatic attendance."],["hubacc","Money","Who's paid, who owes, card payments and reminders."],["hubmkt","Marketing","Your club page, posts, offers and leads."],["hubkids","Kids academy","Guardians, consent, gradings and safeguarding."]];
+function readyHTML(){var c=club()||{},n=count();
+ return '<div class="ob-in"><div class="ob-top"><span class="ob-brand">Club <b>setup</b></span><span></span><button class="linkbtn" type="button" data-swx>Close</button></div><div class="ob-body">'+
+  '<span class="label">All set</span><h2>'+esc(c.name||"Your club")+' is ready</h2><p class="ob-sub">'+(n===STEPS.length?'Everything essential is done.':'You\'ve done '+n+' of '+STEPS.length+'. The rest can wait: tap one to finish it now, or later from Overview.')+' Members join with code <b>'+esc(c.code||"")+'</b>.</p>'+
+  '<div class="sw-chk">'+STEPS.map(function(x,i){var d=done(x[0]);return '<button type="button" class="sw-ck'+(d?" ok":"")+'" data-swstep2="'+i+'"><span>'+(d?"✓":(i+1))+'</span>'+esc(x[1])+'</button>'}).join("")+'</div>'+
+  '<span class="label" style="margin-top:6px">What the club side is for</span><div class="sw-tour">'+TOURS.map(function(x){return '<button type="button" class="sw-tr" data-swtour="'+x[0]+'"><b>'+esc(x[1])+'</b><span>'+esc(x[2])+'</span></button>'}).join("")+'</div>'+
+  '<p class="ob-sub small">Overview always shows what needs you next. Your own training is optional: <button class="linkbtn" type="button" data-fhsetup>answer the training questions</button> whenever you like.</p></div>'+
+  '<div class="ob-foot"><span></span><button class="btn gold" type="button" data-swgoclub>Go to my club</button></div></div>'}
+function close(){var el=document.getElementById("fbSet");try{if(!ready)sessionStorage.removeItem("fb65welcome")}catch(x){}if(el)el.hidden=true;document.body.style.overflow="";open=false;card()}
 function openAt(i){if(!own())return;step=typeof i==="number"?i:Math.max(0,STEPS.findIndex(function(x){return !done(x[0])}));if(step<0)step=0;open=true;render()}
 function val(id){var e=document.getElementById(id);return e?e.value:""}
 function saveStep(){var c=club()||{},k=STEPS[step][0];
@@ -8899,10 +8936,16 @@ document.addEventListener("click",function(e){var t=e.target;if(!t.closest)retur
  if(b=t.closest("[data-swstep]")){openAt(+b.dataset.swstep);return}
  if(t.closest("[data-swhide]")){var s0=Object.assign({},su(),{hidden:true});upd({setup:s0}).then(card);return}
  var el=document.getElementById("fbSet");if(!el||!el.contains(t)||!c)return;
+ if(ready){if(t.closest("[data-swx]")||t.closest("[data-swgoclub]")){ready=false;close();try{sessionStorage.removeItem("fb65welcome")}catch(x){}showTab("hubover");return}
+  if(b=t.closest("[data-swstep2]")){ready=false;step=+b.dataset.swstep2;render();return}
+  if(b=t.closest("[data-swtour]")){ready=false;close();try{sessionStorage.removeItem("fb65welcome")}catch(x){}showTab(b.dataset.swtour);try{window.scrollTo(0,0)}catch(x){}return}
+  if(t.closest("[data-fhsetup]")){ready=false;close();return}return}
+ if(b=t.closest("[data-swsug]")){var ti0=document.getElementById("swTitle");if(ti0){ti0.value=b.dataset.swsug;ti0.focus()}return}
+ if(t.closest("[data-swpay]")){try{sessionStorage.setItem("fb65resume","pay")}catch(x){}return}
  if(t.closest("[data-swx]")){saveStep().then(close,function(){});return}
  if(t.closest("[data-swback]")){step=Math.max(0,step-1);render();return}
  if(b=t.closest("[data-swgo]")){var to=+b.dataset.swgo;saveStep().then(function(){step=to;render()},function(){});return}
- if(t.closest("[data-swnext]")){saveStep().then(function(){if(step===STEPS.length-1){var s=Object.assign({},su(),{done:count()===STEPS.length?new Date().toISOString().slice(0,10):null});upd({setup:s});close();toast(count()===STEPS.length?"Your club is set up":"Saved","Members can join with code "+(c.code||""))}else{step++;render()}},function(){});return}
+ if(t.closest("[data-swnext]")){saveStep().then(function(){if(step===STEPS.length-1){var s=Object.assign({},su(),{done:count()===STEPS.length?new Date().toISOString().slice(0,10):null});upd({setup:s});ready=true;render()}else{step++;render()}},function(){});return}
  if(b=t.closest("[data-swsp]")){var sp=(c.sports||[]).slice(),i=sp.indexOf(b.dataset.swsp);if(i>=0)sp.splice(i,1);else sp.push(b.dataset.swsp);var nm2=val("swName"),cy=val("swCity");upd({sports:sp}).then(function(){render();var a=document.getElementById("swName");if(a)a.value=nm2;var y=document.getElementById("swCity");if(y)y.value=cy});return}
  if(b=t.closest("[data-swcol]")){var br=Object.assign({},c.brand||{},{color:b.dataset.swcol,tagline:val("swTag").trim()||(c.brand||{}).tagline||""});upd({brand:br}).then(render);return}
  if(t.closest("[data-swnologo]")){var br2=Object.assign({},c.brand||{});delete br2.logo;upd({brand:br2}).then(render);return}
@@ -8930,6 +8973,8 @@ function card(){var host=document.getElementById("huboverBody"),c=club(),w=docum
   (window.FH76?'<span class="label" style="margin-top:4px">The basics</span>':'')+'<div class="row">'+(all?'<button class="btn ghost sm" type="button" data-swopen>Review</button><button class="linkbtn" type="button" data-swhide>Hide this</button>':'<button class="btn gold sm" type="button" data-swopen>'+(n?"Carry on":"Start setup")+'</button><span class="muted small">About 15 minutes. Do it in any order.</span>')+'</div>'+(window.FH76?'<span class="label" style="margin-top:10px">Your setup programme</span>'+FH76.progCard():'');
  if(!w){w=document.createElement("div");w.id="swCard";w.className="panel plate";var ps=host.querySelectorAll(".panel");host.insertBefore(w,ps[1]||null);if(!w.parentNode)host.appendChild(w)}
  if(w.dataset.sig!==h){w.innerHTML=h;w.dataset.sig=h}}
+/* v367: back from Stripe during set-up, carry on at the card payments step */
+var resumed=false;setInterval(function(){if(resumed)return;var r=null;try{r=sessionStorage.getItem("fb65resume")}catch(x){}if(!r){resumed=true;return}var c=club();if(!c||!own())return;resumed=true;try{sessionStorage.removeItem("fb65resume")}catch(x){}var i=STEPS.findIndex(function(x){return x[0]===r});setTimeout(function(){openAt(i<0?0:i);if(window.FH241&&FH241.load)FH241.load().then(function(){if(open)render()})},1500)},1000);
 /* open once for a brand-new club */
 var auto={};setInterval(function(){try{var o=document.getElementById("tab-hubover");if(o&&!o.hidden)card();var c=club();if(c&&own()&&!open&&!auto[c.id]&&!su().hidden&&count()<=2&&document.body.classList.contains("hubview")){auto[c.id]=1;openAt()}}catch(e){}},1500);
 var st=showTab;showTab=function(t){var r=st.apply(this,arguments);try{if(t==="hubover")setTimeout(card,80)}catch(e){}return r};
@@ -8943,7 +8988,12 @@ var css=document.createElement("style");css.textContent=
  ".sw-list{display:flex;flex-direction:column;border:1px solid var(--line);border-radius:14px;overflow:hidden}.sw-li{display:flex;align-items:center;gap:12px;padding:10px 14px;border-top:1px solid var(--line)}.sw-li:first-child{border-top:0}.sw-li b{min-width:90px}.sw-li span{flex:1;color:var(--muted)}"+
  ".sw-big{display:flex;align-items:baseline;gap:10px}.sw-big b{font:900 56px var(--display,'Big Shoulders Display'),sans-serif;line-height:1;color:#E8DFC8}.sw-big span{color:var(--muted)}"+
  ".sw-bar{height:6px;border-radius:9px;background:rgba(255,255,255,.08);overflow:hidden;margin:4px 0 10px}.sw-bar i{display:block;height:100%;background:linear-gradient(90deg,#C81E3A,#E8DFC8)}"+
- ".sw-chk{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px;margin-bottom:10px}.sw-ck{all:unset;cursor:pointer;display:flex;align-items:center;gap:8px;padding:9px 12px;border-radius:12px;border:1px solid var(--line);font-size:14px}.sw-ck span{width:22px;height:22px;border-radius:50%;display:grid;place-items:center;font-size:12px;font-weight:800;background:rgba(255,255,255,.08)}.sw-ck.ok{border-color:rgba(63,197,126,.4)}.sw-ck.ok span{background:#3FC57E;color:#0B0C0F}";
+ ".sw-welcome{display:flex;flex-direction:column;gap:4px;padding:14px 16px;border-radius:14px;margin-bottom:14px;background:linear-gradient(135deg,rgba(63,197,126,.18),rgba(232,223,200,.12));border:1px solid rgba(63,197,126,.45)}.sw-welcome b{font-size:17px}.sw-welcome span{color:var(--muted);font-size:14px}"+
+ ".sw-ok{padding:12px 14px;border-radius:12px;background:rgba(63,197,126,.14);border:1px solid rgba(63,197,126,.45);font-weight:700}"+
+ ".sw-help{border:1px solid var(--line);border-radius:12px;padding:10px 14px}.sw-help summary{cursor:pointer;font-weight:700}.sw-help ul{margin:8px 0 0;padding-left:18px;display:flex;flex-direction:column;gap:6px;font-size:14px}"+
+ ".sw-sugg{margin-top:8px}.sw-sugg .chip{font-size:13px}"+
+ ".sw-tour{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:8px}.sw-tr{all:unset;cursor:pointer;display:flex;flex-direction:column;gap:3px;padding:12px 14px;border-radius:12px;border:1px solid var(--line)}.sw-tr:hover,.sw-tr:focus-visible{border-color:rgba(232,223,200,.6)}.sw-tr span{color:var(--muted);font-size:13px}"+
+".sw-chk{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px;margin-bottom:10px}.sw-ck{all:unset;cursor:pointer;display:flex;align-items:center;gap:8px;padding:9px 12px;border-radius:12px;border:1px solid var(--line);font-size:14px}.sw-ck span{width:22px;height:22px;border-radius:50%;display:grid;place-items:center;font-size:12px;font-weight:800;background:rgba(255,255,255,.08)}.sw-ck.ok{border-color:rgba(63,197,126,.4)}.sw-ck.ok span{background:#3FC57E;color:#0B0C0F}";
 document.head.appendChild(css);
 window.FH65={open:openAt,card:card,count:count};
 })();
@@ -25633,6 +25683,14 @@ var MEMBER=["today","log","stats","journey","trophies","progress","meals","shop"
 function cur(){var s=document.querySelector("section[id^=tab-]:not([hidden])");return s?s.id.slice(4):""}
 function guard(){try{if(!document.body.classList.contains("hubview"))return;var t=cur();if(MEMBER.indexOf(t)>=0&&typeof showTab==="function")showTab("hubover")}catch(e){}}
 setInterval(guard,1200);
+/* 2. v367 (Steve 13 Nov 17:48 to 17:49: "i'm supposed to be setting up a club"; "the owner might not train either"): a club sign-in
+      skips the member welcome and the training questions and goes straight to Set up your club. The owner's own training
+      questions are there later (Settings, Redo my setup questions; and the "Your club is ready" page). */
+function door(){try{return localStorage.getItem("fb_clubdoor")==="1"||/^#club\b/.test(location.hash||"")}catch(x){return false}}
+var ob0=window.openOnboarding;
+if(typeof ob0==="function")window.openOnboarding=function(){
+ try{if(door()&&typeof S!=="undefined"&&S.profile&&!S.profile.onboarded&&!S.profile.role){S.profile.onboarded=true;S.profile.obLater=true;S.profile.welcomed=true;try{localStorage.setItem("fb_welcomed","1")}catch(x){}if(typeof profChanged==="function")profChanged();return}}catch(x){}
+ return ob0.apply(this,arguments)};
 window.FH250={guard:guard};
 })();
 
