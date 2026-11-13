@@ -25694,6 +25694,158 @@ if(typeof ob0==="function")window.openOnboarding=function(){
 window.FH250={guard:guard};
 })();
 
+/* FighterBase v368 (Steve's after-test list, 13 Nov 2026).
+   1. Invite a member (Steve 18:10 and 19:47: "should this be invite, and invite should be WhatsApp with access code sent with, for club
+      all prepared, and also for text and email"). One sheet with a ready message (join link and club code) the owner can edit, then
+      WhatsApp, Text, Email, the phone's own Share menu, Copy, or the QR poster. Offered on Overview, Accounts and the set-up invite step.
+      "Add a member" in Accounts becomes "Add someone by hand" (for members who don't use the app).
+   2. Help on every page (Steve 17:59: "a help symbol that links to help with a quick easy report an error message that we can
+      investigate and fix"). A small "?" button bottom-left opens Help: get help, or Report a problem. A report keeps what the person
+      wrote plus the page, the view (member or club side), screen size, version and the last few errors, saved to their account
+      (member_private kind reports/{u}/<id>) so we can read it in the database. */
+(function(){
+function e(s){return String(s==null?"":s).replace(/[&<>"]/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]})}
+function club(){try{return (typeof clubState!=="undefined"&&clubState.club)||null}catch(x){return null}}
+function link(c){return location.origin+location.pathname+"#join="+encodeURIComponent((c&&c.code)||"")}
+function msgFor(c){return "Hi! "+((c&&c.name)||"Our club")+" is on FighterBase. Join here to book classes, check in and pay your membership: "+link(c)+"\nClub code: "+((c&&c.code)||"")}
+var css=document.createElement("style");css.textContent=
+ "#inv251,#help251{position:fixed;inset:0;z-index:100001;background:rgba(5,6,8,.78);backdrop-filter:blur(6px);display:flex;align-items:flex-end;justify-content:center}"+
+ "#inv251[hidden],#help251[hidden]{display:none}.s251{width:100%;max-width:560px;max-height:92vh;overflow:auto;background:var(--surface,#15161b);border:1px solid rgba(255,255,255,.1);border-radius:20px 20px 0 0;padding:20px;display:flex;flex-direction:column;gap:12px}"+
+ "@media(min-width:700px){#inv251,#help251{align-items:center}.s251{border-radius:20px}}"+
+ ".s251 h2{margin:0;font-size:24px}.s251 textarea{width:100%;min-height:110px;border-radius:12px;padding:12px;background:#0B0C0F;color:inherit;border:1px solid rgba(255,255,255,.14);font:inherit;font-size:15px;box-sizing:border-box}"+
+ ".g251{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:8px}.g251 .btn{width:100%;min-height:48px;justify-content:center}"+
+ "#q251{position:fixed;left:12px;bottom:calc(84px + env(safe-area-inset-bottom,0px));z-index:9990;width:44px;height:44px;border-radius:50%;border:1px solid rgba(183,140,255,.55);background:rgba(28,22,44,.92);color:#D9C6FF;font:800 20px/1 var(--body,inherit);cursor:pointer;box-shadow:0 6px 18px rgba(0,0,0,.35)}"+
+ "#q251:focus-visible{outline:2px solid #D9C6FF;outline-offset:3px}body.fb-desk #q251{left:auto;right:18px;bottom:18px}"+
+ ".ok251{padding:12px 14px;border-radius:12px;background:rgba(63,197,126,.14);border:1px solid rgba(63,197,126,.45)}";
+document.head.appendChild(css);
+/* ---------- 1. invite ---------- */
+function sheet(id){var s=document.getElementById(id);if(!s){s=document.createElement("div");s.id=id;s.setAttribute("role","dialog");s.setAttribute("aria-modal","true");s.hidden=true;document.body.appendChild(s)}return s}
+function openInv(){var c=club();if(!c||!c.code){if(typeof toast==="function")toast("Set up your club first","Your club needs a join code before you can invite members.");return}
+ var s=sheet("inv251");s.setAttribute("aria-label","Invite members");
+ s.innerHTML='<div class="s251"><div><span class="label">Invite members</span><h2>Invite to '+e(c.name||"your club")+'</h2><p class="muted small" style="margin:6px 0 0">Your message is ready with the join link and club code <b>'+e(c.code)+'</b>. Change it if you like, then pick how to send it.</p></div>'+
+  '<label class="label" for="inv251t">Message</label><textarea id="inv251t">'+e(msgFor(c))+'</textarea>'+
+  '<div class="g251"><button class="btn gold" type="button" data-inv251="wa">WhatsApp</button><button class="btn" type="button" data-inv251="sms">Text message</button><button class="btn" type="button" data-inv251="mail">Email</button>'+
+  (navigator.share?'<button class="btn" type="button" data-inv251="share">More ways…</button>':'')+'<button class="btn ghost" type="button" data-inv251="copy">Copy message</button><button class="btn ghost" type="button" data-hbposter data-inv251="poster">QR poster</button></div>'+
+  '<p class="muted small" style="margin:0">New members join with the link or code, then choose what your club can see.</p><div class="row"><button class="linkbtn" type="button" data-inv251="x">Close</button></div></div>';
+ s.hidden=false;setTimeout(function(){var b=s.querySelector("[data-inv251=wa]");if(b)b.focus()},50)}
+function mark(){try{var c=club();if(c&&typeof db!=="undefined"&&db){var su=Object.assign({},c.setup||{},{invited:true});c.setup=su;db.doc("clubs/"+c.id).update({setup:su}).catch(function(){})}}catch(x){}}
+document.addEventListener("click",function(ev){var t=ev.target;if(!t.closest)return;
+ if(t.closest("[data-fh251]")){ev.preventDefault();openInv();return}
+ var b=t.closest("[data-inv251]");if(!b)return;var a=b.dataset.inv251,s=document.getElementById("inv251"),txt=((document.getElementById("inv251t")||{}).value||"").trim(),c=club();
+ if(a==="x"){s.hidden=true;return}
+ if(a==="poster"){s.hidden=true;mark();return}/* fh53 makes the poster */
+ var u=encodeURIComponent(txt);
+ if(a==="wa"){mark();window.open("https://wa.me/?text="+u,"_blank","noopener");return}
+ if(a==="sms"){mark();location.href="sms:?&body="+u;return}
+ if(a==="mail"){mark();location.href="mailto:?subject="+encodeURIComponent("Join "+((c&&c.name)||"our club")+" on FighterBase")+"&body="+u;return}
+ if(a==="share"){mark();navigator.share({title:"Join "+((c&&c.name)||"our club"),text:txt}).catch(function(){});return}
+ if(a==="copy"){mark();try{navigator.clipboard.writeText(txt).then(function(){if(typeof toast==="function")toast("Message copied","Paste it anywhere.")},function(){})}catch(x){}return}},true);
+/* put "Invite a member" where owners look for it */
+function place(){try{
+ var ad=document.querySelector("[data-acadd]");if(ad){if(ad.textContent==="Add a member")ad.textContent="Add someone by hand";if(!ad.parentNode.querySelector("[data-fh251]")){var b=document.createElement("button");b.type="button";b.className="btn gold sm";b.setAttribute("data-fh251","");b.textContent="Invite a member";ad.parentNode.insertBefore(b,ad.parentNode.firstChild)}}
+ var hc=document.querySelector("[data-hubcopy]");if(hc&&!hc.parentNode.querySelector("[data-fh251]")){var b2=document.createElement("button");b2.type="button";b2.className="btn gold sm";b2.setAttribute("data-fh251","");b2.textContent="Invite by WhatsApp, text or email";hc.parentNode.insertBefore(b2,hc)}
+ var sc=document.querySelector("#fbSet [data-swcopy]");if(sc&&!sc.parentNode.querySelector("[data-fh251]")){var b3=document.createElement("button");b3.type="button";b3.className="btn gold";b3.setAttribute("data-fh251","");b3.textContent="Send an invite";sc.parentNode.insertBefore(b3,sc.parentNode.firstChild)}
+}catch(x){}}
+setInterval(place,1200);
+/* ---------- 2. help and report a problem ---------- */
+var ERR=[];window.addEventListener("error",function(x){try{ERR.push(String(x.message||"").slice(0,160)+" @"+String(x.filename||"").split("/").pop()+":"+x.lineno);if(ERR.length>8)ERR.shift()}catch(y){}});
+function cur(){var s=document.querySelector("section[id^=tab-]:not([hidden])");return s?s.id.slice(4):""}
+function curName(){var t=cur();try{return (typeof TABNAME!=="undefined"&&TABNAME[t])||t}catch(x){return t}}
+var LAST="";
+function openHelp(mode){var s=sheet("help251");s.setAttribute("aria-label","Help");
+ if(mode==="report"){s.innerHTML='<div class="s251"><div><span class="label">Report a problem</span><h2>What went wrong?</h2><p class="muted small" style="margin:6px 0 0">Say what you were trying to do and what happened. We also keep which page you were on ('+e(curName())+'), your screen size and any error, so we can find it and fix it.</p></div>'+
+  '<textarea id="help251t" placeholder="e.g. I pressed Create club and it took me back to Today"></textarea><div class="row"><button class="btn gold" type="button" data-help251="send">Send report</button><button class="linkbtn" type="button" data-help251="x">Cancel</button></div><p id="help251m" class="muted small" style="margin:0"></p></div>'}
+ else s.innerHTML='<div class="s251"><div><span class="label">Help</span><h2>How can we help?</h2><p class="muted small" style="margin:6px 0 0">You\'re on: '+e(curName())+'</p></div>'+
+  '<div class="g251"><button class="btn gold" type="button" data-help251="report">Report a problem</button><button class="btn" type="button" data-help251="guide">Show me this page</button><button class="btn ghost" type="button" data-help251="help">Help and contact</button></div>'+
+  '<div class="row"><button class="linkbtn" type="button" data-help251="x">Close</button></div></div>';
+ s.hidden=false}
+function save(text){var A=window.FH181,D=window.__FB_DEMO;var id=new Date().toISOString().replace(/[^0-9]/g,"").slice(0,14)+Math.random().toString(36).slice(2,5);
+ var r={at:new Date().toISOString(),text:text.slice(0,2000),page:cur(),pageName:curName(),view:document.body.classList.contains("hubview")?"club":"member",club:(club()||{}).name||"",w:innerWidth,h:innerHeight,ua:navigator.userAgent.slice(0,180),errors:ERR.slice(),v:(document.querySelector('meta[name="fb-version"]')||{}).content||""};
+ if(A&&A.on&&A.local&&D&&D.db){D.db.doc("reports/"+A.local+"/"+id).set(r);return true}
+ try{var k="fb251reports",L=JSON.parse(localStorage.getItem(k)||"[]");L.push(r);localStorage.setItem(k,JSON.stringify(L.slice(-20)))}catch(x){}return false}
+document.addEventListener("click",function(ev){var t=ev.target;if(!t.closest)return;
+ if(t.closest("#q251")){openHelp();return}
+ var b=t.closest("[data-help251]");if(!b)return;var a=b.dataset.help251,s=document.getElementById("help251");
+ if(a==="x"){s.hidden=true;return}
+ if(a==="report"){openHelp("report");setTimeout(function(){var x=document.getElementById("help251t");if(x)x.focus()},50);return}
+ if(a==="guide"){s.hidden=true;try{var t0=cur(),g=window.FH158&&(FH158.GD||[]).filter(function(x){return x.tab===t0})[0];if(g)FH158.start(g.id);else if(typeof toast==="function")toast("No guide for this page yet","Report a problem if something's unclear and we'll add one.")}catch(x){}return}
+ if(a==="help"){s.hidden=true;try{showTab("profile")}catch(x){}setTimeout(function(){var h=[].slice.call(document.querySelectorAll("button")).filter(function(x){return /^get help$/i.test((x.textContent||"").trim())})[0];if(h)h.scrollIntoView({block:"center"})},400);return}
+ if(a==="send"){var txt=((document.getElementById("help251t")||{}).value||"").trim();var m=document.getElementById("help251m");if(!txt){if(m)m.textContent="Write a few words about what went wrong.";return}
+  var on=save(txt);s.querySelector(".s251").innerHTML='<div class="ok251"><b>Thanks, report sent.</b><br>'+(on?"We'll look into it and fix it.":"Saved on this device. It's sent when you're signed in.")+'</div><div class="row"><button class="btn" type="button" data-help251="x">Close</button></div>';return}});
+function qbtn(){if(document.getElementById("q251"))return;var b=document.createElement("button");b.id="q251";b.type="button";b.setAttribute("aria-label","Help and report a problem");b.title="Help";b.textContent="?";document.body.appendChild(b)}
+function vis(){var q=document.getElementById("q251");if(!q)return;var hide=["fbGate","fbOb","fbSet","fbw"].some(function(id){var el=document.getElementById(id);return el&&!el.hidden&&getComputedStyle(el).display!=="none"});if(q.hidden!==hide)q.hidden=hide}
+setTimeout(qbtn,1500);setInterval(vis,800);
+window.FH251={invite:openInv,help:openHelp};
+})();
+
+/* FighterBase v368 (Steve 13 Nov 19:59 to 20:01): "a tab or a bar or a small menu that tells the club what to do next or shows what's
+   outstanding" ... "on the right hand side an always there column with list boxes of things need doing, and each one is a link to the
+   function that needs completing".
+   Club side only. A "To do" tab on the right edge opens the list; on a wide screen (1800 px and up) the list stays open as a column.
+   Set-up first (most urgent first): make the club live, card payments, classes, prices, trainers, invite members. Then day to day:
+   fights to confirm, coaches asking to join, members who owe money, members who've gone quiet. Each box goes straight to the place
+   to do it. Hidden while a set-up screen or sheet is open. */
+(function(){
+function e(s){return String(s==null?"":s).replace(/[&<>"]/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]})}
+function club(){try{return (typeof clubState!=="undefined"&&clubState.club)||null}catch(x){return null}}
+function own(){try{return !!(window.FHC&&FHC.isOwner())}catch(x){return false}}
+var UUID=/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+var KEY="fb252",pref={};try{pref=JSON.parse(localStorage.getItem(KEY)||"{}")||{}}catch(x){pref={}}
+function savePref(){try{localStorage.setItem(KEY,JSON.stringify(pref))}catch(x){}}
+function items(){var c=club();if(!c)return [];var L=[],su=c.setup||{},sk=su.skip||{},M=[];try{M=clubState.members||[]}catch(x){}
+ var signed=false;try{signed=!!(window.FH240&&FH240.state&&FH240.state().signedIn)}catch(x){}
+ var live=UUID.test(c.id||"");
+ if(signed&&!live)L.push({u:2,t:"Make your club live",s:"So members can join and book from their phones",a:'data-t252go="hubsetup"'});
+ var pay=null;try{pay=window.FH241&&FH241.state&&FH241.state()}catch(x){}
+ if(live&&!(pay&&pay.charges_enabled)&&!sk.pay)L.push({u:2,t:"Set up card payments",s:pay&&!pay.none?"Stripe needs a few more details":"Members pay by card; money goes to your bank",a:'data-swstep="4"'});
+ if(!(c.timetable||[]).length)L.push({u:1,t:"Schedule your classes",s:"Members book and check in against these",a:'data-swstep="2"'});
+ if(!((c.pay||{}).plans||[]).length)L.push({u:1,t:"Add membership prices",s:"Shown on your club page and used for payments",a:'data-swstep="3"'});
+ if(!(c.coaches||[]).length&&!sk.coaches)L.push({u:0,t:"Add your trainers",s:"Give coaches the club side",a:'data-swstep="6"'});
+ if(!su.invited&&M.length<2)L.push({u:0,t:"Invite your members",s:"WhatsApp, text or email, all ready",a:'data-fh251'});
+ /* day to day */
+ var frc=c.frc||{},pend=0;M.forEach(function(m){(m.fr||[]).forEach(function(f){if(!frc[m.uid+"_"+f.id])pend++})});
+ if(pend)L.push({u:2,t:"Confirm "+pend+" fight"+(pend>1?"s":""),s:"Members are waiting for you",a:'data-t252go="hubins"'});
+ var co=c.coaches||[],decl=c.coachDecl||{},req=M.filter(function(m){var r=m.coachReq;return r&&r.club===c.id&&c.coachCode&&r.code===c.coachCode&&co.indexOf(m.uid)<0&&!decl[m.uid]}).length;
+ if(req)L.push({u:2,t:req+" asking to coach",s:"Approve or decline them",a:'data-t252go="hubover"'});
+ var owe=0;try{if(window.FH57)(FH57.roster()||[]).forEach(function(r){var a=FH57.acct(r);if(a&&+a.bal>0.009)owe++})}catch(x){}
+ if(owe)L.push({u:1,t:"Chase "+owe+" payment"+(owe>1?"s":""),s:"Members who owe money",a:'data-t252go="hubacc"'});
+ var today=new Date(),quiet=M.filter(function(m){var d=m.daily||{},ks=Object.keys(d).filter(function(k){var v=d[k];return v&&(v.ck||v.s)}).sort();if(!ks.length)return false;return (today-new Date(ks[ks.length-1]+"T12:00"))/864e5>=21}).length;
+ if(quiet)L.push({u:0,t:"Nudge "+quiet+" quiet member"+(quiet>1?"s":""),s:"Not seen for 3 weeks or more",a:'data-t252go="hubmem"'});
+ return L.sort(function(a,b){return b.u-a.u})}
+var css=document.createElement("style");css.textContent=
+ "#td252b{position:fixed;right:0;top:46%;z-index:9989;writing-mode:vertical-rl;transform:rotate(180deg);border:1px solid rgba(232,223,200,.55);border-right:0;border-radius:0 12px 12px 0;background:rgba(30,26,16,.95);color:#E8DFC8;font:800 13px var(--body,inherit);letter-spacing:.08em;padding:14px 9px;cursor:pointer;display:flex;align-items:center;gap:8px}"+
+ "#td252b i{font-style:normal;writing-mode:horizontal-tb;transform:rotate(180deg);background:#E8DFC8;color:#0B0C0F;border-radius:9px;min-width:18px;padding:1px 5px;text-align:center}"+
+ "#td252{position:fixed;top:0;right:0;bottom:0;width:min(360px,92vw);z-index:9991;background:var(--surface,#14151a);border-left:1px solid rgba(255,255,255,.1);box-shadow:-12px 0 30px rgba(0,0,0,.4);display:flex;flex-direction:column;transform:translateX(105%);transition:transform .22s ease}"+
+ "#td252.on{transform:none}#td252 header{display:flex;align-items:center;justify-content:space-between;padding:16px 16px 8px}#td252 header b{font:900 22px var(--display,inherit);text-transform:uppercase}"+
+ "#td252 .l252{overflow:auto;padding:4px 12px 16px;display:flex;flex-direction:column;gap:8px}.i252{all:unset;cursor:pointer;display:flex;gap:10px;align-items:flex-start;padding:12px;border-radius:12px;border:1px solid rgba(255,255,255,.1);background:rgba(255,255,255,.03)}"+
+ ".i252:hover,.i252:focus-visible{border-color:rgba(232,223,200,.6)}.i252 em{font-style:normal;font-size:11px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;padding:2px 7px;border-radius:7px;flex:none;margin-top:1px}"+
+ ".i252.u2 em{background:rgba(200,30,58,.2);color:#FF8A70}.i252.u1 em{background:rgba(232,223,200,.18);color:#E8DFC8}.i252.u0 em{background:rgba(255,255,255,.08);color:#C9C2B6}"+
+ ".i252 div{display:flex;flex-direction:column;gap:2px}.i252 span{color:var(--muted);font-size:13px}.n252{padding:14px;color:var(--muted)}"+
+ "@media (min-width:1800px){body.hubview.pin252>.wrap{margin-right:372px!important;width:auto!important}body.hubview.pin252 #td252{transform:none;box-shadow:none}body.hubview.pin252 #td252b{display:none}}"+
+ "@media (min-width:1800px){body.hubview.pin252 #q251{right:378px}}"+
+ "@media (prefers-reduced-motion:reduce){#td252{transition:none}}";
+document.head.appendChild(css);
+var open=false,sig="";
+function ensure(){var b=document.getElementById("td252b");if(!b){b=document.createElement("button");b.id="td252b";b.type="button";b.setAttribute("aria-controls","td252");document.body.appendChild(b)}
+ var p=document.getElementById("td252");if(!p){p=document.createElement("aside");p.id="td252";p.setAttribute("aria-label","To do");p.innerHTML='<header><b>To do</b><button class="linkbtn" type="button" data-t252x>Close</button></header><div class="l252"></div>';document.body.appendChild(p)}return [b,p]}
+function busy(){return ["fbSet","roleSheet","fbOb","fbGate","inv251","help251"].some(function(id){var el=document.getElementById(id);return el&&!el.hidden&&getComputedStyle(el).display!=="none"})}
+function paint(){var hub=document.body.classList.contains("hubview")&&own()&&club();var ep=ensure(),b=ep[0],p=ep[1];
+ var show=!!hub&&!busy();b.hidden=!show;p.style.display=show?"":"none";document.body.classList.toggle("pin252",!!hub&&pref.pin!==false);
+ if(!show)return;var L=items();b.innerHTML='To do'+(L.length?'<i>'+L.length+'</i>':'');b.setAttribute("aria-expanded",String(open));p.classList.toggle("on",open);
+ var h=L.length?L.map(function(x){return '<button type="button" class="i252 u'+x.u+'" '+x.a+'><em>'+(x.u===2?"Now":x.u===1?"Soon":"Next")+'</em><div><b>'+e(x.t)+'</b><span>'+e(x.s)+'</span></div></button>'}).join(""):'<p class="n252">Nothing outstanding. Your club is running smoothly.</p>';
+ h+='<p class="n252" style="padding-top:0;font-size:12px">'+(window.innerWidth>=1800?'<button class="linkbtn" type="button" data-t252pin>'+(pref.pin===false?"Keep this list open":"Hide this list")+'</button>':'')+'</p>';
+ if(h!==sig){p.querySelector(".l252").innerHTML=h;sig=h}}
+document.addEventListener("click",function(ev){var t=ev.target;if(!t.closest)return;
+ if(t.closest("#td252b")){open=!open;paint();return}
+ if(t.closest("[data-t252x]")){open=false;if(window.innerWidth>=1800){pref.pin=false;savePref()}paint();return}
+ if(t.closest("[data-t252pin]")){pref.pin=pref.pin===false;savePref();sig="";paint();return}
+ var g=t.closest("[data-t252go]");if(g){try{showTab(g.dataset.t252go);window.scrollTo(0,0)}catch(x){}}
+ if(t.closest(".i252")&&window.innerWidth<1800){open=false;setTimeout(paint,50)}});
+document.addEventListener("keydown",function(ev){if(ev.key==="Escape"&&open){open=false;paint()}});
+setInterval(function(){if(!document.hidden)try{paint()}catch(x){}},1500);
+window.FH252={items:items,paint:paint};
+})();
+
 /* FighterBase v44: always a way back, always a next step. */
 var N31=N31||false;
 (function(){
