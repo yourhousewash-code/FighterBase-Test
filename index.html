@@ -20146,13 +20146,19 @@ function loadProviders(){fetch(URL_+"/auth/v1/settings",{headers:{apikey:KEY}}).
 function oauth(p){if(!prov[p]){err=p==="google"?"Google sign-in is not switched on yet. It needs a one-off setup first.":"Apple sign-in comes when the Apple developer account is set up.";msg="";paint();return}
  location.href=URL_+"/auth/v1/authorize?provider="+p+"&redirect_to="+encodeURIComponent(location.origin+"/")}
 function backupLocal(){try{var o={};mine().forEach(function(p){o[p]=store[p]});localStorage.setItem("fb_local_backup",JSON.stringify({at:Date.now(),docs:o}))}catch(e){}}
+/* v365 (Steve, 13 Nov 18:36, "took me back here again"): the database keeps a document's fields in its own order, so comparing the
+   raw text always looked like a change and every other return to the app reloaded it onto Today. Compare with the fields sorted, so
+   only a real change from another device reloads, and when it does, come back to the same screen. */
+function canon(v){return JSON.stringify(v,function(k,x){if(x&&typeof x==="object"&&!Array.isArray(x)){var o={};Object.keys(x).sort().forEach(function(q){o[q]=x[q]});return o}return x})}
+function keepPlace(){try{var t=document.querySelector("section[id^=tab-]:not([hidden])");sessionStorage.setItem("fb181tab",JSON.stringify({t:t?t.id.slice(4):"",y:window.scrollY||0}))}catch(x){}}
+setTimeout(function(){try{var v=JSON.parse(sessionStorage.getItem("fb181tab")||"null");sessionStorage.removeItem("fb181tab");if(v&&v.t&&typeof showTab==="function"){showTab(v.t);setTimeout(function(){try{window.scrollTo(0,v.y||0)}catch(x){}},300)}}catch(x){}},2500);
 async function pull(first){if(!ses)return;try{var rows=await api("GET","member_private?select=kind,data");var cloud={};(rows||[]).forEach(function(r){cloud[r.kind]=r.data});
   if(first&&Object.keys(cloud).length)backupLocal();
   var changed=0;applying=true;
-  Object.keys(cloud).forEach(function(k){var p=pathOf(k);if(dirty[p])return;if(JSON.stringify(store[p])!==JSON.stringify(cloud[k])){D.db.doc(p).set(cloud[k]);changed++}});
+  Object.keys(cloud).forEach(function(k){var p=pathOf(k);if(dirty[p])return;if(canon(store[p])!==canon(cloud[k])){D.db.doc(p).set(cloud[k]);changed++}});
   applying=false;
   mine().forEach(function(p){var k=kindOf(p);if(!(k in cloud))dirty[p]=1});sd();await push();last=Date.now();
-  if(changed&&!sessionStorage.getItem("fb181r")){sessionStorage.setItem("fb181r","1");setTimeout(function(){location.reload()},400)}
+  if(changed&&!sessionStorage.getItem("fb181r")){sessionStorage.setItem("fb181r","1");setTimeout(function(){keepPlace();location.reload()},400)}
   else sessionStorage.removeItem("fb181r")}
  catch(e){applying=false;err="Could not reach the database: "+e.message}paint()}
 /* ---- account actions ---- */
