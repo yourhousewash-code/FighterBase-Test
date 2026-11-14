@@ -8135,8 +8135,9 @@ function body(){var s=steps()[step],h="";
  if(s==="gym"&&door){if(A.gymQ==null||A.club){A.gymQ=false;A.club=null;A.clubId=null}}
  if(s==="gym"&&door)h='<h2>Your club comes next</h2><p class="ob-sub">As soon as these questions are done you\'ll set up your club: name, timetable, memberships and card payments. Your own training stays separate and private.</p><button class="linkbtn" type="button" data-obclubdoor="0">I don\'t run a club, I train at one</button>';
  else if(s==="gym")h='<h2>Train at a gym? Link it for extras</h2><p class="ob-sub">If your club uses FighterBase, link it with their code for the timetable, check-ins and coach messages. Otherwise skip.</p>'+yn("gymQ","Yes, link my gym","Skip, I train on my own")+'<p class="ob-sub small" style="margin-top:10px">Run a club or gym? <button class="linkbtn" type="button" data-obclubdoor="1">Set up my club after these questions</button></p>'+
-  (A.gymQ?(A.club?'<div class="ob-club"><span class="ob-cl">'+(A.club.brand&&A.club.brand.logo?'<img src="'+esc(A.club.brand.logo)+'" alt="">':esc((A.club.name||"C").slice(0,1)))+'</span><div><b>'+esc(A.club.name)+'</b><span class="ob-sub small">Found it. Next, choose what they can see.</span></div><button class="linkbtn" type="button" data-obunclub>Change</button></div>'
-   :'<div class="row" style="align-items:flex-end"><div class="field"><label class="label" for="obCode">Club code</label><input type="text" id="obCode" maxlength="16" value="'+esc(A.code)+'" placeholder="e.g. WARRIOR" style="text-transform:uppercase;max-width:200px" autocapitalize="characters"></div><button class="btn sm" type="button" data-obfind>Find my gym</button><button class="btn ghost sm" type="button" data-fb116find>Find a club</button></div><p class="ob-sub small" id="obMsg">'+esc(A.msg||"Your coach can give you the code or a link.")+'</p>'):'<p class="ob-sub small">No problem. You can link a gym any time from Me, or when a gym sends you an invite.</p>');
+  (A.gymQ?(A.club?'<div class="ob-club"><span class="ob-cl">'+(A.club.brand&&A.club.brand.logo?'<img src="'+esc(A.club.brand.logo)+'" alt="">':esc((A.club.name||"C").slice(0,1)))+'</span><div><b>'+esc(A.club.name)+'</b><span class="ob-sub small">'+(A.club.live?"You've joined. Next, choose what they can see.":"Found it. Next, choose what they can see.")+'</span></div><button class="linkbtn" type="button" data-obunclub>Change</button></div>'
+   :(liveOn()?'<div class="grid2"><div class="field"><label class="label" for="obCode">Club code</label><input type="text" id="obCode" maxlength="16" value="'+esc(A.code)+'" placeholder="e.g. WARRIOR" style="text-transform:uppercase" autocapitalize="characters"></div><div class="field"><label class="label" for="obDob">Date of birth</label><input type="date" id="obDob" value="'+esc(A.dob||"")+'"></div></div><div class="row" style="justify-content:flex-end;margin-top:8px"><button class="btn ghost sm" type="button" data-fb116find>Find a club</button><button class="btn sm" type="button" data-obfind>Join my gym</button></div><p class="ob-sub small" id="obMsg">'+esc(A.msg||"Your coach can give you the code or a link. Your date of birth is needed to join, and your club never sees it.")+'</p>'
+   :'<div class="row" style="align-items:flex-end"><div class="field"><label class="label" for="obCode">Club code</label><input type="text" id="obCode" maxlength="16" value="'+esc(A.code)+'" placeholder="e.g. WARRIOR" style="text-transform:uppercase;max-width:200px" autocapitalize="characters"></div><button class="btn sm" type="button" data-obfind>Find my gym</button><button class="btn ghost sm" type="button" data-fb116find>Find a club</button></div><p class="ob-sub small" id="obMsg">'+esc(A.msg||"Your coach can give you the code or a link.")+'</p>')):'<p class="ob-sub small">No problem. You can link a gym any time from Me, or when a gym sends you an invite.</p>');
  if(s==="share"){var t=window.FB54?FB54.track(A.club):{training:true,goals:true,skills:true,weight:true,fights:true,injury:true},C=(window.FB54&&FB54.CATS)||[];if(!A.cons){A.cons={};C.forEach(function(c){A.cons[c[0]]=c[0]==="training"?true:(t[c[0]]&&c[3])})}
   h='<h2>What can '+esc(A.club.name)+' see?</h2><p class="ob-sub">Training is always shared with your gym. Everything else is your choice and you can change it any time.</p><div class="ob-list">'+C.filter(function(c){return t[c[0]]||c[0]==="training"}).map(function(c){var lock=c[0]==="training";return '<label class="ob-tog'+(lock?" lock":"")+'"><input type="checkbox" data-obcons="'+c[0]+'"'+(A.cons[c[0]]?" checked":"")+(lock?" disabled":"")+'><span><b>'+esc(c[1])+(lock?' <em>always on</em>':'')+'</b><small>'+esc(c[2])+'</small></span></label>'}).join("")+'</div>'}
  if(s==="done"){var it=[];it.push(["Training",A.tmode==="days"?A.tdays.slice().sort().map(function(i){return DN[i]}).join(" · "):A.tn+" a week"]);
@@ -8159,10 +8160,20 @@ function render(){try{if(A&&!(S.profile&&S.profile.onboarded))localStorage.setIt
  var f=el.querySelector(".ob-body input[type=text]:not([value]),.ob-body #obName");if(f&&st[step]==="name"&&!A.name)setTimeout(function(){try{f.focus()}catch(e){}},50)}
 function grab(){var g=function(id){var e=document.getElementById(id);return e?e.value:null},v;
  if((v=g("obName"))!=null)A.name=v.trim();if((v=g("obMsOwn"))!=null)A.msOwn=v.trim().slice(0,60);if((v=g("obHelpN"))!=null)A.helpNote=v.trim().slice(0,120);var hs=document.getElementById("obHelpS");if(hs)A.helpShare=hs.checked;if((v=g("obAv"))!=null)A.avoid=v;if((v=g("obHt"))!=null)A.height=v;if((v=g("obAge"))!=null)A.age=v;if((v=g("obInjN"))!=null)A.injNote=v;var tg=document.getElementById("obTgt");if(tg)A.tgt=tg.checked;var hp=document.getElementById("obHidePr");if(hp)A.hidePr=hp.checked;var ad=document.getElementById("obAdult");if(ad)A.adult=ad.checked;if((v=g("obIc"))!=null)A.ic=v;if((v=g("obW"))!=null)A.w=v;if((v=g("obL"))!=null)A.l=v;if((v=g("obD"))!=null)A.d=v;if((v=g("obFin"))!=null)A.fin=v;
- if((v=g("obFty"))!=null)A.ftypeO=v.trim();if((v=g("obFru"))!=null)A.frulesO=v.trim();if((v=g("obFlim"))!=null)A.flimit=v;if((v=g("obFrn"))!=null&&v!=="")A.frounds=v;if((v=g("obFrl"))!=null&&v!=="")A.flen=v;if((v=g("obFd"))!=null)A.fdate=v;if((v=g("obFe"))!=null)A.fevent=v;if((v=g("obWn"))!=null)A.wnow=v;if((v=g("obWt"))!=null)A.wtar=v;if((v=g("obBelt"))!=null)A.belt=v.trim();if((v=g("obGby"))!=null)A.gby=v;if((v=g("obProt"))!=null)A.prot=v;if((v=g("obCode"))!=null)A.code=v.trim().toUpperCase()}
+ if((v=g("obFty"))!=null)A.ftypeO=v.trim();if((v=g("obFru"))!=null)A.frulesO=v.trim();if((v=g("obFlim"))!=null)A.flimit=v;if((v=g("obFrn"))!=null&&v!=="")A.frounds=v;if((v=g("obFrl"))!=null&&v!=="")A.flen=v;if((v=g("obFd"))!=null)A.fdate=v;if((v=g("obFe"))!=null)A.fevent=v;if((v=g("obWn"))!=null)A.wnow=v;if((v=g("obWt"))!=null)A.wtar=v;if((v=g("obBelt"))!=null)A.belt=v.trim();if((v=g("obGby"))!=null)A.gby=v;if((v=g("obProt"))!=null)A.prot=v;if((v=g("obCode"))!=null)A.code=v.trim().toUpperCase();if((v=g("obDob"))!=null)A.dob=v}
+/* v376 A13 (Steve 14 Nov 11:28 at "Yes, link my gym": "What gym do I search for?"; it only found the demo clubs). When signed in, a code that
+   isn't one of this phone's own clubs joins the live club straight away (with the date of birth the server needs to check age), so a member
+   reaches their real club from the questions or an invite link, and the next step asks what that club may see. */
+function liveOn(){try{return !!(window.FH240&&FH240.on&&FH240.state&&FH240.state().signedIn)}catch(x){return false}}
 async function find(){grab();if(!A.code){A.msg="Type your club code first.";render();return}A.msg="Looking…";render();
- try{var s=await db.collection("clubs").where("code","==",A.code).limit(1).get();if(s.empty){A.msg="No gym with that code. Check it with your coach.";render();return}var d=s.docs[0];A.club=Object.assign({id:d.id},d.data());A.clubId=d.id;A.cons=null;A.msg="";render()}
- catch(e){A.msg="Couldn't look that up. Check you're signed in and try again.";render()}}
+ try{var s=await db.collection("clubs").where("code","==",A.code).limit(1).get();
+  if(s.empty){if(!liveOn()){A.msg="No gym with that code. Check it with your coach, or sign in first if your club is new to FighterBase.";render();return}
+   if(!A.dob){A.msg="Add your date of birth, then tap Join my gym.";render();return}
+   A.msg="Joining…";render();var id=await FH240.join(A.code,A.dob),c=null;
+   for(var i=0;i<20&&!c;i++){try{if(clubState.club&&clubState.club.id===id)c=clubState.club}catch(x){}if(!c)await new Promise(function(r){setTimeout(r,250)})}
+   A.club=Object.assign({},c||{name:"your club"},{id:id,live:true});A.clubId=id;A.cons=null;A.msg="";render();return}
+  var d=s.docs[0];A.club=Object.assign({id:d.id},d.data());A.clubId=d.id;A.cons=null;A.msg="";render()}
+ catch(e){var m=String(e&&e.message||"");A.msg=/date of birth/i.test(m)?"Add your date of birth, then tap Join my gym.":/parent/i.test(m)?"Under 18: a parent or guardian needs to link first.":/unknown club/i.test(m)?"No club with that code. Check it with your coach.":"Couldn't join: "+m;render()}}
 function uid(){return Date.now().toString(36)+Math.random().toString(36).slice(2,5)}
 function finish(){var p=P(),sp=A.sports.slice(),g=p.eg?JSON.parse(JSON.stringify(p.eg)):{};
  p.name=A.name||p.name||"";p.leagueName=(A.name||p.leagueName||"Member").split(" ")[0];p.sports=(+(A.age||p.age)>0&&+(A.age||p.age)<18)?sp.filter(function(x){return x!=="Bare knuckle boxing"}):sp;if(A.stance)p.stance=A.stance;p.discipline=p.sports[0]||"";p.otherTraining=A.other.slice();var door2=false;try{door2=localStorage.getItem("fb_clubdoor")==="1"||/^#club\b/.test(location.hash||"")}catch(x){}if(!door2)p.role=p.role||"member";p.mode=p.mode||"simple";
@@ -8252,7 +8263,7 @@ document.addEventListener("click",function(e){var t=e.target;if(!t.closest||!A)r
  var cd=t.closest("[data-obclubdoor]");if(cd){try{if(cd.dataset.obclubdoor==="1"){localStorage.setItem("fb_clubdoor","1");A.gymQ=false;A.club=null;A.clubId=null}else{localStorage.removeItem("fb_clubdoor");if(/^#club\b/.test(location.hash||""))history.replaceState(null,"",location.pathname+location.search)}}catch(x){}render();return}});
 document.addEventListener("change",function(e){var t=e.target;if(!A||!t.dataset||!t.dataset.obcons)return;A.cons[t.dataset.obcons]=t.checked});
 document.addEventListener("input",function(e){var t=e.target;if(!A||!t.closest||!t.closest("#fbOb"))return;var b=document.querySelector("#fbOb [data-obnext]");if(!b)return;grab();b.disabled=!canNext()});
-document.addEventListener("keydown",function(e){if(!A||e.key!=="Enter")return;var t=e.target;if(t.id==="obCode"){e.preventDefault();find()}});
+document.addEventListener("keydown",function(e){if(!A||e.key!=="Enter")return;var t=e.target;if(t.id==="obCode"||t.id==="obDob"){e.preventDefault();find()}});
 var css=document.createElement("style");css.textContent=
  "#fbOb{position:fixed;inset:0;z-index:100000;overflow-y:auto;background:radial-gradient(1200px 600px at 80% -10%,rgba(200,30,58,.22),transparent 60%),radial-gradient(900px 500px at -10% 110%,rgba(232,223,200,.12),transparent 60%),var(--bg,#0B0C0F)}"+
  ".ob-in{max-width:620px;margin:0 auto;min-height:100%;display:flex;flex-direction:column;padding:18px 18px calc(18px + env(safe-area-inset-bottom))}"+
@@ -25336,7 +25347,7 @@ async function makeLive(){var c=(typeof clubState!=="undefined"&&clubState.club)
  Object.keys(store).forEach(function(k){if(k.indexOf("clubmedia/")===0&&store[k]&&store[k].clubId===c.id){var md=JSON.parse(J(store[k]));md.clubId=id;D.db.doc(k).set(md);cmClub[k]=id;dirty[k]=1}});/* v356: the club's photos go live with it */
  await push();if(typeof subscribeClub==="function")subscribeClub();return id}
 async function join(code,dob){code=String(code||"").trim().toUpperCase();if(!code)throw new Error("Enter the club code.");
- if(dob){try{await A.api("POST","profiles?on_conflict=user_id",{user_id:me(),dob:dob,display_name:(S.profile.name||"").split(" ")[0]||null},{Prefer:"resolution=merge-duplicates,return=minimal"})}catch(e){}}
+ if(dob){try{await A.api("POST","profiles?on_conflict=user_id",(function(){var b={user_id:me(),dob:dob},n=(S.profile.name||"").split(" ")[0];if(n)b.display_name=n;return b})(),{Prefer:"resolution=merge-duplicates,return=minimal"})}catch(e){}}
  var id=await rpc("join_club",{code:code});if(!live(id))throw new Error("Unknown club code.");
  S.profile.clubId=id;S.profile.leagueOptIn=false;if(typeof profChanged==="function")profChanged();await pull();if(typeof subscribeClub==="function")subscribeClub();return id}
 /* ---------- small panels ---------- */
@@ -25806,7 +25817,7 @@ setInterval(qwatch,120);
    happened. Enter in a long text box still makes a new line; the club code box still searches. On a keyboard computer Next shows ↵. */
 document.addEventListener("keydown",function(ev){if(ev.key!=="Enter"||ev.repeat||ev.shiftKey||ev.altKey||ev.ctrlKey||ev.metaKey||ev.isComposing)return;
  var o=document.getElementById("fbOb");var t=ev.target;if(!o||o.hidden||!(o.contains(t)||t===document.body))return;
- if(t.tagName==="TEXTAREA"||t.id==="obCode"||t.tagName==="A"||(t.closest&&t.closest("[data-obback],[data-obnext],details,summary")))return;
+ if(t.tagName==="TEXTAREA"||t.id==="obCode"||t.id==="obDob"||t.tagName==="A"||(t.closest&&t.closest("[data-obback],[data-obnext],details,summary")))return;
  var b=o.querySelector("[data-obnext]");if(!b||b.disabled||o.classList.contains("q250hold"))return;ev.preventDefault();b.click()});
 var kcss=document.createElement("style");kcss.textContent="@media (hover:hover) and (pointer:fine){#fbOb [data-obnext]:not([disabled])::after{content:\" \\21B5\";opacity:.7;margin-left:6px;font-weight:700}}";document.head.appendChild(kcss);
 /* v371 (Steve's screenshots 14 Nov 12:23: the club header still said "Friday 13 November" on Saturday). The app works out "today" once,
@@ -25820,7 +25831,33 @@ var rolled=false;function roll(force){try{if(rolled||typeof TODAY==="undefined")
 document.addEventListener("visibilitychange",function(){if(!document.hidden)roll(quiet())});
 window.addEventListener("focus",function(){roll(quiet())});
 setInterval(function(){roll(false)},60000);
-window.FH250={guard:guard,roll:roll};
+/* v376 A16 (Steve 14 Nov, as a new member in the test: "cant find attendance"; Attendance only appears once you're in a club, and joining was under
+   Me, Find a club, Join with a code). A member with no club now sees "Join your club" at the top of Today: the club code (and, signed in,
+   the date of birth a live club needs), one Join button bottom right, and "Find a club near me". Not now hides it for two weeks. */
+var JKEY="fb250join";
+var jcss=document.createElement("style");jcss.textContent="#tab-today#tab-today#tab-today>#j250#j250#j250#j250#j250{display:block!important;order:-80!important}#j250 .grid2{margin-top:2px}";document.head.appendChild(jcss);
+function jWant(){try{if(document.body.classList.contains("hubview"))return false;var p=S.profile||{};if(!p.onboarded||p.clubId)return false;var t=+localStorage.getItem(JKEY)||0;return Date.now()-t>14*864e5}catch(x){return false}}
+function jLive(){try{return !!(window.FH240&&FH240.on&&FH240.state().signedIn)}catch(x){return false}}
+function jPaint(){var sc=document.getElementById("tab-today"),el=document.getElementById("j250");
+ if(!sc||!jWant()){if(el)el.remove();return}
+ if(el&&el.dataset.live===String(jLive()))return;if(el)el.remove();
+ el=document.createElement("section");el.id="j250";el.className="panel plate";el.dataset.live=String(jLive());el.style.order="-70";
+ el.innerHTML='<div class="sec-h"><h2>Join your club</h2></div><p class="muted" style="margin:0 0 10px">Got a code from your gym? Join here for its timetable, class booking and your membership. Attendance and check-ins appear once you\'re in.</p>'+
+  '<div class="grid2"><div class="field"><label class="label" for="j250c">Club code</label><input type="text" id="j250c" maxlength="16" placeholder="e.g. WARRIOR" style="text-transform:uppercase" autocapitalize="characters"></div>'+
+  (jLive()?'<div class="field"><label class="label" for="j250d">Date of birth</label><input type="date" id="j250d"></div>':'')+'</div>'+
+  '<div class="row" style="justify-content:flex-end;margin-top:8px;flex-wrap:wrap"><button type="button" class="linkbtn" data-j250x>Not now</button><button type="button" class="btn ghost sm" data-fb116find>Find a club near me</button><button type="button" class="btn sm" data-j250go>Join my club</button></div><p class="saved" id="j250m" aria-live="polite"></p>';
+ sc.insertBefore(el,sc.firstChild)}
+function jMsg(t){var m=document.getElementById("j250m");if(m)m.textContent=t||""}
+async function jGo(){var code=((document.getElementById("j250c")||{}).value||"").trim().toUpperCase(),dob=(document.getElementById("j250d")||{}).value||"";if(!code){jMsg("Type your club's code first.");return}
+ if(jLive()){if(!dob){jMsg("Add your date of birth, then tap Join my club.");return}jMsg("Joining…");
+  try{await FH240.join(code,dob);var nm="";try{nm=(clubState.club&&clubState.club.name)||""}catch(x){}jMsg("");if(typeof toast==="function")toast(nm?"You've joined "+nm:"You've joined your club","Choose your membership on the Club page.");try{showTab("clubpage")}catch(x){}}
+  catch(e){var m=String(e&&e.message||"");jMsg(/date of birth/i.test(m)?"Add your date of birth, then tap Join my club.":/parent/i.test(m)?"Under 18: a parent or guardian needs to link first.":/unknown club/i.test(m)?"No club with that code. Check it with your coach.":"Couldn't join: "+m)}return}
+ try{showTab("club");setTimeout(function(){var i=document.getElementById("joinCode"),b=document.getElementById("joinBtn");if(i){i.value=code;if(b)b.click()}},150)}catch(x){}}
+document.addEventListener("click",function(ev){var t=ev.target;if(!t.closest)return;if(t.closest("[data-j250go]")){jGo();return}if(t.closest("[data-j250x]")){try{localStorage.setItem(JKEY,String(Date.now()))}catch(x){}jPaint()}});
+document.addEventListener("keydown",function(ev){if(ev.key==="Enter"&&ev.target&&(ev.target.id==="j250c"||ev.target.id==="j250d")){ev.preventDefault();jGo()}});
+document.addEventListener("input",function(ev){if(ev.target&&(ev.target.id==="j250c"||ev.target.id==="j250d"))jMsg("")});
+setInterval(function(){if(!document.hidden)try{jPaint()}catch(x){}},1500);
+window.FH250={guard:guard,roll:roll,joinCard:jPaint};
 })();
 
 /* FighterBase v368 (Steve's after-test list, 13 Nov 2026).
