@@ -18409,20 +18409,20 @@ function hubMode(){return document.body.classList.contains("hubview")}
 var GD=[
 /* ---------------- member ---------------- */
 {id:"today",tab:"today",t:"Your Today page",m:1,why:"Your day on one page.",s:[
- ["css:#fb155","Your day, top to bottom","The top card shows your next class, your last session, your week and anything from your coach. Start here each day."],
- ["css:nav.bottom","Five tabs, that is all","Today, Train, Fuel, Progress and Me. Everything else lives inside one of these."],
- ["your progress","Your progress","Your week and your streak. Missing a day is never marked against you."],
- ["hide weight and calories","You choose what shows","Prefer not to see weight or calories on Home? Hide them here. You can bring them back any time."]]},
+ ["^good (morning|afternoon|evening)","Your day, top to bottom","Today is your day on one page: what's next, your week and anything from your coach. Start here each day."],
+ ["^check-in$","Log in one tap","Training, Food and Check-in log your day in a tap. Skip anything you don't track.",1],
+ ["^main event","Your week against last week","This card compares your week with last week. Missing a day is never marked against you."],
+ ["^edit my page$","You choose what shows","Choose which cards Today shows, including hiding weight or calories. You can bring them back any time."]]},
 {id:"train",tab:"train",t:"Log a session",m:1,why:"20 seconds, builds your week.",s:[
  ["log a session","Log what you trained","Choose the type and how long. Minutes and notes are optional. This is what builds your weekly picture."],
  ["css:#tab-train button[data-rpe],#tab-train .rpe","How hard did it feel?","Pick 1 (easy) to 10 (all out). It helps you pace your week and spot hard weeks. Optional.",0,"^1$"],
  ["^log session$","Save it","Tap this to save. It counts toward your weekly plan straight away."],
- ["training load","Your training load","A simple picture of how much you have done lately, so you do not do too much too fast."]]},
+ ["^your totals$","Your totals","What you have done lately, so you can see your load building and not do too much too fast."]]},
 {id:"log",tab:"log",t:"Daily check-in",m:1,why:"Weight, sleep, water, food.",s:[
  ["log today","A quick daily check-in","Weight, sleep, water, steps and food. Skip anything you do not want to track. Blanks are never counted against you."],
  ["add something to track","Pick what matters to you","Add a tracker such as sleep or mood. Each gets its own chart. Remove it any time."],
- ["log any food by weight","Log food","Search a food, type the grams and it adds the calories and protein. Rough is fine."],
- ["scan a nutrition label","Scan a label","Take a photo of a nutrition table. Always check the numbers it reads before saving."]]},
+ ["^log meal$","Log a meal","Log one of your planned meals in a tap. Rough is fine."],
+ ["^open food diary$","Food diary","Snap each meal, search a food or scan a label in the food diary. Always check the numbers it reads before saving."]]},
 {id:"workouts",tab:"workouts",t:"Workouts",m:1,why:"Your own, starters, or your coach's.",s:[
  ["^class plan$","Four libraries","Class plan is what your coach set. My workouts are yours. Starters are ready-made. Community is shared by other clubs.",1],
  ["^starters$","Start with a starter","If you are new, pick a starter. Open it to see each move, then run it or log it.",0],
@@ -18453,7 +18453,7 @@ var GD=[
  ["your progress","Where you are","Your training and numbers in one place."],
  ["your goal in numbers","Your goal in numbers","Turns your goal into weekly targets. Change the goal any time."],
  ["add a goal","Add a goal","Pick what you are working towards and the app builds your week around it.",0],
- ["view charts","Charts","Tap a chart to read the values. The more you log, the clearer it gets.",0],
+ ["^charts$","Charts","Tap a chart to read the values. The more you log, the clearer it gets.",0],
  ["weekly stats","Weekly stats","Sessions, minutes and effort by week."]]},
 {id:"growth",tab:"growth",t:"Growth and fitness checks",m:1,why:"Repeat checks, see change.",s:[
  ["your growth","What this is","Fitness checks and confidence. It shows how you change, not how you compare."],
@@ -18468,15 +18468,15 @@ var GD=[
  ["your challenges","Your challenges","Ones you joined show here with your progress."],
  ["take one on","Take one on","Your logged sessions count automatically. Leave any time."]]},
 {id:"club",tab:"club",t:"Your club",m:2,why:"Check in, classes, membership.",s:[
- ["my club","Everything about your gym","Check in, see classes, your attendance and your membership."],
+ ["^classes$","Everything about your gym","Classes, your membership and the club's details, one tap each.",1],
  ["at the gym","Check in","When you are at the gym, check in here. Your phone's location is used once to confirm it, and only the check-in is shared."],
- ["classes","Say you are coming","Tap I'm coming on a class. It is a plan, not a payment."],
- ["what my club can see","You decide what is shared","A plain list of what your club sees and what it never sees."],
- ["show more","More sections","Your membership and payment sit under Show more. Check your club's notice terms before cancelling."]]},
+ ["i.m coming","Say you are coming","Tap I'm coming on a class. It is a plan, not a payment."],
+ ["^your attendance$","Your attendance","Your check-ins and classes this month. Only the check-in is shared, never where you are."],
+ ["^membership$","Your membership","Your plan, what you owe and your payments. Check your club's notice terms before cancelling."]]},
 {id:"clubpage",tab:"clubpage",t:"Club page",m:1,why:"Timetable, booking, news.",s:[
  ["timetable and booking","Timetable and booking","Pick a class and book it. Your plan shows whether it is covered."],
  ["your membership","Your membership","What you are on and what you owe."],
- ["show more","More sections","Club news and more sit under Show more."]]},
+ ["^club news$","Club news","News, events and the club's details further down this page."]]},
 {id:"mygym",tab:"mygym",t:"My gym",m:1,why:"Shortcuts at your gym.",s:[
  ["sessions","Sessions","Your timetable."],
  ["workouts","Workouts","What your coach set for you."],
@@ -18505,8 +18505,8 @@ var GD=[
  ["invite a friend","Bring a friend","Share a link. Nothing is sent unless you tap Share."],
  ["invite your club","Bring your club","Share this with your coach so your gym can join."]]},
 {id:"profile",tab:"profile",t:"Settings",m:2,why:"Targets, reminders, what you see.",s:[
- ["check-in style","How often we ask","Weekly, daily or only when you want. Change it any time."],
- ["calorie target","Your targets","Set your calories here. Changes save as you go."],
+ ["^reminders","How often we ask","When and how often we nudge you. Weekly suits most people. Change it any time."],
+ ["^goals and targets","Your targets","Calories, protein and training targets. Changes save as you go."],
  ["guide","Tips and guides","Turn tips on or off and replay guides here."]]},
 {id:"diary",tab:"diary",t:"Food diary",m:1,why:"What you ate, with water.",s:[
  ["food diary","One day at a time","Use the arrows to move between days. Everything you ate is here with your water."],
@@ -18517,7 +18517,7 @@ var GD=[
  ["your training record","Your record","Sessions, milestones and camps in one place. Missed weeks are not held against you."],
  ["last 30 days","Pick a time range","This changes every number and chart on the screen.",0],
  ["sessions per week","Sessions per week","See your usual rhythm at a glance."],
- ["^milestones$","Milestones","Moments like a first sparring session or a grading. Some come from your coach."]]},
+ ["^my milestones$","Milestones","Moments like a first sparring session or a grading. Some come from your coach."]]},
 {id:"goals2",tab:"goals2",t:"Goals",m:1,why:"What you are working towards.",s:[
  ["your goals right now","What you are working on","Your goals and how you are getting on with each."],
  ["my main goal","Pick a main goal","The app builds your weekly target around it. Change it any time."],
@@ -18540,9 +18540,9 @@ var GD=[
  ["register interest","Register interest","We will tell you when it opens. No payment, nothing shared.",0]]},
 /* ---------------- coach ---------------- */
 {id:"safety",tab:"partners",t:"Block, mute and report",m:1,why:"You decide who reaches you.",s:[
- ["block or mute","Block or mute","Open a crew and tap Block or mute next to someone. Mute hides their messages and cheers. Block also stops partner requests. They aren't told.",0],
- ["^report$","Report","Report anything wrong or worrying. It goes to FighterBase's moderators, and you can block them at the same time.",0],
- ["css:.cr-open,#crWrap","Undo it any time","Me, Clear my data and privacy, Safety and complaints lists everyone you blocked or muted, with Unblock and Unmute."]]},
+ ["members ·","Block or mute","Open a crew and tap Block or mute next to someone. Mute hides their messages and cheers. Block also stops partner requests. They aren't told.",0],
+ ["members ·","Report","Inside any crew, Report sends anything wrong or worrying to FighterBase's moderators, and you can block them at the same time.",0],
+ ["^what you share$","Undo it any time","Choose what partners see here. Everyone you blocked or muted is listed in Me, Clear my data and privacy, with Unblock and Unmute."]]},
 {id:"c-setup",tab:"hubsetup",t:"Getting set up",m:2,why:"Start here.",s:[
  ["get set up","Pick what to do first","Choose payments, classes, workouts or fight camps. The guide then walks you through it. Skip anything for later."],
  ["run the club","Run the club","Your day-to-day jobs."],
@@ -18614,7 +18614,7 @@ var GD=[
  ["tell members on whatsapp","Tell members","Opens WhatsApp. You tap send."]]},
 {id:"c-acc",tab:"hubacc",t:"Accounts",m:2,why:"Who has paid.",s:[
  ["members and payments","Who owes and who paid","Record cash payments and send reminders."],
- ["add a member","Add a member","One at a time, or use the template to add many.",0],
+ ["^invite a member$|add someone by hand","Add members","Invite members by WhatsApp, text or email with your code, or add someone by hand. Use the template to add many at once.",0],
  ["owes money","Filter to who owes","Then record a payment or send a reminder.",0]]},
 {id:"c-kids",tab:"hubkids",t:"Kids academy",m:1,why:"Juniors, families and safety.",s:[
  ["^kids academy$","Juniors in one place","Children are profiles inside a parent's account. Their age decides what they and their parents can see."],
