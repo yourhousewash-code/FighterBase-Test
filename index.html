@@ -18762,7 +18762,7 @@ document.addEventListener("click",function(ev){var t=ev.target;if(!t.closest)ret
  if(t.closest("[data-g158reset]")){P().guides={done:st().done,skip:{}};save();refresh()}});
 var sh=showTab;showTab=function(){var r=sh.apply(this,arguments);try{setTimeout(refresh,60)}catch(x){}return r};
 setInterval(function(){if(!CUR){chips();hub()}},1500);
-setInterval(function(){if(CUR&&document.getElementById("fb158"))place()},500);/* v371: the screen can change under a guide (lists refresh); keep the frame and the card where they belong */
+setInterval(function(){var o=document.getElementById("fb158");if(!CUR||!o)return;if(!o._el||!document.body.contains(o._el)){try{var e2=find(CUR,CUR.s[IDX]);if(e2)o._el=e2}catch(x){}}place()},500);/* v371: the screen can change under a guide (lists refresh); keep the frame and the card where they belong */
 var css=document.createElement("style");css.textContent=
 "#fb158{position:fixed;inset:0;z-index:9500}#fb158 .b158{position:absolute;inset:0}"+
 "#fb158 .h158{position:fixed;border-radius:12px;box-shadow:0 0 0 9999px rgba(0,0,0,.62);outline:3px solid #fff;outline-offset:0;pointer-events:none;transition:all .18s ease;display:none}"+
