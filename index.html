@@ -7683,7 +7683,26 @@ var VIEW="debt",OPEN=null,PAY=null,ADD=false,Q="",SEL={},UNDO=null,VIS=[];
 function selIds(){return Object.keys(SEL).filter(function(k){return SEL[k]})}
 function classPeople(c,key){var sv=(c.register||{})[key];if(sv&&sv.present)return sv.present;try{return rsvpUids(c,key)}catch(e){return []}}
 function classOpts(c){var out=[],seen={};function add(key){if(seen[key])return;seen[key]=1;var d=key.slice(0,10),id=key.slice(11),cl=null;try{cl=(classesOn(c,d)||[]).filter(function(x){return x.id===id})[0]}catch(e){}if(!cl)return;out.push({key:key,label:cl.title+" · "+fmtD(d)+(cl.time?" "+cl.time:"")})}try{upcoming(c,7).forEach(function(x){x[1].forEach(function(cl){add(x[0]+"_"+cl.id)})})}catch(e){}Object.keys(c.register||{}).sort().reverse().slice(0,8).forEach(add);return out}
+/* v371 (Stripe test 14 Nov 12:25: Johnny and Peter joined John Bones Gym and paid £10 by card in the app, but Accounts said "0 on your
+   list" and £0 collected, because only people imported or added by hand were on the list). In a live club, anyone who joins in the app
+   with a membership is now added to the list automatically: their name, plan, price and start date, linked to their app account so
+   their card payments count. Someone the club removes from the list isn't added back (rosterSkip). Owner's screen only. */
+var APPTRY={},APPBUSY=false;
+function appAdd(){var c=club();if(!c||APPBUSY||!isOwner()||!/^[0-9a-f]{8}-[0-9a-f]{4}-/i.test(c.id||""))return false;
+ var R=roster(),skip=c.rosterSkip||[],plans=((c.pay||{}).plans)||[],add=[];
+ (clubState.members||[]).forEach(function(m){var ms=m&&m.ms;if(!m||!m.uid||APPTRY[m.uid]||!ms||ms.status!=="active"||(ms.clubId&&ms.clubId!==c.id))return;
+  if(R.some(function(r){return r.uid===m.uid})||skip.indexOf(m.uid)>=0)return;APPTRY[m.uid]=1;
+  var pl=plans.filter(function(p){return p.id===ms.planId})[0]||null,per=pl&&pl.per;
+  var same=R.filter(function(r){return !r.uid&&r.name&&m.name&&r.name.toLowerCase()===String(m.name).toLowerCase()});
+  if(same.length===1){same[0].uid=m.uid;add.push(null);return}
+  var row={id:uid(),uid:m.uid,name:String(m.name||"Member").slice(0,60),email:"",phone:"",plan:pl?String(pl.name||"").slice(0,40):"",fee:pl?Math.round(+pl.amt||0)/100:0,
+   freq:per==="week"?"week":per==="month"?"month":per==="term"?"term":"payg",start:ms.since||TODAY,status:"active",open:0,pays:[],charges:[],added:TODAY,src:"app"};
+  if(per==="term"){row.termM=+pl.termM||6;row.renew=pl.renew||"";row.termAt=row.start}
+  add.push(row)});
+ if(!add.length)return false;APPBUSY=true;var n=add.filter(Boolean).length;
+ saveRoster(R.concat(add.filter(Boolean)),n?(n===1?"1 member added from the app":n+" members added from the app"):"Linked to the app",n?"They joined and chose a membership in the app":"").then(function(){APPBUSY=false},function(){APPBUSY=false});return true}
 function page(){var el=$("#hubaccBody"),c=club();if(!el||!c)return;if(document.activeElement&&el.contains(document.activeElement)&&/INPUT|TEXTAREA|SELECT/.test(document.activeElement.tagName))return;
+ try{if(appAdd())return}catch(x){APPBUSY=false}
  var R=roster(),A=R.map(function(r){return {r:r,a:acct(r)}}),mStart=TODAY.slice(0,8)+"01";
  var expected=R.filter(function(r){return r.status==="active"}).reduce(function(s,r){return s+(r.freq==="month"?+r.fee:r.freq==="week"?(+r.fee)*52/12:r.freq==="term"?(+r.fee)/(+r.termM||6):0)},0),collected=A.reduce(function(s,x){return s+x.a.pays.filter(function(p){return p.d>=mStart&&!p.exp}).reduce(function(t,p){return t+(+p.amt||0)},0)},0),owed=A.reduce(function(s,x){return s+Math.max(0,x.a.bal)},0),od=A.filter(function(x){return x.a.status==="overdue"}),soExp=A.reduce(function(s,x){return s+x.a.pays.filter(function(p){return p.exp&&p.d>=mStart}).reduce(function(t,p){return t+(+p.amt||0)},0)},0);
  var h='<div class="panel plate"><div class="sec-h"><h2>Members and payments</h2><span class="muted small">'+R.length+' on your list</span></div><p class="muted small" style="margin:0">Your full membership list, including people not using the app yet. Payments made in the app are added automatically; tick off cash, card and bank payments yourself.</p>'+
@@ -7757,7 +7776,7 @@ document.addEventListener("click",async function(e){var t=e.target;if(!t.closest
  if(b=t.closest("[data-sounmiss]")){var ru=find(b.dataset.sounmiss);if(!ru)return;var ml=(ru.soMiss||[]).slice().sort(),du=b.dataset.d||ml[ml.length-1];await saveRoster(R.map(function(o){return o.id===ru.id?Object.assign({},o,{soMiss:(o.soMiss||[]).filter(function(x){return x!==du})}):o}),"Miss removed for "+ru.name);return}
  if(b=t.closest("[data-adlink]")){var u=v("adLink");if(!u)return;var arr6=R.map(function(o){return o.id===b.dataset.adlink?Object.assign({},o,{uid:u}):o});await saveRoster(arr6,"Linked");return}
  if(b=t.closest("[data-adunlink]")){var arr7=R.map(function(o){return o.id===b.dataset.adunlink?Object.assign({},o,{uid:null}):o});await saveRoster(arr7,"Unlinked");return}
- if(b=t.closest("[data-addel]")){if(b.dataset.c!=="1"){b.dataset.c="1";b.textContent="Tap again to remove";return}OPEN=null;await saveRoster(R.filter(function(o){return o.id!==b.dataset.addel}),"Removed");return}
+ if(b=t.closest("[data-addel]")){if(b.dataset.c!=="1"){b.dataset.c="1";b.textContent="Tap again to remove";return}OPEN=null;var gone=R.filter(function(o){return o.id===b.dataset.addel})[0],cl0=club();if(gone&&gone.uid&&cl0){cl0.rosterSkip=(cl0.rosterSkip||[]).filter(function(u){return u!==gone.uid}).concat([gone.uid]);try{db.doc("clubs/"+cl0.id).update({rosterSkip:cl0.rosterSkip})}catch(x){}}await saveRoster(R.filter(function(o){return o.id!==b.dataset.addel}),"Removed");return}
  if(t.closest("[data-acadd]")){ADD=true;page();return}
  if(t.closest("[data-ancancel]")){ADD=false;page();return}
  if(t.closest("[data-anadd]")){var nm=v("anN").trim();if(!nm){toast("Add a name");return}var nr={id:uid(),name:nm,email:v("anE").trim(),phone:"",plan:v("anPl").trim(),fee:money(v("anF")),freq:v("anQ")||"month",start:v("anS")||TODAY,status:"active",open:0,pays:[],charges:[],added:TODAY};ADD=false;await saveRoster(autoLink(R.concat([nr])),"Added "+nm);return}
@@ -7776,7 +7795,7 @@ var css=document.createElement("style");css.textContent=[
 ".ac-payf{grid-column:1/-1;border-top:1px dashed var(--line);padding-top:10px}.ac-payf input[type=text]{min-width:140px}.ac-d input,.ac-d select{width:100%}",
 ".ac-map{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:8px}.ac-map label{display:flex;flex-direction:column;gap:3px}.ac-map select{width:100%}.ac-prev{border:1px solid var(--line);border-radius:12px;padding:8px 12px}",
 "@media(max-width:700px){.ac-r{grid-template-columns:minmax(0,1.4fr) .9fr;}.ac-r>span:nth-child(2),.ac-r>span:nth-child(3){display:none}.ac-h span:nth-child(2),.ac-h span:nth-child(3),.ac-h span:nth-child(5){display:none}.ac-act{grid-column:1/-1;justify-content:flex-start}}"].join("");document.head.appendChild(css);
-window.FH57={acct:acct,dueList:dueList,termEnd:termEnd,roster:roster,page:page,readFile:readFile,rowToMember:rowToMember};
+window.FH57={acct:acct,dueList:dueList,termEnd:termEnd,roster:roster,page:page,readFile:readFile,rowToMember:rowToMember,appAdd:appAdd};
 })();
 
 /* FighterBase v67-68: competition record by sport.
@@ -18678,12 +18697,35 @@ function draw(){if(!CUR)return;var o=document.getElementById("fb158");if(!o)retu
  c.innerHTML='<div class="k158">'+e(g.t)+' · step '+(IDX+1)+' of '+n+'</div><h3>'+e(s[1])+'</h3><p>'+e(s[2])+'</p>'+(el?"":'<p class="muted small">This part is not on your screen yet. It shows once there is something to show.</p>')+
   '<div class="d158">'+g.s.map(function(_,i){return '<i class="'+(i===IDX?"on":"")+'"></i>'}).join("")+'</div><div class="r158"><button type="button" class="btn ghost" data-g158="back"'+(IDX?"":" disabled")+'>Back</button><button type="button" class="btn" data-g158="next">'+(IDX===n-1?"Done":"Next")+'</button></div><button type="button" class="linkbtn" data-g158="stop">Stop the guide</button>';
  o._el=el;if(!el&&RETRY<4){RETRY++;setTimeout(function(){if(CUR&&document.getElementById('fb158'))draw()},600)}else if(el)RETRY=0;
- if(el){try{if(innerWidth>=700){el.scrollIntoView({block:"center",behavior:"auto"})}else{var r0=el.getBoundingClientRect();if(r0.top<96||r0.top>innerHeight*.45)window.scrollBy(0,r0.top-96)}}catch(x){}}
+ if(el){try{if(innerWidth>=700){var rr=el.getBoundingClientRect(),cc=c.getBoundingClientRect();
+   /* v371: room for the card. A part that fits with the card stacked under it is scrolled up enough to leave that room; otherwise centred as before */
+   if(rr.height+cc.height+60<innerHeight&&rr.right>innerWidth-cc.width-40){var top0=Math.max(100,(innerHeight-rr.height-cc.height-24)/2);window.scrollBy(0,rr.top-top0)}else el.scrollIntoView({block:"center",behavior:"auto"})}
+  else{var r0=el.getBoundingClientRect();if(r0.top<96||r0.top>innerHeight*.45)window.scrollBy(0,r0.top-96)}}catch(x){}}
  place();var nb=c.querySelector('[data-g158="next"]');if(nb)nb.focus({preventScroll:true})}
-function place(){var o=document.getElementById("fb158");if(!o)return;cancelAnimationFrame(raf);raf=requestAnimationFrame(function(){var h=o.querySelector(".h158"),el=o._el;
- if(!el||!document.body.contains(el)){h.style.display="none";return}
- var r=el.getBoundingClientRect();if(r.width===0&&r.height===0){h.style.display="none";return}
- h.style.display="block";var pad=6;h.style.left=Math.max(r.left-pad,2)+"px";h.style.top=Math.max(r.top-pad,2)+"px";h.style.width=Math.min(r.width+pad*2,innerWidth-4)+"px";h.style.height=Math.min(r.height+pad*2,innerHeight*.7)+"px"})}
+function place(){var o=document.getElementById("fb158");if(!o)return;cancelAnimationFrame(raf);raf=requestAnimationFrame(function(){var h=o.querySelector(".h158"),el=o._el,c=o.querySelector(".c158");
+ if(!el||!document.body.contains(el)){h.style.display="none";card(c,null);return}
+ var r=el.getBoundingClientRect();if(r.width===0&&r.height===0){h.style.display="none";card(c,null);return}
+ h.style.display="block";var pad=6,L=Math.max(r.left-pad,2),T=Math.max(r.top-pad,2),W=Math.min(r.width+pad*2,innerWidth-4),H=Math.min(r.height+pad*2,innerHeight*.7);
+ /* v371: a part too tall to show beside the card is framed from its top down to the space left above the card, so the card never sits on the framed part */
+ if(c){var ch=c.offsetHeight||0,cw=c.offsetWidth||0,nav=innerWidth<700?84:0,room=innerHeight-nav-ch-36-T;if(H>room&&innerWidth-W<cw+36&&room>=60)H=room}
+ h.style.left=L+"px";h.style.top=T+"px";h.style.width=W+"px";h.style.height=H+"px";card(c,{l:L,t:T,r:L+W,b:T+H})})}
+/* v371 (Steve 14 Nov 12:23, screenshot of the Members guide covering "Possible check-ins": "tutorial needs to not ever block the item
+   being shown"; tracker A20). The guide card normally sits in its corner (bottom right on a computer, bottom on a phone). If that would
+   cover the lit-up part, it moves next to it instead: below, above, right or left, whichever fits on screen; then the other corners.
+   Only if nothing fits (a part taller than the screen) does it go where it covers the least, and never over the part's top edge. */
+function card(c,R){if(!c)return;var st=c.style;function reset(){st.left=st.top=st.right=st.bottom=st.margin=st.width="";}
+ reset();if(!R)return;var vw=innerWidth,vh=innerHeight,g=12,nav=vw<700?84:0,cr=c.getBoundingClientRect(),cw=cr.width,ch=cr.height;
+ function hit(a){return !(a.r<=R.l-4||a.l>=R.r+4||a.b<=R.t-4||a.t>=R.b+4)}
+ if(!hit({l:cr.left,t:cr.top,r:cr.right,b:cr.bottom}))return;
+ var cl=function(v,lo,hi){return Math.max(lo,Math.min(v,hi))},maxL=vw-cw-g,maxT=vh-nav-ch-g,mid=(R.l+R.r)/2-cw/2,midT=(R.t+R.b)/2-ch/2;
+ var C=[{l:cl(mid,g,maxL),t:R.b+g},{l:cl(mid,g,maxL),t:R.t-g-ch},{l:R.r+g,t:cl(midT,g,maxT)},{l:R.l-g-cw,t:cl(midT,g,maxT)},
+  {l:g,t:maxT},{l:maxL,t:g},{l:g,t:g},{l:maxL,t:maxT}];
+ var best=null,bestA=1e9;
+ for(var i=0;i<C.length;i++){var a=C[i];if(a.l<g-1||a.t<g-1||a.l>maxL+1||a.t>maxT+1)continue;var box={l:a.l,t:a.t,r:a.l+cw,b:a.t+ch};
+  if(!hit(box)){best=a;break}
+  var ov=(Math.min(box.r,R.r)-Math.max(box.l,R.l))*(Math.min(box.b,R.b)-Math.max(box.t,R.t));if(box.t>R.t+40&&ov<bestA){bestA=ov;best=a}}
+ if(!best)best={l:cl(mid,g,maxL),t:maxT};
+ st.margin="0";st.right="auto";st.bottom="auto";st.width=cw+"px";st.left=Math.round(best.l)+"px";st.top=Math.round(best.t)+"px"}
 function go(d){if(!CUR)return;var n=CUR.s.length;if(d>0&&IDX===n-1){finish();return}IDX=Math.max(0,IDX+d);RETRY=0;draw()}
 function avail(id){var g=GD.filter(function(x){return x.id===id})[0];if(!g)return false;if(g.tab.indexOf("hub")===0)return !!document.getElementById("tab-"+g.tab);try{return Object.keys(GROUPS).some(function(k){return GROUPS[k].indexOf(g.tab)>=0})}catch(x){return true}}
 function nextInChain(id){if(!CH)return null;var i=CH.indexOf(id);return i>=0&&i<CH.length-1?CH[i+1]:null}
@@ -18720,10 +18762,11 @@ document.addEventListener("click",function(ev){var t=ev.target;if(!t.closest)ret
  if(t.closest("[data-g158reset]")){P().guides={done:st().done,skip:{}};save();refresh()}});
 var sh=showTab;showTab=function(){var r=sh.apply(this,arguments);try{setTimeout(refresh,60)}catch(x){}return r};
 setInterval(function(){if(!CUR){chips();hub()}},1500);
+setInterval(function(){if(CUR&&document.getElementById("fb158"))place()},500);/* v371: the screen can change under a guide (lists refresh); keep the frame and the card where they belong */
 var css=document.createElement("style");css.textContent=
 "#fb158{position:fixed;inset:0;z-index:9500}#fb158 .b158{position:absolute;inset:0}"+
 "#fb158 .h158{position:fixed;border-radius:12px;box-shadow:0 0 0 9999px rgba(0,0,0,.62);outline:3px solid #fff;outline-offset:0;pointer-events:none;transition:all .18s ease;display:none}"+
-"#fb158 .c158{position:fixed;left:12px;right:12px;bottom:84px;max-width:420px;margin:0 auto;background:var(--card,#17171A);color:var(--ink,#F4F4F5);border:1px solid var(--line,#2A2A2F);border-radius:16px;padding:14px 16px;box-shadow:0 10px 40px rgba(0,0,0,.5);display:flex;flex-direction:column;gap:8px;outline:none}"+
+"#fb158 .c158{transition:left .18s ease,top .18s ease;position:fixed;left:12px;right:12px;bottom:84px;max-width:420px;margin:0 auto;background:var(--card,#17171A);color:var(--ink,#F4F4F5);border:1px solid var(--line,#2A2A2F);border-radius:16px;padding:14px 16px;box-shadow:0 10px 40px rgba(0,0,0,.5);display:flex;flex-direction:column;gap:8px;outline:none}"+
 "@media(min-width:700px){#fb158 .c158{left:auto;right:24px;bottom:24px;margin:0;width:380px}}"+
 "#fb158 .k158,#fb158hub .k158{font-size:.7rem;letter-spacing:.12em;text-transform:uppercase;font-weight:700;opacity:.75}"+
 "#fb158 h3{margin:0;font-size:1.15rem}#fb158 p{margin:0;line-height:1.4}"+
@@ -25748,7 +25791,18 @@ document.addEventListener("keydown",function(ev){if(ev.key!=="Enter"||ev.repeat|
  if(t.tagName==="TEXTAREA"||t.id==="obCode"||t.tagName==="A"||(t.closest&&t.closest("[data-obback],[data-obnext],details,summary")))return;
  var b=o.querySelector("[data-obnext]");if(!b||b.disabled||o.classList.contains("q250hold"))return;ev.preventDefault();b.click()});
 var kcss=document.createElement("style");kcss.textContent="@media (hover:hover) and (pointer:fine){#fbOb [data-obnext]:not([disabled])::after{content:\" \\21B5\";opacity:.7;margin-left:6px;font-weight:700}}";document.head.appendChild(kcss);
-window.FH250={guard:guard};
+/* v371 (Steve's screenshots 14 Nov 12:23: the club header still said "Friday 13 November" on Saturday). The app works out "today" once,
+   when the page opens, so a page left open overnight kept yesterday's date for everything, including where new check-ins and logs are
+   filed. When the date changes, the page reloads itself onto the same screen (fh181 keeps the place): straight away when you come back
+   to it, otherwise at the next quiet moment (nothing being typed, no question or set-up screen open). */
+function dayNow(){try{return dayKey(new Date())}catch(x){return null}}
+function quiet(){var a=document.activeElement;if(a&&/INPUT|TEXTAREA|SELECT/.test(a.tagName))return false;
+ return !["fbOb","fbSet","roleSheet","fb158","inv251","help251","fbGate"].some(function(id){var el=document.getElementById(id);return el&&!el.hidden&&getComputedStyle(el).display!=="none"})}
+var rolled=false;function roll(force){try{if(rolled||typeof TODAY==="undefined")return;var d=dayNow();if(!d||d===TODAY)return;if(!force&&!quiet())return;rolled=true;location.reload()}catch(x){}}
+document.addEventListener("visibilitychange",function(){if(!document.hidden)roll(quiet())});
+window.addEventListener("focus",function(){roll(quiet())});
+setInterval(function(){roll(false)},60000);
+window.FH250={guard:guard,roll:roll};
 })();
 
 /* FighterBase v368 (Steve's after-test list, 13 Nov 2026).
