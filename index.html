@@ -20189,7 +20189,7 @@ function pathOf(k){return k.split("{u}").join(uid)}
 function mine(){return Object.keys(store).filter(function(p){return kindOf(p)})}
 function mark(p){if(!ses||applying||!kindOf(p))return;dirty[p]=1;sd();clearTimeout(timer);timer=setTimeout(push,3000);paint()}
 if(window.__FB_LOCAL_HOOK)window.__FB_LOCAL_HOOK(mark);
-async function push(){if(!ses||up)return;var ps=Object.keys(dirty);if(!ps.length)return;up=true;
+async function push(){if(!ses||up||hold)return;var ps=Object.keys(dirty);if(!ps.length)return;up=true;
  try{var rows=[],dels=[];ps.forEach(function(p){var k=kindOf(p);if(!k)return;if(p in store)rows.push({user_id:ses.uid,kind:k,data:store[p]});else dels.push(k)});
   for(var i=0;i<rows.length;i+=15)await api("POST","member_private?on_conflict=user_id,kind",rows.slice(i,i+15),{Prefer:"resolution=merge-duplicates,return=minimal"});
   for(var j=0;j<dels.length;j++)await api("DELETE","member_private?user_id=eq."+ses.uid+"&kind=eq."+encodeURIComponent(dels[j]),null,{Prefer:"return=minimal"});
@@ -20211,12 +20211,31 @@ function backupLocal(){try{var o={};mine().forEach(function(p){o[p]=store[p]});l
 function canon(v){return JSON.stringify(v,function(k,x){if(x&&typeof x==="object"&&!Array.isArray(x)){var o={};Object.keys(x).sort().forEach(function(q){o[q]=x[q]});return o}return x})}
 function keepPlace(){try{var t=document.querySelector("section[id^=tab-]:not([hidden])");sessionStorage.setItem("fb181tab",JSON.stringify({t:t?t.id.slice(4):"",y:window.scrollY||0}))}catch(x){}}
 setTimeout(function(){try{var v=JSON.parse(sessionStorage.getItem("fb181tab")||"null");sessionStorage.removeItem("fb181tab");if(v&&v.t&&typeof showTab==="function"){showTab(v.t);setTimeout(function(){try{window.scrollTo(0,v.y||0)}catch(x){}},300)}}catch(x){}},2500);
-async function pull(first){if(!ses)return;try{var rows=await api("GET","member_private?select=kind,data");var cloud={};(rows||[]).forEach(function(r){cloud[r.kind]=r.data});
-  if(first&&Object.keys(cloud).length)backupLocal();
+/* v370 (guidance log 3, Steve 13 Nov 16:40: a new account opened with his own profile in it): the data kept in a browser belongs to one
+   account. We remember which (fb181last). Signing in to a different account on that browser keeps a backup and starts that account
+   from its own data; a brand-new account on a browser that already holds someone's data asks first ("Is this you?"). Nothing is
+   copied into an account without that yes. */
+var hold=false;
+function ownerOf(){try{return localStorage.getItem("fb181last")}catch(e){return null}}
+function setOwner(u){try{if(u)localStorage.setItem("fb181last",u)}catch(e){}}
+function localName(){try{var pr=store[pathOf("data/users/{u}/profile")];return pr&&(pr.onboarded||pr.name)?(pr.name||"someone"):null}catch(e){return null}}
+function wipe(keep){applying=true;mine().forEach(function(p){if(keep&&keep(p))return;D.db.doc(p).delete()});applying=false}
+function askOwn(name){var el=document.getElementById("own181");if(!el){el=document.createElement("div");el.id="own181";el.setAttribute("role","dialog");el.setAttribute("aria-modal","true");el.setAttribute("aria-label","Whose data is this?");document.body.appendChild(el)}
+ el.innerHTML='<div class="o181"><span class="g-small" style="margin:0">One quick check</span><h2>This browser already has FighterBase data for '+esc(name)+'</h2><p>Is that you? If it\'s someone else\'s, start fresh: their data stays saved on this browser as a backup and is never added to your account.</p><div class="g-btns"><button class="btn gold" type="button" data-own181="fresh">Start fresh, it\'s not me</button><button class="btn ghost" type="button" data-own181="keep">Yes, it\'s me: keep it</button></div></div>';el.hidden=false}
+document.addEventListener("click",function(ev){var b=ev.target.closest&&ev.target.closest("[data-own181]");if(!b||!ses)return;var el=document.getElementById("own181");
+ if(b.dataset.own181==="keep"){hold=false;setOwner(ses.uid);mine().forEach(function(p){dirty[p]=1});sd();if(el)el.hidden=true;push()}
+ else{backupLocal();wipe();dirty={};sd();hold=false;setOwner(ses.uid);if(el)el.hidden=true;setTimeout(function(){location.reload()},300)}});
+(function(){var c=document.createElement("style");c.textContent="#own181{position:fixed;inset:0;z-index:2147483001;background:#0B0C0F;display:flex;align-items:center;justify-content:center;padding:16px}#own181[hidden]{display:none}.o181{max-width:460px;background:#14151a;border:1px solid rgba(255,255,255,.12);border-radius:18px;padding:22px;color:#F4EFE6;display:flex;flex-direction:column;gap:10px}.o181 h2{margin:0;font-size:22px}.o181 p{margin:0;color:#C9C2B6}.o181 .g-btns{display:flex;flex-direction:column;gap:10px}.o181 .btn{width:100%}";document.head.appendChild(c)})();
+async function pull(first){if(!ses||hold)return;try{var rows=await api("GET","member_private?select=kind,data");var cloud={};(rows||[]).forEach(function(r){cloud[r.kind]=r.data});
+  var owner=ownerOf(),nc=Object.keys(cloud).length;
+  if(first&&owner&&owner!==ses.uid){backupLocal();wipe();dirty={};sd()}/* another account's data: backed up, not copied */
+  else if(first&&!owner&&nc){backupLocal();wipe(function(p){return dirty[p]||(kindOf(p) in cloud)})}/* leftovers next to a real account stay out */
+  else if(first&&!owner&&!nc&&localName()){hold=true;askOwn(localName());paint();return}
+  if(first&&nc)backupLocal();
   var changed=0;applying=true;
   Object.keys(cloud).forEach(function(k){var p=pathOf(k);if(dirty[p])return;if(canon(store[p])!==canon(cloud[k])){D.db.doc(p).set(cloud[k]);changed++}});
   applying=false;
-  mine().forEach(function(p){var k=kindOf(p);if(!(k in cloud))dirty[p]=1});sd();await push();last=Date.now();
+  mine().forEach(function(p){var k=kindOf(p);if(!(k in cloud))dirty[p]=1});sd();await push();last=Date.now();setOwner(ses.uid);
   if(changed&&!sessionStorage.getItem("fb181r")){sessionStorage.setItem("fb181r","1");setTimeout(function(){keepPlace();location.reload()},400)}
   else sessionStorage.removeItem("fb181r")}
  catch(e){applying=false;err="Could not reach the database: "+e.message}paint()}
