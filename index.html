@@ -8049,7 +8049,9 @@ function recPreset(){return A.exp==="comp"?"fighter":(A.exp==="3y"||A.exp==="exp
 function applyPreset(id){var d=PRE.filter(function(x){return x[0]===id})[0];if(!d)return;A.preset=id;if(!d[3]){YNQ().forEach(function(q){A[q[0]]=null});return}
  A.tmode="count";A.tn=d[3].tn;A.ck=d[3].ck;YNQ().forEach(function(q){A[q[0]]=d[3].yes.indexOf(q[0])>=0})}
 function dietNames(){if(!A.diets||!A.diets.length||typeof FB_DIETS==="undefined")return "";return A.diets.map(function(i){return (FB_DIETS.filter(function(d){return d.id===i})[0]||{}).name||""}).filter(Boolean).join(" + ")+" · "}
-var SEC=[["you","About you",["name","sport","other","exp","stance","adult"],"#C81E3A"],["setup","Your set-up",["quick","yesno"],"#E8DFC8"],["train","Training",["train","pack","help","helpn"],"#C81E3A"],["fight","Fighting",["rec","fight","grading","skills"],"#E5484D"],["body","Body and fuel",["weight","food","inj"],"#3FC57E"],["goals","Check-ins and goals",["check","head","mile"],"#4DA3FF"],["gym","Your gym",["gym","share"],"#E8DFC8"]];
+/* v377 A9 (Steve 14 Nov: the questions "look the same", "I thought this was being fixed last night"): each part has its own lamp colour and its own photo */
+var SEC=[["you","About you",["name","sport","other","exp","stance","adult"],"#E8DFC8"],["setup","Your set-up",["quick","yesno"],"#B482FF"],["train","Training",["train","pack","help","helpn"],"#C81E3A"],["fight","Fighting",["rec","fight","grading","skills"],"#FF9F6B"],["body","Body and fuel",["weight","food","inj"],"#3FC57E"],["goals","Check-ins and goals",["check","head","mile"],"#4DA3FF"],["gym","Your gym",["gym","share"],"#9AA3B2"]];
+var BGSEC={you:"FB-TRAIN-021",setup:"FB-TRAIN-014",train:"FB-TRAIN-025",fight:"FB-TRAIN-035",body:"FB-TRAIN-037",goals:"FB-TRAIN-027",gym:"FB-TRAIN-039"};
 function secOf(id){if(id&&id.indexOf("yn_")===0)id="yesno";for(var i=0;i<SEC.length;i++)if(SEC[i][2].indexOf(id)>=0)return SEC[i];return null}
 function secFirst(sid){var st=steps();for(var i=0;i<st.length;i++){var c=secOf(st[i]);if(c&&c[0]===sid)return i}return -1}
 function activeSecs(){var st=steps();return SEC.filter(function(c){return st.some(function(x){return c[2].indexOf(x)>=0})})}
@@ -8070,7 +8072,7 @@ var WHY={you:["Why we ask","Your sport and how long you've trained decide the dr
  gym:["Why link your gym","Linking lets your coach see attendance and help with your goals, and counts your sessions automatically. You choose what they see."],
  share:["Why you choose","Sharing is opt-in for each type of data and can be switched off at any time."]};
 var BG={name:"hero",sport:"hero",other:"train-f",exp:"hero",stance:"hero",adult:"hero",you:"hero",quick:"hero-f",yesno:"hero-f",train:"train-f",rec:"onboard",fight:"onboard",grading:"onboard",skills:"train-f",weight:"hero-f",food:"hero",inj:"train-f",check:"onboard",head:"hero",gym:"onboard",share:"onboard",done:"hero-f",mile:"hero-f"};
-function bgFor(s){if(s.indexOf("yn_")===0)s="yesno";var I=window.FH_IMAGES||{};return I[BG[s]]||I.hero||""}
+function bgFor(s){if(s.indexOf("yn_")===0)s="yesno";var I=window.FH_IMAGES||{},c=secOf(s);if(s!=="done"&&c&&I[BGSEC[c[0]]])return I[BGSEC[c[0]]];return I[BG[s]]||I.hero||""}
 function secSummary(c){var out="";switch(c[0]){case "you":out=A.sports.join(" + ");break;case "setup":var pp=PRE.filter(function(x){return x[0]===A.preset})[0];out=pp?pp[1]:"Custom";break;case "train":out=A.tmode==="days"?A.tdays.length+" days":A.tn+" a week";break;
  case "fight":var o=[];if(A.rec)o.push((+A.w||0)+"-"+(+A.l||0));if(A.fightQ&&A.fdate)o.push(new Date(A.fdate+"T12:00").toLocaleDateString("en-GB",{day:"numeric",month:"short"}));if(A.grQ&&A.belt)o.push(A.belt);if(A.skQ&&A.skills.length)o.push(A.skills.length+" skill"+(A.skills.length>1?"s":""));out=o.join(", ")||"Skipped";break;
  case "body":var b=[];if(A.wtQ)b.push((A.wnow?A.wnow+(A.wu==="lb"?"lb":"kg"):"Weight"));if(A.foodQ)b.push(A.diets.length?A.diets.length+" diet"+(A.diets.length>1?"s":""):"Food diary");if(A.injQ)b.push("Injury");out=b.join(", ")||"Skipped";break;
@@ -8151,6 +8153,10 @@ function render(){try{if(A&&!(S.profile&&S.profile.onboarded))localStorage.setIt
  var st=steps();if(step>=st.length)step=st.length-1;var pct=Math.round(step/(st.length-1)*100),last=st[step]==="done",sc=secOf(st[step]),act=activeSecs(),sn=sc?act.indexOf(sc)+1:0;
  var h=body();if(!last)h=h.replace("</p>","</p>"+whyHtml(st[step]));
  var kick=sc?'<div class="ob-kick" style="--sc:'+sc[3]+'">Part '+sn+' of '+act.length+' · '+esc(sc[1])+'</div>':'';
+ /* v377 A9: a big question number for the part ("02/04"), and the layout swaps sides from one question to the next */
+ var qi=0,qn=0;if(sc){var inSec=st.filter(function(x){var c=secOf(x);return c&&c[0]===sc[0]});qn=inSec.length;qi=inSec.indexOf(st[step])+1}
+ if(sc&&!last)kick='<div class="ob-num" aria-hidden="true">'+(qi<10?"0":"")+qi+'<small>/'+(qn<10?"0":"")+qn+'</small></div>'+kick;
+ el.dataset.sec=sc?sc[0]:"done";el.dataset.alt=String(step%2);
  var ps=el.querySelector(".ob-secs"),px=ps?ps.scrollLeft:0;
  el.style.setProperty("--sc",sc?sc[3]:"#E8DFC8");
  el.innerHTML='<div class="ob-bg" style="background-image:url('+bgFor(st[step])+')"></div><div class="ob-in"><div class="ob-top"><span class="ob-brand"><img class="ob-logo" alt="" src="'+(window.FB_LOGO_S||"")+'">Fighter<b>Base</b></span><div class="ob-bar"><i style="width:'+pct+'%"></i></div>'+(P().onboarded?'<button class="linkbtn" type="button" data-obx>Close</button>':'')+'</div>'+(last?'':strip(st))+
@@ -25857,6 +25863,49 @@ document.addEventListener("click",function(ev){var t=ev.target;if(!t.closest)ret
 document.addEventListener("keydown",function(ev){if(ev.key==="Enter"&&ev.target&&(ev.target.id==="j250c"||ev.target.id==="j250d")){ev.preventDefault();jGo()}});
 document.addEventListener("input",function(ev){if(ev.target&&(ev.target.id==="j250c"||ev.target.id==="j250d"))jMsg("")});
 setInterval(function(){if(!document.hidden)try{jPaint()}catch(x){}},1500);
+/* v377 A9, A7, A12 (Steve 14 Nov: "these still need varying up the look", "images, that's what really changes the user's view", "the
+   fighterbase logo is tiny ... display it with pride"). The questions now change visibly at every step:
+   - each part has its own lamp colour and its own photo (fh60), shown crisp on one side on a computer; the photo swaps sides from one
+     question to the next, so every Next is a visible change; on a phone the part's photo fills the background;
+   - a big outlined question number for the part ("02/04") and a coloured bar under each question;
+   - chosen answers light up in the part's colour;
+   - moving into a new part shows a short title card (the part's name over its photo); a tap or Enter skips it;
+   - the FighterBase logo is bigger in the top bar, with a large faded mark in the background on the side away from the photo. */
+var qcss2=document.createElement("style");qcss2.textContent=
+ "#fbOb .ob-brand{font-size:26px;letter-spacing:.03em}#fbOb .ob-logo{width:40px;height:40px;vertical-align:-12px;margin-right:10px}"+
+ "#fbOb:before{content:'';position:fixed;left:-6vh;bottom:-8vh;width:60vh;height:60vh;background:var(--wm250) center/contain no-repeat;opacity:.08;pointer-events:none;z-index:1}#fbOb[data-alt='1']:before{left:auto;right:-6vh}"+
+ "#fbOb .ob-num{font:900 clamp(56px,9vw,112px)/.85 var(--display,'Big Shoulders Display'),sans-serif;color:transparent;-webkit-text-stroke:2px var(--sc);letter-spacing:-.01em;margin:0 0 -4px}"+
+ "#fbOb .ob-num small{font-size:.3em;-webkit-text-stroke:0;color:var(--sc);margin-left:8px;letter-spacing:.08em;vertical-align:.2em}"+
+ "#fbOb .ob-body h2:after{content:'';display:block;width:64px;height:4px;border-radius:2px;background:var(--sc);margin-top:12px;box-shadow:0 0 18px color-mix(in srgb,var(--sc) 60%,transparent)}"+
+ "#fbOb .ob-c.on{border-color:var(--sc)!important;background:color-mix(in srgb,var(--sc) 16%,rgba(11,12,15,.6))!important;box-shadow:0 0 0 3px color-mix(in srgb,var(--sc) 22%,transparent)!important}"+
+ "#fbOb .ob-c:hover{border-color:color-mix(in srgb,var(--sc) 70%,transparent)}#fbOb .chip[aria-pressed=true]{border-color:var(--sc);background:color-mix(in srgb,var(--sc) 22%,transparent)}"+
+ "#fbOb .ob-bg{opacity:.5}"+
+ "@media (min-width:1000px){#fbOb .ob-bg{left:auto;right:0;width:46%;opacity:.95;animation:obKb 30s ease-in-out infinite alternate;transform-origin:center}"+
+  "#fbOb .ob-bg:after{background:linear-gradient(90deg,var(--bg,#0B0C0F) 0%,rgba(11,12,15,.35) 26%,rgba(11,12,15,.08) 60%,rgba(11,12,15,.4) 100%)}"+
+  "#fbOb .ob-bg:before{content:'';position:absolute;z-index:1;top:0;bottom:0;left:0;width:3px;background:var(--sc);box-shadow:0 0 30px 4px color-mix(in srgb,var(--sc) 55%,transparent)}"+
+  "#fbOb[data-alt='1'] .ob-bg{right:auto;left:0}#fbOb[data-alt='1'] .ob-bg:after{background:linear-gradient(270deg,var(--bg,#0B0C0F) 0%,rgba(11,12,15,.35) 26%,rgba(11,12,15,.08) 60%,rgba(11,12,15,.4) 100%)}#fbOb[data-alt='1'] .ob-bg:before{left:auto;right:0}"+
+  "#fbOb .ob-in{max-width:none;width:54%;margin:0;padding:22px 48px}#fbOb[data-alt='1'] .ob-in{margin-left:46%}#fbOb .ob-body,#fbOb .ob-foot{max-width:640px}"+
+  "#fbOb[data-sec='done'] .ob-bg{width:100%;opacity:.5}#fbOb[data-sec='done'] .ob-in{width:auto;max-width:720px;margin:0 auto}}"+
+ "#fbOb .ob-part{position:fixed;inset:0;z-index:5;display:flex;flex-direction:column;justify-content:center;padding:8vh 8vw;background:#0B0C0F center/cover no-repeat;cursor:pointer;animation:obPart 1.25s ease forwards}"+
+ "#fbOb .ob-part:before{content:'';position:absolute;inset:0;background:linear-gradient(90deg,rgba(11,12,15,.92) 0%,rgba(11,12,15,.55) 55%,rgba(11,12,15,.2) 100%)}"+
+ "#fbOb .ob-part>*{position:relative}#fbOb .ob-part em{font:800 15px var(--cond,'Barlow Condensed'),sans-serif;letter-spacing:.24em;text-transform:uppercase;color:var(--sc);font-style:normal}"+
+ "#fbOb .ob-part b{display:block;font:900 clamp(56px,12vw,150px)/.9 var(--display,'Big Shoulders Display'),sans-serif;text-transform:uppercase;color:#fff;margin:10px 0 14px}"+
+ "#fbOb .ob-part i{display:block;width:120px;height:6px;border-radius:3px;background:var(--sc);box-shadow:0 0 30px var(--sc)}"+
+ "@keyframes obPart{0%{opacity:0;clip-path:inset(0 100% 0 0)}18%{opacity:1;clip-path:inset(0 0 0 0)}78%{opacity:1}100%{opacity:0;visibility:hidden}}"+
+ "@media (prefers-reduced-motion:reduce){#fbOb .ob-part{animation:none}#fbOb .ob-bg{animation:none!important}}"+
+ "@media (max-height:700px){#fbOb .ob-num{display:none}}";
+document.head.appendChild(qcss2);
+var lastSec="",SECS=["you","setup","train","fight","body","goals","gym","done"],partT=0;
+function partCard(o){var sec=o.dataset.sec||"";if(!sec||sec===lastSec)return;var a=SECS.indexOf(lastSec),b=SECS.indexOf(sec),prev=lastSec;lastSec=sec;if(sec==="done"||(prev&&b<=a))return;
+ var k=o.querySelector(".ob-kick"),bg=o.querySelector(".ob-bg");if(!k)return;var t=(k.textContent||"").split("·"),nm=(t[1]||"").trim();if(!nm)return;
+ var old=o.querySelector(".ob-part");if(old)old.remove();var d=document.createElement("div");d.className="ob-part";d.setAttribute("aria-hidden","true");
+ if(bg)d.style.backgroundImage=bg.style.backgroundImage;d.innerHTML='<em>'+(t[0]||"").trim()+'</em><b>'+nm.replace(/[<>&]/g,"")+'</b><i></i>';o.appendChild(d);
+ clearTimeout(partT);partT=setTimeout(function(){d.remove()},1300)}
+document.addEventListener("click",function(ev){var p=ev.target.closest&&ev.target.closest("#fbOb .ob-part");if(p){p.remove();ev.stopPropagation()}},true);
+document.addEventListener("keydown",function(ev){var p=document.querySelector("#fbOb .ob-part");if(p&&(ev.key==="Enter"||ev.key===" "||ev.key==="Escape")){p.remove();ev.preventDefault();ev.stopPropagation()}},true);
+setInterval(function(){var o=document.getElementById("fbOb");if(!o||o.hidden){lastSec="";return}
+ if(window.FB_LOGO_S&&!o.style.getPropertyValue("--wm250"))o.style.setProperty("--wm250",'url("'+window.FB_LOGO_S+'")');
+ try{partCard(o)}catch(x){}},120);
 window.FH250={guard:guard,roll:roll,joinCard:jPaint};
 })();
 
