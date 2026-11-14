@@ -7400,13 +7400,20 @@ function apply(d){var p=P(),cc=Object.assign({},p.clubConsent||{},{at:TODAY,v:2}
  profChanged();try{FBE.sync()}catch(e){}try{scheduleLeague()}catch(e){}}
 /* ---------- the member's sheet (used when joining and from "What my club can see") ---------- */
 function draftFor(c,cur){var t=track(c),cs=cur?consent():{},d={};CATS.forEach(function(x){var k=x[0];if(!t[k])return;d[k]=cs[k]!=null?cs[k]:x[3]});return d}
-function sheet(c,d){var t=track(c),ask=CATS.filter(function(x){return t[x[0]]}),no=CATS.filter(function(x){return !t[x[0]]});
- return '<div class="cs-in"><span class="ob-kick">'+(P().clubConsent?"What my club can see":"Joining your club")+'</span><h2>'+esc(c.name)+'</h2><p class="muted" style="margin:0">You choose exactly what '+esc(c.name)+' can see. Change it any time.</p>'+
- '<div class="cs-box"><b>Always shared while you\'re a member</b><ul><li>Your name and that you belong to the club</li><li>Class bookings and check-ins (attendance)</li></ul><p class="muted small" style="margin:4px 0 0">Attendance is how the club runs its classes. Later it can be automatic when you arrive.</p></div>'+
- (ask.length?'<div class="cs-box"><b>'+esc(c.name)+' asks to see</b>'+ask.map(function(x){return '<label class="toggle"><input type="checkbox" data-cstog="'+x[0]+'" '+(d[x[0]]?"checked":"")+'><span><b>'+x[1]+'</b><br><span class="muted small">'+x[2]+'</span></span></label>'}).join("")+'<div class="row" style="gap:6px"><button class="linkbtn" type="button" data-csall="1">Share all</button><button class="linkbtn" type="button" data-csall="0">Share none</button></div></div>':'')+
- (no.length?'<div class="cs-box"><b>Not asked for by this club</b><p class="muted small" style="margin:2px 0 0">'+no.map(function(x){return x[1]}).join(", ")+'. Not shared.</p></div>':'')+
- '<div class="cs-box"><b>Never shared with a club</b><ul><li>Meals, food photos and calories</li><li>Injury details, notes and chats</li><li>Cycle data</li></ul></div>'+
- '<div class="row"><button class="btn gold" type="button" data-csok>'+(P().clubConsent?"Save":"Confirm and join")+'</button><button class="btn ghost" type="button" '+(P().clubConsent?"data-csclose":"data-csleave")+'>'+(P().clubConsent?"Cancel":"Leave club")+'</button></div></div>'}
+/* v379 A24 (Steve 14 Nov, on the club sharing screen during the member test: "too much scrolling"). One tap at the top shares what the club
+   asks for (recommended, with the reason); choosing item by item is folded away underneath with a count; what is always and never shared
+   is folded into one line; the Join (or Save) button stays in view at the bottom. */
+function sheet(c,d){var t=track(c),ask=CATS.filter(function(x){return t[x[0]]}),no=CATS.filter(function(x){return !t[x[0]]}),edit=!!P().clubConsent,nm=esc(c.name),onN=ask.filter(function(x){return d[x[0]]}).length;
+ return '<div class="cs-in cs54"><span class="ob-kick">'+(edit?"What my club can see":"Joining your club")+'</span><h2>'+nm+'</h2><p class="muted" style="margin:0">You choose what '+nm+' can see. Change it any time.</p>'+
+ (ask.length?'<div class="cs-rec"><button class="btn gold" type="button" data-csrec>'+(edit?"Share everything they ask for":"Share what they ask for and join")+'</button><p class="muted small" style="margin:0">Recommended: your coach can plan your training, camps and weigh-ins around it. Nothing else is shared.</p></div>':'')+
+ (ask.length?'<details class="cs-box cs-det"'+(edit?" open":"")+'><summary><b>Choose for myself</b><span class="muted small" data-cscount>'+onN+' of '+ask.length+' shared</span></summary>'+ask.map(function(x){return '<label class="toggle"><input type="checkbox" data-cstog="'+x[0]+'" '+(d[x[0]]?"checked":"")+'><span><b>'+x[1]+'</b><br><span class="muted small">'+x[2]+'</span></span></label>'}).join("")+'<div class="row" style="gap:6px"><button class="linkbtn" type="button" data-csall="1">Share all</button><button class="linkbtn" type="button" data-csall="0">Share none</button></div></details>':'')+
+ '<!--cshist-->'+
+ '<details class="cs-box cs-det"><summary><b>Always and never shared</b></summary><p class="small" style="margin:0"><b>Always, while you\'re a member:</b> your name, that you belong to the club, and your class bookings and check-ins (that\'s how the club runs its classes).</p><p class="small" style="margin:0"><b>Never:</b> meals, food photos and calories, injury details, notes and chats, cycle data.</p>'+(no.length?'<p class="small muted" style="margin:0">Not asked for by this club, so not shared: '+no.map(function(x){return x[1]}).join(", ")+'.</p>':'')+'</details>'+
+ '<div class="cs-foot"><div class="row"><button class="btn'+(ask.length?"":" gold")+'" type="button" data-csok>'+(edit?"Save":(ask.length?"Join with my choices":"Confirm and join"))+'</button><button class="btn ghost" type="button" '+(edit?"data-csclose":"data-csleave")+'>'+(edit?"Cancel":"Leave club")+'</button></div></div></div>'}
+document.addEventListener("click",function(e){var b=e.target.closest&&e.target.closest("[data-csrec]");if(!b)return;document.querySelectorAll("#csSheet [data-cstog]").forEach(function(i){if(!i.checked){i.checked=true;i.dispatchEvent(new Event("change",{bubbles:true}))}});var ok=document.querySelector("#csSheet [data-csok]");if(ok)ok.click()});
+document.addEventListener("change",function(e){var x=e.target;if(!x||!x.dataset||!x.dataset.cstog)return;var L=document.querySelectorAll("#csSheet [data-cstog]"),n=0;L.forEach(function(i){if(i.checked)n++});var c=document.querySelector("#csSheet [data-cscount]");if(c)c.textContent=n+" of "+L.length+" shared"});
+(function(){var st=document.createElement("style");st.textContent=".cs54 .cs-rec{display:flex;flex-direction:column;gap:6px}.cs54 .cs-rec .btn{width:100%;min-height:52px;white-space:normal;line-height:1.2}.cs54 .cs-det summary{cursor:pointer;display:flex;justify-content:space-between;align-items:center;gap:10px;list-style:none}.cs54 .cs-det summary::-webkit-details-marker{display:none}.cs54 .cs-det summary:after{content:'';width:8px;height:8px;border-right:2px solid currentColor;border-bottom:2px solid currentColor;transform:rotate(45deg);opacity:.6;flex:none;margin-left:auto}.cs54 .cs-det[open] summary:after{transform:rotate(-135deg)}.cs54 .cs-det summary b{flex:1}"+
+ ".cs54 .cs-foot{position:sticky;bottom:-22px;margin:0 -18px calc(-22px - env(safe-area-inset-bottom,0px));padding:12px 18px calc(16px + env(safe-area-inset-bottom,0px));background:linear-gradient(180deg,rgba(20,22,27,.88),var(--surface,#14161b) 35%);border-top:1px solid var(--line,rgba(255,255,255,.1));z-index:2}.cs54 .cs-foot .row{justify-content:flex-end}.cs54 .cs-det .fb111-h>.label{display:none}";document.head.appendChild(st)})();
 document.addEventListener("click",function(e){var b=e.target.closest&&e.target.closest("[data-csall]");if(!b)return;var on=b.dataset.csall==="1";document.querySelectorAll("#csSheet [data-cstog]").forEach(function(i){i.checked=on;i.dispatchEvent(new Event("change",{bubbles:true}))})});
 /* ---------- what gets published to the club, on top of the engine's publish ---------- */
 function extend(o){var c=club();if(!c)return o;var t=track(c);
@@ -13895,7 +13902,7 @@ function histHtml(){var g=P().histGrant||{},on=grantOn();
   '<label class="ob-tog"><input type="checkbox" id="fb111Old"'+(on?" checked":"")+'><span><b>Also share older history with this club</b><small>Applies to this club only, and ends if you leave it.</small></span></label>'+
   '<div class="chips" id="fb111Opts"'+(on?"":" hidden")+' style="margin-top:8px">'+[["2","Up to 2 years"],["5","Up to 5 years"],["all","Everything"]].map(function(x){return '<button type="button" class="chip" data-fb111yrs="'+x[0]+'" aria-pressed="'+((g.yrs||"2")===x[0])+'">'+x[1]+'</button>'}).join("")+'</div>'+
   '<p class="small muted" style="margin:10px 0 0"><b>If a session came from another club</b>, that club\'s coaches see only a summary, never the plan: <em>'+e_(summary({date:"2026-04-21",activity:"Pad work",minutes:60,state:"completed"}))+'</em></p></div>'}
-function wrapSheet(){if(!window.FB54||FB54.__w111)return;var os=FB54.sheet;FB54.sheet=function(c,d){var h=os(c,d),i=h.lastIndexOf('<div class="row"><button class="btn gold"');var s=histHtml();return i>=0?h.slice(0,i)+s+h.slice(i):h+s};FB54.__w111=true}
+function wrapSheet(){if(!window.FB54||FB54.__w111)return;var os=FB54.sheet;FB54.sheet=function(c,d){var h=os(c,d),s=histHtml();if(h.indexOf('<!--cshist-->')>=0)return h.replace('<!--cshist-->','<details class="cs-box cs-det"><summary><b>How far back your coach can see</b></summary>'+s+'</details>');var i=h.lastIndexOf('<div class="row"><button class="btn gold"');return i>=0?h.slice(0,i)+s+h.slice(i):h+s};FB54.__w111=true}
 /* ---------- club owner: leaving policy and unlink ---------- */
 var unl=null;
 function ownerPanel(){var host=document.getElementById("huboverBody"),c=club();if(!host||!c)return;var own=window.FHC&&FHC.isOwner&&FHC.isOwner();var w=document.getElementById("fb111Panel");if(!own){if(w)w.remove();return}
@@ -17672,7 +17679,11 @@ function mode(){var m=P().tipsMode;return m==="off"||m==="screens"?m:"all"}
 function seen(){var p=P();if(!p.tipsSeen)p.tipsSeen={};return p.tipsSeen}
 function save(){try{profChanged()}catch(x){}}
 function ready(){var p=P();return !!(S.uid&&p.onboarded)||!!p.onboarded}
-function blocked(){return !!document.querySelector(".gr-tour,.ob-wrap:not([hidden])")}
+/* v379 (Steve 14 Nov: a "New here" tip sat on top of the club sharing screen, like the guides did, A20): a first-use tip waits while any
+   pop-up is open, and one already showing steps aside (and comes back later) when a pop-up opens over it. */
+function blocked(){if(document.querySelector(".gr-tour,.ob-wrap:not([hidden])"))return true;
+ var ids=["fbOb","fbSet","roleSheet","csSheet","fbGate","fbw","fb158","inv251","help251","own181"];for(var i=0;i<ids.length;i++){var el=document.getElementById(ids[i]);if(el&&!el.hidden&&getComputedStyle(el).display!=="none")return true}
+ var L=document.querySelectorAll('[aria-modal="true"],[role="dialog"]');for(var j=0;j<L.length;j++){var m=L[j];if(m.hidden||m.id==="fb148")continue;var cs=getComputedStyle(m);if(cs.display==="none"||cs.visibility==="hidden"||cs.opacity==="0")continue;var r=m.getBoundingClientRect();if(r.width>40&&r.height>40&&r.right>0&&r.bottom>0&&r.left<innerWidth&&r.top<innerHeight)return true}return false}
 function visTab(){var s=document.querySelector("section[id^=tab-]:not([hidden])");return s?s.id.slice(4):""}
 /* ---------- the card ---------- */
 var css=document.createElement("style");css.textContent=
@@ -17729,7 +17740,8 @@ function card(){var tab=document.getElementById("tab-profile");if(!tab)return;va
  if(el.dataset.sig!==h){el.innerHTML=h;el.dataset.sig=h}}
 document.addEventListener("click",function(ev){var b=ev.target.closest&&ev.target.closest("[data-t148m],[data-t148reset]");if(!b)return;
  if(b.dataset.t148m){P().tipsMode=b.dataset.t148m;save()}else{P().tipsSeen={};save();last=""}card()},true);
-setInterval(function(){try{card()}catch(x){}},1500);
+setInterval(function(){try{card()}catch(x){}try{if(box.style.display!=="none"&&cur&&blocked()){var k=cur;hide();delete seen()[k];if(/^s:/.test(k))last="";save()}}catch(x){}},1500);
+setInterval(function(){try{if(box.style.display==="none"&&!blocked())screenTip()}catch(x){}},3000);
 window.FH148={SCR:SCR,R:R,reset:function(){P().tipsSeen={};P().tipsMode="all";hide();last="";save()},seen:seen,mode:mode,hide:hide,screenTip:screenTip,visible:function(){return box.style.display!=="none"?box.innerText:""}};
 })();
 
@@ -26003,7 +26015,10 @@ document.addEventListener("click",function(ev){var t=ev.target;if(!t.closest)ret
  if(a==="send"){var txt=((document.getElementById("help251t")||{}).value||"").trim();var m=document.getElementById("help251m");if(!txt){if(m)m.textContent="Write a few words about what went wrong.";return}
   var on=save(txt);s.querySelector(".s251").innerHTML='<div class="ok251"><b>Thanks, report sent.</b><br>'+(on?"We'll look into it and fix it.":"Saved on this device. It's sent when you're signed in.")+'</div><div class="row"><button class="btn" type="button" data-help251="x">Close</button></div>';return}});
 function qbtn(){if(document.getElementById("q251"))return;var b=document.createElement("button");b.id="q251";b.type="button";b.setAttribute("aria-label","Help and report a problem");b.title="Help";b.textContent="?";document.body.appendChild(b)}
-function vis(){var q=document.getElementById("q251");if(!q)return;var hide=["fbGate","fbOb","fbSet","fbw"].some(function(id){var el=document.getElementById(id);return el&&!el.hidden&&getComputedStyle(el).display!=="none"});if(q.hidden!==hide)q.hidden=hide}
+/* v379: the "?" also steps aside while a sheet or pop-up is open, so it never sits on a sheet's buttons (it covered "Join with my choices") */
+function vis(){var q=document.getElementById("q251");if(!q)return;var hide=["fbGate","fbOb","fbSet","fbw","csSheet","roleSheet","inv251","help251","fb158"].some(function(id){var el=document.getElementById(id);return el&&!el.hidden&&getComputedStyle(el).display!=="none"});
+ if(!hide){var L=document.querySelectorAll('[aria-modal="true"]');for(var i=0;i<L.length&&!hide;i++){var m=L[i];if(m.hidden)continue;var cs=getComputedStyle(m);if(cs.display==="none"||cs.visibility==="hidden"||cs.opacity==="0")continue;var r=m.getBoundingClientRect();if(r.width>40&&r.height>40&&r.right>0&&r.bottom>0&&r.left<innerWidth&&r.top<innerHeight)hide=true}}
+ if(q.hidden!==hide)q.hidden=hide}
 setTimeout(qbtn,1500);setInterval(vis,800);
 window.FH251={invite:openInv,help:openHelp};
 })();
