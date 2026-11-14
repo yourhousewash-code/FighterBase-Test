@@ -8988,7 +8988,7 @@ function readyHTML(){var c=club()||{},n=count();
   '<span class="label">All set</span><h2>'+esc(c.name||"Your club")+' is ready</h2><p class="ob-sub">'+(n===STEPS.length?'Everything essential is done.':'You\'ve done '+n+' of '+STEPS.length+'. The rest can wait: tap one to finish it now, or later from Overview.')+' Members join with code <b>'+esc(c.code||"")+'</b>.</p>'+
   '<div class="sw-chk">'+STEPS.map(function(x,i){var d=done(x[0]);return '<button type="button" class="sw-ck'+(d?" ok":"")+'" data-swstep2="'+i+'"><span>'+(d?"✓":(i+1))+'</span>'+esc(x[1])+'</button>'}).join("")+'</div>'+
   '<span class="label" style="margin-top:6px">What the club side is for</span><div class="sw-tour">'+TOURS.map(function(x){return '<button type="button" class="sw-tr" data-swtour="'+x[0]+'"><b>'+esc(x[1])+'</b><span>'+esc(x[2])+'</span></button>'}).join("")+'</div>'+
-  '<p class="ob-sub small">Overview always shows what needs you next. Your own training is optional: <button class="linkbtn" type="button" data-fhsetup>answer the training questions</button> whenever you like.</p></div>'+
+  '<p class="ob-sub small">Overview always shows what needs you next. Your own training is optional: <button class="linkbtn" type="button" data-fhsetup>answer the training questions</button> whenever you like.</p><p class="ob-sub small">Something not right, or an idea? Tap <b>?</b> on any page: Report a problem or Suggest a change. We read every one.</p></div>'+
   '<div class="ob-foot"><span></span><button class="btn gold" type="button" data-swgoclub>Go to my club</button></div></div>'}
 function close(){var el=document.getElementById("fbSet");try{if(!ready)sessionStorage.removeItem("fb65welcome")}catch(x){}if(el)el.hidden=true;document.body.style.overflow="";open=false;card()}
 function openAt(i){if(!own())return;step=typeof i==="number"?i:Math.max(0,STEPS.findIndex(function(x){return !done(x[0])}));if(step<0)step=0;open=true;render()}
@@ -13815,7 +13815,7 @@ var CSS="#fbw{position:fixed;inset:0;z-index:100000;background:radial-gradient(1
 function style(){if(document.getElementById("fbwcss"))return;var s=document.createElement("style");s.id="fbwcss";s.textContent=CSS;document.head.appendChild(s)}
 /* ---------- welcome story ---------- */
 var SL=[
- {ic:"mark",k:"Welcome",t:"Fighter<b>Base</b>",p:"Train. Fight. Look after yourself. Your training, food and progress in one place.",l:["Takes about two minutes to set up","You choose what to answer and what to skip","Nothing is shared unless you say so","Train at a gym? Link your club or find one here"],ic:"mark"},
+ {ic:"mark",k:"Welcome",t:"Fighter<b>Base</b>",p:"Train. Fight. Look after yourself. Your training, food and progress in one place.",l:["Takes about two minutes to set up","You choose what to answer and what to skip","Nothing is shared unless you say so","Train at a gym? Link your club or find one here","Tap ? on any page to report a problem or suggest a change. We listen and improve"],ic:"mark"},
  {k:"Home",t:"Your day, <b>at a glance</b>",p:"Home shows how your week is going, what is next, and a gentle nudge on what to do today.",ic:0,shot:"tour-today",col:"#E8DFC8",sym:"home"},
  {k:"Log",t:"Sessions <b>logged for you</b>",p:"Your gym sessions are logged automatically when you turn it on, so there is nothing to remember. Add anything else yourself in a few taps: a run, a lift, a weigh-in or a quick check-in.",ic:1,shot:"tour-log",col:"#C81E3A",sym:"log"},
  {k:"Food",t:"Eat for the <b>work</b>",p:"Search foods, scan a label or build meals. Only track what helps you. Skip it if you would rather not.",ic:2,shot:"tour-food",col:"#3FC57E",sym:"food"},
@@ -26014,26 +26014,47 @@ var ERR=[];window.addEventListener("error",function(x){try{ERR.push(String(x.mes
 function cur(){var s=document.querySelector("section[id^=tab-]:not([hidden])");return s?s.id.slice(4):""}
 function curName(){var t=cur();try{return (typeof TABNAME!=="undefined"&&TABNAME[t])||t}catch(x){return t}}
 var LAST="";
+/* v381 A27 (Steve 14 Nov: "report and edit, request a change type thing ... include that in the tutorials and the training and the setup"):
+   Suggest a change sits next to Report a problem on every page; a report can say it's a link or button that doesn't work. Both are saved
+   with the page they came from, like reports (kind "idea", "bug" or "link"). */
+var KIND="bug";
 function openHelp(mode){var s=sheet("help251");s.setAttribute("aria-label","Help");
+ if(mode==="idea"){KIND="idea";s.innerHTML='<div class="s251"><div><span class="label">Suggest a change</span><h2>What would make it better?</h2><p class="muted small" style="margin:6px 0 0">An idea, something missing, or "I wish it did...". We keep which page you were on ('+e(curName())+').</p></div>'+
+  '<textarea id="help251t" placeholder="e.g. I wish I could see my sparring rounds on my timeline"></textarea><div class="row"><button class="btn gold" type="button" data-help251="send">Send suggestion</button><button class="linkbtn" type="button" data-help251="x">Cancel</button></div><p id="help251m" class="muted small" style="margin:0"></p></div>';s.hidden=false;return}
+ if(mode==="report")KIND="bug";
  if(mode==="report"){s.innerHTML='<div class="s251"><div><span class="label">Report a problem</span><h2>What went wrong?</h2><p class="muted small" style="margin:6px 0 0">Say what you were trying to do and what happened. We also keep which page you were on ('+e(curName())+'), your screen size and any error, so we can find it and fix it.</p></div>'+
-  '<textarea id="help251t" placeholder="e.g. I pressed Create club and it took me back to Today"></textarea><div class="row"><button class="btn gold" type="button" data-help251="send">Send report</button><button class="linkbtn" type="button" data-help251="x">Cancel</button></div><p id="help251m" class="muted small" style="margin:0"></p></div>'}
+  '<div class="chips" style="margin:0"><button type="button" class="chip" data-k251="bug" aria-pressed="true">Something went wrong</button><button type="button" class="chip" data-k251="link" aria-pressed="false">A link or button doesn\'t work</button></div><textarea id="help251t" placeholder="e.g. I pressed Create club and it took me back to Today"></textarea><div class="row"><button class="btn gold" type="button" data-help251="send">Send report</button><button class="linkbtn" type="button" data-help251="x">Cancel</button></div><p id="help251m" class="muted small" style="margin:0"></p></div>'}
  else s.innerHTML='<div class="s251"><div><span class="label">Help</span><h2>How can we help?</h2><p class="muted small" style="margin:6px 0 0">You\'re on: '+e(curName())+'</p></div>'+
-  '<div class="g251"><button class="btn gold" type="button" data-help251="report">Report a problem</button><button class="btn" type="button" data-help251="guide">Show me this page</button><button class="btn ghost" type="button" data-help251="help">Help and contact</button></div>'+
+  '<div class="g251"><button class="btn gold" type="button" data-help251="report">Report a problem</button><button class="btn gold" type="button" data-help251="idea">Suggest a change</button><button class="btn" type="button" data-help251="guide">Show me this page</button><button class="btn ghost" type="button" data-help251="help">Help and contact</button></div><p class="muted small" style="margin:0">We read every report and suggestion. We can\'t promise every change, but the most asked-for ones get built.</p>'+
   '<div class="row"><button class="linkbtn" type="button" data-help251="x">Close</button></div></div>';
  s.hidden=false}
 function save(text){var A=window.FH181,D=window.__FB_DEMO;var id=new Date().toISOString().replace(/[^0-9]/g,"").slice(0,14)+Math.random().toString(36).slice(2,5);
- var r={at:new Date().toISOString(),text:text.slice(0,2000),page:cur(),pageName:curName(),view:document.body.classList.contains("hubview")?"club":"member",club:(club()||{}).name||"",w:innerWidth,h:innerHeight,ua:navigator.userAgent.slice(0,180),errors:ERR.slice(),v:(document.querySelector('meta[name="fb-version"]')||{}).content||""};
+ var r={at:new Date().toISOString(),kind:KIND,text:text.slice(0,2000),page:cur(),pageName:curName(),view:document.body.classList.contains("hubview")?"club":"member",club:(club()||{}).name||"",w:innerWidth,h:innerHeight,ua:navigator.userAgent.slice(0,180),errors:ERR.slice(),v:(document.querySelector('meta[name="fb-version"]')||{}).content||""};
  if(A&&A.on&&A.local&&D&&D.db){D.db.doc("reports/"+A.local+"/"+id).set(r);return true}
  try{var k="fb251reports",L=JSON.parse(localStorage.getItem(k)||"[]");L.push(r);localStorage.setItem(k,JSON.stringify(L.slice(-20)))}catch(x){}return false}
 document.addEventListener("click",function(ev){var t=ev.target;if(!t.closest)return;
  if(t.closest("#q251")){openHelp();return}
  var b=t.closest("[data-help251]");if(!b)return;var a=b.dataset.help251,s=document.getElementById("help251");
  if(a==="x"){s.hidden=true;return}
+ if(a==="idea"){openHelp("idea");setTimeout(function(){var x=document.getElementById("help251t");if(x)x.focus()},50);return}
  if(a==="report"){openHelp("report");setTimeout(function(){var x=document.getElementById("help251t");if(x)x.focus()},50);return}
  if(a==="guide"){s.hidden=true;try{var t0=cur(),g=window.FH158&&(FH158.GD||[]).filter(function(x){return x.tab===t0})[0];if(g)FH158.start(g.id);else if(typeof toast==="function")toast("No guide for this page yet","Report a problem if something's unclear and we'll add one.")}catch(x){}return}
  if(a==="help"){s.hidden=true;try{showTab("profile")}catch(x){}setTimeout(function(){var h=[].slice.call(document.querySelectorAll("button")).filter(function(x){return /^get help$/i.test((x.textContent||"").trim())})[0];if(h)h.scrollIntoView({block:"center"})},400);return}
- if(a==="send"){var txt=((document.getElementById("help251t")||{}).value||"").trim();var m=document.getElementById("help251m");if(!txt){if(m)m.textContent="Write a few words about what went wrong.";return}
-  var on=save(txt);s.querySelector(".s251").innerHTML='<div class="ok251"><b>Thanks, report sent.</b><br>'+(on?"We'll look into it and fix it.":"Saved on this device. It's sent when you're signed in.")+'</div><div class="row"><button class="btn" type="button" data-help251="x">Close</button></div>';return}});
+ if(a==="send"){var txt=((document.getElementById("help251t")||{}).value||"").trim();var m=document.getElementById("help251m");if(!txt){if(m)m.textContent=KIND==="idea"?"Write a few words about your idea.":"Write a few words about what went wrong.";return}
+  var on=save(txt),idea=KIND==="idea";s.querySelector(".s251").innerHTML='<div class="ok251"><b>Thanks, '+(idea?"suggestion":"report")+' sent.</b><br>'+(on?(idea?"We read every one. The most asked-for changes get built.":"We'll look into it and fix it."):"Saved on this device. It's sent when you're signed in.")+'</div><div class="row"><button class="btn" type="button" data-help251="x">Close</button></div>';return}});
+document.addEventListener("click",function(ev){var c=ev.target.closest&&ev.target.closest("[data-k251]");if(!c)return;KIND=c.dataset.k251;document.querySelectorAll("[data-k251]").forEach(function(x){x.setAttribute("aria-pressed",String(x===c))})});
+/* v381 A26 (Steve 14 Nov: "whenever someone creates their own, that should be recorded ... come back to head office ... should it be
+   included as a permanent feature"). When someone types their own option where a list is offered (a class name, a plan name, a fight
+   type, a belt or grade, a skill, a milestone), the words are counted on their account (words only, never who or anything personal;
+   names, injuries, food and notes are never collected). Head office reads the counts across accounts once a month and the common ones
+   become options in the lists. Stored as ownwords/<account>/<field>: {field, items:{key:{t,n,last}}}. */
+var OWN={swTitle:"class",swPn:"plan",obFty:"fighttype",obBelt:"grade",obSkNew:"skill",obMsOwn:"milestone",m185t:"milestone"};
+function ownLog(field,text){try{var t=String(text||"").replace(/\s+/g," ").trim().slice(0,40);if(t.length<3)return;if(/@|\d{5,}|https?:/i.test(t))return;
+ var k=t.toLowerCase().replace(/[^a-z0-9 &+'-]/g,"").trim();if(!k)return;var A=window.FH181,D=window.__FB_DEMO;var loc=(A&&A.local)||"";if(!D||!D.db||!loc)return;
+ var path="ownwords/"+loc+"/"+field,doc=(D.store&&D.store[path])||{field:field,items:{}};doc=JSON.parse(JSON.stringify(doc));doc.items=doc.items||{};
+ var it=doc.items[k]||{t:t,n:0};it.n=(+it.n||0)+1;it.last=new Date().toISOString().slice(0,10);doc.items[k]=it;doc.at=it.last;D.db.doc(path).set(doc)}catch(x){}}
+document.addEventListener("change",function(ev){var t=ev.target;if(!t||!t.id||!OWN[t.id])return;ownLog(OWN[t.id],t.value)});
+window.FH251own=ownLog;
 function qbtn(){if(document.getElementById("q251"))return;var b=document.createElement("button");b.id="q251";b.type="button";b.setAttribute("aria-label","Help and report a problem");b.title="Help";b.textContent="?";document.body.appendChild(b)}
 /* v379: the "?" also steps aside while a sheet or pop-up is open, so it never sits on a sheet's buttons (it covered "Join with my choices") */
 function vis(){var q=document.getElementById("q251");if(!q)return;var hide=["fbGate","fbOb","fbSet","fbw","csSheet","roleSheet","inv251","help251","fb158"].some(function(id){var el=document.getElementById(id);return el&&!el.hidden&&getComputedStyle(el).display!=="none"});
