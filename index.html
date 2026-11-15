@@ -26251,6 +26251,50 @@ setInterval(function(){if(document.hidden)return;try{member()}catch(x){}try{staf
 window.FH254={clubUrl:function(x){return ok()?clubUrl(x):""}};
 })();
 
+/* FighterBase v387 (Steve 15 Nov 2026 06:57: "I think we should be able to test this before I give to Jay").
+   Hand over a live club. Steve sets Warrior Spirit up and tests it from his own owner account; when he's happy, Jay joins the team with
+   the coach link and Steve approves him; then "Hand over the club" makes Jay the owner, with everything already set up, and Steve becomes a
+   coach without Accounts (Jay can keep or remove him). Database: hand_over_club() in db/m11_hand_over.sql checks all of this again.
+   Shown on the club side under Your team, only to the owner of a live club, only when someone is already on the team. */
+(function(){
+var UUID=/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i,PICK="",ARM=0,busy=false,msg="";
+function e(s){return String(s==null?"":s).replace(/[&<>"]/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]})}
+function A(){return window.FH181&&FH181.on&&FH181.api?FH181:null}
+function club(){try{return (typeof clubState!=="undefined"&&clubState.club)||null}catch(x){return null}}
+function role(){try{var s=window.FH240&&FH240.state&&FH240.state();return s&&s.club===club().id?s.role:null}catch(x){return null}}
+function LU(){return A()&&A().local}
+function team(c){var me=LU();return (c.coaches||[]).filter(function(u){return UUID.test(u)&&u!==c.ownerUid&&u!==me&&u!==(A()&&A().me())})}
+function nameOf(c,u){return ((c.coachNames||{})[u])||(((typeof clubState!=="undefined"&&clubState.members)||[]).filter(function(m){return m.uid===u})[0]||{}).name||"Coach"}
+var css=document.createElement("style");css.textContent="#ho255{margin-top:14px}#ho255 .chips{margin:6px 0 10px}#ho255 .ho-warn{padding:10px 12px;border-radius:12px;background:rgba(232,223,200,.1);border:1px solid rgba(232,223,200,.4);margin:8px 0}";
+document.head.appendChild(css);
+function paint(){var tp=document.getElementById("tmPanel"),el=document.getElementById("ho255"),c=club();
+ var show=!!(tp&&c&&UUID.test(c.id||"")&&A()&&A().signedIn()&&role()==="owner"&&team(c).length);
+ if(!show){if(el&&!msg)el.remove();if(!msg||!tp)return}
+ var t=c?team(c):[];if(PICK&&t.indexOf(PICK)<0)PICK="";if(!PICK&&t.length===1)PICK=t[0];var nm=PICK?nameOf(c,PICK):"";
+ var h='<div class="sec-h"><h3>Hand over the club</h3></div>'+
+  (msg?'<p class="saved" aria-live="polite">'+e(msg)+'</p>':'')+
+  (show?'<p class="small muted" style="margin:0">Make someone on your team the owner. They get everything you\'ve set up: timetable, prices, members, messages and records. You stay on as a coach without Accounts, and they can remove you. Only they can hand it back.</p>'+
+  '<div class="chips" role="group" aria-label="Who becomes the owner">'+t.map(function(u){return '<button type="button" class="chip" data-ho255pick="'+e(u)+'" aria-pressed="'+(PICK===u)+'">'+e(nameOf(c,u))+'</button>'}).join("")+'</div>'+
+  '<div class="ho-warn small">Card payments: if you connected a Stripe account here, it is yours. Let the new owner connect their own before any real money is taken.</div>'+
+  '<div class="row" style="justify-content:flex-end"><button type="button" class="btn sm'+(ARM?' danger':'')+'" data-ho255go'+(PICK&&!busy?'':' disabled')+'>'+e(busy?"Handing over…":ARM?"Tap again: "+nm+" becomes the owner":(nm?"Hand over to "+nm:"Pick who becomes the owner"))+'</button></div>':'');
+ if(!el){el=document.createElement("div");el.id="ho255";tp.appendChild(el)}
+ if(el.dataset.sig!==h){el.innerHTML=h;el.dataset.sig=h}}
+async function go(){var c=club(),a=A();if(busy||!c||!a||!PICK)return;busy=true;msg="";paint();var to=PICK,nm=nameOf(c,to);
+ try{await a.api("POST","rpc/hand_over_club",{p_club:c.id,p_to:to});
+  var me=LU(),co=(c.coaches||[]).filter(function(u){return u!==to&&u!==me}).concat([me]);
+  try{await window.__FB_DEMO.db.doc("clubs/"+c.id).update({ownerUid:to,coaches:co})}catch(x){}
+  try{if(window.FH240&&FH240.pull)await FH240.pull()}catch(x){}
+  msg=nm+" is now the owner. You're a coach here; they can change that.";PICK="";
+  if(typeof toast==="function")toast(nm+" is now the owner","They'll see the owner's tools when they next open the app.")}
+ catch(x){var m=String(x&&x.message||x);msg=/team first/.test(m)?nm+" isn't on your team yet: send them the coach link and approve them first.":/only the owner/.test(m)?"Only the owner can hand over the club.":"Couldn't hand over just now: "+m}
+ busy=false;ARM=0;paint()}
+document.addEventListener("click",function(ev){var t=ev.target;if(!t.closest)return;var b;
+ if(b=t.closest("[data-ho255pick]")){PICK=b.getAttribute("data-ho255pick");ARM=0;msg="";paint();return}
+ if(t.closest("[data-ho255go]")){if(!PICK)return;if(ARM&&Date.now()-ARM<6000){go()}else{ARM=Date.now();paint();setTimeout(function(){if(ARM&&Date.now()-ARM>=6000){ARM=0;paint()}},6100)}}});
+setInterval(function(){if(!document.hidden)try{paint()}catch(x){}},1500);
+window.FH255={paint:paint};
+})();
+
 /* FighterBase v44: always a way back, always a next step. */
 var N31=N31||false;
 (function(){
