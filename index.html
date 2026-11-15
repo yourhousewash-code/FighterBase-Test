@@ -25347,7 +25347,7 @@ var A=window.FH181,D=window.__FB_DEMO;if(!A||!A.on||!A.api||!D||!D.store)return 
 var store=D.store,LU=A.local,UUID=/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 var PUB={name:1,city:1,code:1,ownerUid:1,sports:1,brand:1,site:1,about:1,contact:1,timetable:1,posts:1,geo:1,checkinCode:1,checkinDate:1,targets:1,
  workouts:1,track:1,show:1,coaches:1,coachNames:1,teachers:1,ptSlots:1,wlib:1,menu:1,resources:1,msdefs:1,tests:1,kidsTT195:1,skills197:1,badges197:1,
- events94:1,jev202:1,policy202:1,social205:1,blog205:1,courses191:1,front191:1,offers190:1,challenge:1,teamGoal:1,affiliates:1,classPhotos:1,hours:1,billDay:1,market:1,cut260:1};
+ events94:1,jev202:1,policy202:1,social205:1,blog205:1,courses191:1,front191:1,offers190:1,challenge:1,teamGoal:1,affiliates:1,classPhotos:1,hours:1,billDay:1,market:1,cut260:1,pushCfg:1};
 var LPUB={uid:1,clubId:1,name:1,ring:1,sports:1,optIn:1,rank:1,streak:1,rsvp:1,cant:1,events:1,evEnt:1,gach:1,commit:1,updated:1,weekStart:1,msPublic:1};
 var LOPT={week:1,month:1,daily:1};/* only shown to club-mates when the member opted in to the club league */
 var last={},dirty={},applying=false,roleOf={},joinSt={},timer=null,busy=false,lastPull=0,msg="";
@@ -25363,7 +25363,10 @@ function J(v){return JSON.stringify(v===undefined?null:v)}
 function partsOf(path,d){d=toServer(d||{});var k=path.split("/")[0],o={};
  if(k==="clubmedia"){var cm={};Object.keys(d).forEach(function(x){if(x!=="id"&&x!=="srv")cm[x]=d[x]});o.pub=cm}/* v356: a club photo (banner or gallery) is read by the club's members */
  else if(k==="partners"){var pp={};Object.keys(d).forEach(function(x){if(x!=="srv")pp[x]=d[x]});o.pub=pp}/* v350: a training-partner card is all "pub": it exists to be found by club-mates */
- else if(k==="clubs"){var pub={},stf={};Object.keys(d).forEach(function(x){if(x==="id")return;if(x==="pay"){var p=d.pay||{};pub.pay={plans:p.plans||[]};stf.pay=p;return}if(PUB[x])pub[x]=d[x];else stf[x]=d[x]});o.pub=pub;o.staff=stf}
+ else if(k==="clubs"){var pub={},stf={};Object.keys(d).forEach(function(x){if(x==="id"||x==="pushAll"||x==="gciPub")return;
+  if(x==="push"){stf.push=d.push;pub.pushAll=(d.push||[]).filter(function(p){return p&&p.aud==="all"}).slice(-20).map(function(p){return {id:p.id,t:p.t||"",b:p.b||"",at:p.at||""}});return}/* v394: notices to everyone, without any list of people (fh261) */
+  if(x==="gci"){stf.gci=d.gci;var g=d.gci;pub.gciPub=g&&g.id?{id:g.id,msg:g.msg||"",start:g.start||"",months:g.months||0}:null;return}
+  if(x==="pay"){var p=d.pay||{};pub.pay={plans:p.plans||[]};stf.pay=p;return}if(PUB[x])pub[x]=d[x];else stf[x]=d[x]});o.pub=pub;o.staff=stf}
  else{var lp={},ls={};Object.keys(d).forEach(function(x){if(x==="srv")return;if(LPUB[x]||(LOPT[x]&&d.optIn===true))lp[x]=d[x];else ls[x]=d[x]});o.pub=lp;o.self=ls}
  return o}
 function sPath(path){var a=path.split("/");return a[1]===LU?a[0]+"/"+me():path}
@@ -26670,6 +26673,69 @@ function tick(){if(document.hidden)return;try{var a=document.getElementById("tab
  try{var s=document.getElementById("tab-schedule");if(!s||!s.hidden){watch("scheduleBody",memberNote);memberNote()}}catch(x){}}
 setInterval(tick,1500);
 window.FH260={cut:function(){return cut(club())},late:lateList,info:function(k){return classInfo(club(),k)}};
+})();
+
+/* FighterBase v394 (Warrior Spirit switch-over, build 2): the club's notices reach members' phones in a live club, privately.
+   Until now the bell's club notices (c.push), the goal check-in (c.gci) and coaches' notes (c.cnote) lived only in the club's staff part on
+   the server, so members of a live club never saw them.
+   1. Notices to everyone: fh240 now also writes "pushAll" (title, text and time only, no list of people) and "gciPub" into the club's public
+      part; members' phones show them in the bell. No database change.
+   2. Notices to a chosen group (a class's regulars, people not seen lately, picked members) and coaches' notes: each person gets a private
+      copy through db/m13 (club_notices, send_club_notice): the sender's phone sends it, each member reads only their own, staff read all.
+      Until m13 is applied the composer says these reach members once the database change is in; the sender's phone keeps trying for 7 days.
+   Demo and local clubs are unchanged (everything there is already on the one device). */
+(function(){
+var UUID=/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i,ROWS=[],LASTF=0,LASTS=0,ST="",busy=false,SENT={},DAY=864e5;
+try{SENT=JSON.parse(localStorage.getItem("fb261s")||"{}")||{}}catch(x){SENT={}}
+function A(){return window.FH181&&FH181.on&&FH181.api?FH181:null}
+function club(){try{return (typeof clubState!=="undefined"&&clubState.club)||null}catch(x){return null}}
+function P(){try{return S.profile||{}}catch(x){return {}}}
+function cid(){return P().clubId||""}
+function live(){var a=A();return !!(a&&a.signedIn()&&UUID.test(cid()))}
+function role(){try{var s=FH240.state();return s.club===cid()?s.role:""}catch(x){return ""}}
+function staff(){var r=role();return r==="owner"||r==="coach"}
+function pref(k){var n=P().notif||{};return n[k]!==false}
+function since(){return (P().clubConsent||{}).at||""}
+function hash(s){var h=5381;for(var i=0;i<s.length;i++)h=((h<<5)+h+s.charCodeAt(i))|0;return (h>>>0).toString(36)}
+/* ---------- member: what the bell shows ---------- */
+function inbox(){var c=club(),out=[];if(!c||!cid())return out;
+ if(!c.push&&pref("club"))(c.pushAll||[]).forEach(function(x){if(x&&x.id&&(x.at||"")>=since())out.push({id:x.id,at:x.at,t:x.t,b:x.b,from:c.name,kind:"club"})});
+ var g=c.gciPub;if(!c.gci&&g&&g.id)out.push({id:"gci"+g.id,at:g.start+"T09:00:00",t:"Goal check-in",b:g.msg,from:c.name,kind:"club"});
+ if(live()&&!staff())ROWS.forEach(function(r){var note=/^cn/.test(r.notice_id);if(!pref(note?"coach":"club"))return;if(!note&&(r.sent_at||"")<since())return;
+  out.push({id:r.notice_id,at:r.sent_at,t:r.title,b:r.body,from:c.name,kind:note?"coach":"club"})});
+ return out}
+(window.FB_INBOX_X=window.FB_INBOX_X||[]).push(inbox);
+async function fetchMine(force){var a=A();if(!live()||staff()||!a)return;if(!force&&Date.now()-LASTF<120000)return;LASTF=Date.now();var me=a.me();if(!me)return;
+ try{var r=await a.api("GET","club_notices?select=notice_id,title,body,sent_at&club_id=eq."+cid()+"&user_id=eq."+me+"&order=sent_at.desc&limit=30");ROWS=Array.isArray(r)?r:[];ST="ok"}
+ catch(x){ROWS=[];ST=/club_notices|relation|schema cache|404|42P01/i.test(String(x&&x.message||x))?"nodb":"err"}}
+/* the club can see who has read its notices (pseen, fh56): mark the newest one this member has */
+document.addEventListener("click",function(ev){var t=ev.target;if(!t.closest||!t.closest("#fbBell"))return;var c=club();if(!c||c.push||!cid())return;
+ var L=[];(c.pushAll||[]).forEach(function(x){if(x&&x.id)L.push({id:x.id,at:x.at||""})});ROWS.forEach(function(r){if(!/^cn/.test(r.notice_id))L.push({id:r.notice_id,at:r.sent_at||""})});
+ L.sort(function(a,b){return String(a.at).localeCompare(String(b.at))});var top=L[L.length-1];if(top&&P().pseen!==top.id){S.profile.pseen=top.id;try{profChanged()}catch(x){}try{FBE.sync()}catch(x){}}
+ fetchMine(true)});
+/* ---------- staff: send each group notice and coach's note privately ---------- */
+function saveSent(){var lim=Date.now()-21*DAY;Object.keys(SENT).forEach(function(k){if(!(SENT[k]>lim))delete SENT[k]});try{localStorage.setItem("fb261s",JSON.stringify(SENT))}catch(x){}}
+function pending(){var c=club(),lim=Date.now()-7*DAY,todo=[];if(!c)return todo;
+ (c.push||[]).forEach(function(x){if(!x||x.aud==="all"||x.by!==S.uid||SENT[x.id]||!(Date.parse(x.at)>lim))return;var u=(x.uids||[]).filter(function(v){return UUID.test(v)});if(u.length)todo.push({nid:x.id,t:x.t||"Club notice",b:x.b||"",u:u})});
+ var cn=c.cnote||{};Object.keys(cn).forEach(function(u){var n=cn[u];if(!n||!n.t||!UUID.test(u)||n.by!==S.uid)return;if(!(Date.parse(String(n.at).slice(0,10)+"T23:59:59")>lim))return;
+  var nid="cn"+hash(u+"|"+n.at+"|"+n.t);if(!SENT[nid])todo.push({nid:nid,t:("Note from "+(n.byName||"your coach")).slice(0,60),b:n.t,u:[u]})});
+ return todo}
+async function sendPending(force){var a=A();if(!live()||!staff()||!a||busy)return;if(!force&&Date.now()-LASTS<60000)return;LASTS=Date.now();var todo=pending();if(!todo.length)return;busy=true;
+ for(var i=0;i<todo.length;i++){var x=todo[i];
+  try{await a.api("POST","rpc/send_club_notice",{c:cid(),nid:x.nid,t:x.t,b:x.b,uids:x.u});SENT[x.nid]=Date.now();ST="ok"}
+  catch(e){var m=String(e&&e.message||e);ST=/send_club_notice|function|schema cache|404|PGRST202/i.test(m)?"nodb":/too many/i.test(m)?"limit":"err";break}}
+ saveSent();busy=false;composerNote()}
+function composerNote(){var w=document.getElementById("nbComp"),el=w&&w.querySelector(".n261");
+ var txt=!live()||!staff()?"":ST==="nodb"?"Notices to everyone reach members' phones. Notices to a group or to picked people, and your notes to a member, reach them once the next database change (m13) is in. This phone keeps them and sends them then.":
+  ST==="limit"?"That's the most notices for one day (30). The rest go tomorrow.":"";
+ if(!w||!txt){if(el)el.remove();return}
+ if(!el){el=document.createElement("p");el.className="small muted n261";el.style.margin="8px 0 0";w.appendChild(el)}if(el.textContent!==txt)el.textContent=txt}
+/* a quick check on the club side, so the note shows before anything is sent */
+async function probe(){var a=A();if(!live()||!staff()||!a||ST)return;try{await a.api("GET","club_notices?select=notice_id&club_id=eq."+cid()+"&limit=1");ST="ok"}catch(x){ST=/club_notices|relation|schema cache|404|42P01/i.test(String(x&&x.message||x))?"nodb":"err"}composerNote()}
+var tidied=0;async function tidy(){var a=A();if(!live()||role()!=="owner"||!a||ST!=="ok"||Date.now()-tidied<DAY)return;tidied=Date.now();try{await a.api("POST","rpc/tidy_club_notices",{c:cid()})}catch(x){}}
+setInterval(function(){if(document.hidden)return;try{fetchMine(false)}catch(x){}try{probe()}catch(x){}try{sendPending(false)}catch(x){}try{composerNote()}catch(x){}try{tidy()}catch(x){}},3000);
+document.addEventListener("click",function(ev){var t=ev.target;if(t.closest&&t.closest("[data-nbsend],[data-pmnote]"))setTimeout(function(){sendPending(true)},1500)});
+window.FH261={rows:function(){return ROWS},state:function(){return ST},pending:pending,inbox:inbox,send:sendPending,fetch:fetchMine};
 })();
 
 /* FighterBase v44: always a way back, always a next step. */
