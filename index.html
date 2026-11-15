@@ -10053,7 +10053,7 @@ function tourHTML(){if(TS<0)return "";var t=TOUR[TS],c=null;try{c=clubState.club
 function tourDraw(){var el=document.getElementById("grTour");if(TS<0){if(el)el.remove();return}if(!el){el=document.createElement("div");el.id="grTour";document.body.appendChild(el)}el.innerHTML=tourHTML();var b=el.querySelector("[data-trn]");if(b)b.focus()}
 function tourOpen(){TS=0;tourDraw()}
 function tourEnd(){TS=-1;tourDraw();if(!P().tourW){P().tourW=new Date().toISOString();try{profChanged()}catch(e){}}}
-setInterval(function(){try{if(TS>=0||P().tourW||!P().clubId||!P().onboarded||(window.FH64&&FH64.isRealOwner&&FH64.isRealOwner())||/#demo-(club|jay)/.test(location.hash))return;if(document.getElementById("onb")||document.querySelector(".ob-wrap:not([hidden])"))return;try{var j=window.FH256&&FH256.state().join;if(j==="pending"||j==="declined")return}catch(x){}/* v388: not until the club has approved them */var n=Object.keys(P().att||{}).length;if(n<3)tourOpen()}catch(e){}},4000);
+setInterval(function(){try{if(TS>=0||P().tourW||!P().clubId||!P().onboarded||(window.FH64&&FH64.isRealOwner&&FH64.isRealOwner())||/#demo-(club|jay)/.test(location.hash))return;if(document.getElementById("onb")||document.querySelector(".ob-wrap:not([hidden])"))return;try{var j=window.FH256&&FH256.state().join;if(j==="pending"||j==="declined")return}catch(x){}if(document.getElementById("qj257"))return;var cs0=document.getElementById("csSheet");if(cs0&&!cs0.hidden)return;/* v389: not over the join or sharing sheets *//* v388: not until the club has approved them */var n=Object.keys(P().att||{}).length;if(n<3)tourOpen()}catch(e){}},4000);
 /* ---------- coach guide (course) ---------- */
 var LES=[
  ["m1","Why structured training improves the member experience","Members stay when they can see they're getting better. Structure makes that visible: sessions they recognise, small steps up, and a record they can look back on. It doesn't replace your coaching. It shows it.",null,"Have a look at the principles below."],
@@ -26321,7 +26321,7 @@ function club(){try{return (typeof clubState!=="undefined"&&clubState.club)||nul
 function cname(){var c=club();return (c&&c.name)||"Your club"}
 var css=document.createElement("style");css.textContent=
  "#jr256m{border-color:rgba(232,223,200,.45)}#jr256m p{margin:0 0 8px}#jr256s .jr-r{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 0;border-top:1px solid var(--line,rgba(255,255,255,.1));flex-wrap:wrap}"+
- "#jr256s .jr-r:first-of-type{border-top:0}#jr256s .jr-r .row{gap:8px}#jr256s .btn{min-height:44px}#tab-today#tab-today>#jr256m{order:-90!important}";
+ "#jr256s .jr-r:first-of-type{border-top:0}#jr256s .jr-r .row{gap:8px}#jr256s .btn{min-height:44px}#tab-today#tab-today#tab-today>#jr256m#jr256m#jr256m{display:block!important;order:-90!important}";
 document.head.appendChild(css);
 /* ---------- member: waiting or declined ---------- */
 function memberBanner(){var j=join(),w=j==="pending"||j==="declined";
@@ -26371,6 +26371,110 @@ document.addEventListener("click",function(ev){var t=ev.target;if(!t.closest)ret
  if(t.closest("[data-jr256drop]")){try{S.profile.clubId=null;if(typeof profChanged==="function")profChanged();if(typeof subscribeClub==="function")subscribeClub();showTab("today")}catch(x){}note="";return}});
 setInterval(function(){if(document.hidden)return;try{memberBanner()}catch(x){}try{var tab=document.getElementById("tab-hubover");if(tab&&!tab.hidden)load(false);else staffPanel()}catch(x){}},1500);
 window.FH256={load:load,state:function(){return {join:join(),requests:REQ,approval:APPR}}};
+})();
+
+/* FighterBase v389 (Council C-021 proposal (a), Steve's yes 15 Nov 2026 14:37): an invited member goes straight to their club and
+   membership; the training questions come after their first task.
+   When someone arrives with a club link (#join=CODE, #book=CODE or #pt=CODE) and is signed in but hasn't done the questions:
+   - the log-in screen says they're joining a club with that code;
+   - instead of the welcome slides and the long questions, one short sheet: first name, date of birth, Join (the club's code is filled in);
+   - then the club's own sharing sheet ("what your club can see", as before), then the club page to choose a membership;
+   - a "Welcome to <club>" card on Today ticks off: choose your membership, pay (card or "I've paid"), book your first class, and offers
+     "Make FighterBase useful for your training (about 2 minutes)", which opens the full questions whenever they like.
+   "Not joining a club? Set up FighterBase my way" opens the usual welcome and questions. Under 18s are told a parent or guardian sets
+   it up with them (the database enforces it too). Nothing here joins without the member tapping Join. */
+(function(){
+var LINK=/^#(join|book|pt)=([^&]+)/;
+function P(){try{return S.profile||{}}catch(x){return {}}}
+function link(){var m=LINK.exec(location.hash||"");if(!m)return null;var c="";try{c=decodeURIComponent(m[2])}catch(x){c=m[2]}
+ c=String(c).trim().toUpperCase().replace(/[^A-Z0-9-]/g,"").slice(0,16);return c?{via:m[1],code:c}:null}
+function signed(){try{return !!(window.FH240&&FH240.on&&FH240.state().signedIn)}catch(x){return false}}
+function door(){try{return localStorage.getItem("fb_clubdoor")==="1"||/^#club\b/.test(location.hash||"")}catch(x){return false}}
+function e(s){return String(s==null?"":s).replace(/[&<>"]/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]})}
+function td(){var d=new Date();return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0")}
+function ageOf(dob){var b=new Date(dob+"T12:00"),n=new Date();if(isNaN(b))return 0;var a=n.getFullYear()-b.getFullYear();if(n.getMonth()<b.getMonth()||(n.getMonth()===b.getMonth()&&n.getDate()<b.getDate()))a--;return a}
+function club(){try{return (typeof clubState!=="undefined"&&clubState.club)||null}catch(x){return null}}
+var css=document.createElement("style");css.textContent=
+ "#qj257{position:fixed;inset:0;z-index:100002;background:rgba(5,6,8,.86);backdrop-filter:blur(6px);display:flex;align-items:flex-end;justify-content:center}"+
+ "#qj257 .q-s{width:100%;max-width:520px;max-height:92vh;overflow:auto;background:var(--surface,#15161b);border:1px solid rgba(255,255,255,.12);border-radius:20px 20px 0 0;padding:22px 20px;display:flex;flex-direction:column;gap:12px}"+
+ "@media(min-width:700px){#qj257{align-items:center}#qj257 .q-s{border-radius:20px}}#qj257 h2{margin:0;font-size:26px;line-height:1.1}#qj257 .q-code{align-self:flex-start;display:inline-block;padding:4px 10px;border-radius:999px;background:rgba(232,223,200,.14);border:1px solid rgba(232,223,200,.45);font-weight:800;letter-spacing:.06em}"+
+ "#qj257 .q-row{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-top:4px}#qj257 .btn{min-height:48px}#qj257 .q-err{color:#FF8A7A;margin:0}"+
+ "#qj257g{margin:0 0 12px;padding:10px 12px;border-radius:12px;background:rgba(232,223,200,.12);border:1px solid rgba(232,223,200,.4);font-size:15px}"+
+ "#qs257{border-color:rgba(63,197,126,.45)}#tab-today#tab-today#tab-today>#qs257#qs257#qs257{display:block!important;order:-85!important}#qs257 ol{list-style:none;margin:6px 0 10px;padding:0;display:flex;flex-direction:column;gap:8px}"+
+ "#qs257 li{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 12px;border-radius:12px;background:rgba(255,255,255,.04)}#qs257 li.done b{text-decoration:line-through;opacity:.7}#qs257 .q-t{width:22px;height:22px;border-radius:50%;border:2px solid rgba(255,255,255,.35);display:inline-flex;align-items:center;justify-content:center;font-size:13px;flex:none}#qs257 li.done .q-t{background:#3FC57E;border-color:#3FC57E;color:#08130C}"+
+ "#qs257 li>span:first-child{display:flex;align-items:center;gap:10px}";
+document.head.appendChild(css);
+/* 1. the log-in screen says which club */
+function gateNote(){var g=document.getElementById("fbGate"),l=link();if(!g||!l){return}if(document.getElementById("qj257g"))return;
+ var box=g.querySelector(".g-in")||g,h=box.querySelector(".g-tag,.g-first,h1,h2,h3,form,.field");var p=document.createElement("p");p.id="qj257g";
+ p.innerHTML="You're joining a club with code <b>"+e(l.code)+"</b>. Create an account (or log in) and you'll go straight to your club.";if(h&&h.parentNode)h.parentNode.insertBefore(p,h);else box.insertBefore(p,box.firstChild)}
+/* 2. the short sheet instead of the welcome slides and long questions */
+var ob=window.openOnboarding;
+var waiting=false;
+if(typeof ob==="function")window.openOnboarding=function(){var l=link(),self=this,args=arguments;
+ try{if(l&&!P().onboarded&&!P().quick257&&!door()){
+  if(signed()){openQuick(l);return}
+  /* opened before log-in: wait for it (the log-in screen is up); with no log-in screen (on-device use) carry on as usual */
+  if(document.getElementById("fbGate")){if(waiting)return;waiting=true;var n=0,iv=setInterval(function(){n++;
+   if(signed()){clearInterval(iv);waiting=false;if(!P().onboarded&&!P().quick257)openQuick(link()||l);return}
+   if(!document.getElementById("fbGate")&&n>8){clearInterval(iv);waiting=false;if(!P().onboarded)ob.apply(self,args)}},500);return}}}catch(x){}
+ return ob.apply(this,arguments)};
+var Q=null;
+function openQuick(l){Q={l:l,err:"",busy:false};draw()}
+function draw(){var el=document.getElementById("qj257");if(!Q){if(el)el.remove();return}
+ if(!el){el=document.createElement("div");el.id="qj257";el.setAttribute("role","dialog");el.setAttribute("aria-modal","true");el.setAttribute("aria-label","Join your club");document.body.appendChild(el)}
+ var ni=document.getElementById("qjName"),nm=ni?ni.value:(P().name||"").split(" ")[0],dob=(document.getElementById("qjDob")||{}).value||"";
+ el.innerHTML='<div class="q-s"><span class="q-code">Club code '+e(Q.l.code)+'</span><h2>Join your club</h2>'+
+  '<p class="muted" style="margin:0">Two details and you\'re in. Your club sees your name, that you belong, and the classes you book. Anything else is your choice, next.</p>'+
+  '<div class="field"><label class="label" for="qjName">First name</label><input id="qjName" type="text" autocomplete="given-name" maxlength="40" value="'+e(nm)+'"></div>'+
+  '<div class="field"><label class="label" for="qjDob">Date of birth</label><input id="qjDob" type="date" value="'+e(dob)+'"><span class="small muted">Clubs need it to keep training safe for every age. Only your club\'s staff see it.</span></div>'+
+  (Q.err?'<p class="q-err" role="alert">'+e(Q.err)+'</p>':'')+
+  '<div class="q-row"><button type="button" class="linkbtn" data-qj257other>Not joining a club? Set up FighterBase my way</button><button type="button" class="btn" data-qj257go'+(Q.busy?' disabled':'')+'>'+(Q.busy?"Joining…":"Join "+e(Q.l.code))+'</button></div></div>';
+ var f=document.getElementById(nm?"qjDob":"qjName");if(f&&!Q.busy)try{f.focus({preventScroll:true})}catch(x){}}
+async function go(){if(!Q||Q.busy)return;var name=((document.getElementById("qjName")||{}).value||"").trim(),dob=(document.getElementById("qjDob")||{}).value||"";
+ if(!name){Q.err="Add your first name.";draw();return}if(!/^\d{4}-\d{2}-\d{2}$/.test(dob)){Q.err="Add your date of birth.";draw();return}
+ var age=ageOf(dob);if(age<5||age>110){Q.err="Check your date of birth.";draw();return}
+ if(age<18){Q.err="Under 18? A parent or guardian sets FighterBase up with you. Ask them, or ask your club.";draw();return}
+ var p=P();p.name=name;p.leagueName=name.split(" ")[0];p.age=age;p.dob=dob;Q.busy=true;Q.err="";draw();
+ try{await FH240.join(Q.l.code,dob)}catch(x){var m=String(x&&x.message||x);Q.busy=false;
+  Q.err=/unknown club/i.test(m)?"No club with code "+Q.l.code+". Check it with your club, or set up FighterBase your way.":/parent/i.test(m)?"Under 18: a parent or guardian needs to link first.":"Couldn't join just now: "+m;draw();return}
+ p=P();p.role=p.role||"member";p.mode=p.mode||"simple";p.sports=p.sports||[];p.goal=p.goal||"maintain";p.onboarded=true;p.obLater=true;p.welcomed=true;p.roadSkip=true;p.created=p.created||td();
+ p.quick257={at:td(),code:Q.l.code,via:Q.l.via};try{localStorage.setItem("fb_welcomed","1")}catch(x){}try{localStorage.removeItem("fb_obdraft_v1")}catch(x){}
+ S.profile=p;try{profChanged()}catch(x){}try{scheduleLeague()}catch(x){}Q=null;draw();
+ var pend=false;try{pend=FH240.state().join==="pending"}catch(x){}var nm2=(club()||{}).name||"your club";
+ try{showTab("today");scrollTo(0,0)}catch(x){}
+ if(typeof toast==="function")toast(pend?"Request sent to "+nm2:"Welcome to "+nm2,pend?"You'll be in once the club approves you.":"Next: choose what your club can see.")}
+/* 3. after the sharing sheet, on to the membership */
+var sent=false;
+function afterShare(){var p=P(),q=p.quick257;if(!q||sent||q.toClub)return;if(!p.clubConsent||!p.clubId)return;sent=true;q.toClub=1;try{profChanged()}catch(x){}
+ if(q.via==="book"||q.via==="pt")return;/* the club link asked for the timetable: fh253 opens it */
+ try{var j=window.FH240&&FH240.state().join;if(j==="pending"||j==="declined")return}catch(x){}
+ setTimeout(function(){try{showTab("clubpage");scrollTo(0,0)}catch(x){}if(typeof toast==="function")toast("Next: choose your membership","Pick one on this page, then pay or tell the club you've paid.")},600)}
+/* 4. the welcome card on Today */
+function steps(){var p=P(),c=club(),ms=p.mship&&p.mship.clubId===p.clubId?p.mship:null;
+ return [["Choose your membership",!!ms,"clubpage","Choose"],["Pay, or tell the club you've paid",!!(ms&&(((ms.paid||[]).length)||((ms.claims||[]).length))),"clubpage","Pay"],
+  ["Book your first class",Object.keys(p.rsvp||{}).length>0,"schedule","See classes"]]}
+function card(){var tab=document.getElementById("tab-today"),el=document.getElementById("qs257"),p=P(),q=p.quick257;
+ var show=!!(tab&&q&&p.clubId&&!q.hide&&!(q.snooze&&Date.now()<q.snooze));
+ try{var j=window.FH240&&FH240.state().join;if(j==="pending"||j==="declined")show=false}catch(x){}
+ if(!show){if(el)el.remove();return}
+ var st=steps(),all=st.every(function(s){return s[1]}),nm=(club()||{}).name||"your club",nx=-1;st.forEach(function(s,i){if(nx<0&&!s[1])nx=i});
+ if(all&&q.qDone){if(el)el.remove();return}
+ var h='<div class="sec-h"><h2>Welcome to '+e(nm)+'</h2></div>'+
+  '<ol>'+st.map(function(s){return '<li class="'+(s[1]?"done":"")+'"><span><span class="q-t" aria-hidden="true">'+(s[1]?"✓":"")+'</span><b>'+e(s[0])+'</b></span>'+(s[1]?'<span class="small muted">Done</span>':'<button type="button" class="btn sm'+(st.indexOf(s)===nx?'':' ghost')+'" data-qs257tab="'+s[2]+'">'+e(s[3])+'</button>')+'</li>'}).join("")+'</ol>'+
+  (q.qDone?'':'<div class="row" style="justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px"><span class="small">'+(all?"All set. ":"")+'Make FighterBase useful for your training: about 2 minutes of questions, whenever you like.</span><button type="button" class="btn ghost sm" data-qs257q>Start</button></div>')+
+  '<div class="row" style="justify-content:flex-end;margin-top:6px"><button type="button" class="linkbtn" data-qs257x>Hide for a week</button></div>';
+ if(!el){el=document.createElement("section");el.id="qs257";el.className="panel plate";tab.insertBefore(el,tab.firstChild)}
+ if(el.dataset.sig!==h){el.innerHTML=h;el.dataset.sig=h}}
+document.addEventListener("click",function(ev){var t=ev.target;if(!t.closest)return;var b;
+ if(t.closest("[data-qj257go]")){go();return}
+ if(t.closest("[data-qj257other]")){Q=null;draw();try{ob.apply(window,[])}catch(x){}return}
+ if(b=t.closest("[data-qs257tab]")){try{showTab(b.getAttribute("data-qs257tab"));scrollTo(0,0)}catch(x){}return}
+ if(t.closest("[data-qs257q]")){var p=P();if(p.quick257){p.quick257.qDone=1;try{profChanged()}catch(x){}}try{window.openOnboarding()}catch(x){}return}
+ if(t.closest("[data-qs257x]")){var p2=P();if(p2.quick257){p2.quick257.snooze=Date.now()+7*864e5;try{profChanged()}catch(x){}}card();return}});
+document.addEventListener("keydown",function(ev){if(ev.key==="Enter"&&Q&&ev.target&&(ev.target.id==="qjName"||ev.target.id==="qjDob")){ev.preventDefault();go()}});
+setInterval(function(){if(document.hidden)return;try{gateNote()}catch(x){}try{afterShare()}catch(x){}try{card()}catch(x){}},800);
+window.FH257={link:link,open:function(){var l=link();if(l)openQuick(l)},steps:steps};
 })();
 
 /* FighterBase v44: always a way back, always a next step. */
