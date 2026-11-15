@@ -18804,19 +18804,42 @@ function start(id){var g=GD.filter(function(x){return x.id===id})[0];if(!g)retur
 function closeTips(){try{FH148.hide()}catch(x){}}
 var RETRY=0;
 function draw(){if(!CUR)return;var o=document.getElementById("fb158");if(!o)return;var g=CUR,s=g.s[IDX],n=g.s.length,el=find(g,s);
+ /* v397: a part tucked away under "Show more" (phones fold long screens) is opened so the guide can show it */
+ if(!el){try{var sc0=sect(g),fb0=sc0&&sc0.querySelector(".f149b [data-f149]");if(fb0&&sc0.querySelector(".f149m")){fb0.click();el=find(g,s)}}catch(x){}}
  var c=o.querySelector(".c158");
- c.innerHTML='<div class="k158">'+e(g.t)+' · step '+(IDX+1)+' of '+n+'</div><h3>'+e(s[1])+'</h3><p>'+e(s[2])+'</p>'+(el?"":'<p class="muted small">This part is not on your screen yet. It shows once there is something to show.</p>')+
+ c.innerHTML='<div class="k158">'+e(g.t)+' · step '+(IDX+1)+' of '+n+'</div><h3>'+e(s[1])+'</h3><p>'+e(s[2])+'</p>'+(el||RETRY<4?"":'<p class="muted small">This part is not on your screen yet. It shows once there is something to show.</p>')/* v397: only once it has stopped looking, so a page still opening doesn't flash it */+
   '<div class="d158">'+g.s.map(function(_,i){return '<i class="'+(i===IDX?"on":"")+'"></i>'}).join("")+'</div><div class="r158"><button type="button" class="btn ghost" data-g158="back"'+(IDX?"":" disabled")+'>Back</button><button type="button" class="btn" data-g158="next">'+(IDX===n-1?"Done":"Next")+'</button></div><button type="button" class="linkbtn" data-g158="stop">Stop the guide</button>';
  o._el=el;if(!el&&RETRY<4){RETRY++;setTimeout(function(){if(CUR&&document.getElementById('fb158'))draw()},600)}else if(el)RETRY=0;
- if(el){try{if(innerWidth>=700){var rr=el.getBoundingClientRect(),cc=c.getBoundingClientRect();
-   /* v371: room for the card. A part that fits with the card stacked under it is scrolled up enough to leave that room; otherwise centred as before */
-   if(rr.height+cc.height+60<innerHeight&&rr.right>innerWidth-cc.width-40){var top0=Math.max(100,(innerHeight-rr.height-cc.height-24)/2);window.scrollBy(0,rr.top-top0)}else el.scrollIntoView({block:"center",behavior:"auto"})}
-  else{var r0=el.getBoundingClientRect();if(r0.top<96||r0.top>innerHeight*.45)window.scrollBy(0,r0.top-96)}}catch(x){}}
+ if(el){aim(el,c);var k0=IDX,g0=CUR;[500,1300,2600].forEach(function(t){setTimeout(function(){
+   /* v397: content above the part can still be loading when the guide first scrolls (a fresh Classes page on a phone pushed "Who's training?" below the screen);
+      look again shortly after and move once more, unless the person has scrolled since */
+   if(CUR!==g0||IDX!==k0||o._el!==el||!document.getElementById("fb158")||Math.abs(window.scrollY-AIMY)>2)return;var r1=el.getBoundingClientRect();
+   if(Math.abs(r1.top-AIMT)>24){aim(el,c);place()}},t)})}
  place();var nb=c.querySelector('[data-g158="next"]');if(nb)nb.focus({preventScroll:true})}
+var AIMY=0,AIMT=0;
+function aim(el,c){try{var hd=cover(),free=innerHeight-hd;if(innerWidth>=700){var rr=el.getBoundingClientRect(),cc=c.getBoundingClientRect();
+   /* v371: room for the card. A part that fits with the card stacked under it is scrolled up enough to leave that room; otherwise centred as before.
+      v397 (Steve 15 Nov 22:12, screenshot of "Who's training?" step 1: "is this tutorial box placed correctly?"): the page's sticky header
+      covers the top of the screen, so every position is measured from the header's bottom edge, and a part too tall to centre starts just under it */
+   var beside=rr.right<=innerWidth-cc.width-40;
+   if(!beside&&rr.height+cc.height+60<free){var top0=Math.max(hd+16,hd+(free-rr.height-cc.height-24)/2);sby(rr.top-top0)}
+   else if(beside&&rr.height<free-40)sby(rr.top-(hd+(free-rr.height)/2));
+   else sby(rr.top-(hd+16))/* too tall to show whole with the card: its top just under the header, framed down to the card */}
+  else{var r0=el.getBoundingClientRect();if(r0.top<hd+12||r0.top>hd+(innerHeight-hd)*.45)sby(r0.top-(hd+12))}}catch(x){}
+ AIMY=window.scrollY;AIMT=el.getBoundingClientRect().top}
+/* v397: jump straight there. The page scrolls smoothly by default, and a second move started while the first was still gliding added to it
+   and pushed the part up under the header (Steve's "Who's training?" screenshot, 15 Nov 22:12) */
+function sby(d){if(Math.abs(d)<2)return;try{window.scrollTo({top:window.scrollY+d,behavior:"instant"})}catch(x){window.scrollBy(0,d)}}
+/* v397: the bottom edge of whatever stays stuck to the top of the screen (the page header), so the guide never frames the header or hides a part under it */
+function cover(){var y=0;try{document.querySelectorAll("header,nav,.top,.topbar,[data-sticky]").forEach(function(x){if(x.closest("#fb158"))return;var cs=getComputedStyle(x);if(cs.position!=="sticky"&&cs.position!=="fixed")return;if(cs.display==="none"||cs.visibility==="hidden")return;
+ var r=x.getBoundingClientRect(),t0=parseFloat(cs.top);if(isNaN(t0)||t0>4||r.width<innerWidth*.5||r.height>=innerHeight*.45)return;
+ /* a sticky header that isn't stuck yet (page at the top) will be once the guide scrolls, so count where its bottom will be when stuck */
+ var bot=cs.position==="sticky"?Math.max(t0+r.height,r.top<60?r.bottom:0):r.bottom;if(cs.position==="fixed"&&r.top>4)return;if(bot>y)y=bot})}catch(x){}return Math.round(y)}
 function place(){var o=document.getElementById("fb158");if(!o)return;cancelAnimationFrame(raf);raf=requestAnimationFrame(function(){var h=o.querySelector(".h158"),el=o._el,c=o.querySelector(".c158");
  if(!el||!document.body.contains(el)){h.style.display="none";card(c,null);return}
  var r=el.getBoundingClientRect();if(r.width===0&&r.height===0){h.style.display="none";card(c,null);return}
- h.style.display="block";var pad=6,L=Math.max(r.left-pad,2),T=Math.max(r.top-pad,2),W=Math.min(r.width+pad*2,innerWidth-4),H=Math.min(r.height+pad*2,innerHeight*.7);
+ var hd=cover();if(r.bottom<=hd+8){h.style.display="none";card(c,null);return}/* scrolled away under the header */
+ h.style.display="block";var pad=6,L=Math.max(r.left-pad,2),T=Math.max(r.top-pad,hd+2,2),W=Math.min(r.width+pad*2,innerWidth-4),H=Math.min(r.bottom+pad-T,innerHeight*.7);
  /* v371: a part too tall to show beside the card is framed from its top down to the space left above the card, so the card never sits on the framed part */
  if(c){var ch=c.offsetHeight||0,cw=c.offsetWidth||0,nav=innerWidth<700?84:0,room=innerHeight-nav-ch-36-T;if(H>room&&innerWidth-W<cw+36&&room>=60)H=room}
  h.style.left=L+"px";h.style.top=T+"px";h.style.width=W+"px";h.style.height=H+"px";card(c,{l:L,t:T,r:L+W,b:T+H})})}
@@ -18828,11 +18851,12 @@ function card(c,R){if(!c)return;var st=c.style;function reset(){st.left=st.top=s
  reset();if(!R)return;var vw=innerWidth,vh=innerHeight,g=12,nav=vw<700?84:0,cr=c.getBoundingClientRect(),cw=cr.width,ch=cr.height;
  function hit(a){return !(a.r<=R.l-4||a.l>=R.r+4||a.b<=R.t-4||a.t>=R.b+4)}
  if(!hit({l:cr.left,t:cr.top,r:cr.right,b:cr.bottom}))return;
+ var minT=cover()+g;/* v397: never under the sticky header */
  var cl=function(v,lo,hi){return Math.max(lo,Math.min(v,hi))},maxL=vw-cw-g,maxT=vh-nav-ch-g,mid=(R.l+R.r)/2-cw/2,midT=(R.t+R.b)/2-ch/2;
- var C=[{l:cl(mid,g,maxL),t:R.b+g},{l:cl(mid,g,maxL),t:R.t-g-ch},{l:R.r+g,t:cl(midT,g,maxT)},{l:R.l-g-cw,t:cl(midT,g,maxT)},
-  {l:g,t:maxT},{l:maxL,t:g},{l:g,t:g},{l:maxL,t:maxT}];
+ var C=[{l:cl(mid,g,maxL),t:R.b+g},{l:cl(mid,g,maxL),t:R.t-g-ch},{l:R.r+g,t:cl(midT,minT,maxT)},{l:R.l-g-cw,t:cl(midT,minT,maxT)},
+  {l:g,t:maxT},{l:maxL,t:minT},{l:g,t:minT},{l:maxL,t:maxT}];
  var best=null,bestA=1e9;
- for(var i=0;i<C.length;i++){var a=C[i];if(a.l<g-1||a.t<g-1||a.l>maxL+1||a.t>maxT+1)continue;var box={l:a.l,t:a.t,r:a.l+cw,b:a.t+ch};
+ for(var i=0;i<C.length;i++){var a=C[i];if(a.l<g-1||a.t<minT-1||a.l>maxL+1||a.t>maxT+1)continue;var box={l:a.l,t:a.t,r:a.l+cw,b:a.t+ch};
   if(!hit(box)){best=a;break}
   var ov=(Math.min(box.r,R.r)-Math.max(box.l,R.l))*(Math.min(box.b,R.b)-Math.max(box.t,R.t));if(box.t>R.t+40&&ov<bestA){bestA=ov;best=a}}
  if(!best)best={l:cl(mid,g,maxL),t:maxT};
