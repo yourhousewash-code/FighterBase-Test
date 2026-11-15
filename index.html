@@ -8971,7 +8971,8 @@ function body(){var c=club()||{},k=STEPS[step][0],h="";
  if(k==="pay"){var on=payOn(),lv=liveClub();h='<h2>Card payments</h2><p class="ob-sub">Members pay their membership by card, Apple Pay or Google Pay, and the money goes straight to your club\'s bank through Stripe. FighterBase never holds your money. Optional: you can also take cash or bank transfer and mark it paid.</p>'+
   (on?'<div class="sw-ok">Card payments are on. Members can pay from their Club membership.</div>':
    !lv?'<p class="small" style="margin:0">Your club needs to be live first (it goes live when you sign in and create it).</p>':
-   '<div class="row"><button class="btn gold" type="button" data-st241="onboard" data-swpay>Set up card payments with Stripe</button></div>'+
+   (function(){var ss=null;try{ss=window.FH241&&FH241.status&&FH241.status()}catch(x){}return ss&&ss.key!=="none"?'<div class="sw-ok" style="border-color:'+ss.tone+'">'+esc(ss.label)+': '+esc(ss.text)+'</div>':'<p class="small muted" style="margin:0 0 8px">Have ready: your bank details and photo ID. Stripe may take a day or two to check them; carry on with the next steps meanwhile.</p>'})()+
+   ((function(){var k="none";try{k=FH241.status().key}catch(x){}return k==="checks"?'<div class="row"><button class="btn ghost" type="button" data-st241="status">Check again</button></div>':'<div class="row"><button class="btn gold" type="button" data-st241="onboard" data-swpay>'+(k==="info"?"Finish setting up with Stripe":"Set up card payments with Stripe")+'</button></div>'})())+
    '<details class="sw-help"><summary>What Stripe will ask, and what to choose (2 minutes)</summary><ul>'+
    '<li><b>Business type:</b> sole trader if you run the club yourself; company if it\'s a limited company.</li>'+
    '<li><b>Your details and ID:</b> the person responsible for the club. Stripe checks them by law.</li>'+
@@ -10802,14 +10803,14 @@ function settingsPage(){var el=document.getElementById("hubmsBody"),c=club();if(
   '<div class="panel"><div class="sec-h"><h3>Standard milestones (automatic)</h3></div>'+Object.keys(CAT).filter(function(k){return k!=="club"}).map(function(k){var L=DEFS.filter(function(d){return d.cat===k});if(!L.length)return "";return '<div class="ms-std"><span class="label">'+CAT[k]+'</span><div class="chips">'+L.map(function(d){return '<span class="chip sm imp'+d.imp+'" title="'+esc(d.desc)+'">'+esc(d.title)+(d.imp>=3?" ★":"")+'</span>'}).join("")+'</div></div>'}).join("")+'<p class="muted small" style="margin:6px 0 0">★ = important (a bigger celebration). Milestones based on data a member hasn\'t shared are never shown to coaches.</p></div>';
  if(el.dataset.sig!==h){el.innerHTML=h;el.dataset.sig=h}}
 /* ---------- club community strip (club page) ---------- */
-function publicStrip(){var c=club();if(!c||!P().clubId)return "";var L=[];Object.keys(c.msaward||{}).forEach(function(u){(c.msaward[u]||[]).forEach(function(a){var d=clubDefs().filter(function(x){return x.id===a.def})[0];var m=member(u)||(u===S.uid?{name:S.profile.name,msPublicNo:P().msPublicNo}:null);if(d&&d.public&&d.visible&&a.at.slice(0,10)>=add(TD(),-45)&&m&&!m.msPublicNo)L.push({n:m.name,d:d,at:a.at.slice(0,10)})})});if(!L.length)return "";L.sort(function(a,b){return b.at.localeCompare(a.at)});
+function publicStrip(){var c=club();if(!c||!P().clubId)return "";var L=[];Object.keys(c.msaward||{}).forEach(function(u){(c.msaward[u]||[]).forEach(function(a){var d=clubDefs().filter(function(x){return x.id===a.def})[0];var m=member(u)||(u===S.uid?{name:S.profile.name,msPublic:P().msPublic}:null);/* v390 (Steve 15 Nov 14:37 "milestones are private"): only members who chose to show them */if(d&&d.public&&d.visible&&a.at.slice(0,10)>=add(TD(),-45)&&m&&m.msPublic===true)L.push({n:m.name,d:d,at:a.at.slice(0,10)})})});if(!L.length)return "";L.sort(function(a,b){return b.at.localeCompare(a.at)});
  return '<div class="panel"><div class="sec-h"><h3>Recognised at '+esc(c.name)+'</h3></div>'+L.slice(0,6).map(function(o){return '<div class="ms-def"><div><b>'+esc(o.n||"Member")+' · '+esc(o.d.title)+'</b><span class="muted small">'+esc(fmt(o.at))+'</span></div></div>'}).join("")+'</div>'}
 function place(hostId,id,html,top){var host=document.getElementById(hostId);if(!host)return;var w=document.getElementById(id);if(!html){if(w)w.remove();return}if(!w){w=document.createElement("div");w.id=id}if(w.dataset.sig!==html){w.innerHTML=html;w.dataset.sig=html}if(top){if(host.firstChild!==w)host.insertBefore(w,host.firstChild)}else if(w.parentNode!==host||w!==host.lastElementChild)host.appendChild(w)}
 function render(){try{var o=document.getElementById("tab-hubover");if(o&&!o.hidden)overCard();var s=document.getElementById("tab-hubms");if(s&&!s.hidden)settingsPage();var cp=document.getElementById("tab-clubpage");if(cp&&!cp.hidden){var b=cp.querySelector("[id$=Body]")||cp;place(b.id||"tab-clubpage","msPub",publicStrip(),false)}}catch(e){}}
 setInterval(render,1500);
 var st0=showTab;showTab=function(tb){if(tb==="hubms"&&!isCoach())tb="hubover";var r=st0.apply(this,[tb].concat([].slice.call(arguments,1)));try{setTimeout(render,30);var nv=document.querySelector("nav.hubnav");if(nv&&/^hub/.test(tb))nv.querySelectorAll("[data-hub]").forEach(function(x){x.setAttribute("aria-current",String(x.dataset.hub===tb))})}catch(e){}return r};
 /* publish the goal request (basic, part of the goal plan with the club) */
-setInterval(function(){if(window.FB54&&FB54.extend&&!FB54.extend.p74){var ex=FB54.extend;FB54.extend=function(o){o=ex(o);o.goalReq=P().goalReq||null;o.msPublicNo=!!P().msPublicNo;return o};FB54.extend.p74=true}},1000);
+setInterval(function(){if(window.FB54&&FB54.extend&&!FB54.extend.p74){var ex=FB54.extend;FB54.extend=function(o){o=ex(o);o.goalReq=P().goalReq||null;o.msPublicNo=!!P().msPublicNo;o.msPublic=P().msPublic===true;return o};FB54.extend.p74=true}},1000);
 /* ---------- clicks ---------- */
 function reAll(){CACHE.t=0;["pbBoard","mylibBody","hubmsBody","msOver"].forEach(function(id){var e=document.getElementById(id);if(e)e.dataset.sig=""});try{FH72.mount()}catch(e){}try{FH72.lib()}catch(e){}render();try{FHB49.drawBase()}catch(e){}}
 document.addEventListener("click",function(e){var t=e.target;if(!t.closest)return;var b,c=club();
@@ -10853,6 +10854,17 @@ var css=document.createElement("style");css.textContent=
  ".ms-def{display:flex;flex-wrap:wrap;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid var(--line)}.ms-def>div{flex:1;min-width:200px;display:flex;flex-direction:column}.ms-std{margin-top:8px}.chip.imp3{border-color:rgba(232,223,200,.5)}.rv-ms{display:flex;flex-wrap:wrap;gap:4px 10px;align-items:baseline;padding:8px 12px;border-radius:12px;background:rgba(232,223,200,.08)}#hubmsBody>*{grid-column:1/-1}";
 document.head.appendChild(css);
 window.FH74={mine:mine,forMember:forMember,historyHTML:historyHTML,bannerHTML:bannerHTML,profile:profile,ptContext:ptContext,DEFS:DEFS,recentFor:recentFor,compute:compute,ctxSelf:ctxSelf};
+})();
+/* v390 (Council C-023 proposal e, Steve's yes 15 Nov 2026 14:37): milestones are private. Club-awarded milestones show on the club page
+   only for members who switch this on, under My milestones on the Training Index (off by default; the member can change it any time). */
+(function(){
+function P2(){return (typeof S!=="undefined"&&S.profile)||{}}
+setInterval(function(){try{var p=P2();document.querySelectorAll(".m185").forEach(function(box){var el=box.querySelector(".ms74pub");
+ if(!p.clubId){if(el)el.remove();return}
+ if(!el){el=document.createElement("label");el.className="ms74pub row small";el.style.cssText="gap:10px;align-items:center;margin-top:6px;cursor:pointer";el.innerHTML='<input type="checkbox" data-ms74pub> <span>Show milestones my club awards me on the club page (off: only you and your coaches see them)</span>';box.appendChild(el)}
+ var cb=el.querySelector("input");if(cb&&cb.checked!==(p.msPublic===true))cb.checked=p.msPublic===true})}catch(x){}},1500);
+document.addEventListener("change",function(ev){var t=ev.target;if(!t||!t.hasAttribute||!t.hasAttribute("data-ms74pub"))return;var p=P2();p.msPublic=!!t.checked;try{profChanged()}catch(x){}try{scheduleLeague()}catch(x){}
+ if(typeof toast==="function")toast(t.checked?"Shown on your club page":"Private","Milestones your club awards you are "+(t.checked?"shown to club-mates.":"only seen by you and your coaches."))});
 })();
 
 /* FighterBase v82: progress you can see at the top of Home, plus Steve's test notes.
@@ -25336,7 +25348,7 @@ var store=D.store,LU=A.local,UUID=/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]
 var PUB={name:1,city:1,code:1,ownerUid:1,sports:1,brand:1,site:1,about:1,contact:1,timetable:1,posts:1,geo:1,checkinCode:1,checkinDate:1,targets:1,
  workouts:1,track:1,show:1,coaches:1,coachNames:1,teachers:1,ptSlots:1,wlib:1,menu:1,resources:1,msdefs:1,tests:1,kidsTT195:1,skills197:1,badges197:1,
  events94:1,jev202:1,policy202:1,social205:1,blog205:1,courses191:1,front191:1,offers190:1,challenge:1,teamGoal:1,affiliates:1,classPhotos:1,hours:1,billDay:1,market:1};
-var LPUB={uid:1,clubId:1,name:1,ring:1,sports:1,optIn:1,rank:1,streak:1,rsvp:1,cant:1,events:1,evEnt:1,gach:1,commit:1,updated:1,weekStart:1};
+var LPUB={uid:1,clubId:1,name:1,ring:1,sports:1,optIn:1,rank:1,streak:1,rsvp:1,cant:1,events:1,evEnt:1,gach:1,commit:1,updated:1,weekStart:1,msPublic:1};
 var LOPT={week:1,month:1,daily:1};/* only shown to club-mates when the member opted in to the club league */
 var last={},dirty={},applying=false,roleOf={},joinSt={},timer=null,busy=false,lastPull=0,msg="";
 function me(){return A.me()}
@@ -25500,13 +25512,21 @@ function back(){return location.origin+location.pathname}
 function staff(){try{var f=window.FH240&&FH240.state&&FH240.state();return f&&(f.role==="owner"||f.role==="coach")}catch(x){return false}}
 async function load(){var c=cid();if(!live())return null;try{var r=await A.api("GET","club_stripe?select=charges_enabled,payouts_enabled,details_submitted,due,livemode,updated_at&club_id=eq."+c);st[c]=(r&&r[0])||{none:true};at=Date.now()}catch(x){}return st[c]}
 function ready(){var s=st[cid()];return !!(s&&s.charges_enabled)}
+/* v390 (Council C-021 proposal c, Steve's yes 15 Nov 2026 14:37: "the payments is the thing ... It takes that hassle away from them"):
+   one honest status everywhere, from what Stripe has actually told us, never from a return to our page: Not set up, More information needed,
+   Checks in progress, Payments ready (and whether payouts to the bank have started). */
+function status(s){s=s===undefined?st[cid()]:s;
+ if(!s||s.none)return {key:"none",label:"Not set up",tone:"#9AA3B2",text:"Members can't pay by card yet. Your timetable, prices and invites all work without it; set this up any time."};
+ if(s.charges_enabled)return {key:"ready",label:"Payments ready",tone:"#3FC57E",text:s.payouts_enabled?"Members can pay by card. Money goes to your club's bank.":"Members can pay by card. Stripe starts paying out to your bank once it has checked your bank details."};
+ if((+s.due||0)>0||!s.details_submitted)return {key:"info",label:"More information needed",tone:"#E8DFC8",text:"Stripe needs a few more details before members can pay"+((+s.due||0)>0?" ("+s.due+" to go)":"")+". Your progress is saved: carry on where you left off."};
+ return {key:"checks",label:"Checks in progress",tone:"#4DA3FF",text:"You've sent Stripe everything it asked for. It's checking your details, which can take a day or two. Nothing to do now: this changes to Payments ready by itself."}}
 async function go(body,label){if(busy)return;busy=true;note=label||"Opening Stripe…";paint();try{var r=await A.fn("stripe-pay",Object.assign({club:cid(),back:back()},body));if(r&&r.url){location.href=r.url;return}if(r&&r.status)st[cid()]=r.status;note=""}catch(x){note=x.message}busy=false;paint()}
 /* ---------- club side ---------- */
 function clubCard(){var host=document.getElementById("hubaccBody");if(!host||!host.offsetParent||!live()||!staff())return;var el=document.getElementById("st241c");
  if(!el){el=document.createElement("div");el.id="st241c";el.className="panel plate";host.insertBefore(el,host.children[0]||null)}
- var s=st[cid()],h='<div class="sec-h"><h2 class="st241h">Take card payments</h2>'+(s&&s.charges_enabled?'<span class="badge" style="background:rgba(63,197,126,.15);color:#7BE0A6">Ready</span>':'')+'</div>';
- if(!s||s.none)h+='<p class="small" style="margin:0 0 8px">Members pay by card, Apple Pay or Google Pay, monthly or one-off, and the money goes straight to your club\'s bank. Stripe checks your details and handles card fees, refunds and disputes in your own Stripe Dashboard. FighterBase never holds your money.</p><div class="row"><button type="button" class="btn" data-st241="onboard">Set up card payments with Stripe</button></div>';
- else if(!s.charges_enabled)h+='<p class="small" style="margin:0 0 8px">Stripe needs a few more details before members can pay'+(s.due?' ('+s.due+' to go)':'')+'.</p><div class="row"><button type="button" class="btn" data-st241="onboard">Finish setting up with Stripe</button><button type="button" class="btn ghost" data-st241="status">Check again</button></div>';
+ var s=st[cid()],ss=status(s),h='<div class="sec-h"><h2 class="st241h">Take card payments</h2><span class="badge" style="background:'+ss.tone+'26;color:'+ss.tone+';border:1px solid '+ss.tone+'66">'+ss.label+'</span></div>';
+ if(!s||s.none)h+='<p class="small" style="margin:0 0 8px">Members pay by card, Apple Pay or Google Pay, monthly or one-off, and the money goes straight to your club\'s bank. Stripe checks your details and handles card fees, refunds and disputes in your own Stripe Dashboard. FighterBase never holds your money.</p><p class="small muted" style="margin:0 0 8px">Have ready: your bank details and photo ID. Stripe may take a day or two to check them; your timetable and prices keep working meanwhile, so you can do this now or later.</p><div class="row"><button type="button" class="btn" data-st241="onboard">Set up card payments with Stripe</button></div>';
+ else if(!s.charges_enabled)h+='<p class="small" style="margin:0 0 8px">'+e(ss.text)+'</p><div class="row">'+(ss.key==="info"?'<button type="button" class="btn" data-st241="onboard">Finish setting up with Stripe</button>':'')+'<button type="button" class="btn ghost" data-st241="status">Check again</button></div>';
  else h+='<p class="small" style="margin:0 0 8px">Members can pay by card from their Club membership. Paid members are ticked off here by themselves'+(s.payouts_enabled?'':'; Stripe will start paying out to your bank once it has checked your bank details')+'. Refunds, receipts and payouts are in your Stripe Dashboard.</p><div class="row"><a class="btn ghost" href="https://dashboard.stripe.com/" target="_blank" rel="noopener">Open my Stripe Dashboard</a><button type="button" class="btn ghost" data-st241="status">Refresh</button></div>';
  if(s&&s.livemode===false&&!s.none)h+='<p class="muted small" style="margin:6px 0 0">Test mode: use Stripe\'s test card 4242 4242 4242 4242; no real money moves.</p>';
  if(note)h+='<p class="small" style="margin:6px 0 0">'+e(note)+'</p>';
@@ -25536,7 +25556,7 @@ document.addEventListener("click",function(ev){var t=ev.target.closest&&ev.targe
   if(q==="done"&&window.FH240)[5000,20000,45000].forEach(function(ms){setTimeout(function(){FH240.pull()},ms)})},2500)})();
 var css=document.createElement("style");css.textContent=".st241h{font-family:var(--body,inherit);font-weight:800;text-transform:none;letter-spacing:0;font-size:20px}#st241c a.btn{text-decoration:none}";document.head.appendChild(css);
 setInterval(function(){if(document.hidden||!live())return;if(Date.now()-at>60000)load().then(paint);else paint()},1500);
-return {on:true,load:load,state:function(){return st[cid()]||null}}})();
+return {on:true,load:load,status:status,state:function(){return st[cid()]||null}}})();
 
 /* FighterBase v350: crew chats and training-partner messages between phones (star run 12 Nov 2026, job "sync the rest of the shared lists").
    Until now a crew, its messages and cheers, and partner messages lived only on the phone they were written on. For members of the same
@@ -26122,7 +26142,7 @@ function items(){var c=club();if(!c)return [];var L=[],su=c.setup||{},sk=su.skip
  var live=UUID.test(c.id||"");
  if(signed&&!live)L.push({u:2,t:"Make your club live",s:"So members can join and book from their phones",a:'data-t252go="hubsetup"'});
  var pay=null;try{pay=window.FH241&&FH241.state&&FH241.state()}catch(x){}
- if(live&&!(pay&&pay.charges_enabled)&&!sk.pay)L.push({u:2,t:"Set up card payments",s:pay&&!pay.none?"Stripe needs a few more details":"Members pay by card; money goes to your bank",a:'data-swstep="4"'});
+ if(live&&!(pay&&pay.charges_enabled)&&!sk.pay)L.push({u:2,t:(function(){try{var x=FH241.status();return x.key==="checks"?"Card payments: checks in progress":x.key==="info"?"Card payments: more information needed":"Set up card payments"}catch(e){return "Set up card payments"}})(),s:(function(){try{var x=FH241.status();return x.key==="checks"?"Stripe is checking your details; nothing to do now":x.key==="info"?"Finish the details Stripe asked for":"Members pay by card; money goes to your bank"}catch(e){return "Members pay by card; money goes to your bank"}})(),a:'data-swstep="4"'});
  if(!(c.timetable||[]).length)L.push({u:1,t:"Schedule your classes",s:"Members book and check in against these",a:'data-swstep="2"'});
  if(!((c.pay||{}).plans||[]).length)L.push({u:1,t:"Add membership prices",s:"Shown on your club page and used for payments",a:'data-swstep="3"'});
  if(!(c.coaches||[]).length&&!sk.coaches)L.push({u:0,t:"Add your trainers",s:"Give coaches the club side",a:'data-swstep="6"'});
