@@ -20469,7 +20469,7 @@ setInterval(paint,2000);setTimeout(function(){if(ses)pull(false)},1500);
 document.addEventListener("visibilitychange",function(){if(!document.hidden&&ses&&!Object.keys(dirty).length)pull(false)});
 return {on:true,state:function(){return {signedIn:!!ses,dirty:Object.keys(dirty).length}},
  /* v346: for the club sync (fh240): signed-in calls to the database, my account id and this phone's local id */
- api:api,me:function(){return ses&&ses.uid||null},local:uid,doOut:doOut,signedIn:function(){return !!ses},
+ api:api,base:URL_,me:function(){return ses&&ses.uid||null},local:uid,doOut:doOut,signedIn:function(){return !!ses},
  /* v347: call one of our server functions (stripe-pay) as the signed-in member */
  fn:async function(name,body){var go=function(){return fetch(URL_+"/functions/v1/"+name,{method:"POST",headers:hdr(true),body:JSON.stringify(body||{})})};var r=await go();if(r.status===401&&await refresh())r=await go();var j={};try{j=await r.json()}catch(e){}if(!r.ok||(j&&j.ok===false))throw new Error((j&&(j.text||j.message))||("Request failed ("+r.status+")"));return j}}})();
 
@@ -26197,6 +26197,58 @@ function act(){var a=parse();if(!a||busy)return;if(!ready())return;busy=true;
  catch(e){}finally{busy=false}}
 window.addEventListener("hashchange",act);setInterval(function(){if(!document.hidden)act()},1200);
 window.FH253={parse:parse,act:act};
+})();
+
+/* FighterBase v386 (FB-056, Steve's yes 15 Nov 2026 06:40): calendar feeds, for live clubs when signed in.
+   Member, Schedule page: "Add to your calendar": my bookings (a private link: classes I'm coming to, waiting-list place, confirmed PT)
+   and the club's timetable. Each opens in the phone's calendar, Google Calendar, or copies.
+   "New private link" replaces the key, which stops the old link at once (cal_token(true), db/m10_cal_tokens.sql).
+   Club side, Classes page: the same timetable feed plus a data version for the club's own website.
+   The feeds are read by the server function supabase/functions/cal. Nothing here changes any booking. */
+(function(){
+var UUID=/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i,MINE="",busy=false,note="",ARM=0;
+function e(s){return String(s==null?"":s).replace(/[&<>"]/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]})}
+function A(){return window.FH181&&FH181.on&&FH181.base?FH181:null}
+function cid(){try{return (S.profile&&S.profile.clubId)||""}catch(x){return ""}}
+function ok(){var a=A();return !!(a&&a.signedIn&&a.signedIn()&&UUID.test(cid()))}
+function base(){return A().base+"/functions/v1/cal"}
+function clubUrl(ext){return base()+"/club/"+cid().toLowerCase()+"."+(ext||"ics")}
+function web(u){return u.replace(/^https:/,"webcal:")}
+function gcal(u){return "https://calendar.google.com/calendar/render?cid="+encodeURIComponent(web(u))}
+function row(label,sub,u,extra){return '<div class="c254r"><div><b>'+e(label)+'</b><span class="small muted">'+e(sub)+'</span></div><div class="row c254b">'+
+ '<a class="btn sm" href="'+e(web(u))+'">Add to calendar</a><a class="btn ghost sm" href="'+e(gcal(u))+'" target="_blank" rel="noopener">Google Calendar</a>'+
+ '<button type="button" class="btn ghost sm" data-c254copy="'+e(u)+'">Copy link</button>'+(extra||"")+'</div></div>'}
+var css=document.createElement("style");css.textContent=
+ "#cal254,#cal254c{margin-top:14px;grid-column:1/-1}.c254b a.btn{text-decoration:none}.c254r{display:flex;flex-direction:column;gap:8px;padding:12px 0;border-top:1px solid var(--line,rgba(255,255,255,.1))}.c254r:first-of-type{border-top:0}"+
+ ".c254r>div:first-child{display:flex;flex-direction:column;gap:2px}.c254b{flex-wrap:wrap;gap:8px;justify-content:flex-end}.c254b .btn{min-height:44px}";
+document.head.appendChild(css);
+function member(){var tab=document.getElementById("tab-schedule"),el=document.getElementById("cal254");
+ if(!ok()){if(el)el.remove();MINE="";return}if(!tab||tab.hidden)return;
+ var h='<div class="sec-h"><h2>Add to your calendar</h2></div><p class="small muted" style="margin:0 0 4px">Your calendar app keeps these up to date by itself, about once an hour.</p>'+
+  (MINE?row("My bookings","Only you can see this link: the classes you said you're coming to, any waiting-list place, and confirmed PT.",base()+"/me/"+MINE+".ics",'<button type="button" class="linkbtn" data-c254new>'+(ARM?'Tap again: the old link stops':'New private link')+'</button>')
+       :'<div class="c254r"><div><b>My bookings</b><span class="small muted">A private link to your own classes and PT, for your phone\'s calendar.</span></div><div class="row c254b"><button type="button" class="btn sm" data-c254mine>Get my calendar link</button></div></div>')+
+  row("Club timetable","Every class on the timetable, including rotating weeks.",clubUrl("ics"))+(note?'<p class="saved" aria-live="polite">'+e(note)+'</p>':'');
+ if(!el){el=document.createElement("section");el.id="cal254";el.className="panel";tab.appendChild(el)}
+ if(el.dataset.sig!==h){el.innerHTML=h;el.dataset.sig=h}}
+function staff(){var tab=document.getElementById("tab-hubclasses"),el=document.getElementById("cal254c");
+ if(!ok()){if(el)el.remove();return}if(!tab||tab.hidden)return;
+ var h='<div class="sec-h"><h2>Your timetable in calendars and on your website</h2></div><p class="small muted" style="margin:0 0 4px">Live links that follow your timetable here, rotating weeks included. They show class, day, time, length, level and the coach\'s first name, nothing about members.</p>'+
+  row("Calendar link","For members' calendars, or for your website's calendar button.",clubUrl("ics"))+
+  '<div class="c254r"><div><b>Timetable data for your website</b><span class="small muted">For whoever builds your website: the same timetable as data (JSON) to read and show.</span></div><div class="row c254b"><button type="button" class="btn ghost sm" data-c254copy="'+e(clubUrl("json"))+'">Copy data link</button></div></div>';
+ if(!el){el=document.createElement("section");el.id="cal254c";el.className="panel";tab.appendChild(el)}
+ if(el.dataset.sig!==h){el.innerHTML=h;el.dataset.sig=h}}
+async function getMine(reset){if(busy||!ok())return;busy=true;note=reset?"Making a new link…":"Getting your link…";member();
+ try{var t=await A().api("POST","rpc/cal_token",{p_reset:!!reset});/* api() returns the parsed answer and throws on an error */
+  if(/^[a-f0-9]{64}$/.test(String(t||""))){MINE=String(t);note=reset?"New link made. The old one has stopped working: add this one to your calendar instead.":""}
+  else note="Couldn't get your link just now. Try again in a minute."}
+ catch(x){note="Couldn't get your link just now. Try again in a minute."}busy=false;member()}
+function copy(u){try{navigator.clipboard.writeText(u).then(function(){if(typeof toast==="function")toast("Link copied","Paste it where you need it.")},function(){if(typeof toast==="function")toast("Your link",u)})}catch(x){if(typeof toast==="function")toast("Your link",u)}}
+document.addEventListener("click",function(ev){var t=ev.target;if(!t.closest)return;var b;
+ if(b=t.closest("[data-c254copy]")){copy(b.getAttribute("data-c254copy"));return}
+ if(t.closest("[data-c254mine]")){getMine(false);return}
+ if(t.closest("[data-c254new]")){if(ARM&&Date.now()-ARM<6000){ARM=0;getMine(true)}else{ARM=Date.now();member();setTimeout(function(){if(ARM&&Date.now()-ARM>=6000){ARM=0;member()}},6100)}return}});
+setInterval(function(){if(document.hidden)return;try{member()}catch(x){}try{staff()}catch(x){}},1500);
+window.FH254={clubUrl:function(x){return ok()?clubUrl(x):""}};
 })();
 
 /* FighterBase v44: always a way back, always a next step. */
