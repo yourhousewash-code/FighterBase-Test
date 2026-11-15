@@ -5854,7 +5854,7 @@ function acct(){var host=document.getElementById("tab-profile");if(!host||!S.pro
  if(el.dataset.sig!==h){el.innerHTML=h;el.dataset.sig=h}}
 /* ---------- when to ask ---------- */
 function tick(){try{acct();if(!S.uid||typeof obChecked==="undefined"||!obChecked)return;if(role())return;if(!sheet.hidden)return;if(window.__fbWelcomeBusy){return}var ob0=document.getElementById("fbOb");if(ob0&&!ob0.hidden)return;
- var h=location.hash||"";if(/^#join=/.test(h)){setRole("member");return}
+ var h=location.hash||"";if(/^#(?:join|book|pt)\b/.test(h)){setRole("member");return}
  /* v364: the club door on the opening screen survives the email confirm link (which drops the #club) */
  var door=false;try{door=localStorage.getItem("fb_clubdoor")==="1"}catch(x){}
  if(h==="#club"||door){try{localStorage.removeItem("fb_clubdoor")}catch(x){}pickClub();return}
@@ -8241,7 +8241,7 @@ function finish(){var p=P(),sp=A.sports.slice(),g=p.eg?JSON.parse(JSON.stringify
  if(joined){try{pushClubEvent("joined the club")}catch(e){}try{subscribeClub()}catch(e){}}
  try{scheduleLeague()}catch(e){}try{showTab("today");scrollTo(0,0)}catch(e){}toast("Welcome to FighterBase"+(nm?", "+nm:""),cl?"Linked to "+cl.name:"Your plan is ready")}
 function close(){var el=document.getElementById("fbOb");if(el)el.hidden=true;document.body.style.overflow="";A=null}
-function open(){A=fresh();step=0;SEEN={};try{var dr=JSON.parse(localStorage.getItem("fb_obdraft_v1")||"null");if(dr&&dr.A&&Date.now()-dr.at<30*86400000&&!(S.profile&&S.profile.onboarded)){A=Object.assign(A,dr.A);step=+dr.step||0}}catch(e){}var m=(location.hash||"").match(/^#join=(.+)$/);if(!m&&window.FH116_PENDING&&!A.clubId){m=[0,encodeURIComponent(window.FH116_PENDING)];window.FH116_PENDING=null}if(m&&!A.clubId){A.gymQ=true;A.code=decodeURIComponent(m[1]).trim().toUpperCase();setTimeout(function(){if(A&&A.code&&!A.club)find()},400)}
+function open(){A=fresh();step=0;SEEN={};try{var dr=JSON.parse(localStorage.getItem("fb_obdraft_v1")||"null");if(dr&&dr.A&&Date.now()-dr.at<30*86400000&&!(S.profile&&S.profile.onboarded)){A=Object.assign(A,dr.A);step=+dr.step||0}}catch(e){}var m=(location.hash||"").match(/^#(?:join|book|pt)=([^&]+)/);/* v385: club-site links #book=CODE and #pt=CODE fill the code too; &offer=... is not part of the code */if(!m&&window.FH116_PENDING&&!A.clubId){m=[0,encodeURIComponent(window.FH116_PENDING)];window.FH116_PENDING=null}if(m&&!A.clubId){A.gymQ=true;A.code=decodeURIComponent(m[1]).trim().toUpperCase();setTimeout(function(){if(A&&A.code&&!A.club)find()},400)}
  try{if(S.profile&&!S.profile.onboarded&&typeof ob!=="undefined"){}var o=document.getElementById("ob");if(o)o.hidden=true}catch(e){}render()}
 /* replace the old setup everywhere */
 window.openOnboarding=open;try{openOnboarding=open}catch(e){}
@@ -26165,6 +26165,38 @@ document.addEventListener("click",function(ev){var t=ev.target;if(!t.closest)ret
 document.addEventListener("keydown",function(ev){if(ev.key==="Escape"&&open){open=false;paint()}});
 setInterval(function(){if(!document.hidden)try{paint()}catch(x){}},1500);
 window.FH252={items:items,paint:paint};
+})();
+
+/* FighterBase v385 (FB-056, 15 Nov 2026: Warrior Spirit is the first club; its website will send members here).
+   Fixed links a club's own website (or a poster, a text, an email) can use. The club code is the only thing in the link.
+     #join=CODE   sign up or log in, then join that club (the questions fill the code in; a member who has already finished the
+                  questions gets the "Join your club" card on Today with the code filled in)
+     #book        open the club's Schedule to book a class        #book=CODE  the same, joining that club first if needed
+     #pt          open the Schedule at Personal training           #pt=CODE    the same, joining that club first if needed
+   A link waits until the person has logged in and finished the questions, acts once, then tidies the address so a reload
+   doesn't repeat it. Nothing is joined without the member tapping Join (a live club also needs their date of birth). */
+(function(){
+function parse(){var m=/^#(join|book|pt)(?:=([^&]*))?/.exec(location.hash||"");if(!m)return null;var c="";try{c=decodeURIComponent(m[2]||"")}catch(e){c=m[2]||""}
+ c=String(c).trim().toUpperCase().replace(/[^A-Z0-9-]/g,"").slice(0,16);return {k:m[1],code:c}}
+function P(){try{return (typeof S!=="undefined"&&S.profile)||{}}catch(x){return {}}}
+function seen(id){var e=document.getElementById(id);if(!e||e.hidden)return false;var r=e.getBoundingClientRect();return r.width>0&&r.height>0&&getComputedStyle(e).display!=="none"}
+function ready(){var p=P();return !!(p.onboarded&&!seen("fbGate")&&!seen("fbOb"))}
+function club(){try{return (typeof clubState!=="undefined"&&clubState.club)||null}catch(x){return null}}
+function inClub(code){var p=P(),c=club();if(!p.clubId||!c)return false;return !code||String(c.code||"").toUpperCase()===code}
+function tidy(){try{history.replaceState(null,"",location.pathname+location.search)}catch(x){}}
+function fillJoin(code){try{localStorage.removeItem("fb250join")}catch(x){}var n=0,iv=setInterval(function(){n++;var i=document.getElementById("j250c");
+ if(i){if(code&&!i.value)i.value=code;clearInterval(iv);try{i.scrollIntoView({block:"center"})}catch(x){}var d=document.getElementById("j250d");try{(d&&code?d:i).focus({preventScroll:true})}catch(x){}}else if(n>20)clearInterval(iv)},300);try{showTab("today")}catch(x){}}
+function openPT(){var n=0,iv=setInterval(function(){n++;var b=document.getElementById("scheduleBody");if(!b){if(n>20)clearInterval(iv);return}
+ var h=[].filter.call(b.querySelectorAll("h2,h3,.label,b"),function(x){return /personal training|\bPT\b/i.test(x.textContent||"")})[0];if(h||n>20){clearInterval(iv);if(h)try{h.scrollIntoView({block:"start",behavior:"smooth"})}catch(x){}}},300)}
+var busy=false;
+function act(){var a=parse();if(!a||busy)return;if(!ready())return;busy=true;
+ try{var mine=inClub(a.code),none=!P().clubId;tidy();
+  if(mine){if(a.k==="join")showTab("clubpage");else{showTab("schedule");if(a.k==="pt")openPT()}}
+  else if(none){fillJoin(a.code);if(a.k!=="join"&&typeof toast==="function")toast("Join your club first","Then you can book from the Schedule.")}
+  else if(typeof toast==="function")toast("You're in a different club","This link is for "+(a.code||"another club")+". To move, leave your club first on the Club page.")}
+ catch(e){}finally{busy=false}}
+window.addEventListener("hashchange",act);setInterval(function(){if(!document.hidden)act()},1200);
+window.FH253={parse:parse,act:act};
 })();
 
 /* FighterBase v44: always a way back, always a next step. */
