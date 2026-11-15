@@ -8164,7 +8164,7 @@ function body(){var s=steps()[step],h="";
  if(s==="gym"&&door){if(A.gymQ==null||A.club){A.gymQ=false;A.club=null;A.clubId=null}}
  if(s==="gym"&&door)h='<h2>Your club comes next</h2><p class="ob-sub">As soon as these questions are done you\'ll set up your club: name, timetable, memberships and card payments. Your own training stays separate and private.</p><button class="linkbtn" type="button" data-obclubdoor="0">I don\'t run a club, I train at one</button>';
  else if(s==="gym")h='<h2>Train at a gym? Link it for extras</h2><p class="ob-sub">If your club uses FighterBase, link it with their code for the timetable, check-ins and coach messages. Otherwise skip.</p>'+yn("gymQ","Yes, link my gym","Skip, I train on my own")+'<p class="ob-sub small" style="margin-top:10px">Run a club or gym? <button class="linkbtn" type="button" data-obclubdoor="1">Set up my club after these questions</button></p>'+
-  (A.gymQ?(A.club?'<div class="ob-club"><span class="ob-cl">'+(A.club.brand&&A.club.brand.logo?'<img src="'+esc(A.club.brand.logo)+'" alt="">':esc((A.club.name||"C").slice(0,1)))+'</span><div><b>'+esc(A.club.name)+'</b><span class="ob-sub small">'+(A.club.live?"You've joined. Next, choose what they can see.":"Found it. Next, choose what they can see.")+'</span></div><button class="linkbtn" type="button" data-obunclub>Change</button></div>'
+  (A.gymQ?(A.club?'<div class="ob-club"><span class="ob-cl">'+(A.club.brand&&A.club.brand.logo?'<img src="'+esc(A.club.brand.logo)+'" alt="">':esc((A.club.name||"C").slice(0,1)))+'</span><div><b>'+esc(A.club.name)+'</b><span class="ob-sub small">'+(A.club.pending?"Request sent: the club approves new members. Next, choose what they can see.":A.club.live?"You've joined. Next, choose what they can see.":"Found it. Next, choose what they can see.")+'</span></div><button class="linkbtn" type="button" data-obunclub>Change</button></div>'
    :(liveOn()?'<div class="grid2"><div class="field"><label class="label" for="obCode">Club code</label><input type="text" id="obCode" maxlength="16" value="'+esc(A.code)+'" placeholder="e.g. WARRIOR" style="text-transform:uppercase" autocapitalize="characters"></div><div class="field"><label class="label" for="obDob">Date of birth</label><input type="date" id="obDob" value="'+esc(A.dob||"")+'"></div></div><div class="row" style="justify-content:flex-end;margin-top:8px"><button class="btn ghost sm" type="button" data-fb116find>Find a club</button><button class="btn sm" type="button" data-obfind>Join my gym</button></div><p class="ob-sub small" id="obMsg">'+esc(A.msg||"Your coach can give you the code or a link. Your date of birth is needed to join, and your club never sees it.")+'</p>'
    :'<div class="row" style="align-items:flex-end"><div class="field"><label class="label" for="obCode">Club code</label><input type="text" id="obCode" maxlength="16" value="'+esc(A.code)+'" placeholder="e.g. WARRIOR" style="text-transform:uppercase;max-width:200px" autocapitalize="characters"></div><button class="btn sm" type="button" data-obfind>Find my gym</button><button class="btn ghost sm" type="button" data-fb116find>Find a club</button></div><p class="ob-sub small" id="obMsg">'+esc(A.msg||"Your coach can give you the code or a link.")+'</p>')):'<p class="ob-sub small">No problem. You can link a gym any time from Me, or when a gym sends you an invite.</p>');
  if(s==="share"){var t=window.FB54?FB54.track(A.club):{training:true,goals:true,skills:true,weight:true,fights:true,injury:true},C=(window.FB54&&FB54.CATS)||[];if(!A.cons){A.cons={};C.forEach(function(c){A.cons[c[0]]=c[0]==="training"?true:(t[c[0]]&&c[3])})}
@@ -8204,7 +8204,7 @@ async function find(){grab();if(!A.code){A.msg="Type your club code first.";rend
    if(!A.dob){A.msg="Add your date of birth, then tap Join my gym.";render();return}
    A.msg="Joining…";render();var id=await FH240.join(A.code,A.dob),c=null;
    for(var i=0;i<20&&!c;i++){try{if(clubState.club&&clubState.club.id===id)c=clubState.club}catch(x){}if(!c)await new Promise(function(r){setTimeout(r,250)})}
-   A.club=Object.assign({},c||{name:"your club"},{id:id,live:true});A.clubId=id;A.cons=null;A.msg="";render();return}
+   A.club=Object.assign({},c||{name:"your club"},{id:id,live:true,pending:(function(){try{return FH240.state().join==="pending"}catch(x){return false}})()});A.clubId=id;A.cons=null;A.msg="";render();return}
   var d=s.docs[0];A.club=Object.assign({id:d.id},d.data());A.clubId=d.id;A.cons=null;A.msg="";render()}
  catch(e){var m=String(e&&e.message||"");A.msg=/date of birth/i.test(m)?"Add your date of birth, then tap Join my gym.":/parent/i.test(m)?"Under 18: a parent or guardian needs to link first.":/unknown club/i.test(m)?"No club with that code. Check it with your coach.":"Couldn't join: "+m;render()}}
 function uid(){return Date.now().toString(36)+Math.random().toString(36).slice(2,5)}
@@ -10053,7 +10053,7 @@ function tourHTML(){if(TS<0)return "";var t=TOUR[TS],c=null;try{c=clubState.club
 function tourDraw(){var el=document.getElementById("grTour");if(TS<0){if(el)el.remove();return}if(!el){el=document.createElement("div");el.id="grTour";document.body.appendChild(el)}el.innerHTML=tourHTML();var b=el.querySelector("[data-trn]");if(b)b.focus()}
 function tourOpen(){TS=0;tourDraw()}
 function tourEnd(){TS=-1;tourDraw();if(!P().tourW){P().tourW=new Date().toISOString();try{profChanged()}catch(e){}}}
-setInterval(function(){try{if(TS>=0||P().tourW||!P().clubId||!P().onboarded||(window.FH64&&FH64.isRealOwner&&FH64.isRealOwner())||/#demo-(club|jay)/.test(location.hash))return;if(document.getElementById("onb")||document.querySelector(".ob-wrap:not([hidden])"))return;var n=Object.keys(P().att||{}).length;if(n<3)tourOpen()}catch(e){}},4000);
+setInterval(function(){try{if(TS>=0||P().tourW||!P().clubId||!P().onboarded||(window.FH64&&FH64.isRealOwner&&FH64.isRealOwner())||/#demo-(club|jay)/.test(location.hash))return;if(document.getElementById("onb")||document.querySelector(".ob-wrap:not([hidden])"))return;try{var j=window.FH256&&FH256.state().join;if(j==="pending"||j==="declined")return}catch(x){}/* v388: not until the club has approved them */var n=Object.keys(P().att||{}).length;if(n<3)tourOpen()}catch(e){}},4000);
 /* ---------- coach guide (course) ---------- */
 var LES=[
  ["m1","Why structured training improves the member experience","Members stay when they can see they're getting better. Structure makes that visible: sessions they recognise, small steps up, and a record they can look back on. It doesn't replace your coaching. It shows it.",null,"Have a look at the principles below."],
@@ -25338,7 +25338,7 @@ var PUB={name:1,city:1,code:1,ownerUid:1,sports:1,brand:1,site:1,about:1,contact
  events94:1,jev202:1,policy202:1,social205:1,blog205:1,courses191:1,front191:1,offers190:1,challenge:1,teamGoal:1,affiliates:1,classPhotos:1,hours:1,billDay:1,market:1};
 var LPUB={uid:1,clubId:1,name:1,ring:1,sports:1,optIn:1,rank:1,streak:1,rsvp:1,cant:1,events:1,evEnt:1,gach:1,commit:1,updated:1,weekStart:1};
 var LOPT={week:1,month:1,daily:1};/* only shown to club-mates when the member opted in to the club league */
-var last={},dirty={},applying=false,roleOf={},timer=null,busy=false,lastPull=0,msg="";
+var last={},dirty={},applying=false,roleOf={},joinSt={},timer=null,busy=false,lastPull=0,msg="";
 function me(){return A.me()}
 function on(){return !!me()}
 function swap(o,a,b){if(!a||!b||a===b)return o;return JSON.parse(JSON.stringify(o).split(a).join(b))}
@@ -25360,7 +25360,8 @@ function lPath(path){var a=path.split("/");return a[1]===me()?a[0]+"/"+LU:path}
 var cmClub={},cmSeen={},cmSince={},cmOff=false;/* v356 club photos: the club a photo belongs to (kept after a delete), photos this phone has seen on the server (kept on this phone) */
 try{cmSeen=JSON.parse(localStorage.getItem("fb240cm")||"{}")||{}}catch(x){cmSeen={}}
 function cmKeep(){try{localStorage.setItem("fb240cm",JSON.stringify(cmSeen))}catch(x){}}
-function mine(path){var a=path.split("/");if(a.length!==2)return false;if(a[0]==="clubmedia"){var mc=(store[path]||{}).clubId||cmClub[path];return live(mc)&&(roleOf[mc]==="owner"||roleOf[mc]==="coach")}if(a[0]==="clubs")return live(a[1])&&(roleOf[a[1]]==="owner"||roleOf[a[1]]==="coach");return (a[0]==="league"||a[0]==="props"||a[0]==="partners")&&a[1]===LU&&live((store[path]||{}).clubId||clubId())}
+function mine(path){var a=path.split("/");if(a.length!==2)return false;if(a[0]==="clubmedia"){var mc=(store[path]||{}).clubId||cmClub[path];return live(mc)&&(roleOf[mc]==="owner"||roleOf[mc]==="coach")}if(a[0]==="clubs")return live(a[1])&&(roleOf[a[1]]==="owner"||roleOf[a[1]]==="coach");if(a[1]===LU&&waiting((store[path]||{}).clubId||clubId()))return false;/* v388: not shared with a club that hasn't approved me yet */
+ return (a[0]==="league"||a[0]==="props"||a[0]==="partners")&&a[1]===LU&&live((store[path]||{}).clubId||clubId())}
 function mark(p){if(applying||!on())return;var a=String(p).split("/");if(a.length!==2||!/^(clubs|league|props|partners|clubmedia)$/.test(a[0]))return;if(a[0]==="clubmedia"&&store[p]&&store[p].clubId)cmClub[p]=store[p].clubId;dirty[p]=1;clearTimeout(timer);timer=setTimeout(push,1500)}
 if(window.__FB_LOCAL_HOOK)window.__FB_LOCAL_HOOK(mark);
 async function pushOne(path){var d=store[path];
@@ -25391,7 +25392,10 @@ async function push(){if(!on()||busy)return;var ps=Object.keys(dirty).filter(min
  msg=bad?"Club not synced yet: "+bad:(wait?"Waiting for the owner to approve you as a coach.":"");busy=false;paint()}
 function pendingCoach(){try{var r=S.profile&&S.profile.coachReq,c=clubId();return !!(r&&r.club===c&&!roleOf[c])}catch(e){return false}}
 /* ---------- pull ---------- */
-async function role(cid){try{roleOf[cid]=await rpc("my_club_role",{c:cid})}catch(e){}return roleOf[cid]}
+async function role(cid){try{roleOf[cid]=await rpc("my_club_role",{c:cid})}catch(e){}
+ /* v388 (m12): a club can ask new members to wait for approval; "pending" or "declined" comes from my_join_status */
+ if(roleOf[cid])joinSt[cid]="active";else{try{joinSt[cid]=await rpc("my_join_status",{c:cid})}catch(e){}}return roleOf[cid]}
+function waiting(cid){return !!(cid&&(joinSt[cid]==="pending"||joinSt[cid]==="declined"))}
 function q(s){return encodeURIComponent(s)}
 async function pull(){var cid=clubId();if(!on()||busy||!live(cid))return;busy=true;
  try{await role(cid);var rows=await A.api("GET","shared_docs?select=path,part,data&club_id=eq."+cid+"&path=not.like.clubmedia/*")||[];
@@ -25468,7 +25472,7 @@ document.addEventListener("click",function(ev){var rc=ev.target.closest&&ev.targ
  join(code,(document.getElementById("cs240dob")||{}).value||"").then(function(){if(m){m.textContent="";m.classList.remove("cs240err")}
   /* v374 A18: say which club, clearly, and what to do next */
   var nm="";try{nm=(clubState.club&&clubState.club.name)||""}catch(x){}
-  if(typeof toast==="function")toast(nm?"You've joined "+nm:"You've joined your club",(nm?nm+"'s":"Your club's")+" timetable and memberships are on the Club page. Choose your membership there.")}).catch(function(x){if(m)m.classList.add("cs240err");
+  if(typeof toast==="function"){if(joinSt[clubId()]==="pending")toast("Request sent to "+(nm||"your club"),"You'll be in once the club approves you. You can look at the timetable meanwhile.");else toast(nm?"You've joined "+nm:"You've joined your club",(nm?nm+"'s":"Your club's")+" timetable and memberships are on the Club page. Choose your membership there.")}}).catch(function(x){if(m)m.classList.add("cs240err");
   if(/unknown club/i.test(x.message)){var local=Object.keys(store).some(function(k){return k.indexOf("clubs/")===0&&k.split("/").length===2&&String((store[k]||{}).code||"").toUpperCase()===code});if(local&&typeof jb.onclick==="function"){if(m)m.textContent="";jb.onclick();return}}
   if(m)m.textContent=/date of birth/.test(x.message)?"Add your date of birth, then tap Join club again.":/parent/.test(x.message)?"Under 18: a parent or guardian needs to link first.":/unknown club/i.test(x.message)?"No club with that code. Check with your coach.":"Couldn't join: "+x.message})},true);
 /* v374 A18: an old message clears as soon as the code or date of birth is changed */
@@ -25477,7 +25481,7 @@ var css=document.createElement("style");css.textContent=".cs240err{color:#FF8A70
 setInterval(function(){if(document.hidden||!on())return;if(Date.now()-lastPull>20000)pull();paint()},2000);
 document.addEventListener("visibilitychange",function(){if(!document.hidden&&on())pull()});
 setTimeout(function(){if(on())pull()},1500);
-return {on:true,pull:pull,push:push,makeLive:makeLive,join:join,partsOf:partsOf,state:function(){return {signedIn:on(),club:clubId(),role:roleOf[clubId()]||null,lastPull:lastPull,msg:msg,dirty:Object.keys(dirty)}}}})();
+return {on:true,pull:pull,push:push,makeLive:makeLive,join:join,partsOf:partsOf,state:function(){return {signedIn:on(),club:clubId(),role:roleOf[clubId()]||null,join:joinSt[clubId()]||null,lastPull:lastPull,msg:msg,dirty:Object.keys(dirty)}}}})();
 
 /* FighterBase v347: card payments for live clubs through Stripe (money path M3, Steve 12 Nov 2026).
    Club side (Money, Accounts): "Take card payments" card. The owner (or staff with the accounts permission) taps Set up, fills in Stripe's own
@@ -25931,7 +25935,7 @@ function jPaint(){var sc=document.getElementById("tab-today"),el=document.getEle
 function jMsg(t){var m=document.getElementById("j250m");if(m)m.textContent=t||""}
 async function jGo(){var code=((document.getElementById("j250c")||{}).value||"").trim().toUpperCase(),dob=(document.getElementById("j250d")||{}).value||"";if(!code){jMsg("Type your club's code first.");return}
  if(jLive()){if(!dob){jMsg("Add your date of birth, then tap Join my club.");return}jMsg("Joining…");
-  try{await FH240.join(code,dob);var nm="";try{nm=(clubState.club&&clubState.club.name)||""}catch(x){}jMsg("");if(typeof toast==="function")toast(nm?"You've joined "+nm:"You've joined your club","Choose your membership on the Club page.");try{showTab("clubpage")}catch(x){}}
+  try{await FH240.join(code,dob);var nm="";try{nm=(clubState.club&&clubState.club.name)||""}catch(x){}jMsg("");var pend=false;try{pend=FH240.state().join==="pending"}catch(x){}if(typeof toast==="function"){if(pend)toast("Request sent to "+(nm||"your club"),"You'll be in once the club approves you.");else toast(nm?"You've joined "+nm:"You've joined your club","Choose your membership on the Club page.")}try{showTab("clubpage")}catch(x){}}
   catch(e){var m=String(e&&e.message||"");jMsg(/date of birth/i.test(m)?"Add your date of birth, then tap Join my club.":/parent/i.test(m)?"Under 18: a parent or guardian needs to link first.":/unknown club/i.test(m)?"No club with that code. Check it with your coach.":"Couldn't join: "+m)}return}
  try{showTab("club");setTimeout(function(){var i=document.getElementById("joinCode"),b=document.getElementById("joinBtn");if(i){i.value=code;if(b)b.click()}},150)}catch(x){}}
 document.addEventListener("click",function(ev){var t=ev.target;if(!t.closest)return;if(t.closest("[data-j250go]")){jGo();return}if(t.closest("[data-j250x]")){try{localStorage.setItem(JKEY,String(Date.now()))}catch(x){}jPaint()}});
@@ -26293,6 +26297,80 @@ document.addEventListener("click",function(ev){var t=ev.target;if(!t.closest)ret
  if(t.closest("[data-ho255go]")){if(!PICK)return;if(ARM&&Date.now()-ARM<6000){go()}else{ARM=Date.now();paint();setTimeout(function(){if(ARM&&Date.now()-ARM>=6000){ARM=0;paint()}},6100)}}});
 setInterval(function(){if(!document.hidden)try{paint()}catch(x){}},1500);
 window.FH255={paint:paint};
+})();
+
+/* FighterBase v388 (FB-056 and FB-057; db/m12_join_approval.sql): the club approves new members.
+   Why: a club's code goes on its website, and members can see club-mates' first names and class bookings, so a stranger with the code
+   shouldn't see any of that until the club says yes. New clubs ask for approval (the owner can switch it off); the two existing test clubs
+   keep instant joining.
+   Member waiting: a banner on Today and the club page ("Warrior Spirit has your request"); they can look at the timetable and memberships,
+   but booking, PT requests and paying wait (a short message says why). Declined: told kindly, with Find a club and Remove this club.
+   Club side (owner and coaches), Overview: "Asking to join" with Approve and Decline (Decline asks twice); the owner can switch approval
+   on or off there. Nothing is joined or shared without the club's yes. */
+(function(){
+var UUID=/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i,REQ=null,APPR=null,LASTQ=0,busy=false,note="",ARMD={};
+function e(s){return String(s==null?"":s).replace(/[&<>"]/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]})}
+function A(){return window.FH181&&FH181.on&&FH181.api?FH181:null}
+function st(){try{return (window.FH240&&FH240.state&&FH240.state())||{}}catch(x){return {}}}
+function cid(){try{return (S.profile&&S.profile.clubId)||""}catch(x){return ""}}
+function live(){return UUID.test(cid())&&!!(A()&&A().signedIn())}
+function join(){var s=st();return live()&&s.club===cid()?s.join:null}
+function staff(){var s=st();return live()&&s.club===cid()&&(s.role==="owner"||s.role==="coach")}
+function owner(){var s=st();return live()&&s.club===cid()&&s.role==="owner"}
+function club(){try{return (typeof clubState!=="undefined"&&clubState.club)||null}catch(x){return null}}
+function cname(){var c=club();return (c&&c.name)||"Your club"}
+var css=document.createElement("style");css.textContent=
+ "#jr256m{border-color:rgba(232,223,200,.45)}#jr256m p{margin:0 0 8px}#jr256s .jr-r{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 0;border-top:1px solid var(--line,rgba(255,255,255,.1));flex-wrap:wrap}"+
+ "#jr256s .jr-r:first-of-type{border-top:0}#jr256s .jr-r .row{gap:8px}#jr256s .btn{min-height:44px}#tab-today#tab-today>#jr256m{order:-90!important}";
+document.head.appendChild(css);
+/* ---------- member: waiting or declined ---------- */
+function memberBanner(){var j=join(),w=j==="pending"||j==="declined";
+ ["tab-today","tab-clubpage"].forEach(function(id){var tab=document.getElementById(id),el=tab&&tab.querySelector(":scope > #jr256m, :scope > .jr256m");
+  if(!tab||!w){if(el)el.remove();return}
+  var h=j==="pending"?'<div class="sec-h"><h2>'+e(cname())+' has your request</h2></div><p>You\'ll be in as soon as the club approves you. Until then you can look at the timetable and memberships. Booking, paying and seeing who\'s training start after that.</p><div class="row" style="justify-content:flex-end"><button type="button" class="btn ghost sm" data-jr256check>Check again</button></div>'
+   :'<div class="sec-h"><h2>'+e(cname())+' didn\'t accept your request</h2></div><p>If you think that\'s a mistake, speak to the club. Or find another club near you.</p><div class="row" style="justify-content:flex-end;flex-wrap:wrap"><button type="button" class="linkbtn" data-jr256drop>Remove this club</button><button type="button" class="btn sm" data-fb116find>Find a club near me</button></div>';
+  if(note)h+='<p class="saved" aria-live="polite">'+e(note)+'</p>';
+  if(!el){el=document.createElement("section");el.className="panel plate jr256m";if(id==="tab-today")el.id="jr256m";tab.insertBefore(el,tab.firstChild)}
+  if(el.dataset.sig!==h){el.innerHTML=h;el.dataset.sig=h}})}
+/* booking, PT and paying wait for the club's yes */
+window.addEventListener("click",function(ev){var t=ev.target;if(!t.closest)return;var j=join();if(j!=="pending"&&j!=="declined")return;/* window, capture: before any other click handler */
+ if(t.closest("[data-rsvp],[data-ptpick],[data-ptreq],[data-pypay],[data-pyclaim],[data-pyclsend],[data-st241]")){ev.preventDefault();ev.stopImmediatePropagation();
+  if(typeof toast==="function")toast(j==="pending"?"Waiting for "+cname():"Not a member of "+cname(),j==="pending"?"You can book and pay once the club approves you.":"The club didn't accept your request.")}},true);
+/* ---------- club side: asking to join ---------- */
+async function load(force){var a=A(),c=cid();if(!a||!staff()||busy)return;if(!force&&Date.now()-LASTQ<20000)return;LASTQ=Date.now();
+ try{REQ=await a.api("POST","rpc/join_requests",{c:c})||[]}catch(x){REQ=null}
+ if(owner()){try{var r=await a.api("GET","clubs?select=join_approval&id=eq."+c);APPR=r&&r[0]?!!r[0].join_approval:null}catch(x){APPR=null}}
+ staffPanel()}
+function staffPanel(){var host=document.getElementById("huboverBody"),el=document.getElementById("jr256s");
+ var show=!!(host&&staff()&&(REQ&&REQ.length||owner()&&APPR!==null||note));
+ if(!show){if(el)el.remove();return}
+ var n=(REQ||[]).length,h='<div class="sec-h"><h2>'+(n?"Asking to join ("+n+")":"New members")+'</h2></div>'+
+  (n?(REQ||[]).map(function(r){var k=r.user_id,arm=ARMD[k]&&Date.now()-ARMD[k]<6000;var when="";try{when=new Date(r.asked_at).toLocaleDateString("en-GB",{day:"numeric",month:"short"})}catch(x){}
+    return '<div class="jr-r"><div><b>'+e(r.name||"New member")+'</b><span class="muted small"> asked '+e(when)+'</span></div><div class="row"><button type="button" class="btn ghost sm" data-jr256no="'+e(k)+'">'+(arm?"Tap again to decline":"Decline")+'</button><button type="button" class="btn sm" data-jr256ok="'+e(k)+'">Approve</button></div></div>'}).join("")
+   :'<p class="small muted" style="margin:0">Nobody is waiting.</p>')+
+  (owner()&&APPR!==null?'<div class="row" style="justify-content:space-between;align-items:center;margin-top:10px;flex-wrap:wrap;gap:8px"><span class="small">'+(APPR?"New members wait for your approval before they see other members, book or pay.":"Anyone with your club code joins straight away.")+'</span><button type="button" class="linkbtn" data-jr256mode="'+(APPR?"0":"1")+'">'+(APPR?"Let people join straight away":"Ask for approval first")+'</button></div>'+
+   (APPR?'':'<p class="small muted" style="margin:6px 0 0">Keep approval on if your code is on your website or a poster: members can see each other\'s first names and class bookings.</p>'):'')+
+  (note?'<p class="saved" aria-live="polite">'+e(note)+'</p>':'');
+ if(!el){el=document.createElement("section");el.id="jr256s";el.className="panel";host.insertBefore(el,host.firstChild)}
+ if(el.dataset.sig!==h){el.innerHTML=h;el.dataset.sig=h}}
+async function decide(u,ok){var a=A();if(!a||busy)return;busy=true;note="";
+ try{await a.api("POST","rpc/decide_join",{c:cid(),u:u,ok:ok});var r=(REQ||[]).filter(function(x){return x.user_id===u})[0];
+  note=(r&&r.name||"They")+(ok?" can now book and pay. They'll see the club next time their app refreshes.":" won't join. They're told kindly and can ask again.");
+  REQ=(REQ||[]).filter(function(x){return x.user_id!==u})}
+ catch(x){note="Couldn't save that just now: "+String(x&&x.message||x)}
+ busy=false;staffPanel();clearSoon();try{if(ok&&window.FH240&&FH240.pull)FH240.pull()}catch(x){}}
+var clr=null;function clearSoon(){clearTimeout(clr);clr=setTimeout(function(){note="";staffPanel();memberBanner()},9000)}
+async function mode(on){var a=A();if(!a||busy||!owner())return;busy=true;note="";
+ try{await a.api("POST","rpc/set_join_approval",{c:cid(),p_on:on});APPR=on;note=on?"New members now wait for your approval.":"People with your code now join straight away."}
+ catch(x){note="Couldn't change that just now: "+String(x&&x.message||x)}busy=false;staffPanel();clearSoon()}
+document.addEventListener("click",function(ev){var t=ev.target;if(!t.closest)return;var b;
+ if(b=t.closest("[data-jr256ok]")){decide(b.getAttribute("data-jr256ok"),true);return}
+ if(b=t.closest("[data-jr256no]")){var k=b.getAttribute("data-jr256no");if(ARMD[k]&&Date.now()-ARMD[k]<6000){ARMD[k]=0;decide(k,false)}else{ARMD[k]=Date.now();staffPanel();setTimeout(staffPanel,6100)}return}
+ if(b=t.closest("[data-jr256mode]")){mode(b.getAttribute("data-jr256mode")==="1");return}
+ if(t.closest("[data-jr256check]")){note="Checking…";memberBanner();Promise.resolve(window.FH240&&FH240.pull&&FH240.pull()).then(function(){var j=join();note=j==="pending"?"Still waiting. The club hasn't answered yet.":"";memberBanner()},function(){note="";memberBanner()});return}
+ if(t.closest("[data-jr256drop]")){try{S.profile.clubId=null;if(typeof profChanged==="function")profChanged();if(typeof subscribeClub==="function")subscribeClub();showTab("today")}catch(x){}note="";return}});
+setInterval(function(){if(document.hidden)return;try{memberBanner()}catch(x){}try{var tab=document.getElementById("tab-hubover");if(tab&&!tab.hidden)load(false);else staffPanel()}catch(x){}},1500);
+window.FH256={load:load,state:function(){return {join:join(),requests:REQ,approval:APPR}}};
 })();
 
 /* FighterBase v44: always a way back, always a next step. */
