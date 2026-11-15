@@ -25519,7 +25519,7 @@ function live(){var c=cid();return !!(c&&UUID.test(c)&&A.me())}
 function e(s){return String(s==null?"":s).replace(/[&<>"]/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]})}
 function back(){return location.origin+location.pathname}
 function staff(){try{var f=window.FH240&&FH240.state&&FH240.state();return f&&(f.role==="owner"||f.role==="coach")}catch(x){return false}}
-async function load(){var c=cid();if(!live())return null;try{var r=await A.api("GET","club_stripe?select=charges_enabled,payouts_enabled,details_submitted,due,livemode,updated_at&club_id=eq."+c);var old=st[c];st[c]=(r&&r[0])||{none:true};if(old&&old.dd&&!st[c].dd)st[c].dd=old.dd;at=Date.now()}catch(x){}return st[c]}
+async function load(){var c=cid();if(!live())return null;try{var r=await A.api("GET","club_stripe?select=charges_enabled,payouts_enabled,details_submitted,due,livemode,updated_at&club_id=eq."+c);var old=st[c];st[c]=(r&&r[0])||{none:true};if(old)["dd","ddReq","ddDue","ddWhy"].forEach(function(k){if(old[k]!==undefined&&st[c][k]===undefined)st[c][k]=old[k]});at=Date.now()}catch(x){}return st[c]}
 function ready(){var s=st[cid()];return !!(s&&s.charges_enabled)}
 /* v390 (Council C-021 proposal c, Steve's yes 15 Nov 2026 14:37: "the payments is the thing ... It takes that hassle away from them"):
    one honest status everywhere, from what Stripe has actually told us, never from a return to our page: Not set up, More information needed,
@@ -25533,12 +25533,18 @@ async function go(body,label){if(busy)return;busy=true;note=label||"Opening Stri
 /* v395: Direct Debit. The club's public payment settings say whether it's on, so members' phones word the button right. */
 function ddPub(dd){try{if(dd===undefined||!staff())return;var c=clubState.club;if(!c||c.id!==cid())return;var on=dd==="active",p=c.pay||{};if(!!p.dd===on)return;var np=Object.assign({},p,{dd:on});c.pay=np;db.doc("clubs/"+c.id).update({pay:np}).catch(function(){})}catch(x){}}
 async function ddCheck(){var c=cid();if(!c||ddAsked[c]||busy)return;ddAsked[c]=1;try{var r=await A.fn("stripe-pay",{club:c,back:back(),action:"status"});if(r&&r.status){st[c]=r.status;ddPub(r.status.dd);paint()}}catch(x){}}
-function ddRow(s){var d=s&&s.dd,on=d==="active",chk=d==="pending",tone=on?"#3FC57E":chk?"#4DA3FF":"#9AA3B2",lab=on?"On":chk?"Stripe is checking":d===undefined?"Checking…":"Off";
+/* v396 (Steve 15 Nov 22:00, after pressing Switch on Direct Debit: "this is where it took me"): the row now says what happened.
+   Asked for and Stripe checking; Stripe needs a few details (with Finish in Stripe); On; or Off. */
+function ddRow(s){var d=s&&s.dd,on=d==="active",due=+(s&&s.ddDue)||0,need=!on&&!!(s&&s.ddReq)&&due>0,chk=!on&&!need&&(d==="pending"||!!(s&&s.ddReq)),
+  tone=on?"#3FC57E":need?"#E8DFC8":chk?"#4DA3FF":"#9AA3B2",lab=on?"On":need?"Stripe needs details":chk?"Asked: Stripe is checking":d===undefined?"Checking…":"Off";
  var t=on?"Members on monthly or weekly plans can choose Direct Debit or card. Stripe sets up the Direct Debit and sends members the notices. A new Direct Debit's first payment takes up to about 7 working days to confirm; after that it's collected each month or week by itself.":
-  chk?"Stripe is checking your account for Direct Debit. This usually takes a day or two; members can pay by card meanwhile.":
+  need?"You've asked for Direct Debit and Stripe needs "+(due===1?"one more detail":due+" more details")+" before it switches it on. Finish them in Stripe; card payments carry on meanwhile.":
+  chk?"You've asked Stripe for Direct Debit. Stripe checks it, which can take a few minutes or a day or two. Press Refresh above to see. Members can pay by card meanwhile.":
   d===undefined?"":"Direct Debit is steadier for monthly memberships: you know you're getting paid each month, and it costs a little less than card. Switch it on and members on monthly or weekly plans can choose it.";
- return '<div class="dd241"><div class="sec-h" style="margin:10px 0 4px"><h3 style="margin:0;font-size:16px">Direct Debit</h3><span class="badge" style="background:'+tone+'26;color:'+tone+';border:1px solid '+tone+'66">'+lab+'</span></div>'+(t?'<p class="small" style="margin:0 0 8px">'+t+'</p>':'')+
-  (d!==undefined&&!on&&!chk?'<div class="row"><button type="button" class="btn" data-st241="dd_on">Switch on Direct Debit</button><a class="btn ghost" href="https://dashboard.stripe.com/settings/payment_methods" target="_blank" rel="noopener">Payment methods in Stripe</a></div>':'')+'</div>'}
+ var btn=need?'<div class="row"><button type="button" class="btn" data-st241="onboard">Finish in Stripe</button></div>':
+  (d!==undefined&&!on&&!chk)?'<div class="row"><button type="button" class="btn" data-st241="dd_on">Switch on Direct Debit</button><a class="btn ghost" href="https://dashboard.stripe.com/settings/payment_methods" target="_blank" rel="noopener">Payment methods in Stripe</a></div>':
+  chk?'<div class="row"><a class="btn ghost" href="https://dashboard.stripe.com/settings/payment_methods" target="_blank" rel="noopener">Payment methods in Stripe</a></div>':'';
+ return '<div class="dd241"><div class="sec-h" style="margin:10px 0 4px"><h3 style="margin:0;font-size:16px">Direct Debit</h3><span class="badge" style="background:'+tone+'26;color:'+tone+';border:1px solid '+tone+'66">'+lab+'</span></div>'+(t?'<p class="small" style="margin:0 0 8px">'+t+'</p>':'')+btn+'</div>'}
 /* ---------- club side ---------- */
 function clubCard(){var host=document.getElementById("hubaccBody");if(!host||!host.offsetParent||!live()||!staff())return;var el=document.getElementById("st241c");
  if(!el){el=document.createElement("div");el.id="st241c";el.className="panel plate";host.insertBefore(el,host.children[0]||null)}
@@ -25565,7 +25571,7 @@ function paint(){clubCard();ownPaid();memberBits()}
 document.addEventListener("click",function(ev){var t=ev.target.closest&&ev.target.closest("[data-st241],[data-pypay]");if(!t||!live())return;
  if(t.hasAttribute("data-pypay")){ev.preventDefault();ev.stopImmediatePropagation();if(processing()){if(typeof toast==="function")toast("Your Direct Debit is set up","The first payment takes up to about 7 working days to confirm. You don't need to pay again.");return}if(!ready()){if(typeof toast==="function")toast("Card payments aren't on yet","Your club is still setting them up. Use \"I've paid (cash or bank)\" for now.");return}
   var ms=S.profile.mship;if(!ms||!ms.planId)return;go({action:"checkout",plan:ms.planId},"Opening secure payment…");return}
- ev.preventDefault();var a=t.getAttribute("data-st241");if(a==="onboard")go({action:"onboard"},"Opening Stripe…");else if(a==="status")go({action:"status"},"Checking…");else if(a==="dd_on")go({action:"dd_on"},"Asking Stripe to switch on Direct Debit…");else if(a==="portal")go({action:"portal"},"Opening…")},true);
+ ev.preventDefault();var a=t.getAttribute("data-st241");if(a==="onboard")go({action:"onboard"},"Opening Stripe…");else if(a==="status")go({action:"status"},"Checking…");else if(a==="dd_on")Promise.resolve(go({action:"dd_on"},"Asking Stripe to switch on Direct Debit…")).then(function(){var s=st[cid()];if(s&&s.dd!=="active"&&typeof toast==="function")toast("Asked Stripe for Direct Debit",s.ddDue>0?"Stripe needs a few details first: press Finish in Stripe.":"Stripe is checking. Press Refresh in a few minutes.")});else if(a==="portal")go({action:"portal"},"Opening…")},true);
 /* coming back from Stripe */
 (function(){var q="";try{q=new URLSearchParams(location.search).get("fbpay")||""}catch(x){}if(!q)return;
  try{history.replaceState(null,"",location.pathname+location.hash)}catch(x){}
