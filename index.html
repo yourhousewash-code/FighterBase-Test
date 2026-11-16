@@ -2879,7 +2879,7 @@ function challengeValue(ch,st){if(!ch)return 0;return ch.metric==="checkins"?st.
 let leagueTimer=null;function scheduleLeague(){clearTimeout(leagueTimer);leagueTimer=setTimeout(syncLeague,2500)}
 async function syncLeague(){if(!db||!S.uid||!S.profile.clubId)return;const wk=periodStats(weekStartKey()),mo=periodStats(monthStartKey());
   const events=(S.profile.clubEvents||[]).slice(-12);
-  try{await db.doc("league/"+S.uid).set({uid:S.uid,clubId:S.profile.clubId,name:S.profile.leagueName||(S.profile.name||"Member").split(" ")[0],ring:String(S.profile.ring||"").trim().slice(0,40),sports:sportsOf(S.profile).slice(0,3),optIn:S.profile.leagueOptIn===true,commit:(S.profile.commit&&S.profile.commit.m&&S.profile.commit.n)?{m:S.profile.commit.m,n:S.profile.commit.n}:null,updated:new Date().toISOString(),weekStart:weekStartKey(),week:wk,month:mo,daily:dailySeries(45),streak:streak(),rank:rankOf(totalXP()).name,events,rsvp:rsvpPrune(S.profile.rsvp),att:S.profile.att||{},det:(S.profile.det142||[]).slice(-10),cant:rsvpPrune(S.profile.cant142),mp:S.profile.msgPref||null,fr:(window.FHF&&FHF.req?FHF.req():[]),share:(S.profile.clubConsent?{c:S.profile.clubConsent.consistency!==false,w:!!S.profile.clubConsent.weight}:{c:false,w:false}),wv:(S.profile.wvPub&&S.profile.wv&&S.profile.wv.clubId===S.profile.clubId)?S.profile.wvPub:null,ms:(S.profile.mship&&S.profile.mship.clubId===S.profile.clubId)?S.profile.mship:null})}catch(e){}}
+  try{await db.doc("league/"+S.uid).set({uid:S.uid,clubId:S.profile.clubId,name:S.profile.leagueName||(S.profile.name||"Member").split(" ")[0],ring:String(S.profile.ring||"").trim().slice(0,40),sports:sportsOf(S.profile).slice(0,3),optIn:S.profile.leagueOptIn===true,vis:{n:S.profile.shareList===true},commit:(S.profile.commit&&S.profile.commit.m&&S.profile.commit.n)?{m:S.profile.commit.m,n:S.profile.commit.n}:null,updated:new Date().toISOString(),weekStart:weekStartKey(),week:wk,month:mo,daily:dailySeries(45),streak:streak(),rank:rankOf(totalXP()).name,events,rsvp:rsvpPrune(S.profile.rsvp),att:S.profile.att||{},det:(S.profile.det142||[]).slice(-10),cant:rsvpPrune(S.profile.cant142),mp:S.profile.msgPref||null,fr:(window.FHF&&FHF.req?FHF.req():[]),share:(S.profile.clubConsent?{c:S.profile.clubConsent.consistency!==false,w:!!S.profile.clubConsent.weight}:{c:false,w:false}),wv:(S.profile.wvPub&&S.profile.wv&&S.profile.wv.clubId===S.profile.clubId)?S.profile.wvPub:null,ms:(S.profile.mship&&S.profile.mship.clubId===S.profile.clubId)?S.profile.mship:null})}catch(e){}}
 function pushClubEvent(text){if(!S.profile.clubId)return;const ev=[...(S.profile.clubEvents||[]),{id:Date.now().toString(36),date:TODAY,text}].slice(-12);S.profile.clubEvents=ev;profChanged();scheduleLeague()}
 function subscribeClub(){clubState.unsubs.forEach(u=>{try{u()}catch(e){}});clubState.unsubs=[];if(!db||!S.profile.clubId){clubState.club=null;clubState.members=[];renderClub();updateNav();return}
   const id=S.profile.clubId,fail=()=>{};
@@ -25423,7 +25423,7 @@ var store=D.store,LU=A.local,UUID=/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]
 var PUB={name:1,city:1,code:1,ownerUid:1,sports:1,brand:1,site:1,about:1,contact:1,timetable:1,posts:1,geo:1,checkinCode:1,checkinDate:1,targets:1,
  workouts:1,track:1,show:1,coaches:1,coachNames:1,teachers:1,ptSlots:1,wlib:1,menu:1,resources:1,msdefs:1,tests:1,kidsTT195:1,skills197:1,badges197:1,
  events94:1,jev202:1,policy202:1,social205:1,blog205:1,courses191:1,front191:1,offers190:1,challenge:1,teamGoal:1,affiliates:1,classPhotos:1,hours:1,billDay:1,market:1,cut260:1,pushCfg:1,shop263:1};
-var LPUB={uid:1,clubId:1,name:1,ring:1,sports:1,optIn:1,rank:1,streak:1,rsvp:1,cant:1,events:1,evEnt:1,gach:1,commit:1,updated:1,weekStart:1,msPublic:1};
+var LPUB={vis:1,uid:1,clubId:1,name:1,ring:1,sports:1,optIn:1,rank:1,streak:1,rsvp:1,cant:1,events:1,evEnt:1,gach:1,commit:1,updated:1,weekStart:1,msPublic:1};
 var LOPT={week:1,month:1,daily:1};/* only shown to club-mates when the member opted in to the club league */
 var powOf={},last={},dirty={},applying=false,roleOf={},joinSt={},timer=null,busy=false,lastPull=0,msg="";
 function me(){return A.me()}
@@ -25450,7 +25450,7 @@ function lPath(path){var a=path.split("/");return a[1]===me()?a[0]+"/"+LU:path}
 var cmClub={},cmSeen={},cmSince={},cmOff=false,cmGone={};/* v356 club photos: the club a photo belongs to (kept after a delete), photos this phone has seen on the server (kept on this phone) */
 try{cmSeen=JSON.parse(localStorage.getItem("fb240cm")||"{}")||{}}catch(x){cmSeen={}}
 function cmKeep(){try{localStorage.setItem("fb240cm",JSON.stringify(cmSeen))}catch(x){}}
-function mine(path){var a=path.split("/");if(a.length!==2)return false;if(a[0]==="clubmedia"){var mc=(store[path]||{}).clubId||cmClub[path];return live(mc)&&(roleOf[mc]==="owner"||roleOf[mc]==="admin"||roleOf[mc]==="coach")}if(a[0]==="clubs")return live(a[1])&&(roleOf[a[1]]==="owner"||roleOf[a[1]]==="coach");if(a[1]===LU&&waiting((store[path]||{}).clubId||clubId()))return false;/* v388: not shared with a club that hasn't approved me yet */
+function mine(path){var a=path.split("/");if(a.length!==2)return false;if(a[0]==="clubmedia"){var mc=(store[path]||{}).clubId||cmClub[path];return live(mc)&&(roleOf[mc]==="owner"||roleOf[mc]==="admin"||roleOf[mc]==="coach")}if(a[0]==="clubs")return live(a[1])&&(roleOf[a[1]]==="owner"||roleOf[a[1]]==="admin"||roleOf[a[1]]==="coach");if(a[1]===LU&&waiting((store[path]||{}).clubId||clubId()))return false;/* v388: not shared with a club that hasn't approved me yet */
  return (a[0]==="league"||a[0]==="props"||a[0]==="partners")&&a[1]===LU&&live((store[path]||{}).clubId||clubId())}
 function mark(p){if(applying||!on())return;var a=String(p).split("/");if(a.length!==2||!/^(clubs|league|props|partners|clubmedia)$/.test(a[0]))return;if(a[0]==="clubmedia"&&store[p]&&store[p].clubId)cmClub[p]=store[p].clubId;dirty[p]=1;clearTimeout(timer);timer=setTimeout(push,1500)}
 if(window.__FB_LOCAL_HOOK)window.__FB_LOCAL_HOOK(mark);
@@ -25496,6 +25496,11 @@ async function pull(){var cid=clubId();if(!on()||busy||!live(cid))return;busy=tr
   var cmNew=[];if(cmp){var since=cmSince[cid]||"",chg=cmp.filter(function(r){return !(r.path in cmSeen)||r.updated_at>since});
    if(chg.length){var inc=since&&chg.every(function(r){return r.updated_at>since});cmNew=await A.api("GET","shared_docs?select=path,part,data,updated_at&club_id=eq."+cid+"&path=like.clubmedia/*"+(inc?"&updated_at=gt."+encodeURIComponent(since):""))||[]}}
   var mineRows=await A.api("GET","shared_docs?select=path,part,data&owner=eq."+me())||[];
+  /* v408 (m18, Codex finding 4): other members' cards come as the server's copies (name and photo only if they said yes; otherwise "A member"
+     under an anonymous id); someone who has only asked to join gets the public page. Until m18 is applied these calls fail and nothing changes. */
+  var stf0=roleOf[cid]==="owner"||roleOf[cid]==="admin"||roleOf[cid]==="coach",proj=false;
+  if(!stf0&&roleOf[cid]==="member"){try{var cc=await rpc("club_cards",{c:cid});if(Array.isArray(cc)){proj=true;rows=rows.filter(function(r){return r.path.indexOf("league/")!==0}).concat(cc.filter(function(r){return r&&r.path!=="league/"+me()}))}}catch(x){}}
+  else if(!stf0&&(joinSt[cid]==="pending"||joinSt[cid]==="declined")&&!rows.some(function(r){return r.path==="clubs/"+cid&&r.part==="pub"})){try{var cpub=await rpc("club_public",{c:cid});if(cpub&&typeof cpub==="object"&&!Array.isArray(cpub))rows.push({path:"clubs/"+cid,part:"pub",data:cpub})}catch(x){}}
   var by={};rows.concat(mineRows).concat(cmNew).forEach(function(r){(by[r.path]=by[r.path]||{})[r.part]=r.data||{}});
   /* v399 (Codex finding 3): payment records are kept per club at pay/<club>/<member>. Only this club's go onto its members' cards, never
      another club's (my own records from other clubs come down with mineRows and are left out here). An old per-member record (league/<member>
@@ -25515,6 +25520,8 @@ async function pull(){var cid=clubId();if(!on()||busy||!live(cid))return;busy=tr
    if(sp.indexOf("league/")===0){var sv=(m.srv&&m.srv.pays)||[];m.ms=m.ms?Object.assign({},m.ms):m.ms;if(m.ms)m.ms.paid=sv.filter(function(x){return x.st==="paid"||x.st==="part-refunded"}).map(function(x){return {d:x.d,amt:(+x.amt||0)-(+x.refunded||0),m:"card"}})}
    m=toLocal(m);
    if(J(store[lp])!==J(m)){try{D.db.doc(lp).set(m)}catch(x){}}});
+  /* v408: when the server gave this phone its copies of other members' cards, older copies it kept (by name) go */
+  if(proj){Object.keys(store).forEach(function(k){if(k.indexOf("league/")!==0||dirty[k]||k==="league/"+LU||by[sPath(k)])return;var d=store[k]||{};if(d.clubId!==cid)return;try{D.db.doc(k).delete()}catch(x){}})}
   /* a photo the club deleted on another phone goes from this one too (only photos this phone saw on the server, never one waiting to go up) */
   /* v403 (Codex finding 14; lesson S-009): a photo is only removed from this phone when the server's list looks complete (not empty, under the
      server's 1,000-row page) and two pulls in a row agree it has gone; a copy of the last 10 removed photos is kept on this phone */
@@ -27325,6 +27332,35 @@ document.head.appendChild(css);
 function tick(){try{ensureTab();ensureHub();page();mini("tab-train");mini("tab-learn");hub()}catch(x){try{console.warn("fh263",x)}catch(y){}}}
 setInterval(tick,1500);setTimeout(tick,1300);
 return {on:true,products:PRODUCTS,prog:PROG,cat:CAT,act:ACT,needs:needs,best:best,adult:adult,linkOf:linkOf,awinLink:awinLink,approved:APPROVED,code:CODE,clubRef:clubRef,kitLine:kitLine,nextBooked:nextBooked,bundles:bundles,shopOf:shopOf,tick:tick}})();
+
+/* FighterBase v408 (Codex finding 4, m18; Steve's who-can-do-what table, 16 Nov 2026: "A member's name and photo on class lists and the
+   club list: only if that member says yes"; asked once, when they join). Members of a live club are asked once whether other members may
+   see their first name and photo on class lists and the club list. Until they say yes they show as "A member", and their bookings still
+   count for places and waiting lists. The answer goes on their club card (vis.n), and the server (club_cards) decides what others get.
+   Club staff always see who is booked. The club page tab keeps a one-line switch so the member can change it at any time. */
+var FH264=(function(){
+var UUID=/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+function e(s){return esc(String(s==null?"":s))}
+function cid(){try{return (S.profile&&S.profile.clubId)||""}catch(x){return ""}}
+function st(){try{return (window.FH240&&FH240.state&&FH240.state())||{}}catch(x){return {}}}
+function member(){var s=st();return UUID.test(cid())&&s.signedIn&&s.club===cid()&&s.role==="member"}
+function cname(){try{return (clubState.club&&clubState.club.name)||"your club"}catch(x){return "your club"}}
+function set(v){S.profile.shareList=!!v;S.profile.shareListAt=new Date().toISOString();try{profChanged()}catch(x){}try{if(typeof scheduleLeague==="function")scheduleLeague()}catch(x){}
+ if(typeof toast==="function")toast(v?"Your name shows to club-mates":"You show as \"A member\"",v?"Other members see your first name and photo on class lists.":"Your bookings still count. Coaches still see who's booked.");paint()}
+function ask(){return '<div class="sec-h"><h2>Show your name to other members?</h2></div>'+
+ '<p class="small" style="margin:0 0 8px">Other members of '+e(cname())+' would see your first name and photo on class lists and the club list. If you say no, you show as "A member" and your bookings still count. Your coaches always see who\'s booked. You can change this any time on the club page.</p>'+
+ '<div class="row" style="justify-content:flex-end;flex-wrap:wrap"><button type="button" class="btn ghost sm" data-sh264="0">Keep me hidden</button><button type="button" class="btn sm" data-sh264="1">Yes, show my name</button></div>'}
+function line(){var on=S.profile.shareList===true;
+ return '<p class="small" style="margin:0;display:flex;gap:8px;align-items:center;flex-wrap:wrap"><span>Your name on club lists: <b>'+(on?"shown to other members":"hidden (you show as \"A member\")")+'</b></span><button type="button" class="linkbtn" data-sh264="'+(on?"0":"1")+'">'+(on?"Hide it":"Show it")+'</button></p>'}
+function paint(){var m=member(),undec=m&&S.profile.shareList===undefined;
+ ["tab-today","tab-clubpage"].forEach(function(id){var tab=document.getElementById(id);if(!tab)return;var el=tab.querySelector(":scope > .sh264");
+  var want=undec?ask():(m&&id==="tab-clubpage"?line():"");
+  if(!want){if(el)el.remove();return}
+  if(!el){el=document.createElement("section");el.className="panel plate sh264";tab.insertBefore(el,tab.firstChild)}
+  if(el.dataset.sig!==want){el.innerHTML=want;el.dataset.sig=want}})}
+document.addEventListener("click",function(ev){var b=ev.target&&ev.target.closest&&ev.target.closest("[data-sh264]");if(!b)return;ev.preventDefault();set(b.getAttribute("data-sh264")==="1")});
+setInterval(function(){if(!document.hidden)try{paint()}catch(x){}},1500);
+return {on:true,set:set,paint:paint,member:member}})();
 
 /* FighterBase v44: always a way back, always a next step. */
 var N31=N31||false;
