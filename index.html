@@ -6131,7 +6131,7 @@ function curTab(){var s=document.querySelector("section[id^=tab-]:not([hidden])"
 function name(t){return (typeof TABNAME!=="undefined"&&TABNAME[t])||t}
 function brandHTML(){return '<div class="sd-brand" data-sdhome>'+(window.FB_MARK?FB_MARK():"")+'<div><b class="sd-word">Fighter<span>Base</span></b><small>Train. Grow. Win.</small></div></div>'}
 var IC={home:'<path d="M3 11l9-8 9 8v9a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/>',log:'<rect x="4" y="3" width="16" height="18" rx="3"/><path d="M8 8h8M8 12h8M8 16h5"/>',prog:'<path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/>',club:'<circle cx="9" cy="8" r="3.2"/><path d="M3 20c0-3.3 2.7-6 6-6s6 2.7 6 6M16 5.5a3 3 0 0 1 0 5.8M18 14.5c2 .6 3.5 2.6 3.5 5.5"/>',fuel:'<path d="M7 3v8a3 3 0 0 0 6 0V3M10 3v18M17 3c-1.7 1.5-2 4-2 6s1 3 2 3v9"/>',me:'<circle cx="12" cy="8" r="4"/><path d="M4 21c0-4.4 3.6-8 8-8s8 3.6 8 8"/>'};
-var SECT=[["Today","home",["today","log"]],["Train","log",["train","workouts","schedule","mylib","skills"]],["Food","fuel",["diary","meals","shop","foods","nutrition","cut"]],["Progress","prog",["engine","progress","goals2","growth","film","challenges","partners"]],["Me","me",["profile","mygym","clubpage","club","clubsee","devices","learn","supps","invite","specialists","coach"]]];
+var SECT=[["Today","home",["today","log"]],["Train","log",["train","workouts","schedule","mylib","skills","kit"]],["Food","fuel",["diary","meals","shop","foods","nutrition","cut"]],["Progress","prog",["engine","progress","goals2","growth","film","challenges","partners"]],["Me","me",["profile","mygym","clubpage","club","clubsee","devices","learn","supps","invite","specialists","coach"]]];
 var ALWAYS={today:1,engine:1,goals2:1,skills:1,log:1,train:1,diary:1,stats:1,journey:1,trophies:1,film:1,profile:1,specialists:1};
 var LBL={};
 function allowed(x){if(!document.getElementById("tab-"+x))return false;if(x==="coach"&&!S.canEdit)return false;if(ALWAYS[x])return true;var g=typeof GROUPS!=="undefined"?GROUPS:{};return Object.keys(g).some(function(k){return (g[k]||[]).indexOf(x)>=0})}
@@ -18950,7 +18950,7 @@ var F159=F159||false;
 if(F159)return;F159=true;
 function apply(){try{var F=window.FH32FULL;if(!F)return;
  F.today=["today","log"];
- F.train=["train","workouts","schedule","mylib","skills"];
+ F.train=["train","workouts","schedule","mylib","skills"].concat(window.FH263&&FH263.on&&FH263.adult()?["kit"]:[]);/* v404: the Kit shop, adults only (fh263) */
  F.fuel=["diary","meals","shop","foods","nutrition","cut"];
  F.progress=["engine","progress","goals2","growth","film","challenges","partners"];
  F.more=["profile","mygym","clubpage","club","clubsee","devices","learn","supps","invite","specialists","coach"];
@@ -21034,7 +21034,7 @@ function card(){["tab-learn","tab-train"].forEach(function(id){var tb=document.g
 function ov(){var o=document.getElementById("b187");if(!o){o=document.createElement("div");o.id="b187";o.setAttribute("role","dialog");o.setAttribute("aria-modal","true");document.body.appendChild(o)}return o}
 function draw(){var o=ov(),s=st&&st.set;if(!st){o.hidden=true;return}o.hidden=false;var rnd=st.r,pl=s.plan[Math.min(rnd,s.plan.length-1)];
  var h='<div class="b187-in"><div class="row" style="justify-content:space-between;align-items:center"><span class="label">'+e(s.sport)+' · '+e(s.name)+'</span><button class="linkbtn" type="button" data-b187x>Close</button></div>';
- if(st.ph==="ready")h+='<p class="b187-big">'+s.rounds+' rounds</p><p class="muted">'+mm(s.work)+' work, '+s.rest+' seconds rest. Wrap your hands and get a bag or space ready.</p><ol class="b187-pl">'+s.plan.map(function(p,i){return '<li><b>Round '+(i+1)+'</b> '+e(p[0])+'</li>'}).join("")+'</ol><button class="btn" type="button" data-b187go>Start</button>';
+ if(st.ph==="ready")h+='<p class="b187-big">'+s.rounds+' rounds</p><p class="muted">'+mm(s.work)+' work, '+s.rest+' seconds rest. Wrap your hands and get a bag or space ready.</p>'+(s.sport!=="Brazilian Jiu-Jitsu"&&window.FH263&&FH263.kitLine?FH263.kitLine("bag"):"")+'<ol class="b187-pl">'+s.plan.map(function(p,i){return '<li><b>Round '+(i+1)+'</b> '+e(p[0])+'</li>'}).join("")+'</ol><button class="btn" type="button" data-b187go>Start</button>';
  else if(st.ph==="done")h+='<p class="b187-big">Done</p><p class="muted">'+s.rounds+' rounds, about '+Math.round(s.rounds*(s.work+s.rest)/60)+' minutes.</p><div class="row"><button class="btn" type="button" data-b187save>Save to my log</button><button class="linkbtn" type="button" data-b187x>Close without saving</button></div>';
  else{var work=st.ph==="work";h+='<p class="label">'+(work?"Round "+(rnd+1)+" of "+s.rounds:"Rest. Next: round "+(rnd+2))+'</p><p class="b187-time" id="b187t">'+mm(st.left)+'</p><p class="b187-what">'+e((work?pl:s.plan[Math.min(rnd+1,s.plan.length-1)])[0])+'</p><div class="chips">'+(work?pl:s.plan[Math.min(rnd+1,s.plan.length-1)])[1].map(function(id){return '<button type="button" class="chip" data-b187mv="'+escA(id)+'">'+e(mvName(id))+'</button>'}).join("")+'</div><div class="row" style="margin-top:12px"><button class="btn ghost" type="button" data-b187pause>'+(st.paused?"Resume":"Pause")+'</button><button class="linkbtn" type="button" data-b187end>Stop here</button></div>'}
  o.innerHTML=h+'</div>'}
@@ -25421,7 +25421,7 @@ var A=window.FH181,D=window.__FB_DEMO;if(!A||!A.on||!A.api||!D||!D.store)return 
 var store=D.store,LU=A.local,UUID=/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 var PUB={name:1,city:1,code:1,ownerUid:1,sports:1,brand:1,site:1,about:1,contact:1,timetable:1,posts:1,geo:1,checkinCode:1,checkinDate:1,targets:1,
  workouts:1,track:1,show:1,coaches:1,coachNames:1,teachers:1,ptSlots:1,wlib:1,menu:1,resources:1,msdefs:1,tests:1,kidsTT195:1,skills197:1,badges197:1,
- events94:1,jev202:1,policy202:1,social205:1,blog205:1,courses191:1,front191:1,offers190:1,challenge:1,teamGoal:1,affiliates:1,classPhotos:1,hours:1,billDay:1,market:1,cut260:1,pushCfg:1};
+ events94:1,jev202:1,policy202:1,social205:1,blog205:1,courses191:1,front191:1,offers190:1,challenge:1,teamGoal:1,affiliates:1,classPhotos:1,hours:1,billDay:1,market:1,cut260:1,pushCfg:1,shop263:1};
 var LPUB={uid:1,clubId:1,name:1,ring:1,sports:1,optIn:1,rank:1,streak:1,rsvp:1,cant:1,events:1,evEnt:1,gach:1,commit:1,updated:1,weekStart:1,msPublic:1};
 var LOPT={week:1,month:1,daily:1};/* only shown to club-mates when the member opted in to the club league */
 var last={},dirty={},applying=false,roleOf={},joinSt={},timer=null,busy=false,lastPull=0,msg="";
@@ -26969,6 +26969,349 @@ document.addEventListener("click",function(ev){var b=ev.target.closest&&ev.targe
 setTimeout(topUp,2500);setInterval(function(){topUp();draw()},5000);
 return {add:add,stop:stop,skipNext:skipNext,topUp:topUp,list:list,missedTwo:missedTwo,draw:draw};
 })();
+
+/* FighterBase v404 (Steve, 16 Nov 2026 11:02: "each club will have their own shop and get commission from the sales ... some sort of
+   algorithm ... for the training pages ... gum shields, hand wraps, shin guards ... revolving different advertisements for gear ... big startup
+   bundles"; orders FB-064, FB-065, FB-066, FB-068; Oracle C-025). The Kit shop, stage 1: partner (affiliate) links. The partner shop sells,
+   ships and handles returns; FighterBase may earn commission.
+   Member side (adults only):
+   - Kit shop page (Train > Kit shop): kit for your next booked class or for what you train, starter kits, your club's shop (coach's picks
+     and the club's own items), browse by kit, and My kit bag (tick what you already have, so it isn't suggested again).
+   - One small card on Train and Learn: kit for your next class if something's missing, otherwise one kit pick that changes each day and visit.
+     The member can switch the picks off.
+   - Bag work sets (fh187) say what kit you need, with a link here.
+   Club side (owner): Money > Club shop: switch the club's shop on or off, up to 6 coach's picks (kit only), up to 12 of the club's own items
+   (sold at the desk or on the club's own website: no payment in the app yet), and how many taps on partner links came from the club's
+   members (totals only, from the database; never who).
+   Rules (FB-064): every shop card says "Ad"; never on food, weight-cut, injury, concussion, safety, check-in or booking screens; nothing for
+   under-18s (teen logins, the parent's junior view, or no adult date of birth); no nutrition yet (Fuel waits for the dietitian); a link carries
+   only the club's anonymous shop code, never the member; clubs never see what a member taps or buys.
+   Until the partner programmes approve us every product is a SAMPLE: the typical price band, the shop's own site, no partner code.
+   Club doc (pub): shop263 {on, picks:[{p,why}], items:[{id,name,price,note,how:"desk"|"web",link}]}. Profile: kit263 {own:{cat:1}, off, act}.
+   Database: db/m16_shop_clicks.sql (shop_click, shop_club_totals). */
+var FH263=(function(){
+var UUID=/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+function P(){return (typeof S!=="undefined"&&(S.profile||(S.profile={})))||{}}
+function club(){return (typeof clubState!=="undefined"&&clubState.club)||null}
+function e(s){return esc(String(s==null?"":s))}
+function cid(){try{return (S.profile&&S.profile.clubId)||""}catch(x){return ""}}
+function A(){return window.FH181&&FH181.on&&FH181.api?FH181:null}
+function live(){var a=A();try{return !!(a&&a.signedIn&&a.signedIn())}catch(x){return false}}
+function save(){try{profChanged()}catch(x){}}
+function K(){var p=P();return p.kit263||(p.kit263={own:{},off:false,act:""})}
+
+/* ---------- the catalogue (samples until the partner feeds are connected) ---------- */
+var PROG={
+ blitz:{n:"Blitz",net:"awin",rate:"10%",site:"https://www.blitzsport.com/"},
+ fairtex:{n:"Fairtex",net:"uppromote",rate:"10%",site:"https://www.fairtexstore.com/"},
+ venum:{n:"Venum",net:"uppromote",rate:"10%",site:"https://www.venum.com/"},
+ rdx:{n:"RDX",net:"impact",rate:"up to 10%",site:"https://rdxsports.com/"},
+ tbg:{n:"The Boxing Gloves",net:"awin",rate:"10%",site:""}};
+var ORDER=["blitz","fairtex","venum","rdx","tbg"];/* Steve 16 Nov 00:03: Blitz first, then Fairtex or Venum */
+/* Partner codes, filled in when each programme approves us (FB-068 register). Empty = no partner code: the link opens the shop's own site. */
+var CODE={awinAff:"",awinMid:{blitz:"",tbg:""},uppromote:{fairtex:"",venum:""},impact:{rdx:""}};
+var CAT={
+ wraps:["Hand wraps","Protect your knuckles and wrists under gloves."],
+ gloves:["Boxing gloves","14 to 16oz for pads and sparring."],
+ baggloves:["Bag gloves","Lighter gloves for bag rounds."],
+ gumshield:["Gum shield","Protects teeth and jaw in any contact."],
+ shins:["Shin guards","For kicks and checks in sparring."],
+ groin:["Groin guard","For every contact class."],
+ head:["Headguard","Some clubs ask for one in sparring."],
+ shorts:["Muay Thai shorts","Cut so you can kick and knee."],
+ rope:["Skipping rope","Warm-ups and fitness rounds."],
+ gi:["BJJ gi","For gi classes."],
+ rash:["Rash guard","For no-gi and MMA."],
+ spats:["Grappling spats","For no-gi and MMA."],
+ mmagloves:["MMA gloves","For MMA drills and light work."],
+ pads:["Thai pads","For holding kicks and knees for a partner."],
+ mitts:["Focus mitts","For holding punches for a partner."],
+ tape:["Finger tape","Protects fingers on gi grips."],
+ ears:["Ear guards","Helps prevent cauliflower ear."],
+ ankle:["Ankle supports","Extra support for kicking and footwork."],
+ bag:["Kit bag","Carries the lot."]};
+var IC={
+ wraps:'<path d="M5 9.5a4.5 4.5 0 1 0 9 0a4.5 4.5 0 1 0-9 0M9.5 9.5h.01M14 9.5h6v6h-6"/>',
+ gloves:'<path d="M8 4h6a4 4 0 0 1 4 4v5a5 5 0 0 1-5 5h-3a4 4 0 0 1-4-4V7a3 3 0 0 1 2-3zM6 12H5a2 2 0 0 1 0-4h1M9 18v3h6v-3"/>',
+ baggloves:'<path d="M8 5h6a4 4 0 0 1 4 4v4a5 5 0 0 1-5 5h-3a4 4 0 0 1-4-4V8a3 3 0 0 1 2-3zM6 12H5a2 2 0 0 1 0-4h1M9 18v2h6v-2"/>',
+ gumshield:'<path d="M4 8c0 6 3.5 10 8 10s8-4 8-10M7.5 8c0 4 2 6.5 4.5 6.5s4.5-2.5 4.5-6.5M4 8h3.5M16.5 8H20"/>',
+ shins:'<path d="M8 3h8v12a4 4 0 0 1-8 0zM8 8h8M8 12h8"/>',
+ groin:'<path d="M5 8h14c0 5-3 9-7 9s-7-4-7-9zM5 8L3 6M19 8l2-2"/>',
+ head:'<path d="M5 13a7 7 0 0 1 14 0v5h-4v-4H9v4H5zM9 9h6"/>',
+ shorts:'<path d="M5 4h14l1 15h-6l-2-7-2 7H4zM5 7h14"/>',
+ rope:'<path d="M6 4v6M18 4v6M6 10c0 8 12 8 12 0"/>',
+ gi:'<path d="M8 3l4 5 4-5 4 3-2 4h-2v11H8V10H6L4 6zM12 8v13M8 14h8"/>',
+ rash:'<path d="M8 3l4 2 4-2 5 4-3 3-2-1v12H8V9l-2 1-3-3z"/>',
+ spats:'<path d="M7 3h10l-1 18h-3l-1-11-1 11H8zM7 6h10"/>',
+ mmagloves:'<path d="M7 7h10v7a4 4 0 0 1-4 4h-2a4 4 0 0 1-4-4zM9 7V4.5M12 7V4.5M15 7V4.5M7 11h10"/>',
+ pads:'<path d="M6 3h10a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6zM10 7v10"/>',
+ mitts:'<path d="M12 4.5a7 7 0 1 0 0 14a7 7 0 1 0 0-14M12 8.5a3 3 0 1 0 0 6a3 3 0 1 0 0-6"/>',
+ tape:'<path d="M11 7a5 5 0 1 0 0 10a5 5 0 1 0 0-10M11 10a2 2 0 1 0 0 4a2 2 0 1 0 0-4M16 12h5"/>',
+ ears:'<path d="M8 5c-3 0-4 3-4 6s2 5 2 8M16 5c3 0 4 3 4 6s-2 5-2 8M6 5h12"/>',
+ ankle:'<path d="M8 3v9l-3 5h11l3-5V3M8 8h11"/>',
+ bag:'<path d="M3 9h18v10H3zM8 9V6h8v3M3 13h18"/>'};
+function icon(cat){return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">'+(IC[cat]||IC.bag)+'</svg>'}
+/* [id, kit, programme, name, what it is, typical low £, typical high £, sports ("" = any)] */
+var PRODUCTS=[
+ ["bz-wraps","wraps","blitz","Blitz hand wraps, 4.5 m","Stretch cotton with a thumb loop",6,12,""],
+ ["bz-gum","gumshield","blitz","Blitz boil-and-bite gum shield","Mould it at home; case included",8,20,""],
+ ["bz-rope","rope","blitz","Blitz speed rope","Adjustable length",8,20,""],
+ ["bz-groin","groin","blitz","Blitz groin guard","Adjustable waist",15,35,""],
+ ["bz-gi","gi","blitz","Blitz adult BJJ gi","Pearl weave, competition cut",60,110,"bjj"],
+ ["bz-bag","bag","blitz","Blitz kit bag","Room for gloves, shins and a change of clothes",25,50,""],
+ ["bz-mitts","mitts","blitz","Blitz focus mitts","Curved, for partner drills",25,50,"box mt kick mma"],
+ ["bz-head","head","blitz","Blitz headguard","Open face, for sparring",30,60,"box mt kick mma"],
+ ["bz-tape","tape","blitz","Blitz finger tape","Rigid tape for grip fighting",5,12,"bjj grap"],
+ ["bz-ears","ears","blitz","Blitz ear guards","Soft shell, adjustable straps",20,35,"bjj grap mma"],
+ ["fx-gloves","gloves","fairtex","Fairtex boxing gloves, 14 to 16oz","Thai-style padding for pads and sparring",65,90,"mt kick box"],
+ ["fx-shins","shins","fairtex","Fairtex shin guards","Full shin and instep cover",60,95,"mt kick mma"],
+ ["fx-shorts","shorts","fairtex","Fairtex Muay Thai shorts","Satin, wide leg",25,45,"mt kick"],
+ ["fx-pads","pads","fairtex","Fairtex Thai pads (pair)","For holding kicks and knees",90,160,"mt kick"],
+ ["fx-bagg","baggloves","fairtex","Fairtex bag gloves","Lighter gloves for bag rounds",45,70,"mt kick box"],
+ ["vn-gloves","gloves","venum","Venum boxing gloves, 14 to 16oz","A good first pair for pads and sparring",40,60,""],
+ ["vn-shins","shins","venum","Venum shin guards","Slip-on, for sparring",45,65,"mt kick mma"],
+ ["vn-gum","gumshield","venum","Venum gum shield","Boil and bite, with case",15,25,""],
+ ["vn-rash","rash","venum","Venum rash guard","Long or short sleeve",30,55,"bjj grap mma"],
+ ["vn-spats","spats","venum","Venum grappling spats","Compression, no pockets",30,50,"bjj grap mma"],
+ ["vn-mma","mmagloves","venum","Venum MMA training gloves","Open fingers for grappling",40,70,"mma"],
+ ["vn-shorts","shorts","venum","Venum Muay Thai shorts","Classic cut",25,40,"mt kick"],
+ ["rdx-gloves","gloves","rdx","RDX training gloves, 14 to 16oz","Budget pair for beginners",25,45,""],
+ ["rdx-head","head","rdx","RDX headguard","Cheek and chin protection",30,55,"box mt kick mma"],
+ ["rdx-mitts","mitts","rdx","RDX focus pads","Light, curved",20,40,"box mt kick mma"],
+ ["rdx-ankle","ankle","rdx","RDX ankle supports (pair)","Elastic, slip-on",10,20,"mt kick"],
+ ["rdx-groin","groin","rdx","RDX groin guard","Hard cup, elastic straps",15,30,""],
+ ["rdx-wraps","wraps","rdx","RDX hand wraps","Mexican-style stretch",6,12,""],
+ ["rdx-bagg","baggloves","rdx","RDX bag gloves","Gel padding",20,40,"box mt kick"],
+ ["tbg-gloves","gloves","tbg","Revgear boxing gloves, 16oz","Sold by The Boxing Gloves",45,75,"box mt kick"]
+].map(function(a){return {id:a[0],cat:a[1],prog:a[2],name:a[3],spec:a[4],lo:a[5],hi:a[6],sp:a[7],sample:true}});
+function prod(id){return PRODUCTS.filter(function(p){return p.id===id})[0]||null}
+
+/* ---------- what you need for what you train ---------- */
+var ACT={
+ bag:["Bag work",[["wraps",1,"Wrap every session: it protects your knuckles and wrists."],["baggloves",1,"Bag gloves, or your training gloves."],["rope",3,"Good for the warm-up."]]],
+ pads:["Pads and technique",[["wraps",1,"Under your gloves, every session."],["gloves",1,"14 to 16oz training gloves. Ask your coach which weight."],["gumshield",2,"Some drills have light contact."],["shorts",3,"Lets you kick and knee freely.","mt kick"]]],
+ spar:["Sparring",[["gumshield",1,"Never spar without one."],["gloves",1,"16oz for sparring at most clubs."],["wraps",1,"Under your gloves."],["shins",1,"For kicks and checks.","mt kick mma"],["groin",1,"Wear one in every contact class."],["head",2,"Some clubs ask for one. Check with your coach."]]],
+ clinch:["Clinch",[["gumshield",1,"Knees and elbows come close."],["groin",1,"Knees to the body."],["shorts",3,"Room to knee.","mt kick"]]],
+ bjj:["BJJ (gi)",[["gi",1,"Most gi classes need one. Some clubs lend one for your first weeks."],["gumshield",2,"For rolling."],["tape",3,"Protects fingers on gi grips."],["ears",3,"Helps prevent cauliflower ear."]]],
+ nogi:["No-gi",[["rash",1,"Stops mat burn and keeps things clean."],["spats",1,"Or grappling shorts with no pockets."],["gumshield",2,"For rolling."],["ears",3,"Helps prevent cauliflower ear."]]],
+ mma:["MMA",[["mmagloves",1,"For drilling and light work."],["gumshield",1,"Every contact round."],["groin",1,"Every contact class."],["shins",2,"For sparring with kicks."],["rash",2,"For the grappling part."],["spats",2,"For the grappling part."]]],
+ fit:["Fitness and conditioning",[["wraps",2,"If there's bag or pad work."],["rope",2,"For skipping rounds."],["bag",3,"For your kit."]]]};
+var LVL={1:"Must have",2:"Good to have",3:"Optional"};
+function spOf(t){t=String(t||"").toLowerCase();if(/kick|k-?1/.test(t))return "kick";if(/muay|thai/.test(t))return "mt";if(/mma|mixed martial/.test(t))return "mma";if(/no.?gi|grappl|wrestl|submission/.test(t))return "grap";if(/bjj|jiu|jitsu/.test(t))return "bjj";if(/box/.test(t))return "box";return ""}
+function mySports(){var out=[];try{((P().sports)||[]).forEach(function(s){var k=spOf(s);if(k&&out.indexOf(k)<0)out.push(k)})}catch(x){}return out}
+function actOfClass(cl){var t=String((cl.title||"")+" "+(cl.level||"")+" "+(cl.sport||"")).toLowerCase();
+ if(/no.?gi|submission/.test(t))return "nogi";if(/bjj|jiu|jitsu|grappl/.test(t))return "bjj";if(/mma|mixed martial/.test(t))return "mma";if(/spar/.test(t))return "spar";if(/clinch/.test(t))return "clinch";if(/bag/.test(t))return "bag";
+ if(/s&c|strength|conditioning|circuit|hiit|fitness|cardio/.test(t))return "fit";if(/muay|thai|box|kick|k-?1|pad|striking|technique|fundamental/.test(t))return "pads";return ""}
+function defaultAct(){var s=mySports();if(s.indexOf("bjj")>=0&&s.length===1)return "bjj";if(s.indexOf("grap")>=0&&s.length===1)return "nogi";if(s.indexOf("mma")>=0)return "mma";return s.length?"pads":"bag"}
+function needs(act,sp){var a=ACT[act];if(!a)return [];var sps=sp?[sp]:mySports();return a[1].filter(function(n){if(!n[3])return true;if(!sps.length)return true;return sps.some(function(x){return n[3].split(" ").indexOf(x)>=0})}).map(function(n){return {cat:n[0],lvl:n[1],why:n[2]}})}
+function owned(cat){return !!(K().own||{})[cat]}
+function setOwned(cat,v){var k=K();k.own=k.own||{};if(v)k.own[cat]=1;else delete k.own[cat];save()}
+
+/* ---------- the club's shop ---------- */
+function shopOf(c){c=c||club();var s=(c&&c.shop263)||{};return {on:s.on!==false,picks:(s.picks||[]).filter(function(x){return x&&prod(x.p)}).slice(0,6),items:(s.items||[]).slice(0,12)}}
+function myClubShop(){var c=club();if(!c||!cid()||c.id!==cid())return null;var s=shopOf(c);return s.on?{c:c,s:s}:null}
+function pickWhy(p){var m=myClubShop();if(!m)return "";var x=m.s.picks.filter(function(q){return q.p===p.id})[0];return x?(x.why||"Your coach's pick"):""}
+/* the best product for a kit type: the club's pick first, then one for your sport, then the partner order, then the lower price */
+function best(cat,sp){var L=PRODUCTS.filter(function(p){return p.cat===cat});if(!L.length)return null;var sps=sp?[sp]:mySports();
+ function score(p){var s=0;if(pickWhy(p))s-=1000;if(p.sp&&sps.some(function(x){return p.sp.split(" ").indexOf(x)>=0}))s-=100;else if(p.sp&&sps.length)s+=50;s+=ORDER.indexOf(p.prog)*10;s+=p.lo/100;return s}
+ return L.slice().sort(function(a,b){return score(a)-score(b)})[0]}
+
+/* ---------- who sees it ---------- */
+function ageNow(){var p=P(),d=p.dob;if(d){try{if(window.FH195&&FH195.ageOn){var a=FH195.ageOn(d);if(a!=null)return a}}catch(x){}var b=new Date(d+"T12:00"),n=new Date();if(!isNaN(b)){var y=n.getFullYear()-b.getFullYear();if(n.getMonth()<b.getMonth()||(n.getMonth()===b.getMonth()&&n.getDate()<b.getDate()))y--;return y}}var a2=+p.age;return a2>0?a2:null}
+function adult(){try{if(document.body.classList.contains("jv197on"))return false;if(window.FH197&&FH197.on&&FH197.teenKid&&FH197.teenKid())return false}catch(x){}var a=ageNow();return a!=null&&a>=18}
+
+/* ---------- links: the club's anonymous shop code, never the member ---------- */
+function fnv(s){var h=0x811c9dc5;for(var i=0;i<s.length;i++){h^=s.charCodeAt(i);h=(h+((h<<1)+(h<<4)+(h<<7)+(h<<8)+(h<<24)))>>>0}return ("0000000"+h.toString(16)).slice(-8)}
+function clubRef(){var c=cid();return UUID.test(c)?"c"+fnv(c.toLowerCase()):"none"}
+function linkOf(p,place){var pr=PROG[p.prog]||{},base=pr.site;if(!base)return "";var ref=clubRef();
+ if(pr.net==="awin"&&CODE.awinAff&&CODE.awinMid[p.prog])return "https://www.awin1.com/cread.php?awinmid="+encodeURIComponent(CODE.awinMid[p.prog])+"&awinaffid="+encodeURIComponent(CODE.awinAff)+"&clickref="+ref+"&clickref2="+encodeURIComponent(place)+"&ued="+encodeURIComponent(base);
+ if(pr.net==="uppromote"&&CODE.uppromote[p.prog])return base+"?sca_ref="+encodeURIComponent(CODE.uppromote[p.prog])+"&sca_source="+ref;
+ if(pr.net==="impact"&&CODE.impact[p.prog])return CODE.impact[p.prog].replace("{url}",encodeURIComponent(base)).replace("{sub}",ref);
+ return base}
+function partnered(p){var pr=PROG[p.prog]||{};return !!((pr.net==="awin"&&CODE.awinAff&&CODE.awinMid[p.prog])||(pr.net==="uppromote"&&CODE.uppromote[p.prog])||(pr.net==="impact"&&CODE.impact[p.prog]))}
+function track(pid,place){try{var a=A();if(!a||!live())return;var c=cid();Promise.resolve().then(function(){return a.api("POST","rpc/shop_click",{p_club:UUID.test(c)?c:null,p_product:pid,p_place:place})}).catch(function(){})}catch(x){}}
+
+/* ---------- pieces ---------- */
+function gbp(v){return "£"+Math.round(+v||0)}
+function band(lo,hi){return lo===hi?gbp(lo):gbp(lo)+" to "+gbp(hi)}
+function buyBtn(p,place,sm){var u=safeUrl(linkOf(p,place)),pr=PROG[p.prog]||{};if(!u)return '<span class="k263-soon">Link when '+e(pr.n)+' approves us</span>';
+ return '<a class="k263-buy" href="'+escA(u)+'" target="_blank" rel="sponsored noopener noreferrer" data-k263t="'+escA(p.id+"|"+place)+'">See it at '+e(pr.n)+'</a>'}
+function card(p,place,why){var pr=PROG[p.prog]||{},pick=pickWhy(p),wt=(pick&&pick!=="Your coach's pick")?pick:(why||"");
+ return '<article class="k263-p"><div class="k263-pi">'+icon(p.cat)+'<span class="k263-ad">Ad</span></div><div class="k263-pb">'+
+  (pick?'<span class="k263-pick">Coach\'s pick</span>':'')+(p.sample?'<span class="k263-sam">Sample</span>':'')+
+  '<b class="k263-pn">'+e(p.name)+'</b><span class="k263-ps">'+e(p.spec)+'</span>'+
+  (wt?'<span class="k263-why">'+e(wt)+'</span>':'')+
+  '<span class="k263-pr">'+(p.sample?"Typical price ":"")+band(p.lo,p.hi)+'<span class="muted"> · '+e(pr.n)+'</span></span>'+buyBtn(p,place,true)+'</div></article>'}
+function adLine(){return '<p class="k263-disc"><span class="k263-ad">Ad</span> Partner links: if you buy, FighterBase may earn a commission, and your club may get a share. The shop sells, delivers and handles returns. Your club never sees what you tap or buy.</p>'}
+function sampleLine(){return PRODUCTS.some(function(p){return p.sample})?'<p class="muted small" style="margin:6px 0 0">These are sample listings with typical prices while our partner shops approve us. Real products, prices and pictures come from each shop once they do.</p>':''}
+
+/* ---------- next booked class ---------- */
+function nextBooked(days){var c=club(),R=P().rsvp||{},tt=(c&&c.timetable)||[],now=new Date(),out=[];
+ Object.keys(R).forEach(function(k){if(!R[k])return;var m=/^(\d{4}-\d{2}-\d{2})_(.+)$/.exec(k);if(!m)return;var cl=tt.filter(function(x){return x&&x.id===m[2]})[0];if(!cl||cl.kids)return;
+  var t=/^\d{1,2}:\d{2}$/.test(cl.time||"")?("0"+cl.time).slice(-5):"12:00",when=new Date(m[1]+"T"+t+":00"),dd=(when-now)/864e5;if(isNaN(dd)||dd<-0.04||dd>days)return;
+  var act=actOfClass(cl);if(!act)return;out.push({d:m[1],cl:cl,when:when,act:act,sp:spOf((cl.title||"")+" "+(cl.sport||""))})});
+ return out.sort(function(a,b){return a.when-b.when})}
+function whenText(x){var d=x.when,n=new Date(),t=new Date(n.getFullYear(),n.getMonth(),n.getDate()),dd=Math.round((new Date(d.getFullYear(),d.getMonth(),d.getDate())-t)/864e5);
+ var day=dd===0?"today":dd===1?"tomorrow":d.toLocaleDateString("en-GB",{weekday:"long"});return day+" at "+(x.cl.time||"")}
+
+/* ---------- the Kit shop page ---------- */
+var VIEW={act:"",cat:"",open:"",msg:""};
+function ensureTab(){var t=document.getElementById("tab-today");if(!t)return null;var sec=document.getElementById("tab-kit");
+ if(!sec){sec=document.createElement("section");sec.id="tab-kit";sec.className="stack";sec.hidden=true;sec.innerHTML='<div id="kitBody" class="stack"></div>';t.parentNode.appendChild(sec)}
+ try{TABNAME.kit="Kit shop"}catch(x){}
+ /* the menu: fh32 rebuilds GROUPS from FH32FULL, so the Kit shop goes in (or out of) both, changed in place */
+ try{var ok=adult();[window.FH32FULL&&FH32FULL.train,GROUPS.train].forEach(function(arr){if(!arr)return;var i=arr.indexOf("kit");if(ok&&i<0)arr.push("kit");if(!ok&&i>=0)arr.splice(i,1)})}catch(x){}
+ return sec}
+function readyHTML(full){var nb=nextBooked(full?7:3)[0],act=VIEW.act||(nb?nb.act:"")||K().act||defaultAct(),sp=nb&&(!VIEW.act||VIEW.act===nb.act)?nb.sp:"";
+ var L=needs(act,sp),miss=L.filter(function(n){return !owned(n.cat)});
+ var head=nb&&(!VIEW.act||VIEW.act===nb.act)?'Kit for '+e(nb.cl.title)+', '+e(whenText(nb)):'Kit for '+e(ACT[act][0].toLowerCase());
+ var h='<div class="sec-h"><h3>'+head+'</h3></div>';
+ if(full)h+='<div class="chips" role="group" aria-label="What are you training?">'+Object.keys(ACT).map(function(k){return '<button type="button" class="chip" data-k263act="'+escA(k)+'" aria-pressed="'+(k===act)+'">'+e(ACT[k][0])+'</button>'}).join("")+'</div>';
+ if(!L.length)return h+'<p class="muted small">Nothing special needed.</p>';
+ h+='<div class="k263-need">'+L.map(function(n){var o=owned(n.cat),b=o?null:best(n.cat,sp);return '<div class="k263-n'+(o?" got":"")+'"><span class="k263-ni">'+icon(n.cat)+'</span><div class="k263-nt">'+
+   '<div class="k263-nh"><b>'+e(CAT[n.cat][0])+'</b><span class="k263-l'+n.lvl+'">'+e(LVL[n.lvl])+'</span><label class="k263-got"><input type="checkbox" data-k263own="'+escA(n.cat)+'"'+(o?" checked":"")+'> Got it</label></div>'+
+   '<span class="small muted">'+e(n.why)+'</span>'+
+   (b?'<div class="k263-nb"><span><span class="k263-ad">Ad</span> '+e(b.name)+' · '+(b.sample?"typical ":"")+band(b.lo,b.hi)+'</span>'+buyBtn(b,"ready",true)+'</div>':'')+'</div></div>'}).join("")+'</div>';
+ if(!miss.length)h+='<p class="small" style="margin:8px 0 0">You\'ve got everything for this. Good to go.</p>';
+ return h}
+function bundles(){var sps=mySports();var B=[
+ {id:"mt",n:"Muay Thai starter",sp:"mt",cats:["wraps","gloves","shins","gumshield","shorts","groin"],why:"Everything for your first months of Muay Thai, sparring included."},
+ {id:"box",n:"Boxing starter",sp:"box",cats:["wraps","gloves","gumshield","rope","groin"],why:"Pads, bag and your first sparring."},
+ {id:"kick",n:"Kickboxing starter",sp:"kick",cats:["wraps","gloves","shins","gumshield","groin"],why:"Punches and kicks, sparring included."},
+ {id:"bjj",n:"BJJ starter (gi)",sp:"bjj",cats:["gi","gumshield","tape","bag"],why:"For gi classes and your first rolls."},
+ {id:"nogi",n:"No-gi starter",sp:"grap",cats:["rash","spats","gumshield"],why:"Clean, simple kit for no-gi."},
+ {id:"mma",n:"MMA starter",sp:"mma",cats:["mmagloves","gloves","shins","gumshield","groin","rash"],why:"Striking, grappling and sparring."},
+ {id:"spar",n:"First sparring kit",sp:"",cats:["gumshield","gloves","shins","groin","head"],why:"For when your coach says you're ready to spar."}];
+ return B.map(function(b){b.items=b.cats.map(function(c){return best(c,b.sp)}).filter(Boolean);b.lo=b.items.reduce(function(a,p){return a+p.lo},0);b.hi=b.items.reduce(function(a,p){return a+p.hi},0);b.mine=b.sp&&sps.indexOf(b.sp)>=0;b.left=b.items.filter(function(p){return !owned(p.cat)}).length;return b})
+  .sort(function(a,b){return (b.mine?1:0)-(a.mine?1:0)})}
+function bundlesHTML(){var B=bundles();return '<div class="sec-h"><h3>Starter kits</h3></div><p class="muted small" style="margin:0 0 8px">Put together by kit type. Buy the lot or only what you\'re missing; each item is bought from its own shop.</p><div class="k263-bg">'+
+ B.map(function(b){var open=VIEW.open===b.id;return '<div class="k263-b'+(open?" open":"")+'"><button type="button" class="k263-bh" data-k263b="'+escA(b.id)+'" aria-expanded="'+open+'"><b>'+e(b.n)+'</b><span class="small muted">'+e(b.why)+'</span><span class="small">'+b.items.length+' items · typical total '+band(b.lo,b.hi)+(b.left<b.items.length?' · you have '+(b.items.length-b.left):'')+'</span></button>'+
+  (open?'<div class="k263-g">'+b.items.map(function(p){return owned(p.cat)?'<article class="k263-p got"><div class="k263-pi">'+icon(p.cat)+'</div><div class="k263-pb"><b class="k263-pn">'+e(CAT[p.cat][0])+'</b><span class="k263-ps">You\'ve got this</span></div></article>':card(p,"bundle",CAT[p.cat][1])}).join("")+'</div>':'')+'</div>'}).join("")+'</div>'}
+function clubHTML(){var m=myClubShop();if(!m||(!m.s.picks.length&&!m.s.items.length))return "";
+ var h='<div class="sec-h"><h3>'+e(m.c.name||"Your club")+' shop</h3></div>';
+ if(m.s.picks.length)h+='<p class="muted small" style="margin:0 0 8px">Your coach\'s picks.</p><div class="k263-g">'+m.s.picks.map(function(x){return card(prod(x.p),"club",x.why)}).join("")+'</div>';
+ if(m.s.items.length)h+='<p class="muted small" style="margin:12px 0 8px">From the club.</p><div class="k263-g">'+m.s.items.map(function(it){var u=it.how==="web"?safeUrl(it.link):"";return '<article class="k263-p club"><div class="k263-pi">'+icon("bag")+'</div><div class="k263-pb"><span class="k263-pick">From the club</span><b class="k263-pn">'+e(it.name)+'</b>'+(it.note?'<span class="k263-ps">'+e(it.note)+'</span>':'')+(+it.price>0?'<span class="k263-pr">£'+e((+it.price).toFixed(2).replace(/\.00$/,""))+'</span>':'')+
+  (u?'<a class="btn sm" href="'+escA(u)+'" target="_blank" rel="noopener noreferrer">Buy on the club\'s website</a>':'<span class="small">Ask at the desk</span>')+'</div></article>'}).join("")+'</div>';
+ return h}
+function browseHTML(){var cats=Object.keys(CAT).filter(function(c){return PRODUCTS.some(function(p){return p.cat===c})}),cat=VIEW.cat&&CAT[VIEW.cat]?VIEW.cat:"";
+ var L=PRODUCTS.filter(function(p){return !cat||p.cat===cat}).slice().sort(function(a,b){return cats.indexOf(a.cat)-cats.indexOf(b.cat)||ORDER.indexOf(a.prog)-ORDER.indexOf(b.prog)});
+ return '<div class="sec-h"><h3>Browse kit</h3></div><div class="chips" role="group" aria-label="Kit type"><button type="button" class="chip" data-k263cat="" aria-pressed="'+(!cat)+'">All</button>'+cats.map(function(c){return '<button type="button" class="chip" data-k263cat="'+escA(c)+'" aria-pressed="'+(c===cat)+'">'+e(CAT[c][0])+'</button>'}).join("")+'</div><div class="k263-g" style="margin-top:10px">'+L.map(function(p){return card(p,"kit")}).join("")+'</div>'}
+function bagHTML(){var own=K().own||{},n=Object.keys(own).length;return '<div class="sec-h"><h3>My kit bag</h3><span class="muted small">'+n+' ticked</span></div><p class="muted small" style="margin:0 0 8px">Tick what you already have and we won\'t suggest it. Only you see this.</p><div class="k263-bag">'+
+ Object.keys(CAT).map(function(c){return '<label><input type="checkbox" data-k263own="'+escA(c)+'"'+(own[c]?" checked":"")+'> '+e(CAT[c][0])+'</label>'}).join("")+'</div>'+
+ '<label class="k263-off"><input type="checkbox" data-k263off'+(K().off?"":" checked")+'> Show a kit pick on Train and Learn</label>'}
+function page(){var sec=ensureTab(),el=document.getElementById("kitBody");if(!sec||!el||sec.hidden)return;
+ if(document.activeElement&&el.contains(document.activeElement)&&/INPUT|SELECT|TEXTAREA/.test(document.activeElement.tagName)&&document.activeElement.type!=="checkbox")return;
+ var h;if(!adult())h='<div class="panel"><h2>Kit shop</h2><p class="muted">The Kit shop is for adult members. If you\'re 18 or over, add your age in Settings, About you.</p></div>';
+ else h='<div class="panel plate"><div class="sec-h"><h2>Kit shop</h2></div>'+adLine()+sampleLine()+'</div>'+
+  '<div class="panel" id="k263ready">'+readyHTML(true)+'</div>'+
+  (clubHTML()?'<div class="panel">'+clubHTML()+'</div>':'')+
+  '<div class="panel">'+bundlesHTML()+'</div><div class="panel">'+browseHTML()+'</div><div class="panel">'+bagHTML()+'</div>'+
+  '<p class="muted small">Food and supplements come later, after our dietitian has checked them. Nothing in the Kit shop is shown to under-18s.</p>';
+ if(el.dataset.sig!==h){var y=window.scrollY;el.innerHTML=h;el.dataset.sig=h;if(VIEW.keep){window.scrollTo(0,y);VIEW.keep=false}}}
+
+/* ---------- the small card on Train and Learn ---------- */
+var ROT=0,SEEN={};
+function dayNo(){return Math.floor(Date.now()/864e5)}
+function pickList(){var sps=mySports(),acts={};(sps.length?sps:["box"]).forEach(function(s){({mt:["pads","spar","clinch"],kick:["pads","spar"],box:["pads","spar","bag"],bjj:["bjj"],grap:["nogi"],mma:["mma","spar"]}[s]||["pads"]).forEach(function(a){acts[a]=1})});
+ var cats={};Object.keys(acts).forEach(function(a){needs(a).forEach(function(n){if(!owned(n.cat))cats[n.cat]=Math.min(cats[n.cat]||9,n.lvl)})});
+ var L=Object.keys(cats).sort(function(a,b){return cats[a]-cats[b]}).map(function(c){return best(c)}).filter(Boolean);
+ var m=myClubShop();if(m)m.s.picks.forEach(function(x){var p=prod(x.p);if(p&&!owned(p.cat)&&L.indexOf(p)<0)L.unshift(p)});
+ return L.length?L:PRODUCTS.filter(function(p){return !owned(p.cat)})}
+function mini(id){var tb=document.getElementById(id),el=document.getElementById("k263m_"+id);
+ if(!tb||tb.hidden||!adult()||K().off){if(el)el.remove();if(tb&&tb.hidden)SEEN[id]=false;return}
+ if(!SEEN[id]){SEEN[id]=true;ROT++}
+ var nb=nextBooked(3)[0],h="";
+ if(nb){var miss=needs(nb.act,nb.sp).filter(function(n){return !owned(n.cat)&&n.lvl===1}).slice(0,3);
+  if(miss.length)h='<span class="label"><span class="k263-ad">Ad</span> Get ready</span><h2 class="k263-mh">Kit for '+e(nb.cl.title)+', '+e(whenText(nb))+'</h2>'+
+   '<ul class="k263-ml">'+miss.map(function(n){var b=best(n.cat,nb.sp);return '<li><b>'+e(CAT[n.cat][0])+'</b> <span class="small muted">'+e(n.why)+'</span>'+(b?' '+buyBtn(b,"ready",true):'')+'</li>'}).join("")+'</ul>'+
+   '<div class="row" style="margin-top:8px"><button type="button" class="linkbtn" data-goto="kit" data-k263act2="'+escA(nb.act)+'">I\'ve got some of this</button><button type="button" class="linkbtn" data-goto="kit">Open the Kit shop</button></div>'}
+ if(!h){var L=pickList();if(!L.length){if(el)el.remove();return}var p=L[(dayNo()+ROT)%L.length];
+  h='<span class="label"><span class="k263-ad">Ad</span> Kit pick</span><div class="k263-mp">'+card(p,"pick",CAT[p.cat][1])+'</div><div class="row" style="margin-top:6px"><button type="button" class="linkbtn" data-k263next="'+escA(id)+'">Next pick</button><button type="button" class="linkbtn" data-goto="kit">Open the Kit shop</button><button type="button" class="linkbtn" data-k263hide>Hide kit picks</button></div>'}
+ if(!el){el=document.createElement("div");el.id="k263m_"+id;el.className="fb-card k263-m f149keep";var b187=document.getElementById("b187c_"+id);if(b187&&b187.parentNode===tb)tb.insertBefore(el,b187.nextSibling);else tb.appendChild(el)}
+ if(el.dataset.sig!==h){el.innerHTML=h;el.dataset.sig=h}}
+
+/* ---------- for the bag work sets (fh187) ---------- */
+function kitLine(act){if(!adult()||!ACT[act])return "";var L=needs(act).filter(function(n){return n.lvl===1}).map(function(n){return CAT[n.cat][0].toLowerCase()});if(!L.length)return "";
+ return '<p class="muted small" style="margin:0">Kit: '+e(L.join(" and "))+'. <button type="button" class="linkbtn" data-k263go="'+escA(act)+'">Kit for '+e(ACT[act][0].toLowerCase())+'</button></p>'}
+
+/* ---------- club side: Money > Club shop ---------- */
+var ED={msg:"",tot:null,totAt:0,totErr:""};
+function isOwner(){try{return window.FHC&&FHC.isOwner()}catch(x){return false}}
+function ensureHub(){var t=document.getElementById("tab-today");if(!t)return;if(!document.getElementById("tab-hubshop")){var sec=document.createElement("section");sec.id="tab-hubshop";sec.className="stack";sec.hidden=true;sec.innerHTML='<div id="hubshopBody" class="stack"></div>';t.parentNode.appendChild(sec);try{TABNAME.hubshop="Club shop"}catch(x){}}
+ try{if(window.FH150){FH150.REP.hubshop="hubacc";var st=FH150.STRIPS.filter(function(g){return g[0]==="hubacc"})[0];if(st&&st.indexOf("hubshop")<0)st.push("hubshop")}}catch(x){}}
+function upd(s){var F=window.FH76,c=club();if(!F||!c)return Promise.resolve();return F.upd({shop263:{on:s.on,picks:s.picks,items:s.items}})}
+async function loadTot(force){var c=club(),a=A();if(!c||!a||!live()||!UUID.test(c.id||"")||c.id!==cid())return;if(!force&&ED.totAt&&Date.now()-ED.totAt<60000)return;ED.totAt=Date.now();
+ try{var r=await a.api("POST","rpc/shop_club_totals",{p_club:c.id,p_days:30});ED.tot=Array.isArray(r)?r:[];ED.totErr=""}catch(x){ED.totErr="Couldn't load the numbers just now."}var el=document.getElementById("hubshopBody");if(el)el.dataset.sig="";hub()}
+function totHTML(){var c=club();if(!live()||!c||c.id!==cid())return '<p class="muted small" style="margin:0">Numbers appear here once your club is live in FighterBase.</p>';if(ED.totErr)return '<p class="muted small" style="margin:0">'+e(ED.totErr)+'</p>';if(!ED.tot){loadTot();return '<p class="muted small" style="margin:0">Loading…</p>'}
+ var all=ED.tot.reduce(function(a,r){return a+(+r.n||0)},0);if(!all)return '<p class="muted small" style="margin:0">No taps on partner links from your members in the last 30 days.</p>';
+ var by={};ED.tot.forEach(function(r){by[r.product]=(by[r.product]||0)+(+r.n||0)});var top=Object.keys(by).sort(function(a,b){return by[b]-by[a]}).slice(0,6);
+ return '<p style="margin:0 0 6px"><b>'+all+'</b> tap'+(all===1?"":"s")+' on partner links from your members in the last 30 days.</p>'+top.map(function(k){var p=prod(k);return '<div class="fb-row"><span>'+e(p?p.name:k)+'</span><b>'+by[k]+'</b></div>'}).join("")}
+function hub(){var el=document.getElementById("hubshopBody"),c=club();if(!el||!c)return;var sec=document.getElementById("tab-hubshop");if(!sec||sec.hidden)return;if(!isOwner()){var nh='<div class="panel"><p class="muted">Only the club\'s owner can change the club shop.</p></div>';if(el.dataset.sig!==nh){el.innerHTML=nh;el.dataset.sig=nh}return}
+ if(document.activeElement&&el.contains(document.activeElement)&&/INPUT|SELECT|TEXTAREA/.test(document.activeElement.tagName)&&document.activeElement.type!=="checkbox")return;
+ var s=shopOf(c),opts=Object.keys(CAT).filter(function(k){return PRODUCTS.some(function(p){return p.cat===k})}).map(function(k){return '<optgroup label="'+escA(CAT[k][0])+'">'+PRODUCTS.filter(function(p){return p.cat===k&&!s.picks.some(function(x){return x.p===p.id})}).map(function(p){return '<option value="'+escA(p.id)+'">'+e(p.name)+'</option>'}).join("")+'</optgroup>'}).join("");
+ var h='<div class="panel plate"><div class="sec-h"><h2>Club shop</h2></div><p class="muted small" style="margin:0">FighterBase\'s Kit shop shows partner kit to your adult members: gloves, wraps, gum shields, shin guards and the rest. Your club shop sits on top of it with your coach\'s picks and your own club items. Kit only: no food or supplement advice. Never shown to under-18s.</p>'+
+  '<label class="k263-sw"><input type="checkbox" data-k263hon'+(s.on?" checked":"")+'> Show our club shop to members</label>'+(ED.msg?'<p class="small" role="status">'+e(ED.msg)+'</p>':'')+'</div>';
+ h+='<div class="panel"><div class="sec-h"><h3>Coach\'s picks</h3><span class="muted small">'+s.picks.length+' of 6</span></div><p class="muted small" style="margin:0 0 8px">The kit you\'d tell a new member to get. Shown first in your members\' Kit shop, with your reason.</p>'+
+  (s.picks.length?s.picks.map(function(x,i){var p=prod(x.p);return '<div class="fb-row"><span><b>'+e(p.name)+'</b>'+(x.why?'<br><span class="muted small">'+e(x.why)+'</span>':'')+'</span><button class="linkbtn" type="button" data-k263hdelp="'+i+'">Remove</button></div>'}).join(""):'<p class="muted small">None yet.</p>')+
+  (s.picks.length<6?'<div class="grid2" style="margin-top:8px"><div class="field"><label class="label" for="k263hp">Product</label><select id="k263hp">'+opts+'</select></div><div class="field"><label class="label" for="k263hw">Why (optional)</label><input type="text" id="k263hw" maxlength="80" placeholder="e.g. Our sparring rule: 16oz gloves"></div></div><button class="btn sm" type="button" data-k263haddp>Add pick</button>':'')+'</div>';
+ h+='<div class="panel"><div class="sec-h"><h3>Club items</h3><span class="muted small">'+s.items.length+' of 12</span></div><p class="muted small" style="margin:0 0 8px">Your own T-shirts, hoodies, gloves or gym bags. Members buy at the desk or on your own website; paying in the app comes later.</p>'+
+  (s.items.length?s.items.map(function(it,i){return '<div class="fb-row"><span><b>'+e(it.name)+'</b>'+(+it.price>0?' · £'+e(it.price):'')+'<br><span class="muted small">'+(it.how==="web"?"On your website":"At the desk")+(it.note?' · '+e(it.note):'')+'</span></span><button class="linkbtn" type="button" data-k263hdeli="'+i+'">Remove</button></div>'}).join(""):'<p class="muted small">None yet.</p>')+
+  (s.items.length<12?'<div class="grid2" style="margin-top:8px"><div class="field"><label class="label" for="k263in">Item</label><input type="text" id="k263in" maxlength="50" placeholder="e.g. Club hoodie"></div><div class="field"><label class="label" for="k263ip">Price (£)</label><input type="number" id="k263ip" min="0" max="999" step="0.5"></div><div class="field"><label class="label" for="k263io">Note (optional)</label><input type="text" id="k263io" maxlength="60" placeholder="Sizes S to XXL"></div><div class="field"><label class="label" for="k263ih">How to buy</label><select id="k263ih"><option value="desk">At the desk</option><option value="web">On our website</option></select></div><div class="field"><label class="label" for="k263il">Website link (if on your website)</label><input type="url" id="k263il" maxlength="200" placeholder="https://"></div></div><button class="btn sm" type="button" data-k263hadd>Add item</button>':'')+'</div>';
+ h+='<div class="panel"><div class="sec-h"><h3>From your members</h3><span class="muted small">last 30 days</span></div>'+totHTML()+
+  '<p class="muted small" style="margin:8px 0 0">Totals only. You never see who tapped or bought.</p><p class="muted small" style="margin:6px 0 0"><b>Commission:</b> partner shops pay FighterBase a commission on sales from these links (about 10% on kit). Your club will get a share of what your members\' purchases earn. The share and how it\'s paid are being set; you\'ll see them here before it starts.</p></div>';
+ if(el.dataset.sig!==h){el.innerHTML=h;el.dataset.sig=h}}
+
+/* ---------- clicks ---------- */
+function v(id){var x=document.getElementById(id);return x?String(x.value||""):""}
+function rerender(){var a=document.getElementById("kitBody");if(a)a.dataset.sig="";["tab-train","tab-learn"].forEach(function(id){var m=document.getElementById("k263m_"+id);if(m)m.dataset.sig=""});tick()}
+document.addEventListener("click",function(ev){var t=ev.target.closest&&ev.target.closest("[data-k263t],[data-k263act],[data-k263act2],[data-k263cat],[data-k263b],[data-k263next],[data-k263hide],[data-k263go],[data-k263haddp],[data-k263hdelp],[data-k263hadd],[data-k263hdeli]");if(!t)return;var d=t.dataset;
+ if(d.k263t){var q=d.k263t.split("|");track(q[0],q[1]||"kit");return}
+ if(d.k263act){VIEW.act=d.k263act;K().act=d.k263act;save();VIEW.keep=true;rerender();return}
+ if(d.k263act2){VIEW.act=d.k263act2;return}
+ if(d.k263cat!=null){VIEW.cat=d.k263cat;VIEW.keep=true;rerender();return}
+ if(d.k263b){VIEW.open=VIEW.open===d.k263b?"":d.k263b;VIEW.keep=true;rerender();return}
+ if(d.k263next){ROT++;rerender();return}
+ if(t.hasAttribute("data-k263hide")){K().off=true;save();rerender();try{toast("Kit picks hidden","Turn them back on in the Kit shop, My kit bag")}catch(x){}return}
+ if(d.k263go){VIEW.act=d.k263go;try{var x=document.querySelector("#b187 [data-b187x]");if(x)x.click()}catch(y){}try{showTab("kit");window.scrollTo(0,0)}catch(y){}rerender();return}
+ var c=club();if(!c||!isOwner())return;var s=shopOf(c);
+ if(t.hasAttribute("data-k263haddp")){var pid=v("k263hp");if(!prod(pid)||s.picks.length>=6)return;s.picks=s.picks.concat([{p:pid,why:v("k263hw").trim().slice(0,80)}]);upd(s).then(function(){ED.msg="Pick added.";rerender()});return}
+ if(d.k263hdelp!=null){s.picks.splice(+d.k263hdelp,1);upd(s).then(function(){ED.msg="Pick removed.";rerender()});return}
+ if(t.hasAttribute("data-k263hadd")){var nm=v("k263in").trim().slice(0,50);if(!nm){ED.msg="Add the item's name.";try{toast(ED.msg)}catch(x){}rerender();return}var how=v("k263ih")==="web"?"web":"desk",lk=v("k263il").trim().slice(0,200);
+  if(how==="web"&&!/^https:\/\//i.test(safeUrl(lk)||"")){ED.msg="Add your website link, starting https://";try{toast(ED.msg)}catch(x){}rerender();return}
+  var pr=Math.max(0,Math.min(999,Math.round((+v("k263ip")||0)*100)/100));s.items=s.items.concat([{id:"i"+Date.now().toString(36),name:nm,price:pr,note:v("k263io").trim().slice(0,60),how:how,link:how==="web"?lk:""}]);upd(s).then(function(){ED.msg="Item added.";rerender()});return}
+ if(d.k263hdeli!=null){s.items.splice(+d.k263hdeli,1);upd(s).then(function(){ED.msg="Item removed.";rerender()});return}});
+document.addEventListener("change",function(ev){var t=ev.target;if(!t||!t.dataset)return;
+ if(t.dataset.k263own){setOwned(t.dataset.k263own,t.checked);VIEW.keep=true;rerender();return}
+ if(t.hasAttribute("data-k263off")){K().off=!t.checked;save();rerender();return}
+ if(t.hasAttribute("data-k263hon")){var c=club();if(!c||!isOwner())return;var s=shopOf(c);s.on=t.checked;upd(s).then(function(){ED.msg=s.on?"Your club shop is on.":"Your club shop is off. Members still see FighterBase's Kit shop.";rerender()})}});
+
+var css=document.createElement("style");css.textContent=
+"#kitBody .chips{margin:6px 0 2px}.k263-ad{display:inline-block;font:700 10px/1 var(--body,inherit);letter-spacing:.06em;padding:3px 5px;border-radius:4px;background:var(--gold,#E8DFC8);color:#111;vertical-align:middle}"+
+".k263-disc{margin:6px 0 0;font-size:.9rem}.k263-disc .k263-ad{margin-right:6px}"+
+".k263-g{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:10px}"+
+".k263-p{display:flex;flex-direction:column;border:1px solid var(--line,rgba(255,255,255,.12));border-radius:14px;overflow:hidden;background:rgba(255,255,255,.025)}"+
+".k263-pi{position:relative;display:flex;align-items:center;justify-content:center;height:96px;background:linear-gradient(135deg,rgba(232,223,200,.16),rgba(160,30,40,.14));color:var(--fg,#eee)}.k263-pi svg{width:48px;height:48px;opacity:.9}.k263-pi .k263-ad{position:absolute;top:8px;left:8px}"+
+".k263-pb{display:flex;flex-direction:column;gap:4px;padding:10px 12px 12px;flex:1}.k263-pn{font-size:.98rem;line-height:1.25}.k263-ps{font-size:.82rem;opacity:.75}.k263-why{font-size:.82rem;border-left:2px solid var(--gold,#E8DFC8);padding-left:7px;margin:2px 0}"+
+".k263-pr{font-size:.85rem;margin-top:auto;padding-top:4px}"+
+"a.k263-buy{display:inline-flex;align-items:center;align-self:flex-start;min-height:38px;padding:7px 12px;border:1px solid var(--gold,#E8DFC8);border-radius:999px;color:var(--gold,#E8DFC8);text-decoration:none;font:600 .82rem/1.2 var(--body,inherit);white-space:normal;margin-top:6px}"+
+"a.k263-buy:hover{background:rgba(232,223,200,.12)}"+
+".k263-pick,.k263-sam{align-self:flex-start;font:700 10px/1 var(--body,inherit);letter-spacing:.04em;padding:3px 6px;border-radius:999px;border:1px solid var(--gold,#E8DFC8);color:var(--gold,#E8DFC8)}.k263-sam{border-color:rgba(255,255,255,.3);color:inherit;opacity:.75}"+
+".k263-p.got{opacity:.55}.k263-p.club .k263-pi{background:rgba(255,255,255,.05)}.k263-soon{font-size:.8rem;opacity:.7;margin-top:6px}"+
+".k263-need{display:grid;gap:8px;margin-top:10px}.k263-n{display:flex;gap:10px;align-items:flex-start;padding:10px;border:1px solid var(--line,rgba(255,255,255,.12));border-radius:12px}.k263-n.got{opacity:.6}"+
+".k263-ni svg{width:28px;height:28px}.k263-nt{display:flex;flex-direction:column;gap:3px;flex:1;min-width:0}.k263-nh{display:flex;align-items:center;flex-wrap:wrap;gap:4px 8px}"+
+".k263-nb{font-size:.82rem;display:flex;flex-wrap:wrap;gap:4px 10px;align-items:center;margin-top:4px}.k263-nb a.k263-buy{margin-top:0}"+
+".k263-l1,.k263-l2,.k263-l3{font-size:.72rem;font-weight:700;margin-left:4px}.k263-l1{color:var(--gold,#E8DFC8)}.k263-l3{opacity:.65}"+
+".k263-got{display:flex;align-items:center;gap:6px;font-size:.82rem;white-space:nowrap;min-height:40px;cursor:pointer;margin-left:auto}"+
+".k263-bg{display:grid;gap:8px}.k263-b{border:1px solid var(--line,rgba(255,255,255,.12));border-radius:12px}.k263-b.open{border-color:var(--gold,#E8DFC8)}"+
+".k263-bh{display:flex;flex-direction:column;gap:3px;width:100%;text-align:left;background:none;border:0;color:inherit;font:inherit;padding:12px;cursor:pointer;min-height:44px}.k263-b .k263-g{padding:0 12px 12px}"+
+".k263-bag{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:4px 12px}.k263-bag label,.k263-off,.k263-sw{display:flex;align-items:center;gap:8px;min-height:40px;cursor:pointer}.k263-off{margin-top:10px;border-top:1px solid var(--line,rgba(255,255,255,.12));padding-top:8px}"+
+".k263-m .k263-mh{font-size:20px;margin:4px 0 6px}.k263-ml{margin:0;padding-left:18px;display:grid;gap:8px}.k263-ml a.k263-buy{margin-top:4px;display:flex;width:max-content;max-width:100%}.k263-mp .k263-p{flex-direction:row}.k263-mp .k263-pi{width:96px;height:auto;min-height:96px;flex:none}"+
+"@media (max-width:520px){.k263-g{grid-template-columns:1fr 1fr}.k263-pi{height:80px}.k263-mp .k263-pi{width:76px}}"+
+"a.k263-buy:focus-visible,.k263-bh:focus-visible{outline:2px solid var(--gold,#E8DFC8);outline-offset:2px}";
+document.head.appendChild(css);
+function tick(){try{ensureTab();ensureHub();page();mini("tab-train");mini("tab-learn");hub()}catch(x){try{console.warn("fh263",x)}catch(y){}}}
+setInterval(tick,1500);setTimeout(tick,1300);
+return {on:true,products:PRODUCTS,prog:PROG,cat:CAT,act:ACT,needs:needs,best:best,adult:adult,linkOf:linkOf,clubRef:clubRef,kitLine:kitLine,nextBooked:nextBooked,bundles:bundles,shopOf:shopOf,tick:tick}})();
 
 /* FighterBase v44: always a way back, always a next step. */
 var N31=N31||false;
