@@ -27015,7 +27015,11 @@ var PROG={
  tbg:{n:"The Boxing Gloves",net:"awin",rate:"10%",site:""}};
 var ORDER=["blitz","fairtex","venum","rdx","tbg"];/* Steve 16 Nov 00:03: Blitz first, then Fairtex or Venum */
 /* Partner codes, filled in when each programme approves us (FB-068 register). Empty = no partner code: the link opens the shop's own site. */
-var CODE={awinAff:"",awinMid:{blitz:"",tbg:""},uppromote:{fairtex:"",venum:""},impact:{rdx:""}};
+/* v407 (FB-071, Steve via Alfred 16 Nov 16:31: "it's been accepted"): our Awin publisher ID (an ID, not a secret). A brand only gets
+   partner links once its own programme approves us: set APPROVED[brand] to true and fill its advertiser ID (awinMid) from the approval order.
+   Until then its links stay plain links to the shop (links through a programme that hasn't approved us earn nothing and can break its terms). */
+var CODE={awinAff:"3157158",awinMid:{blitz:"",tbg:""},uppromote:{fairtex:"",venum:""},impact:{rdx:""}};
+var APPROVED={blitz:false,tbg:false,fairtex:false,venum:false,rdx:false};
 var CAT={
  wraps:["Hand wraps","Protect your knuckles and wrists under gloves."],
  gloves:["Boxing gloves","14 to 16oz for pads and sparring."],
@@ -27129,12 +27133,15 @@ function adult(){try{if(document.body.classList.contains("jv197on"))return false
 /* ---------- links: the club's anonymous shop code, never the member ---------- */
 function fnv(s){var h=0x811c9dc5;for(var i=0;i<s.length;i++){h^=s.charCodeAt(i);h=(h+((h<<1)+(h<<4)+(h<<7)+(h<<8)+(h<<24)))>>>0}return ("0000000"+h.toString(16)).slice(-8)}
 function clubRef(){var c=cid();return UUID.test(c)?"c"+fnv(c.toLowerCase()):"none"}
-function linkOf(p,place){var pr=PROG[p.prog]||{},base=pr.site;if(!base)return "";var ref=clubRef();
- if(pr.net==="awin"&&CODE.awinAff&&CODE.awinMid[p.prog])return "https://www.awin1.com/cread.php?awinmid="+encodeURIComponent(CODE.awinMid[p.prog])+"&awinaffid="+encodeURIComponent(CODE.awinAff)+"&clickref="+ref+"&clickref2="+encodeURIComponent(place)+"&ued="+encodeURIComponent(base);
+/* v407: the link goes to the product's own page when we have it (real products from the feed), otherwise the shop's home page */
+function dest(p,pr){var u=safeUrl(p.url||"");return u&&/^https:/.test(u)?u:pr.site}
+function awinLink(mid,aff,ref,place,url){return "https://www.awin1.com/cread.php?awinmid="+encodeURIComponent(mid)+"&awinaffid="+encodeURIComponent(aff)+"&clickref="+encodeURIComponent(ref)+"&clickref2="+encodeURIComponent(place)+"&ued="+encodeURIComponent(url)}
+function linkOf(p,place){var pr=PROG[p.prog]||{},base=dest(p,pr);if(!base)return "";var ref=clubRef();if(!APPROVED[p.prog])return base;
+ if(pr.net==="awin"&&CODE.awinAff&&CODE.awinMid[p.prog])return awinLink(CODE.awinMid[p.prog],CODE.awinAff,ref,place,base);
  if(pr.net==="uppromote"&&CODE.uppromote[p.prog])return base+"?sca_ref="+encodeURIComponent(CODE.uppromote[p.prog])+"&sca_source="+ref;
  if(pr.net==="impact"&&CODE.impact[p.prog])return CODE.impact[p.prog].replace("{url}",encodeURIComponent(base)).replace("{sub}",ref);
  return base}
-function partnered(p){var pr=PROG[p.prog]||{};return !!((pr.net==="awin"&&CODE.awinAff&&CODE.awinMid[p.prog])||(pr.net==="uppromote"&&CODE.uppromote[p.prog])||(pr.net==="impact"&&CODE.impact[p.prog]))}
+function partnered(p){var pr=PROG[p.prog]||{};return !!APPROVED[p.prog]&&!!((pr.net==="awin"&&CODE.awinAff&&CODE.awinMid[p.prog])||(pr.net==="uppromote"&&CODE.uppromote[p.prog])||(pr.net==="impact"&&CODE.impact[p.prog]))}
 function track(pid,place){try{var a=A();if(!a||!live())return;var c=cid();Promise.resolve().then(function(){return a.api("POST","rpc/shop_click",{p_club:UUID.test(c)?c:null,p_product:pid,p_place:place})}).catch(function(){})}catch(x){}}
 
 /* ---------- pieces ---------- */
@@ -27148,7 +27155,7 @@ function card(p,place,why){var pr=PROG[p.prog]||{},pick=pickWhy(p),wt=(pick&&pic
   '<b class="k263-pn">'+e(p.name)+'</b><span class="k263-ps">'+e(p.spec)+'</span>'+
   (wt?'<span class="k263-why">'+e(wt)+'</span>':'')+
   '<span class="k263-pr">'+(p.sample?"Typical price ":"")+band(p.lo,p.hi)+'<span class="muted"> · '+e(pr.n)+'</span></span>'+buyBtn(p,place,true)+'</div></article>'}
-function adLine(){return '<p class="k263-disc"><span class="k263-ad">Ad</span> Partner links: if you buy, FighterBase may earn a commission, and your club may get a share. The shop sells, delivers and handles returns. Your club never sees what you tap or buy.</p>'}
+function adLine(){return '<p class="k263-disc"><span class="k263-ad">Ad</span> We may earn a commission when you buy through these links, and your club may get a share. The shop sells, delivers and handles returns. Your club never sees what you tap or buy.</p>'}
 function sampleLine(){return PRODUCTS.some(function(p){return p.sample})?'<p class="muted small" style="margin:6px 0 0">These are sample listings with typical prices while our partner shops approve us. Real products, prices and pictures come from each shop once they do.</p>':''}
 
 /* ---------- next booked class ---------- */
@@ -27317,7 +27324,7 @@ var css=document.createElement("style");css.textContent=
 document.head.appendChild(css);
 function tick(){try{ensureTab();ensureHub();page();mini("tab-train");mini("tab-learn");hub()}catch(x){try{console.warn("fh263",x)}catch(y){}}}
 setInterval(tick,1500);setTimeout(tick,1300);
-return {on:true,products:PRODUCTS,prog:PROG,cat:CAT,act:ACT,needs:needs,best:best,adult:adult,linkOf:linkOf,clubRef:clubRef,kitLine:kitLine,nextBooked:nextBooked,bundles:bundles,shopOf:shopOf,tick:tick}})();
+return {on:true,products:PRODUCTS,prog:PROG,cat:CAT,act:ACT,needs:needs,best:best,adult:adult,linkOf:linkOf,awinLink:awinLink,approved:APPROVED,code:CODE,clubRef:clubRef,kitLine:kitLine,nextBooked:nextBooked,bundles:bundles,shopOf:shopOf,tick:tick}})();
 
 /* FighterBase v44: always a way back, always a next step. */
 var N31=N31||false;
