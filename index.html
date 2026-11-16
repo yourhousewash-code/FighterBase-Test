@@ -19285,7 +19285,7 @@ var css=document.createElement("style");css.textContent=[
 ".b162{margin-top:8px;display:flex;gap:10px;align-items:center}",
 "#wa162m{position:fixed;inset:0;z-index:9300;background:var(--bg,#0B0C0F);overflow-y:auto;padding:12px 16px 60px}#wa162m .s162{max-width:1100px;margin:0 auto;display:flex;flex-direction:column;gap:12px}#wa162m .t162{display:flex;align-items:center;justify-content:space-between;font:800 24px var(--cond,'Barlow Condensed'),sans-serif}#wa162m .tabs162{display:flex;gap:8px}"
 ].join("\n");document.head.appendChild(css);
-window.FH162={open:openSheet,plan:plan,tally:tally,items:items,close:close};
+window.FH162={open:openSheet,plan:plan,tally:tally,items:items,close:close,redraw:redraw/* v401: fh262 redraws after Skip or Stop */};
 })();
 
 /* FighterBase v208: training photos and class pictures.
@@ -19500,7 +19500,10 @@ try{var ss=document.getElementById("sessSaved");if(ss&&window.MutationObserver)n
  var ti=(f.sport&&f.sport!=="General"?f.sport:"Training")+(f.type&&!/technique/i.test(f.type)?" · "+f.type:"");
  var fut=addDays(f.date,7);setTimeout(function(){show("Session logged","Counts toward your week",{t:"own",date:f.date,title:ti.slice(0,60),mins:f.mins,time:"",label:"Same day, next "+WEEKS+" weeks, as "+ti+" ("+f.mins+" min)"})},300)}}).observe(ss,{childList:true,characterData:true,subtree:true})}catch(e){}
 try{var tr0=toggleRsvp;toggleRsvp=function(key){var had=!!((S.profile||{}).rsvp||{})[key];var r=tr0.apply(this,arguments);try{if(!had&&((S.profile||{}).rsvp||{})[key]&&!document.getElementById("wa162m")){var d=key.slice(0,10),cid=key.slice(11),cl=null;try{cl=classesOn(clubState.club,d).filter(function(c){return c.id===cid})[0]}catch(e){}
- if(cl&&d>=TODAY)setTimeout(function(){show("You're booked in",(cl.title||cl.name||"Class")+" · "+cl.time,{t:"class",date:d,cid:cid,label:(cl.title||cl.name||"This class")+", same day, next "+WEEKS+" weeks"})},250)}}catch(e){}return r}}catch(e){}
+ if(cl&&d>=TODAY){var nm0=cl.title||cl.name||"This class",wd0=new Date(d+"T12:00").toLocaleDateString("en-GB",{weekday:"long"}),rep0=window.FH262&&(FH262.list()||[]).some(function(r){return r.cid===cid});
+ /* v401 (Steve 16 Nov 08:04: "on repeat ongoing ... with check on the weekly check in"): a class repeats every week until the member stops it (fh262) */
+ if(!rep0)setTimeout(function(){show("You're booked in",(cl.title||cl.name||"Class")+" · "+cl.time,window.FH262?{t:"class",date:d,cid:cid,label:nm0+", every "+wd0+" from now on",yes:"Yes, every week",note:" Your weekly check-in asks if you're still coming.",
+  fn:function(){return FH262.add({date:d,cid:cid})},done:function(){return "Booked every "+wd0},after:"Skip a week or stop it any time in your weekly check-in or Plan my week."}:{t:"class",date:d,cid:cid,label:nm0+", same day, next "+WEEKS+" weeks"})},250)}}}catch(e){}return r}}catch(e){}
 /* tuck away rarely used tools */
 function tuck(){try{var tab=document.getElementById("tab-train");if(!tab||document.getElementById("xt165"))return;
  var tp=document.getElementById("templates"),sw=[].slice.call(tab.querySelectorAll(".panel")).filter(function(p){var h=p.querySelector("h2");return h&&/sweat-rate/i.test(h.textContent)})[0];
@@ -26813,6 +26816,78 @@ var tidied=0;async function tidy(){var a=A();if(!live()||role()!=="owner"||!a||S
 setInterval(function(){if(document.hidden)return;try{fetchMine(false)}catch(x){}try{probe()}catch(x){}try{sendPending(false)}catch(x){}try{composerNote()}catch(x){}try{tidy()}catch(x){}},3000);
 document.addEventListener("click",function(ev){var t=ev.target;if(t.closest&&t.closest("[data-nbsend],[data-pmnote]"))setTimeout(function(){sendPending(true)},1500)});
 window.FH261={rows:function(){return ROWS},state:function(){return ST},pending:pending,inbox:inbox,send:sendPending,fetch:fetchMine};
+})();
+
+/* FighterBase v401 (Steve, 16 Nov 2026 08:04, on "Repeating for the next 4 weeks": "is 4 weeks correct or just on repeat ongoing better.
+   We could do ongoing with check on the weekly check in etc."): a class a member says yes to repeating is booked every week from now on,
+   not for 4 weeks.
+   - A standing booking (profile reps[classId] = {cid, title, time, dow, since, skip:{date:1}, ok}) keeps the next 4 weeks booked, topping up
+     a week at a time, so the timetable's "x of 20 going" never fills months ahead with people who may have stopped coming.
+   - Un-booking one date of a repeating class skips just that date (it isn't booked again); "Stop" in the weekly check-in or Plan my week ends it.
+   - The weekly check-in (and Plan my week) lists each standing booking with Skip <its next date> and Stop; after two booked sessions in a row with no
+     attendance it asks "Still coming?" instead of carrying on silently.
+   - If the club takes the class off its timetable, the repeat ends and the member is told once.
+   Classes only: a member's own planned sessions keep the 4-week copy (fh165). Private to the member; the club sees bookings as before. */
+var FH262=(function(){
+var DAY=864e5,AHEAD=4;
+function P(){return (typeof S!=="undefined"&&S&&S.profile)||{}}
+function e(s){try{return esc(String(s==null?"":s))}catch(x){return String(s==null?"":s)}}
+function club(){try{return clubState&&clubState.club}catch(x){return null}}
+function on(k,cid){var c=club();if(!c)return null;try{return classesOn(c,k).filter(function(x){return x.id===cid})[0]||null}catch(x){return null}}
+function wd(k,plural){var n=new Date(k+"T12:00").toLocaleDateString("en-GB",{weekday:"long"});return plural?n+"s":n}
+function reps(){return P().reps||{}}
+function save(){try{profChanged()}catch(x){}try{if(typeof scheduleLeague==="function")scheduleLeague()}catch(x){}}
+function attended(key,k){var at=P().att||{};if(at[key])return true;try{var l=logMap()[k];if(l&&(l.sessions||[]).some(function(s){return s.cid===key}))return true}catch(x){}return false}
+/* the next dates of this class's weekday, from today, for AHEAD weeks */
+function upcoming(r){var out=[],d0=new Date(TODAY+"T12:00").getDay(),off=(r.dow-d0+7)%7;for(var i=0;i<AHEAD;i++)out.push(addDays(TODAY,off+7*i));return out}
+function started(k,cl){if(k!==TODAY)return k<TODAY;try{var n=new Date(),t=String(cl&&cl.time||"00:00");return n.getHours()*60+n.getMinutes()>=(+t.slice(0,2))*60+(+t.slice(3,5))}catch(x){return false}}
+/* keep every standing booking topped up; quietly end ones the club has taken off its timetable */
+var told={};
+function topUp(){var R=reps(),ids=Object.keys(R);if(!ids.length||!club())return 0;var rs=Object.assign({},P().rsvp||{}),n=0,gone=[],ch=false;
+ ids.forEach(function(id){var r=R[id];if(!r||r.stop)return;var miss=0;
+  upcoming(r).forEach(function(k){var cl=on(k,r.cid);if(!cl){if(k!==TODAY)miss++;return}if((r.skip||{})[k]||started(k,cl))return;var key=k+"_"+r.cid;if(!rs[key]){rs[key]=Date.now();n++}});
+  if(miss>=AHEAD-1&&!on(r.since,r.cid)){gone.push(r);r.stop="gone";ch=true}});
+ if(n){P().rsvp=rs;ch=true}
+ if(ch)save();
+ gone.forEach(function(r){if(told[r.cid])return;told[r.cid]=1;try{toast("No longer repeating",(r.title||"A class")+" is no longer on the club's timetable, so it has stopped repeating.")}catch(x){}});
+ return n}
+function add(o){var cl=on(o.date,o.cid);if(!cl)return 0;var R=Object.assign({},reps());
+ R[o.cid]={cid:o.cid,title:cl.title||cl.name||"Class",time:cl.time||"",dow:new Date(o.date+"T12:00").getDay(),since:o.date,skip:{},ok:TODAY};P().reps=R;save();
+ var n=topUp();return n+1}
+function stop(cid){var R=Object.assign({},reps()),r=R[cid];if(!r)return;delete R[cid];P().reps=R;
+ var rs=Object.assign({},P().rsvp||{});upcoming(r).forEach(function(k){var cl=on(k,cid);if(cl&&!started(k,cl))delete rs[k+"_"+cid]});P().rsvp=rs;save()}
+function skipNext(cid,from){var R=Object.assign({},reps()),r=R[cid];if(!r)return null;var k=upcoming(r).filter(function(x){return x>=(from||TODAY)&&!started(x,on(x,cid))})[0];if(!k)return null;
+ r.skip=Object.assign({},r.skip||{});r.skip[k]=1;P().reps=R;var rs=Object.assign({},P().rsvp||{});delete rs[k+"_"+cid];P().rsvp=rs;save();return k}
+/* the last two booked dates before today: both missed? */
+function missedTwo(r){var out=[],k=TODAY;for(var i=0;i<8&&out.length<2;i++){var d0=new Date(k+"T12:00").getDay(),back=(d0-r.dow+7)%7||7;k=addDays(k,-back);if(k<r.since)break;
+  if((P().rsvp||{})[k+"_"+r.cid])out.push(!attended(k+"_"+r.cid,k))}
+ return out.length===2&&out[0]&&out[1]&&!(r.ok&&r.ok>addDays(TODAY,-7))}
+/* un-booking one date of a repeating class skips just that date */
+try{var tr0=toggleRsvp;toggleRsvp=function(key){var had=!!((P().rsvp||{})[key]);var res=tr0.apply(this,arguments);
+ try{var k=key.slice(0,10),cid=key.slice(11),r=reps()[cid];if(r&&!r.stop){var now=!!((P().rsvp||{})[key]);var R=Object.assign({},reps());r=R[cid];r.skip=Object.assign({},r.skip||{});
+  if(had&&!now&&k>=TODAY){r.skip[k]=1;P().reps=R;save()}else if(!had&&now&&r.skip[k]){delete r.skip[k];P().reps=R;save()}}}catch(x){}return res}}catch(x){}
+/* ---- the block in the weekly check-in and Plan my week ---- */
+function list(){var R=reps();return Object.keys(R).map(function(k){return R[k]}).filter(function(r){return r&&!r.stop})}
+function block(){var L=list();if(!L.length)return "";
+ return '<div class="ev262"><div class="h262"><b>Every week</b><span class="muted small">Booked for you each week until you stop. Skip a week or stop any time.</span></div>'+
+  L.map(function(r){var ask=missedTwo(r),nx=upcoming(r).filter(function(k){return !(r.skip||{})[k]&&on(k,r.cid)&&!started(k,on(k,r.cid))})[0];
+   return '<div class="r262'+(ask?' ask':'')+'"><div class="t262"><b>'+e(r.title)+'</b><span>'+e(wd(addDays(TODAY,(r.dow-new Date(TODAY+"T12:00").getDay()+7)%7),true))+(r.time?' · '+e(r.time):'')+'</span>'+
+    (ask?'<span class="q262">You\'ve missed the last two. Still coming?</span>':'')+'</div><div class="b262">'+
+    (ask?'<button type="button" class="btn sm" data-ev262="keep" data-cid="'+e(r.cid)+'">Still coming</button>':'')+
+    (nx?'<button type="button" class="btn ghost sm" data-ev262="skip" data-cid="'+e(r.cid)+'">Skip '+e(new Date(nx+"T12:00").toLocaleDateString("en-GB",{weekday:"short",day:"numeric",month:"short"}))+'</button>':'')+'<button type="button" class="btn ghost sm" data-ev262="stop" data-cid="'+e(r.cid)+'">Stop</button></div></div>'}).join("")+'</div>'}
+function draw(){try{var h=block();document.querySelectorAll(".wa162").forEach(function(w){var x=w.querySelector(".ev262w");if(!h){if(x)x.remove();return}
+  if(!x){x=document.createElement("div");x.className="ev262w";var d=w.querySelector(".days162");if(d)w.insertBefore(x,d);else w.appendChild(x)}
+  if(x.dataset.sig!==h){x.innerHTML=h;x.dataset.sig=h}})}catch(x){}}
+document.addEventListener("click",function(ev){var b=ev.target.closest&&ev.target.closest("[data-ev262]");if(!b)return;ev.preventDefault();var a=b.dataset.ev262,cid=b.dataset.cid,r=reps()[cid];if(!r)return;
+ if(a==="stop"){stop(cid);try{toast("Stopped repeating",(r.title||"This class")+" won't be booked for you any more. Bookings already made for the next few weeks are removed.")}catch(x){}}
+ else if(a==="skip"){var k=skipNext(cid);try{toast(k?"Skipped one week":"Nothing to skip",k?(r.title||"This class")+" on "+new Date(k+"T12:00").toLocaleDateString("en-GB",{weekday:"long",day:"numeric",month:"short"})+" is off. It carries on the week after.":"There's no booking coming up to skip.")}catch(x){}}
+ else if(a==="keep"){var R=Object.assign({},reps());R[cid]=Object.assign({},r,{ok:TODAY});P().reps=R;save();try{toast("Still coming","Good. "+(r.title||"It")+" stays booked every week.")}catch(x){}}
+ draw();try{if(window.FH162&&FH162.redraw)FH162.redraw()}catch(x){}},true);
+(function(){var c=document.createElement("style");c.textContent=".ev262{margin:4px 0 12px;padding:12px;border:1px solid var(--line,#35383E);border-radius:12px;background:var(--surface2,#23262B)}.h262 b{display:block}.h262 span{display:block;margin:2px 0 8px}"+
+ ".r262{display:flex;gap:10px;align-items:center;justify-content:space-between;flex-wrap:wrap;padding:8px 0;border-top:1px solid var(--line,#35383E)}.r262:first-of-type{border-top:0}.t262 b{display:block}.t262 span{display:block;color:var(--muted,#B6B7BD);font-size:13px}"+
+ ".r262.ask{border-left:3px solid #E6A23C;padding-left:10px}.q262{color:#E6A23C!important;font-weight:600}.b262{display:flex;gap:6px;flex-wrap:wrap}";document.head.appendChild(c)})();
+setTimeout(topUp,2500);setInterval(function(){topUp();draw()},5000);
+return {add:add,stop:stop,skipNext:skipNext,topUp:topUp,list:list,missedTwo:missedTwo,draw:draw};
 })();
 
 /* FighterBase v44: always a way back, always a next step. */
