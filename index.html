@@ -14538,7 +14538,8 @@ function club(){return (typeof clubState!=="undefined"&&clubState.club)||null}
 function mem(){return (typeof clubState!=="undefined"&&clubState.members)||[]}
 function TS(){try{return FH69.teachers()||[]}catch(x){return (club()&&club().teachers)||[]}}
 function keyOf(t){return t.uid||t.id}
-function role(uid){var c=club();if(!c)return null;if(arguments.length===0)uid=S.uid;if(!uid)return null;if(c.ownerUid===uid)return"manager";var r=(c.roles||{})[uid];if(r&&r.role)return r.role;if((c.coaches||[]).indexOf(uid)>=0||TS().some(function(t){return t.uid===uid}))return"coach";return null}
+function liveRole(){try{var s=window.FH240&&FH240.state&&FH240.state(),c=club();if(!s||!s.signedIn||!s.role||!c||(c.id&&s.club!==c.id))return null;if(s.role==="owner")return "manager";if(s.acc==null&&s.role!=="member")return null;/* powers not known yet (before m17): the club page decides, as before */return s.acc===true||s.role==="admin"?"admin":s.role==="coach"?"coach":"none"}catch(x){return null}}
+function role(uid){var c=club();if(!c)return null;if(arguments.length===0){var lv=liveRole();if(lv)return lv==="none"?null:lv;uid=S.uid}if(!uid)return null;if(c.ownerUid===uid)return"manager";var r=(c.roles||{})[uid];if(r&&r.role)return r.role;if((c.coaches||[]).indexOf(uid)>=0||TS().some(function(t){return t.uid===uid}))return"coach";return null}
 var PERM={roles:["manager"],unlink:["manager"],schedule:["manager","admin"],payments:["manager","admin"],deals:["manager","admin"],members:["manager","admin","coach"]};
 function can(p){var r=role();return !!r&&(PERM[p]||[]).indexOf(r)>=0}
 function ptOK(t){var c=club(),r=(c.roles||{})[keyOf(t)];return !!(t.pt&&t.pt.on)&&(!r||r.pt!==false)}
@@ -25424,7 +25425,7 @@ var PUB={name:1,city:1,code:1,ownerUid:1,sports:1,brand:1,site:1,about:1,contact
  events94:1,jev202:1,policy202:1,social205:1,blog205:1,courses191:1,front191:1,offers190:1,challenge:1,teamGoal:1,affiliates:1,classPhotos:1,hours:1,billDay:1,market:1,cut260:1,pushCfg:1,shop263:1};
 var LPUB={uid:1,clubId:1,name:1,ring:1,sports:1,optIn:1,rank:1,streak:1,rsvp:1,cant:1,events:1,evEnt:1,gach:1,commit:1,updated:1,weekStart:1,msPublic:1};
 var LOPT={week:1,month:1,daily:1};/* only shown to club-mates when the member opted in to the club league */
-var last={},dirty={},applying=false,roleOf={},joinSt={},timer=null,busy=false,lastPull=0,msg="";
+var powOf={},last={},dirty={},applying=false,roleOf={},joinSt={},timer=null,busy=false,lastPull=0,msg="";
 function me(){return A.me()}
 function on(){return !!me()}
 function swap(o,a,b){if(!a||!b||a===b)return o;return JSON.parse(JSON.stringify(o).split(a).join(b))}
@@ -25449,7 +25450,7 @@ function lPath(path){var a=path.split("/");return a[1]===me()?a[0]+"/"+LU:path}
 var cmClub={},cmSeen={},cmSince={},cmOff=false,cmGone={};/* v356 club photos: the club a photo belongs to (kept after a delete), photos this phone has seen on the server (kept on this phone) */
 try{cmSeen=JSON.parse(localStorage.getItem("fb240cm")||"{}")||{}}catch(x){cmSeen={}}
 function cmKeep(){try{localStorage.setItem("fb240cm",JSON.stringify(cmSeen))}catch(x){}}
-function mine(path){var a=path.split("/");if(a.length!==2)return false;if(a[0]==="clubmedia"){var mc=(store[path]||{}).clubId||cmClub[path];return live(mc)&&(roleOf[mc]==="owner"||roleOf[mc]==="coach")}if(a[0]==="clubs")return live(a[1])&&(roleOf[a[1]]==="owner"||roleOf[a[1]]==="coach");if(a[1]===LU&&waiting((store[path]||{}).clubId||clubId()))return false;/* v388: not shared with a club that hasn't approved me yet */
+function mine(path){var a=path.split("/");if(a.length!==2)return false;if(a[0]==="clubmedia"){var mc=(store[path]||{}).clubId||cmClub[path];return live(mc)&&(roleOf[mc]==="owner"||roleOf[mc]==="admin"||roleOf[mc]==="coach")}if(a[0]==="clubs")return live(a[1])&&(roleOf[a[1]]==="owner"||roleOf[a[1]]==="coach");if(a[1]===LU&&waiting((store[path]||{}).clubId||clubId()))return false;/* v388: not shared with a club that hasn't approved me yet */
  return (a[0]==="league"||a[0]==="props"||a[0]==="partners")&&a[1]===LU&&live((store[path]||{}).clubId||clubId())}
 function mark(p){if(applying||!on())return;var a=String(p).split("/");if(a.length!==2||!/^(clubs|league|props|partners|clubmedia)$/.test(a[0]))return;if(a[0]==="clubmedia"&&store[p]&&store[p].clubId)cmClub[p]=store[p].clubId;dirty[p]=1;clearTimeout(timer);timer=setTimeout(push,1500)}
 if(window.__FB_LOCAL_HOOK)window.__FB_LOCAL_HOOK(mark);
@@ -25482,6 +25483,8 @@ async function push(){if(!on()||busy)return;var ps=Object.keys(dirty).filter(min
 function pendingCoach(){try{var r=S.profile&&S.profile.coachReq,c=clubId();return !!(r&&r.club===c&&!roleOf[c])}catch(e){return false}}
 /* ---------- pull ---------- */
 async function role(cid){try{roleOf[cid]=await rpc("my_club_role",{c:cid})}catch(e){}
+ /* v406 (m17, Codex findings 5 and 9): the database says what this person may do; until m17 is applied this call fails and nothing changes */
+ if(roleOf[cid]==="owner"||roleOf[cid]==="admin"||roleOf[cid]==="coach"){try{powOf[cid]=await rpc("my_club_powers",{c:cid})}catch(e){}}else delete powOf[cid];
  /* v388 (m12): a club can ask new members to wait for approval; "pending" or "declined" comes from my_join_status */
  if(roleOf[cid])joinSt[cid]="active";else{try{joinSt[cid]=await rpc("my_join_status",{c:cid})}catch(e){}}return roleOf[cid]}
 function waiting(cid){return !!(cid&&(joinSt[cid]==="pending"||joinSt[cid]==="declined"))}
@@ -25503,7 +25506,7 @@ async function pull(){var cid=clubId();if(!on()||busy||!live(cid))return;busy=tr
   Object.keys(by).forEach(function(sp){var P=by[sp];if(sp.indexOf("league/")!==0||!P)return;if(payOf[sp])P.srv=payOf[sp];else if(P.srv&&P.srv.club!==cid)delete P.srv;if(confOf[sp])P.club=confOf[sp];else delete P.club});
   Object.keys(payOf).forEach(function(lk){if(!by[lk])by[lk]={srv:payOf[lk]}});Object.keys(confOf).forEach(function(lk){if(!by[lk])by[lk]={club:confOf[lk]};else by[lk].club=confOf[lk]});
   cmNew.forEach(function(r){cmSeen[r.path]=1;cmClub[r.path]=cid;if(!cmSince[cid]||r.updated_at>cmSince[cid])cmSince[cid]=r.updated_at});if(cmNew.length)cmKeep();
-  applying=true;var myc=(by["league/"+me()]||{}).club,staffHere=roleOf[cid]==="owner"||roleOf[cid]==="coach";
+  applying=true;var myc=(by["league/"+me()]||{}).club,staffHere=roleOf[cid]==="owner"||roleOf[cid]==="admin"||roleOf[cid]==="coach";
   Object.keys(by).forEach(function(sp){var P=by[sp],lp=lPath(sp);if(dirty[lp])return;var m={};
    ["pub","staff","self"].forEach(function(pt){if(P[pt]){Object.assign(m,P[pt]);last[sp+"|"+pt]=JSON.parse(J(P[pt]))}});
    if(P.srv)m.srv=P.srv;if(sp.indexOf("clubs/")===0)m.id=sp.split("/")[1];
@@ -25583,7 +25586,7 @@ var css=document.createElement("style");css.textContent=".cs240err{color:#FF8A70
 setInterval(function(){if(document.hidden||!on())return;if(Date.now()-lastPull>20000)pull();paint()},2000);
 document.addEventListener("visibilitychange",function(){if(!document.hidden&&on())pull()});
 setTimeout(function(){if(on())pull()},1500);
-return {on:true,pull:pull,push:push,makeLive:makeLive,join:join,partsOf:partsOf,state:function(){return {signedIn:on(),club:clubId(),role:roleOf[clubId()]||null,join:joinSt[clubId()]||null,lastPull:lastPull,msg:msg,dirty:Object.keys(dirty)}}}})();
+return {on:true,pull:pull,push:push,makeLive:makeLive,join:join,partsOf:partsOf,state:function(){var pw=powOf[clubId()];return {signedIn:on(),club:clubId(),role:roleOf[clubId()]||null,acc:(pw&&typeof pw.accounts==="boolean")?pw.accounts:(roleOf[clubId()]==="owner"?true:null),owner:roleOf[clubId()]==="owner",join:joinSt[clubId()]||null,lastPull:lastPull,msg:msg,dirty:Object.keys(dirty)}}}})();
 
 /* FighterBase v347: card payments for live clubs through Stripe (money path M3, Steve 12 Nov 2026).
    Club side (Money, Accounts): "Take card payments" card. The owner (or staff with the accounts permission) taps Set up, fills in Stripe's own
@@ -25605,7 +25608,10 @@ function cid(){try{return S.profile.clubId||null}catch(x){return null}}
 function live(){var c=cid();return !!(c&&UUID.test(c)&&A.me())}
 function e(s){return String(s==null?"":s).replace(/[&<>"]/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]})}
 function back(){return location.origin+location.pathname}
-function staff(){try{var f=window.FH240&&FH240.state&&FH240.state();return f&&(f.role==="owner"||f.role==="coach")}catch(x){return false}}
+function staff(){try{var f=window.FH240&&FH240.state&&FH240.state();return f&&(f.role==="owner"||((f.role==="admin"||f.role==="coach")&&f.acc!==false))}catch(x){return false}}
+/* v406 (m17, Codex finding 5): connecting Stripe and switching on Direct Debit are the owner's; Accounts staff see the status */
+function isOwner(){try{var f=window.FH240&&FH240.state&&FH240.state();return !!(f&&f.role==="owner")}catch(x){return false}}
+function ownerOnly(h){return isOwner()?h:h.replace(/<button[^>]*data-st241="(onboard|dd_on)"[^>]*>[^<]*<\/button>/g,'<span class="muted small">Only the club owner can do this in Stripe.</span>')}
 async function load(){var c=cid();if(!live())return null;try{var r=await A.api("GET","club_stripe?select=charges_enabled,payouts_enabled,details_submitted,due,livemode,updated_at&club_id=eq."+c);var old=st[c];st[c]=(r&&r[0])||{none:true};if(old)["dd","ddReq","ddDue","ddWhy"].forEach(function(k){if(old[k]!==undefined&&st[c][k]===undefined)st[c][k]=old[k]});at=Date.now()}catch(x){}return st[c]}
 function ready(){var s=st[cid()];return !!(s&&s.charges_enabled)}
 /* v390 (Council C-021 proposal c, Steve's yes 15 Nov 2026 14:37: "the payments is the thing ... It takes that hassle away from them"):
@@ -25641,7 +25647,7 @@ function clubCard(){var host=document.getElementById("hubaccBody");if(!host||!ho
  else h+='<p class="small" style="margin:0 0 8px">Members can pay by card'+(s.dd==="active"?' or Direct Debit':'')+' from their Club membership. Paid members are ticked off here by themselves'+(s.payouts_enabled?'':'; Stripe will start paying out to your bank once it has checked your bank details')+'. Refunds, receipts and payouts are in your Stripe Dashboard.</p><div class="row"><a class="btn ghost" href="https://dashboard.stripe.com/" target="_blank" rel="noopener">Open my Stripe Dashboard</a><button type="button" class="btn ghost" data-st241="status">Refresh</button></div>'+ddRow(s);
  if(s&&s.livemode===false&&!s.none)h+='<p class="muted small" style="margin:6px 0 0">Test mode: use Stripe\'s test card 4242 4242 4242 4242, or for Direct Debit sort code 108800 and account 00012345; no real money moves.</p>';
  if(note)h+='<p class="small" style="margin:6px 0 0">'+e(note)+'</p>';
- if(el.innerHTML!==h)el.innerHTML=h;if(s&&s.charges_enabled&&s.dd===undefined)ddCheck()}
+ h=ownerOnly(h);if(el.innerHTML!==h)el.innerHTML=h;if(s&&s.charges_enabled&&s.dd===undefined)ddCheck()}
 /* ---------- member side ---------- */
 function mine(){try{var m=(clubState.members||[]).filter(function(x){return x.uid===S.uid})[0];return m&&m.srv}catch(x){return null}}
 function processing(){var sv=mine();return !!(sv&&sv.sub&&sv.sub.first==="processing"&&sv.sub.status!=="cancelled")}
@@ -25889,7 +25895,7 @@ async function reconcile(){var cid=clubId();if(!me()||busy||!UUID.test(cid||"")|
  if(prevClub!==cid){prev=null;prevClub=cid}busy=true;
  try{var perm=cd.coachPerm||{},own=srv(cd.ownerUid||""),co=(cd.coaches||[]).map(srv).filter(function(u){return UUID.test(u)&&u!==me()&&u!==own});
   var rows=await A.api("GET","club_staff?select=user_id,role,can_accounts&club_id=eq."+cid)||[],have={};rows.forEach(function(r){have[r.user_id]=r});
-  for(var i=0;i<co.length;i++){var u=co[i],acc=!!((perm[u]||{}).acc);
+  for(var i=0;i<co.length;i++){var u=co[i],rl=(cd.roles||{})[u]||{},acc=!!((perm[u]||{}).acc)||rl.role==="admin"||rl.role==="manager";/* v406: Admin manager = Accounts permission */
    if(!have[u]){await A.api("POST","club_staff",{club_id:cid,user_id:u,role:"coach",can_accounts:acc},{Prefer:"resolution=ignore-duplicates,return=minimal"});nIns++}
    else if(have[u].role==="coach"&&!!have[u].can_accounts!==acc){await A.api("PATCH","club_staff?club_id=eq."+cid+"&user_id=eq."+u+"&role=eq.coach",{can_accounts:acc},{Prefer:"return=minimal"});nAcc++}}
   if(prev)for(var j=0;j<prev.length;j++){var x=prev[j];if(co.indexOf(x)<0&&have[x]&&have[x].role==="coach"){await A.api("DELETE","club_staff?club_id=eq."+cid+"&user_id=eq."+x+"&role=eq.coach",null,{Prefer:"return=minimal"});nDel++}}
@@ -26498,7 +26504,7 @@ function st(){try{return (window.FH240&&FH240.state&&FH240.state())||{}}catch(x)
 function cid(){try{return (S.profile&&S.profile.clubId)||""}catch(x){return ""}}
 function live(){return UUID.test(cid())&&!!(A()&&A().signedIn())}
 function join(){var s=st();return live()&&s.club===cid()?s.join:null}
-function staff(){var s=st();return live()&&s.club===cid()&&(s.role==="owner"||s.role==="coach")}
+function staff(){var s=st();return live()&&s.club===cid()&&(s.role==="owner"||((s.role==="admin"||s.role==="coach")&&s.acc!==false))}/* v406 (m17): coaches without Accounts no longer approve members */
 function owner(){var s=st();return live()&&s.club===cid()&&s.role==="owner"}
 function club(){try{return (typeof clubState!=="undefined"&&clubState.club)||null}catch(x){return null}}
 function cname(){var c=club();return (c&&c.name)||"Your club"}
