@@ -25464,6 +25464,12 @@ async function pull(){var cid=clubId();if(!on()||busy||!live(cid))return;busy=tr
    if(chg.length){var inc=since&&chg.every(function(r){return r.updated_at>since});cmNew=await A.api("GET","shared_docs?select=path,part,data,updated_at&club_id=eq."+cid+"&path=like.clubmedia/*"+(inc?"&updated_at=gt."+encodeURIComponent(since):""))||[]}}
   var mineRows=await A.api("GET","shared_docs?select=path,part,data&owner=eq."+me())||[];
   var by={};rows.concat(mineRows).concat(cmNew).forEach(function(r){(by[r.path]=by[r.path]||{})[r.part]=r.data||{}});
+  /* v399 (Codex finding 3): payment records are kept per club at pay/<club>/<member>. Only this club's go onto its members' cards, never
+     another club's (my own records from other clubs come down with mineRows and are left out here). An old per-member record (league/<member>
+     "srv", before m14) is used only if it says it belongs to this club and there is no new one. */
+  var payOf={};Object.keys(by).forEach(function(sp){if(sp.indexOf("pay/")!==0)return;var a=sp.split("/");if(a[1]===cid&&by[sp].srv)payOf["league/"+a[2]]=by[sp].srv;delete by[sp]});
+  Object.keys(by).forEach(function(sp){var P=by[sp];if(sp.indexOf("league/")!==0||!P)return;if(payOf[sp])P.srv=payOf[sp];else if(P.srv&&P.srv.club!==cid)delete P.srv});
+  Object.keys(payOf).forEach(function(lk){if(!by[lk])by[lk]={srv:payOf[lk]}});
   cmNew.forEach(function(r){cmSeen[r.path]=1;cmClub[r.path]=cid;if(!cmSince[cid]||r.updated_at>cmSince[cid])cmSince[cid]=r.updated_at});if(cmNew.length)cmKeep();
   applying=true;var myc=(by["league/"+me()]||{}).club,staffHere=roleOf[cid]==="owner"||roleOf[cid]==="coach";
   Object.keys(by).forEach(function(sp){var P=by[sp],lp=lPath(sp);if(dirty[lp])return;var m={};
