@@ -8176,7 +8176,12 @@ function body(){var s=steps()[step],h="";
  return h}
 function canNext(){var s=steps()[step];if(s.indexOf("yn_")===0)return A[s.slice(3)]!=null;if(s==="name")return (A.name||"").trim().length>0;if(s==="sport")return A.sports.length>0||!!A.nomart;if(s==="exp")return !!A.exp;if(s==="stance")return true;if(s==="adult")return !!A.adult;if(s==="quick")return !!A.preset;if(s==="yesno")return YNQ().every(function(q){return A[q[0]]!=null});if(s==="train")return A.tmode==="count"?+A.tn>0:A.tdays.length>0;
  if(["rec","fight","weight","grading","food","skills","gym"].indexOf(s)>=0){var k={rec:"rec",fight:"fightQ",weight:"wtQ",grading:"grQ",food:"foodQ",skills:"skQ",gym:"gymQ"}[s];if(A[k]==null)return false;if(s==="gym"&&A.gymQ&&!A.club)return false;if(s==="fight"&&A.fightQ&&!A.fdate)return false}return true}
-function render(){try{if(A&&!(S.profile&&S.profile.onboarded))localStorage.setItem("fb_obdraft_v1",JSON.stringify({A:A,step:step,at:Date.now()}))}catch(e){}var el=document.getElementById("fbOb");if(!el){el=document.createElement("div");el.id="fbOb";el.setAttribute("role","dialog");el.setAttribute("aria-modal","true");el.setAttribute("aria-label","Set up FighterBase");document.body.appendChild(el)}
+/* v398 (Codex review 15 Nov, finding 2, FB-061): an unfinished set-up is saved for its own account only (fb_obdraft_v2 with the account's id),
+   never offered to another account on the same browser, and the open wizard starts again if a different account signs in. */
+function who60(){try{return (window.FH181&&FH181.who&&FH181.who())||"anon"}catch(e){return "anon"}}
+function render(){if(A&&A._u&&A._u!==who60()){/* wait until the new account's own data is in place, so nothing of the last account's profile is read */
+  if(window.FH181&&FH181.ready&&FH181.who&&FH181.who()&&!FH181.ready()){setTimeout(render,800);return}A=fresh();A._u=who60();step=0;SEEN={}}
+ try{if(A&&!(S.profile&&S.profile.onboarded))localStorage.setItem("fb_obdraft_v2",JSON.stringify({u:who60(),A:A,step:step,at:Date.now()}))}catch(e){}var el=document.getElementById("fbOb");if(!el){el=document.createElement("div");el.id="fbOb";el.setAttribute("role","dialog");el.setAttribute("aria-modal","true");el.setAttribute("aria-label","Set up FighterBase");document.body.appendChild(el)}
  var st=steps();if(step>=st.length)step=st.length-1;var pct=Math.round(step/(st.length-1)*100),last=st[step]==="done",sc=secOf(st[step]),act=activeSecs(),sn=sc?act.indexOf(sc)+1:0;
  var h=body();if(!last)h=h.replace("</p>","</p>"+whyHtml(st[step]));
  var kick=sc?'<div class="ob-kick" style="--sc:'+sc[3]+'">Part '+sn+' of '+act.length+' · '+esc(sc[1])+'</div>':'';
@@ -8235,13 +8240,13 @@ function finish(){var p=P(),sp=A.sports.slice(),g=p.eg?JSON.parse(JSON.stringify
  p.compHist={has:A.rec,ic:A.ic,w:A.w,l:A.l,d:A.d,fin:A.fin};p.hidePractice=!!A.hidePr&&(+A.w||0)+(+A.l||0)+(+A.d||0)>0;
  /* gym */
  var joined=false;if(A.gymQ&&A.club&&A.clubId){if(p.clubId!==A.clubId)joined=true;p.clubId=A.clubId;p.leagueOptIn=false}
- try{localStorage.removeItem("fb_obdraft_v1")}catch(e){}delete p.obDraft;try{if(window.FH185){S.profile=p;(A.ms||[]).forEach(function(k){var d={s1:{type:"sess",n:1},s10:{type:"sess",n:10},w4:{type:"weeks",n:4},m12:{type:"months",n:12}}[k];if(d)FH185.adopt(d)});if(A.msOwn)FH185.adopt({type:"manual",title:A.msOwn})}}catch(e){}p.onboarded=true;p.roadSkip=true;p.created=p.created||TD;p.obV=2;S.profile=p;
+ try{localStorage.removeItem("fb_obdraft_v2");localStorage.removeItem("fb_obdraft_v1")}catch(e){}delete p.obDraft;try{if(window.FH185){S.profile=p;(A.ms||[]).forEach(function(k){var d={s1:{type:"sess",n:1},s10:{type:"sess",n:10},w4:{type:"weeks",n:4},m12:{type:"months",n:12}}[k];if(d)FH185.adopt(d)});if(A.msOwn)FH185.adopt({type:"manual",title:A.msOwn})}}catch(e){}p.onboarded=true;p.roadSkip=true;p.created=p.created||TD;p.obV=2;S.profile=p;
  if(p.clubId&&A.cons&&window.FB54)try{FB54.apply(A.cons)}catch(e){}
  var nm=A.name,cl=A.club;close();try{profChanged()}catch(e){}try{window.FBN&&FBN.sync()}catch(e){}["renderProfile","renderTargets","renderLib","renderCheckin"].forEach(function(f){try{if(typeof window[f]==="function")window[f]()}catch(e){}});
  if(joined){try{pushClubEvent("joined the club")}catch(e){}try{subscribeClub()}catch(e){}}
  try{scheduleLeague()}catch(e){}try{showTab("today");scrollTo(0,0)}catch(e){}toast("Welcome to FighterBase"+(nm?", "+nm:""),cl?"Linked to "+cl.name:"Your plan is ready")}
 function close(){var el=document.getElementById("fbOb");if(el)el.hidden=true;document.body.style.overflow="";A=null}
-function open(){A=fresh();step=0;SEEN={};try{var dr=JSON.parse(localStorage.getItem("fb_obdraft_v1")||"null");if(dr&&dr.A&&Date.now()-dr.at<30*86400000&&!(S.profile&&S.profile.onboarded)){A=Object.assign(A,dr.A);step=+dr.step||0}}catch(e){}var m=(location.hash||"").match(/^#(?:join|book|pt)=([^&]+)/);/* v385: club-site links #book=CODE and #pt=CODE fill the code too; &offer=... is not part of the code */if(!m&&window.FH116_PENDING&&!A.clubId){m=[0,encodeURIComponent(window.FH116_PENDING)];window.FH116_PENDING=null}if(m&&!A.clubId){A.gymQ=true;A.code=decodeURIComponent(m[1]).trim().toUpperCase();setTimeout(function(){if(A&&A.code&&!A.club)find()},400)}
+function open(){A=fresh();step=0;SEEN={};try{localStorage.removeItem("fb_obdraft_v1")/* v398: the old draft had no owner, so it is never reused */;var dr=JSON.parse(localStorage.getItem("fb_obdraft_v2")||"null");if(dr&&dr.A&&dr.u===who60()&&Date.now()-dr.at<30*86400000&&!(S.profile&&S.profile.onboarded)){A=Object.assign(A,dr.A);step=+dr.step||0}}catch(e){}A._u=who60();var m=(location.hash||"").match(/^#(?:join|book|pt)=([^&]+)/);/* v385: club-site links #book=CODE and #pt=CODE fill the code too; &offer=... is not part of the code */if(!m&&window.FH116_PENDING&&!A.clubId){m=[0,encodeURIComponent(window.FH116_PENDING)];window.FH116_PENDING=null}if(m&&!A.clubId){A.gymQ=true;A.code=decodeURIComponent(m[1]).trim().toUpperCase();setTimeout(function(){if(A&&A.code&&!A.club)find()},400)}
  try{if(S.profile&&!S.profile.onboarded&&typeof ob!=="undefined"){}var o=document.getElementById("ob");if(o)o.hidden=true}catch(e){}render()}
 /* replace the old setup everywhere */
 window.openOnboarding=open;try{openOnboarding=open}catch(e){}
@@ -20357,36 +20362,49 @@ var FH181=(function(){
 if(!window.__FB_LOCAL||!window.__FB_DEMO||!window.__FB_DEMO.store)return {on:false};
 var URL_="https://xwuqyzjdyfypyglkvpnp.supabase.co",KEY="sb_publishable_UE7Dwez6cWHaU0jRwxYQJg_lYFkD-6g",D=window.__FB_DEMO,store=D.store,uid=D.uid;
 var SK="fb_acct_v1",DK="fb_acct_dirty_v1",ses=null,dirty={},msg="",err="",busy=false,last=null,applying=false,timer=null,up=false;
-try{ses=JSON.parse(localStorage.getItem(SK)||"null")}catch(e){}try{dirty=JSON.parse(localStorage.getItem(DK)||"{}")||{}}catch(e){dirty={}}
+/* v398 (Codex review 15 Nov, finding 1, FB-061): a browser can hold one account's documents while another account signs in. Three guards:
+   (a) a new session is "not ready" (ses.init) until its first private read has finished and the browser's data has been sorted (backed up
+       and cleared if it was someone else's); until then nothing uploads, nothing is marked to upload, and the other sync modules see no account
+       (me() is null), so a failed first read can never lead to the old data going up under the new account;
+   (b) the list of documents waiting to upload belongs to one account (saved with its id) and is dropped if a different account is signed in;
+   (c) every sign-in or sign-out starts a new generation (gen); a token refresh, read or upload started under an older one is discarded. */
+var gen=0;
+try{ses=JSON.parse(localStorage.getItem(SK)||"null")}catch(e){}
+try{var dk=JSON.parse(localStorage.getItem(DK)||"{}")||{};if(dk&&dk.v===2){dirty=(ses&&dk.u===ses.uid&&dk.d)||{}}else{var o0=null;try{o0=localStorage.getItem("fb181last")}catch(e){}dirty=(ses&&o0===ses.uid)?dk:{}}}catch(e){dirty={}}
+function ready(){return !!(ses&&ses.init===true)}
 function esc(s){return String(s==null?"":s).replace(/[&<>"']/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]})}
 function sv(){try{if(ses)localStorage.setItem(SK,JSON.stringify(ses));else localStorage.removeItem(SK)}catch(e){}}
-function sd(){try{localStorage.setItem(DK,JSON.stringify(dirty))}catch(e){}}
+function sd(){try{localStorage.setItem(DK,JSON.stringify({v:2,u:ses?ses.uid:null,d:dirty}))}catch(e){}}
 function jwtSub(t){try{return JSON.parse(atob(t.split(".")[1].replace(/-/g,"+").replace(/_/g,"/"))).sub}catch(e){return null}}
 function hdr(a){var h={apikey:KEY,"Content-Type":"application/json"};if(a&&ses&&ses.tok)h.Authorization="Bearer "+ses.tok;return h}
 function fail(r,j){var m=(j&&(j.message||j.msg||j.error_description||j.hint||j.error))||("Request failed ("+r.status+")");return new Error(m)}
 async function auth(path,body){var r=await fetch(URL_+"/auth/v1/"+path,{method:"POST",headers:hdr(false),body:JSON.stringify(body)});var j={};try{j=await r.json()}catch(e){}if(!r.ok)throw fail(r,j);return j}
-function setSes(j){if(j&&j.access_token){ses={tok:j.access_token,ref:j.refresh_token,uid:jwtSub(j.access_token),email:(j.user&&j.user.email)||(ses&&ses.email)||""};sv()}}
-async function refresh(){if(!ses||!ses.ref)return false;try{setSes(await auth("token?grant_type=refresh_token",{refresh_token:ses.ref}));return true}catch(e){if(/invalid|expired|not found/i.test(e.message)){ses=null;sv()}return false}}
-async function api(method,path,body,extra){var go=function(){return fetch(URL_+"/rest/v1/"+path,{method:method,headers:Object.assign(hdr(true),extra||{}),body:body==null?undefined:JSON.stringify(body)})};
- var r=await go();if(r.status===401&&await refresh())r=await go();var t=await r.text(),j=null;try{j=t?JSON.parse(t):null}catch(e){}if(!r.ok)throw fail(r,j);return j}
+function setSes(j,keep){if(j&&j.access_token){var nu=jwtSub(j.access_token),same=!!(ses&&ses.uid===nu);if(!keep||!same)gen++;
+ ses={tok:j.access_token,ref:j.refresh_token,uid:nu,email:(j.user&&j.user.email)||(same&&ses.email)||"",init:!!(keep&&same&&ses.init)};sv()}}
+async function refresh(){if(!ses||!ses.ref)return false;var g=gen,u=ses.uid;try{var j=await auth("token?grant_type=refresh_token",{refresh_token:ses.ref});
+ if(g!==gen||!ses||ses.uid!==u)return false;/* v398: signed out or switched while this was on its way: never bring the old session back */
+ setSes(j,true);return true}catch(e){if(g===gen&&/invalid|expired|not found/i.test(e.message)){ses=null;gen++;sv()}return false}}
+async function api(method,path,body,extra){var g0=gen;var go=function(){return fetch(URL_+"/rest/v1/"+path,{method:method,headers:Object.assign(hdr(true),extra||{}),body:body==null?undefined:JSON.stringify(body)})};
+ var r=await go();if(r.status===401&&await refresh()&&gen===g0)r=await go();var t=await r.text(),j=null;try{j=t?JSON.parse(t):null}catch(e){}if(!r.ok)throw fail(r,j);return j}
 /* ---- documents <-> rows ---- */
 function kindOf(p){if(p.indexOf("library/")===0||p.indexOf(uid)<0)return null;return p.split(uid).join("{u}")}
 function pathOf(k){return k.split("{u}").join(uid)}
 function mine(){return Object.keys(store).filter(function(p){return kindOf(p)})}
-function mark(p){if(!ses||applying||!kindOf(p))return;dirty[p]=1;sd();clearTimeout(timer);timer=setTimeout(push,3000);paint()}
+function mark(p){if(!ready()||applying||!kindOf(p))return;dirty[p]=1;sd();clearTimeout(timer);timer=setTimeout(push,3000);paint()}
 if(window.__FB_LOCAL_HOOK)window.__FB_LOCAL_HOOK(mark);
-async function push(){if(!ses||up||hold)return;var ps=Object.keys(dirty);if(!ps.length)return;up=true;
- try{var rows=[],dels=[];ps.forEach(function(p){var k=kindOf(p);if(!k)return;if(p in store)rows.push({user_id:ses.uid,kind:k,data:store[p]});else dels.push(k)});
-  for(var i=0;i<rows.length;i+=15)await api("POST","member_private?on_conflict=user_id,kind",rows.slice(i,i+15),{Prefer:"resolution=merge-duplicates,return=minimal"});
-  for(var j=0;j<dels.length;j++)await api("DELETE","member_private?user_id=eq."+ses.uid+"&kind=eq."+encodeURIComponent(dels[j]),null,{Prefer:"return=minimal"});
-  ps.forEach(function(p){delete dirty[p]});sd();last=Date.now();err=""}
+async function push(){if(!ready()||up||hold)return;var ps=Object.keys(dirty);if(!ps.length)return;up=true;var g=gen,u=ses.uid;
+ var still=function(){if(g!==gen||!ses||ses.uid!==u)throw new Error("the account changed")};
+ try{var rows=[],dels=[];ps.forEach(function(p){var k=kindOf(p);if(!k)return;if(p in store)rows.push({user_id:u,kind:k,data:store[p]});else dels.push(k)});
+  for(var i=0;i<rows.length;i+=15){still();await api("POST","member_private?on_conflict=user_id,kind",rows.slice(i,i+15),{Prefer:"resolution=merge-duplicates,return=minimal"})}
+  for(var j=0;j<dels.length;j++){still();await api("DELETE","member_private?user_id=eq."+u+"&kind=eq."+encodeURIComponent(dels[j]),null,{Prefer:"return=minimal"})}
+  still();ps.forEach(function(p){delete dirty[p]});sd();last=Date.now();err=""}
  catch(e){err="Not backed up yet: "+e.message}
  up=false;paint()}
 var prov={google:null,apple:null};
 function oauthReturn(){try{var h=location.hash||"";if(h.indexOf("access_token=")<0)return false;var q={};h.replace(/^#/,"").split("&").forEach(function(x){var k=x.split("=");q[k[0]]=decodeURIComponent(k[1]||"")});
  if(q.error_description){err=q.error_description.replace(/\+/g," ");history.replaceState(null,"",location.pathname+location.search);return false}
- if(q.access_token){ses={tok:q.access_token,ref:q.refresh_token,uid:jwtSub(q.access_token),email:""};sv();history.replaceState(null,"",location.pathname+location.search);
-  fetch(URL_+"/auth/v1/user",{headers:hdr(true)}).then(function(r){return r.json()}).then(function(u){if(u&&u.email){ses.email=u.email;sv()}paint()}).catch(function(){});msg="Signed in.";return true}}catch(e){}return false}
+ if(q.access_token){gen++;ses={tok:q.access_token,ref:q.refresh_token,uid:jwtSub(q.access_token),email:"",init:false};sv();history.replaceState(null,"",location.pathname+location.search);
+  var g1=gen;fetch(URL_+"/auth/v1/user",{headers:hdr(true)}).then(function(r){return r.json()}).then(function(u){if(g1===gen&&ses&&u&&u.email){ses.email=u.email;sv()}paint()}).catch(function(){});msg="Signed in.";return true}}catch(e){}return false}
 function loadProviders(){fetch(URL_+"/auth/v1/settings",{headers:{apikey:KEY}}).then(function(r){return r.json()}).then(function(j){var e=(j&&j.external)||{};prov.google=!!e.google;prov.apple=!!e.apple;lastH="";paint()}).catch(function(){})}
 function oauth(p){if(!prov[p]){err=p==="google"?"Google sign-in is not switched on yet. It needs a one-off setup first.":"Apple sign-in comes when the Apple developer account is set up.";msg="";paint();return}
  location.href=URL_+"/auth/v1/authorize?provider="+p+"&redirect_to="+encodeURIComponent(location.origin+"/")}
@@ -20409,10 +20427,11 @@ function wipe(keep){applying=true;mine().forEach(function(p){if(keep&&keep(p))re
 function askOwn(name){var el=document.getElementById("own181");if(!el){el=document.createElement("div");el.id="own181";el.setAttribute("role","dialog");el.setAttribute("aria-modal","true");el.setAttribute("aria-label","Whose data is this?");document.body.appendChild(el)}
  el.innerHTML='<div class="o181"><span class="g-small" style="margin:0">One quick check</span><h2>This browser already has FighterBase data for '+esc(name)+'</h2><p>Is that you? If it\'s someone else\'s, start fresh: their data stays saved on this browser as a backup and is never added to your account.</p><div class="g-btns"><button class="btn gold" type="button" data-own181="fresh">Start fresh, it\'s not me</button><button class="btn ghost" type="button" data-own181="keep">Yes, it\'s me: keep it</button></div></div>';el.hidden=false}
 document.addEventListener("click",function(ev){var b=ev.target.closest&&ev.target.closest("[data-own181]");if(!b||!ses)return;var el=document.getElementById("own181");
- if(b.dataset.own181==="keep"){hold=false;setOwner(ses.uid);mine().forEach(function(p){dirty[p]=1});sd();if(el)el.hidden=true;push()}
+ if(b.dataset.own181==="keep"){hold=false;setOwner(ses.uid);ses.init=true;sv();mine().forEach(function(p){dirty[p]=1});sd();if(el)el.hidden=true;push()}
  else{backupLocal();wipe();dirty={};sd();hold=false;setOwner(ses.uid);if(el)el.hidden=true;setTimeout(function(){location.reload()},300)}});
 (function(){var c=document.createElement("style");c.textContent="#own181{position:fixed;inset:0;z-index:2147483001;background:#0B0C0F;display:flex;align-items:center;justify-content:center;padding:16px}#own181[hidden]{display:none}.o181{max-width:460px;background:#14151a;border:1px solid rgba(255,255,255,.12);border-radius:18px;padding:22px;color:#F4EFE6;display:flex;flex-direction:column;gap:10px}.o181 h2{margin:0;font-size:22px}.o181 p{margin:0;color:#C9C2B6}.o181 .g-btns{display:flex;flex-direction:column;gap:10px}.o181 .btn{width:100%}";document.head.appendChild(c)})();
-async function pull(first){if(!ses||hold)return;try{var rows=await api("GET","member_private?select=kind,data");var cloud={};(rows||[]).forEach(function(r){cloud[r.kind]=r.data});
+async function pull(first){if(!ses||hold)return;if(!ready())first=true;/* v398: until the first read has finished, every read is treated as the first */
+ var g=gen,u=ses.uid;try{var rows=await api("GET","member_private?select=kind,data");if(g!==gen||!ses||ses.uid!==u)return;var cloud={};(rows||[]).forEach(function(r){cloud[r.kind]=r.data});
   var owner=ownerOf(),nc=Object.keys(cloud).length;
   if(first&&owner&&owner!==ses.uid){backupLocal();wipe();dirty={};sd()}/* another account's data: backed up, not copied */
   else if(first&&!owner&&nc){backupLocal();wipe(function(p){return dirty[p]||(kindOf(p) in cloud)})}/* leftovers next to a real account stay out */
@@ -20421,7 +20440,8 @@ async function pull(first){if(!ses||hold)return;try{var rows=await api("GET","me
   var changed=0;applying=true;
   Object.keys(cloud).forEach(function(k){var p=pathOf(k);if(dirty[p])return;if(canon(store[p])!==canon(cloud[k])){D.db.doc(p).set(cloud[k]);changed++}});
   applying=false;
-  mine().forEach(function(p){var k=kindOf(p);if(!(k in cloud))dirty[p]=1});sd();await push();last=Date.now();setOwner(ses.uid);
+  setOwner(u);if(!ses.init){ses.init=true;sv()}/* v398: this account's data is sorted: uploads may start */
+  mine().forEach(function(p){var k=kindOf(p);if(!(k in cloud))dirty[p]=1});sd();await push();last=Date.now();
   if(changed&&!sessionStorage.getItem("fb181r")){sessionStorage.setItem("fb181r","1");setTimeout(function(){keepPlace();location.reload()},400)}
   else sessionStorage.removeItem("fb181r")}
  catch(e){applying=false;err="Could not reach the database: "+e.message}paint()}
@@ -20436,7 +20456,7 @@ async function sign(kind,pre){pre=pre||"a181";var em=(document.getElementById(pr
  busy=false;paint()}
 async function reset(pre){var em=((document.getElementById((pre||"a181")+"e")||{}).value||"").trim();if(!em){err="Type your email first.";paint();return}
  try{await auth("recover?redirect_to="+encodeURIComponent(location.origin+"/"),{email:em});msg="If that email has an account, a reset link is on its way.";err=""}catch(e){err=e.message}paint()}
-function out(){ses=null;sv();msg="Signed out. Your data stays on this phone.";err="";paint()}
+function out(){ses=null;gen++;dirty={};sd();sv();msg="Signed out. Your data stays on this phone.";err="";paint()}
 /* v353 (Steve 12 Nov 15:43: "Should a sign out option somewhere but would need to make sure save all their data"): sign out only after
    everything on this phone is backed up to the account (and club, chat and payment-claim changes have gone up); if the backup fails,
    stay signed in and say why. */
@@ -20505,7 +20525,7 @@ setInterval(paint,2000);setTimeout(function(){if(ses)pull(false)},1500);
 document.addEventListener("visibilitychange",function(){if(!document.hidden&&ses&&!Object.keys(dirty).length)pull(false)});
 return {on:true,state:function(){return {signedIn:!!ses,dirty:Object.keys(dirty).length}},
  /* v346: for the club sync (fh240): signed-in calls to the database, my account id and this phone's local id */
- api:api,base:URL_,me:function(){return ses&&ses.uid||null},local:uid,doOut:doOut,signedIn:function(){return !!ses},
+ api:api,base:URL_,me:function(){return ready()?ses.uid:null},who:function(){return ses&&ses.uid||null},ready:ready,local:uid,doOut:doOut,signedIn:function(){return !!ses},
  /* v347: call one of our server functions (stripe-pay) as the signed-in member */
  fn:async function(name,body){var go=function(){return fetch(URL_+"/functions/v1/"+name,{method:"POST",headers:hdr(true),body:JSON.stringify(body||{})})};var r=await go();if(r.status===401&&await refresh())r=await go();var j={};try{j=await r.json()}catch(e){}if(!r.ok||(j&&j.ok===false))throw new Error((j&&(j.text||j.message))||("Request failed ("+r.status+")"));return j}}})();
 
