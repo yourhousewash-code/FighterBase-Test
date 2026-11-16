@@ -8883,7 +8883,7 @@ function link(c){return location.href.split("#")[0]+"#coach="+encodeURIComponent
 /* ---------- owner panel on Overview ---------- */
 function panel(){var host=document.getElementById("huboverBody"),c=club();if(!host||!c||!(isRealOwner(c)||isCoach(c)))return;
  var own=isRealOwner(c),co=c.coaches||[],perm=c.coachPerm||{},decl=c.coachDecl||{};
- var req=(clubState.members||[]).filter(function(m){var r=m.coachReq;return r&&r.club===c.id&&c.coachCode&&r.code===c.coachCode&&co.indexOf(m.uid)<0&&!(decl[m.uid]&&decl[m.uid]>=r.at)&&m.uid!==c.ownerUid});
+ var lv=window.FH246&&FH246.live&&FH246.live(),req=lv?FH246.requests().filter(function(r){return co.indexOf(r.uid)<0&&r.uid!==c.ownerUid&&!(decl[r.uid]&&decl[r.uid]>=r.at)}):(clubState.members||[]).filter(function(m){var r=m.coachReq;return r&&r.club===c.id&&c.coachCode&&r.code===c.coachCode&&co.indexOf(m.uid)<0&&!(decl[m.uid]&&decl[m.uid]>=r.at)&&m.uid!==c.ownerUid});/* v402: live clubs read requests from the database (m15) */
  var h='<div class="sec-h"><h3>Your team</h3><span class="muted small">'+(own?"Owner":"Coach")+'</span></div>'+
   '<div class="tm-list"><div class="tm-r"><span class="tm-av">'+esc(nameOf(c.ownerUid||S.uid).slice(0,1))+'</span><div><b>'+esc(c.ownerUid?nameOf(c.ownerUid):"Owner")+'</b><span class="muted small">Owner · everything, including Accounts</span></div></div>'+
   co.filter(function(u){return u!==c.ownerUid}).map(function(u){var a=!!(perm[u]||{}).acc;return '<div class="tm-r"><span class="tm-av c">'+esc(nameOf(u).slice(0,1))+'</span><div><b>'+esc(nameOf(u))+'</b><span class="muted small">Coach · members, insights, notifications'+(a?", Accounts":"")+'</span></div>'+(own&&u!==S.uid?'<div class="tm-act"><label class="tm-sw"><input type="checkbox" data-tmacc="'+esc(u)+'"'+(a?" checked":"")+'> Accounts</label><button class="linkbtn" type="button" data-tmown="'+esc(u)+'">Make owner</button><button class="linkbtn" type="button" data-tmrm="'+esc(u)+'" style="color:var(--bad)">Remove</button></div>':'')+'</div>'}).join("")+'</div>'+
@@ -8901,7 +8901,7 @@ async function request(cd){cd=String(cd||"").trim().toUpperCase();if(!cd||!db||!
 var triedC={};function hashC(){var m=(location.hash||"").match(/^#coach=(.+)$/);if(!m||!S.uid||!(P().onboarded||P().role==="club"))return;var cd=decodeURIComponent(m[1]);if(triedC[cd])return;triedC[cd]=1;request(cd)}
 window.addEventListener("hashchange",function(){triedC={};hashC()});
 /* publish the request with the member's league doc */
-(function(){var t=0,iv=setInterval(function(){if(window.FB54&&FB54.extend&&!FB54.extend.p64){var ex=FB54.extend;FB54.extend=function(o){o=ex(o);o.coachReq=P().coachReq||null;return o};FB54.extend.p64=true;clearInterval(iv)}if(++t>40)clearInterval(iv)},250)})();
+(function(){var t=0,iv=setInterval(function(){if(window.FB54&&FB54.extend&&!FB54.extend.p64){var ex=FB54.extend;FB54.extend=function(o){o=ex(o);var cr=P().coachReq;o.coachReq=cr?{club:cr.club,at:cr.at}:null;/* v402 (Codex finding 8): never the coach code */return o};FB54.extend.p64=true;clearInterval(iv)}if(++t>40)clearInterval(iv)},250)})();
 /* tell a new coach once */
 var told={};function welcome(){var c=club();if(!c||!isCoach(c)||told[c.id])return;var k="coachSeen_"+c.id;if(P()[k])return;told[c.id]=1;P()[k]=TD;try{profChanged()}catch(e){}toast("You're a coach at "+c.name,"Switch to the club side from the top bar.");try{FHC.apply()}catch(e){}}
 /* Accounts for coaches only when allowed */
@@ -8911,7 +8911,7 @@ document.addEventListener("click",function(e){var t=e.target;if(!t.closest)retur
  if(t.closest("[data-tmnew]")){if(!isRealOwner(c))return;upd({coachCode:code()}).then(function(){toast("Coach link ready","Copy it and send it to your coach.");var w=document.getElementById("tmPanel");if(w)w.dataset.sig="";panel()});return}
  if(t.closest("[data-tmcopy]")){var l=link(c);try{navigator.clipboard.writeText(l).then(function(){toast("Coach link copied")},function(){toast("Coach link",l)})}catch(er){toast("Coach link",l)}return}
  if(b=t.closest("[data-tmok]")){if(!isRealOwner(c))return;var u=b.dataset.tmok,co=(c.coaches||[]).filter(function(x){return x!==u}).concat([u]),nm=Object.assign({},c.coachNames||{});nm[u]=b.dataset.n||"Coach";var pm=Object.assign({},c.coachPerm||{});pm[u]=pm[u]||{acc:false};upd({coaches:co,coachNames:nm,coachPerm:pm}).then(function(){toast((b.dataset.n||"Coach")+" is now a coach","They can open the club side.");var w=document.getElementById("tmPanel");if(w)w.dataset.sig="";panel()});return}
- if(b=t.closest("[data-tmno]")){if(!isRealOwner(c))return;var dc=Object.assign({},c.coachDecl||{});dc[b.dataset.tmno]=new Date().toISOString();upd({coachDecl:dc}).then(function(){var w=document.getElementById("tmPanel");if(w)w.dataset.sig="";panel()});return}
+ if(b=t.closest("[data-tmno]")){if(!isRealOwner(c))return;try{if(window.FH246&&FH246.live&&FH246.live())FH246.decline(b.dataset.tmno)}catch(x){}var dc=Object.assign({},c.coachDecl||{});dc[b.dataset.tmno]=new Date().toISOString();upd({coachDecl:dc}).then(function(){var w=document.getElementById("tmPanel");if(w)w.dataset.sig="";panel()});return}
  if(b=t.closest("[data-tmrm]")){if(!isRealOwner(c))return;var u2=b.dataset.tmrm;if(!confirmTwice(b))return;upd({coaches:(c.coaches||[]).filter(function(x){return x!==u2})}).then(function(){toast("Coach removed");var w=document.getElementById("tmPanel");if(w)w.dataset.sig="";panel()});return}
  if(b=t.closest("[data-tmown]")){if(!isRealOwner(c))return;var u3=b.dataset.tmown;if(!confirmTwice(b,"Tap again to hand over ownership"))return;var old=c.ownerUid,co2=(c.coaches||[]).filter(function(x){return x!==u3});if(old&&old!==u3&&co2.indexOf(old)<0)co2.push(old);var pm2=Object.assign({},c.coachPerm||{});if(old)pm2[old]={acc:true};
   upd({ownerUid:u3,coaches:co2,coachPerm:pm2}).then(function(){toast(nameOf(u3).replace(" (you)","")+" now owns the club","You stay on as a coach with Accounts access.");var w=document.getElementById("tmPanel");if(w)w.dataset.sig="";panel()});return}});
@@ -25470,9 +25470,11 @@ async function pull(){var cid=clubId();if(!on()||busy||!live(cid))return;busy=tr
   /* v399 (Codex finding 3): payment records are kept per club at pay/<club>/<member>. Only this club's go onto its members' cards, never
      another club's (my own records from other clubs come down with mineRows and are left out here). An old per-member record (league/<member>
      "srv", before m14) is used only if it says it belongs to this club and there is no new one. */
-  var payOf={};Object.keys(by).forEach(function(sp){if(sp.indexOf("pay/")!==0)return;var a=sp.split("/");if(a[1]===cid&&by[sp].srv)payOf["league/"+a[2]]=by[sp].srv;delete by[sp]});
-  Object.keys(by).forEach(function(sp){var P=by[sp];if(sp.indexOf("league/")!==0||!P)return;if(payOf[sp])P.srv=payOf[sp];else if(P.srv&&P.srv.club!==cid)delete P.srv});
-  Object.keys(payOf).forEach(function(lk){if(!by[lk])by[lk]={srv:payOf[lk]}});
+  /* v402 (Codex finding 10, m15): the club's answers to a member (cash confirmed, cash recorded) are kept per club too, at conf/<club>/<member> */
+  var payOf={},confOf={};Object.keys(by).forEach(function(sp){var a=sp.split("/");if(a[0]==="pay"){if(a[1]===cid&&by[sp].srv)payOf["league/"+a[2]]=by[sp].srv;delete by[sp]}
+   else if(a[0]==="conf"){if(a[1]===cid&&by[sp].club)confOf["league/"+a[2]]=by[sp].club;delete by[sp]}});
+  Object.keys(by).forEach(function(sp){var P=by[sp];if(sp.indexOf("league/")!==0||!P)return;if(payOf[sp])P.srv=payOf[sp];else if(P.srv&&P.srv.club!==cid)delete P.srv;if(confOf[sp])P.club=confOf[sp];else delete P.club});
+  Object.keys(payOf).forEach(function(lk){if(!by[lk])by[lk]={srv:payOf[lk]}});Object.keys(confOf).forEach(function(lk){if(!by[lk])by[lk]={club:confOf[lk]};else by[lk].club=confOf[lk]});
   cmNew.forEach(function(r){cmSeen[r.path]=1;cmClub[r.path]=cid;if(!cmSince[cid]||r.updated_at>cmSince[cid])cmSince[cid]=r.updated_at});if(cmNew.length)cmKeep();
   applying=true;var myc=(by["league/"+me()]||{}).club,staffHere=roleOf[cid]==="owner"||roleOf[cid]==="coach";
   Object.keys(by).forEach(function(sp){var P=by[sp],lp=lPath(sp);if(dirty[lp])return;var m={};
@@ -25808,8 +25810,8 @@ setInterval(apply,800);setTimeout(apply,300);
 /* FighterBase v355 (star run 12 Nov 2026, test-site check row 9 "coach link"): a coach joins a LIVE club from their own phone.
    Before: the owner's coach link (Club, Overview, Your team) only worked on the owner's phone, because the coach code was looked up in
    that phone's own copy of the club. Now, when signed in (fh181):
-   1. Coach's phone: opening the coach link (or typing the code) asks the database (staff_request, db/m7_coach_link.sql). If the code
-      matches a live club, the request goes on the coach's club card, and the coach sees "Your request is with the owner".
+   1. Coach's phone: opening the coach link (or typing the code) asks the database (staff_request, db/m7_coach_link.sql; since v402 m15 the
+      request is a row of its own, never on the coach's card), and the coach sees "Your request is with the owner".
    2. Owner's phone: "Asking to coach" lists the request as before. Approve, Remove and the Accounts tick now also change who the
       database treats as staff (club_staff; only the owner may). The coach's phone then loads the club side on its next refresh.
    Only changes the owner made on this phone are carried out: a coach is removed from club_staff only when this phone saw them in the
@@ -25837,7 +25839,10 @@ D.db.collection=function(p){var c=col0.apply(this,arguments);if(p!=="clubs"||!c|
  return c};
 /* ---------- 2. owner side: the team list decides who the database treats as a coach ---------- */
 function role(){try{var s=window.FH240&&FH240.state&&FH240.state();return s&&s.club===clubId()?s.role:null}catch(e){return null}}
-async function reconcile(){var cid=clubId();if(!me()||busy||!UUID.test(cid||"")||role()!=="owner")return;var cd=store["clubs/"+cid];if(!cd)return;
+/* v402 (Codex finding 8, m15): a coach's request is its own row in the database (staff_requests), seen only by the owner; nothing goes on cards */
+var reqs=[],reqClub=null;
+async function loadReqs(cid){try{var r=await rpc("staff_requests_list",{c:cid});reqs=(r||[]).map(function(x){return {uid:x.user_id,name:x.name,at:x.asked_at}});reqClub=cid}catch(e){}}
+async function reconcile(){var cid=clubId();if(!me()||busy||!UUID.test(cid||"")||role()!=="owner")return;var cd=store["clubs/"+cid];if(!cd)return;await loadReqs(cid);
  if(prevClub!==cid){prev=null;prevClub=cid}busy=true;
  try{var perm=cd.coachPerm||{},own=srv(cd.ownerUid||""),co=(cd.coaches||[]).map(srv).filter(function(u){return UUID.test(u)&&u!==me()&&u!==own});
   var rows=await A.api("GET","club_staff?select=user_id,role,can_accounts&club_id=eq."+cid)||[],have={};rows.forEach(function(r){have[r.user_id]=r});
@@ -25853,7 +25858,11 @@ function paint(){var w=document.getElementById("tmPanel");if(!w)return;var p=doc
  if(p.parentNode!==w)w.appendChild(p);if(p.textContent!==msg)p.textContent=msg}
 setInterval(function(){if(!document.hidden)reconcile()},8000);
 setTimeout(reconcile,3000);
-return {on:true,reconcile:reconcile,state:function(){return {role:role(),msg:msg,requests:nReq,added:nIns,removed:nDel,accounts:nAcc}}}
+return {on:true,reconcile:reconcile,
+ live:function(){var cid=clubId();return !!(me()&&UUID.test(cid||"")&&role()==="owner")},
+ requests:function(){return reqClub===clubId()?reqs.slice():[]},
+ decline:function(u){var cid=clubId();reqs=reqs.filter(function(x){return x.uid!==u});return rpc("staff_request_decline",{c:cid,u:u}).catch(function(){})},
+ state:function(){return {role:role(),msg:msg,requests:nReq,added:nIns,removed:nDel,accounts:nAcc}}}
 })();
 
 /* FighterBase v357 (Steve, 12 Nov 2026 17:25: "whenever warrior spirit is shown so should there logo be and this should be site wide as
@@ -26233,7 +26242,7 @@ function items(){var c=club();if(!c)return [];var L=[],su=c.setup||{},sk=su.skip
  /* day to day */
  var frc=c.frc||{},pend=0;M.forEach(function(m){(m.fr||[]).forEach(function(f){if(!frc[m.uid+"_"+f.id])pend++})});
  if(pend)L.push({u:2,t:"Confirm "+pend+" fight"+(pend>1?"s":""),s:"Members are waiting for you",a:'data-t252go="hubins"'});
- var co=c.coaches||[],decl=c.coachDecl||{},req=M.filter(function(m){var r=m.coachReq;return r&&r.club===c.id&&c.coachCode&&r.code===c.coachCode&&co.indexOf(m.uid)<0&&!decl[m.uid]}).length;
+ var co=c.coaches||[],decl=c.coachDecl||{},req=(window.FH246&&FH246.live&&FH246.live())?FH246.requests().filter(function(r){return co.indexOf(r.uid)<0&&!decl[r.uid]}).length:M.filter(function(m){var r=m.coachReq;return r&&r.club===c.id&&c.coachCode&&r.code===c.coachCode&&co.indexOf(m.uid)<0&&!decl[m.uid]}).length;
  if(req)L.push({u:2,t:req+" asking to coach",s:"Approve or decline them",a:'data-t252go="hubover"'});
  var owe=0;try{if(window.FH57)(FH57.roster()||[]).forEach(function(r){var a=FH57.acct(r);if(a&&+a.bal>0.009)owe++})}catch(x){}
  if(owe)L.push({u:1,t:"Chase "+owe+" payment"+(owe>1?"s":""),s:"Members who owe money",a:'data-t252go="hubacc"'});
@@ -26314,6 +26323,13 @@ window.FH253={parse:parse,act:act};
    The feeds are read by the server function supabase/functions/cal. Nothing here changes any booking. */
 (function(){
 var UUID=/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i,MINE="",busy=false,note="",ARM=0;
+/* v402 (Codex finding 15, m15): the club's public timetable feed is off until the owner publishes it; coaches' names and kids classes only
+   if the owner ticks them. PUB = clubs.cal_pub as the database has it ({on,kids,coaches} or null); read with club_cal_pub(). */
+var PUB={},PUBAT={};
+function role(){try{var s=window.FH240&&FH240.state&&FH240.state();return s&&s.club===cid()?s.role:null}catch(e){return null}}
+function pubOf(){return PUB[cid()]}
+async function loadPub(force){var c=cid();if(!ok()||(!force&&PUBAT[c]&&Date.now()-PUBAT[c]<60000))return;PUBAT[c]=Date.now();
+ try{var v=await A().api("POST","rpc/club_cal_pub",{c:c});PUB[c]=v&&v.on?v:null}catch(x){if(!(c in PUB))PUB[c]=undefined}}
 function e(s){return String(s==null?"":s).replace(/[&<>"]/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]})}
 function A(){return window.FH181&&FH181.on&&FH181.base?FH181:null}
 function cid(){try{return (S.profile&&S.profile.clubId)||""}catch(x){return ""}}
@@ -26334,14 +26350,17 @@ function member(){var tab=document.getElementById("tab-schedule"),el=document.ge
  var h='<div class="sec-h"><h2>Add to your calendar</h2></div><p class="small muted" style="margin:0 0 4px">Your calendar app keeps these up to date by itself, about once an hour.</p>'+
   (MINE?row("My bookings","Only you can see this link: the classes you said you're coming to, any waiting-list place, and confirmed PT.",base()+"/me/"+MINE+".ics",'<button type="button" class="linkbtn" data-c254new>'+(ARM?'Tap again: the old link stops':'New private link')+'</button>')
        :'<div class="c254r"><div><b>My bookings</b><span class="small muted">A private link to your own classes and PT, for your phone\'s calendar.</span></div><div class="row c254b"><button type="button" class="btn sm" data-c254mine>Get my calendar link</button></div></div>')+
-  row("Club timetable","Every class on the timetable, including rotating weeks.",clubUrl("ics"))+(note?'<p class="saved" aria-live="polite">'+e(note)+'</p>':'');
+  (pubOf()?row("Club timetable","Every class the club has published, including rotating weeks.",clubUrl("ics")):'')+(note?'<p class="saved" aria-live="polite">'+e(note)+'</p>':'');
  if(!el){el=document.createElement("section");el.id="cal254";el.className="panel";tab.appendChild(el)}
  if(el.dataset.sig!==h){el.innerHTML=h;el.dataset.sig=h}}
 function staff(){var tab=document.getElementById("tab-hubclasses"),el=document.getElementById("cal254c");
- if(!ok()){if(el)el.remove();return}if(!tab||tab.hidden)return;
- var h='<div class="sec-h"><h2>Your timetable in calendars and on your website</h2></div><p class="small muted" style="margin:0 0 4px">Live links that follow your timetable here, rotating weeks included. They show class, day, time, length, level and the coach\'s first name, nothing about members.</p>'+
+ if(!ok()){if(el)el.remove();return}if(!tab||tab.hidden)return;loadPub();var p=pubOf(),own=role()==="owner";
+ var h='<div class="sec-h"><h2>Your timetable in calendars and on your website</h2><span class="badge">'+(p?"Published":"Not published")+'</span></div>';
+ if(!p)h+='<p class="small muted" style="margin:0 0 8px">Your timetable stays inside FighterBase until you publish it. Publishing gives you a link anyone can add to a calendar or show on your website: class, day, time, length and level, nothing about members.</p>'+
+  (own?'<div class="c254r"><label class="small"><input type="checkbox" id="c254k"> Include kids classes</label><label class="small"><input type="checkbox" id="c254c"> Show coaches\' first names</label><div class="row c254b"><button type="button" class="btn sm" data-c254pub="1">Publish our timetable</button></div></div>':'<p class="small muted" style="margin:0">Only the owner can publish it.</p>');
+ else h+='<p class="small muted" style="margin:0 0 4px">Live links that follow your timetable here, rotating weeks included: class, day, time, length and level'+(p.coaches?", coach's first name":"")+(p.kids?", kids classes included":", kids classes left out")+'. Nothing about members.</p>'+
   row("Calendar link","For members' calendars, or for your website's calendar button.",clubUrl("ics"))+
-  '<div class="c254r"><div><b>Timetable data for your website</b><span class="small muted">For whoever builds your website: the same timetable as data (JSON) to read and show.</span></div><div class="row c254b"><button type="button" class="btn ghost sm" data-c254copy="'+e(clubUrl("json"))+'">Copy data link</button></div></div>';
+  '<div class="c254r"><div><b>Timetable data for your website</b><span class="small muted">For whoever builds your website: the same timetable as data (JSON) to read and show.</span></div><div class="row c254b"><button type="button" class="btn ghost sm" data-c254copy="'+e(clubUrl("json"))+'">Copy data link</button>'+(own?'<button type="button" class="linkbtn" data-c254pub="0">Stop publishing</button>':'')+'</div></div>';
  if(!el){el=document.createElement("section");el.id="cal254c";el.className="panel";tab.appendChild(el)}
  if(el.dataset.sig!==h){el.innerHTML=h;el.dataset.sig=h}}
 async function getMine(reset){if(busy||!ok())return;busy=true;note=reset?"Making a new link…":"Getting your link…";member();
@@ -26350,11 +26369,16 @@ async function getMine(reset){if(busy||!ok())return;busy=true;note=reset?"Making
   else note="Couldn't get your link just now. Try again in a minute."}
  catch(x){note="Couldn't get your link just now. Try again in a minute."}busy=false;member()}
 function copy(u){try{navigator.clipboard.writeText(u).then(function(){if(typeof toast==="function")toast("Link copied","Paste it where you need it.")},function(){if(typeof toast==="function")toast("Your link",u)})}catch(x){if(typeof toast==="function")toast("Your link",u)}}
+async function setPub(on){if(!ok()||role()!=="owner")return;var k=!!(document.getElementById("c254k")||{}).checked,co=!!(document.getElementById("c254c")||{}).checked;
+ try{var v=await A().api("POST","rpc/set_cal_pub",{c:cid(),p_on:!!on,p_kids:k,p_coaches:co});PUB[cid()]=v&&v.on?v:null;PUBAT[cid()]=Date.now();
+  if(typeof toast==="function")toast(on?"Timetable published":"Timetable no longer published",on?"The links below now work for anyone you give them to.":"The links stop working straight away.")}
+ catch(x){if(typeof toast==="function")toast("Couldn't change that","Check your connection and try again.")}staff()}
 document.addEventListener("click",function(ev){var t=ev.target;if(!t.closest)return;var b;
+ if(b=t.closest("[data-c254pub]")){setPub(b.getAttribute("data-c254pub")==="1");return}
  if(b=t.closest("[data-c254copy]")){copy(b.getAttribute("data-c254copy"));return}
  if(t.closest("[data-c254mine]")){getMine(false);return}
  if(t.closest("[data-c254new]")){if(ARM&&Date.now()-ARM<6000){ARM=0;getMine(true)}else{ARM=Date.now();member();setTimeout(function(){if(ARM&&Date.now()-ARM>=6000){ARM=0;member()}},6100)}return}});
-setInterval(function(){if(document.hidden)return;try{member()}catch(x){}try{staff()}catch(x){}},1500);
+setInterval(function(){if(document.hidden)return;try{loadPub()}catch(x){}try{member()}catch(x){}try{staff()}catch(x){}},1500);
 window.FH254={clubUrl:function(x){return ok()?clubUrl(x):""}};
 })();
 
