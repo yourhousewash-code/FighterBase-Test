@@ -27362,6 +27362,64 @@ document.addEventListener("click",function(ev){var b=ev.target&&ev.target.closes
 setInterval(function(){if(!document.hidden)try{paint()}catch(x){}},1500);
 return {on:true,set:set,paint:paint,member:member}})();
 
+/* FighterBase v409: the club's FighterBase plan (club plan billing, test mode first; FB-045 prices: up to 50 active members £39 a month,
+   up to 150 £69, up to 400 £99, over 400 on quote; no set-up fee, no commission). Shown on Money > Accounts to the owner and Accounts-level
+   staff of a live club; only the owner starts the plan or manages billing (Steve's who-can-do-what table, 16 Nov 2026). The band and price
+   come from the payment server (stripe-pay plan_status), worked out from the club's active members; the app never sends a price. Coming
+   back from Stripe the app asks the server, which asks Stripe, before saying the plan is active (payment-safety rule 5).
+   Until the server part (stripe-pay version 8 and m19) is in place, plan_status is unknown to the server and nothing shows. */
+var FH265=(function(){
+var UUID=/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i,A=window.FH181;
+var info={},busy=false,note="",lastAsk={};
+function e(s){return esc(String(s==null?"":s))}
+function cid(){try{return (S.profile&&S.profile.clubId)||""}catch(x){return ""}}
+function st(){try{return (window.FH240&&FH240.state&&FH240.state())||{}}catch(x){return {}}}
+function live(){return !!(A&&A.on&&A.fn&&UUID.test(cid())&&A.me&&A.me())}
+function owner(){var s=st();return s.club===cid()&&s.role==="owner"}
+function acc(){var s=st();return s.club===cid()&&(s.role==="owner"||((s.role==="admin"||s.role==="coach")&&s.acc===true))}
+function gbp(p){return "£"+(Math.round(+p||0)/100).toFixed((+p||0)%100?2:0)}
+function day(iso){try{return new Date(iso).toLocaleDateString("en-GB",{day:"numeric",month:"long",year:"numeric"})}catch(x){return ""}}
+function back(){return location.origin+location.pathname}
+async function ask(check){var c=cid();if(!live()||!acc())return;try{var r=await A.fn("stripe-pay",{action:"plan_status",club:c,back:back(),check:!!check});if(r&&r.ok){info[c]=r;return r}}catch(x){info[c]={gone:true}}return null}
+async function go(action,label){if(busy)return;busy=true;note=label;paint();try{var r=await A.fn("stripe-pay",{action:action,club:cid(),back:back()});if(r&&r.url){location.href=r.url;return}note=""}catch(x){note=x.message}busy=false;paint()}
+var RUN=["active","trialing","past_due","incomplete","unpaid","paused"];
+function body(r){var p=r.plan||null,s=p&&p.status||"none",h="",price=r.amount?gbp(r.amount)+" a month":"",band=r.band?"up to "+r.band+" active members":"";
+ var badge=s==="active"||s==="trialing"?["Active","#3FC57E"]:s==="past_due"||s==="unpaid"?["Payment failed","#F2A33A"]:s==="incomplete"?["Waiting","#F2A33A"]:["Not started","#9097A6"];
+ h+='<div class="sec-h"><h2>Your FighterBase plan</h2><span class="badge" style="background:'+badge[1]+'26;color:'+badge[1]+';border:1px solid '+badge[1]+'66">'+badge[0]+'</span></div>';
+ if(RUN.indexOf(s)<0){
+  if(r.quote)h+='<p class="small" style="margin:0 0 8px">'+e(r.members)+' active members. Clubs with over 400 active members are on a quote: contact FighterBase and we\'ll set it up.</p>';
+  else{h+='<p class="small" style="margin:0 0 8px"><b>'+e(price)+'</b> for your club ('+e(band)+'; you have '+e(r.members)+'). No set-up fee and no commission on your takings. Pay by card; cancel any time from Manage billing.</p>';
+   h+=owner()?'<div class="row"><button type="button" class="btn" data-cp265="plan_checkout">Start your plan</button></div>':'<p class="muted small" style="margin:0">Only the club owner can start the plan.</p>'}
+ }else{
+  if(s==="active"||s==="trialing")h+='<p class="small" style="margin:0 0 8px"><b>'+e(gbp(p.amount))+' a month</b>'+(p.band?' (up to '+e(p.band)+' active members)':'')+'. '+(p.cancel_at_end?'Ends on '+e(day(p.period_end))+'.':'Renews on '+e(day(p.period_end))+'.')+'</p>';
+  else if(s==="past_due"||s==="unpaid")h+='<p class="small" style="margin:0 0 8px">The last payment for your plan didn\'t go through. Update the card in Manage billing and Stripe will try again.</p>';
+  else if(s==="incomplete")h+='<p class="small" style="margin:0 0 8px">Waiting for the first payment to go through. This usually takes a moment.</p><div class="row"><button type="button" class="btn ghost sm" data-cp265="check">Check again</button></div>';
+  if(p.band&&r.band&&r.band>p.band)h+='<p class="small" style="margin:0 0 8px">You now have '+e(r.members)+' active members, more than your plan\'s band. FighterBase will be in touch before anything changes.</p>';
+  h+=owner()?'<div class="row"><button type="button" class="btn ghost" data-cp265="plan_portal">Manage billing</button></div>':'<p class="muted small" style="margin:0">Only the club owner can change billing.</p>'}
+ if(r.test)h+='<p class="muted small" style="margin:6px 0 0">Test mode: use Stripe\'s test card 4242 4242 4242 4242; no real money moves.</p>';
+ if(note)h+='<p class="small" style="margin:6px 0 0" aria-live="polite">'+e(note)+'</p>';
+ return h}
+function paint(){var host=document.getElementById("hubaccBody"),el=document.getElementById("cp265");
+ if(!host||!host.offsetParent||!live()||!acc()){if(el&&(!live()||!acc()))el.remove();return}
+ var c=cid(),r=info[c];if(!r||r.gone||!r.ok){if(el)el.remove();if(!r&&(!lastAsk[c]||Date.now()-lastAsk[c]>60000)){lastAsk[c]=Date.now();ask(false).then(paint)}return}
+ if(!el){el=document.createElement("div");el.id="cp265";el.className="panel plate";var after=document.getElementById("st241c");if(after&&after.parentNode===host)host.insertBefore(el,after.nextSibling);else host.insertBefore(el,host.children[0]||null)}
+ var h=body(r);if(el.innerHTML!==h)el.innerHTML=h}
+document.addEventListener("click",function(ev){var b=ev.target&&ev.target.closest&&ev.target.closest("[data-cp265]");if(!b)return;ev.preventDefault();var a=b.getAttribute("data-cp265");
+ if(a==="check"){note="Checking with Stripe…";paint();ask(true).then(function(){note="";paint()});return}
+ if(a==="plan_checkout"&&owner())go(a,"Opening Stripe…");else if(a==="plan_portal"&&owner())go(a,"Opening billing…")});
+/* coming back from Stripe: ask the server, which asks Stripe, before saying anything */
+(function(){var q="";try{q=new URLSearchParams(location.search).get("fbplan")||""}catch(x){}if(!q)return;
+ try{history.replaceState(null,"",location.pathname+location.hash)}catch(x){}
+ if(q==="cancel"){setTimeout(function(){if(typeof toast==="function")toast("Plan not started","Nothing was taken. You can start it any time from Money, Accounts.")},1500);return}
+ var tries=0;function poll(){tries++;if(!live()||!acc()){if(tries<20)return setTimeout(poll,1500);return}
+  ask(true).then(function(r){var s=r&&r.plan&&r.plan.status;paint();
+   if(s==="active"||s==="trialing"){if(q==="done"&&typeof toast==="function")toast("Your FighterBase plan is active","Stripe has confirmed the first payment.");return}
+   if(tries<12)return setTimeout(poll,5000);if(q==="done"&&typeof toast==="function")toast("Not confirmed yet","Stripe hasn't confirmed the plan yet. Check again on Money, Accounts in a few minutes.")})}
+ if(q==="done"&&typeof toast==="function")setTimeout(function(){toast("Checking your plan with Stripe","This takes a few seconds.")},800);
+ setTimeout(poll,1500)})();
+setInterval(function(){if(!document.hidden)try{paint()}catch(x){}},1500);
+return {on:true,ask:ask,state:function(){return info[cid()]||null}}})();
+
 /* FighterBase v44: always a way back, always a next step. */
 var N31=N31||false;
 (function(){
