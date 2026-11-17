@@ -1,6 +1,5 @@
 <!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="robots" content="noindex"><style>html.fbboot section[id^=tab-]{visibility:hidden}</style><script>document.documentElement.classList.add("fbboot");setTimeout(function(){document.documentElement.classList.remove("fbboot")},4000)</script><link rel="icon" type="image/png" href="icon-64.png"><link rel="manifest" href="manifest.webmanifest"><link rel="apple-touch-icon" href="icon-192.png"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="FighterBase"><meta name="theme-color" content="#101113"><script>window.FH_CONFIG={vapidPublicKey:"BAd9E46l1jiean39yxVlA4J7MYH6WT4A4uCLk37gsDd1NGGGa9HK1Ic-GTUqW5m1JGr3aORIHZXI7X-i2aWxZEg"};</script><title>FighterBase</title></head><body><title>FighterBase</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@700;800;900&family=Barlow:wght@400;500;600;700&family=Barlow+Condensed:wght@500;600;700&family=IBM+Plex+Mono:wght@500;600&display=swap">
+<link rel="stylesheet" href="/fonts/fonts.css"><!-- v414 (Legal PA L7): our own copy of the fonts, nothing from Google -->
 <style>
 /* Layout: fight-night broadcast. Graphite arena, cage-mesh texture, red/blue corner plates, octagon progress rings, tale-of-the-tape hero, app-style bottom bar. Committed single dark look. */
 :root{
@@ -1657,14 +1656,19 @@ window.FB_LOCAL_CLUBS={"warrior-spirit":{"name":"Warrior Spirit Muay Thai & Kick
 if(window.__FB_DEMO)return;
 var h="";try{h=location.hash||""}catch(e){}
 if(/nolocal/.test(h)||(window.claude&&window.claude.use))return;
-var KEY="fb_local_v1",store={},subs=[],t=null;
+var KEY="fb_local_v1",store={},subs=[],t=null,frozen=false;
 function clone(o){return o==null?o:JSON.parse(JSON.stringify(o))}
 try{store=JSON.parse(localStorage.getItem(KEY)||"{}")||{}}catch(e){store={}}
 var uid=null;try{uid=localStorage.getItem("fb_local_uid")}catch(e){}
 if(!uid){uid="local-"+Math.random().toString(36).slice(2,10);try{localStorage.setItem("fb_local_uid",uid)}catch(e){}}
 var CL=window.FB_LOCAL_CLUBS||{};Object.keys(CL).forEach(function(k){store["clubs/"+k]=clone(CL[k])});
 var L=window.FH_LIB||{};["foods","meals","supps"].forEach(function(k){if(L[k])store["library/"+k]={items:L[k]}});
-function persist(){clearTimeout(t);t=setTimeout(function(){try{var o={};Object.keys(store).forEach(function(k){if(k.indexOf("library/")!==0)o[k]=store[k]});localStorage.setItem(KEY,JSON.stringify(o))}catch(e){}},300)}
+function save(){try{var o={};Object.keys(store).forEach(function(k){if(k.indexOf("library/")!==0)o[k]=store[k]});localStorage.setItem(KEY,JSON.stringify(o))}catch(e){}}
+function persist(){clearTimeout(t);t=setTimeout(save,300)}
+/* v419 (FB-083 finding 3, Codex 17 Nov): when the account backup (fh181) clears this phone for a different person, or replaces it with the
+   person's cloud copy, it saves at once and then freezes the store until the page reloads. Nothing the open page still holds from the
+   previous person (a profile save waiting on a timer, a club-card sync) can be written back in that gap and uploaded under the new person. */
+function freeze(){clearTimeout(t);save();frozen=true}
 var hooks=[];window.__FB_LOCAL_HOOK=function(f){if(typeof f==="function")hooks.push(f)};/* v346: several listeners (account backup fh181, club sync fh240) */
 /* v296: snapshot listeners only hear about their own document or query when it actually changed (as the real database does), instead of every listener firing on every write. */
 function notify(p){persist();if(p)hooks.forEach(function(h){try{h(p)}catch(e){}});setTimeout(function(){subs.slice().forEach(function(f){try{f()}catch(e){}})},0)}
@@ -1672,9 +1676,9 @@ function snapDoc(p){return {id:p.split("/").pop(),exists:p in store,data:functio
 function docRef(p){
  return {id:p.split("/").pop(),path:p,
   get:function(){return Promise.resolve(snapDoc(p))},
-  set:function(d,o){store[p]=(o&&o.merge)?Object.assign({},store[p]||{},clone(d)):clone(d);notify(p);return Promise.resolve()},
-  update:function(d){var o=Object.assign({},store[p]||{});Object.keys(d).forEach(function(k){var v=clone(d[k]);if(k.indexOf('.')<0){o[k]=v;return}var a=k.split('.'),c=o,i;for(i=0;i<a.length-1;i++){c[a[i]]=(c[a[i]]&&typeof c[a[i]]==='object')?Object.assign({},c[a[i]]):{};c=c[a[i]]}c[a[a.length-1]]=v});store[p]=o;notify(p);return Promise.resolve()},
-  delete:function(){delete store[p];notify(p);return Promise.resolve()},
+  set:function(d,o){if(frozen)return Promise.resolve();store[p]=(o&&o.merge)?Object.assign({},store[p]||{},clone(d)):clone(d);notify(p);return Promise.resolve()},
+  update:function(d){if(frozen)return Promise.resolve();var o=Object.assign({},store[p]||{});Object.keys(d).forEach(function(k){var v=clone(d[k]);if(k.indexOf('.')<0){o[k]=v;return}var a=k.split('.'),c=o,i;for(i=0;i<a.length-1;i++){c[a[i]]=(c[a[i]]&&typeof c[a[i]]==='object')?Object.assign({},c[a[i]]):{};c=c[a[i]]}c[a[a.length-1]]=v});store[p]=o;notify(p);return Promise.resolve()},
+  delete:function(){if(frozen)return Promise.resolve();delete store[p];notify(p);return Promise.resolve()},
   onSnapshot:function(n){var last;var f=function(){var sig=p in store?JSON.stringify(store[p]):"~";if(sig===last)return;last=sig;n(snapDoc(p))};subs.push(f);setTimeout(f,0);return function(){var i=subs.indexOf(f);if(i>=0)subs.splice(i,1)}},
   collection:function(c){return colRef(p+"/"+c)}}}
 function colRef(p,q){q=q||{};
@@ -1691,7 +1695,7 @@ function colRef(p,q){q=q||{};
   onSnapshot:function(n){var last;var f=function(){var r=run(),sig=JSON.stringify(r.docs.map(function(d){return [d.id,store[p+"/"+d.id]]}));if(sig===last)return;last=sig;n(r)};subs.push(f);setTimeout(f,0);return function(){var i=subs.indexOf(f);if(i>=0)subs.splice(i,1)}}}}
 window.__FB_LOCAL=true;
 window.fbLocalReset=function(){try{localStorage.removeItem(KEY);localStorage.removeItem("fb_local_uid");sessionStorage.clear()}catch(e){}location.hash="";location.reload()};
-window.__FB_DEMO={store:store,real:null,mode:"local",uid:uid,db:{doc:docRef,collection:colRef},
+window.__FB_DEMO={store:store,real:null,mode:"local",uid:uid,db:{doc:docRef,collection:colRef},freeze:freeze,frozen:function(){return frozen},
  user:{id:function(){return Promise.resolve(uid)},me:function(){return Promise.resolve({id:uid,name:""})},isOwner:function(){return false},canEdit:function(){return Promise.resolve(false)},can:function(){return null},profiles:function(){return Promise.resolve({})}}};
 })();
 
@@ -2001,19 +2005,23 @@ function calc(p){
   return {w,tdee:Math.round(tdee),kcal,adj,protein,trainCarbs,restCarbs,pre,post,carbNote,fatT,fatR,waterBase:r1(w*0.035),carb:d.carb};
 }
 const todayCarbs=c=>cur.training?c.trainCarbs:c.restCarbs;
-const waterFor=c=>c?r1(c.waterBase+(cur.training?((+cur.trainLen||90)/60)*0.6:0)):null;
+/* v417 (FB-084 item 1, Council C-031): a water target is shown only when the member chose one (Goals, food goals or key targets); the
+   body-weight estimate (c.waterBase) stays a suggestion in "Why these targets", never an unmet goal on Today, check-ins, rings or badges. */
+function chosenWater(){try{var g=window.FH87&&FH87.G(),T=(g&&g.food&&g.food.t)||{},tr=!!(cur&&((cur.sessions||[]).length||cur.trained||cur.training)),t=(+T.waterTrain>0&&tr)?+T.waterTrain:(+T.water||0);if(t>0)return t}catch(x){}
+ try{var d=FBE.diet();if(d.on&&d.waterT>0)return d.waterT}catch(x){}return 0}
+const waterFor=c=>{const t=chosenWater();return t>0?r1(t):null};
 function renderTargets(){
   const c=calc(S.profile);
   $("#setupCard").hidden=!!S.profile.onboarded||!S.uid;$("#targets").hidden=!c;$("#portionPanel").hidden=!S.profile.sex;
   $("#dietLine").textContent=S.profile.diet?`${diet().name} plan${S.profile.name?" · "+S.profile.name:""}`:"Fight nutrition, training and health.";
-  if(c){const wt=waterFor(c);$("#waterLabel").textContent=`Water (litres, target ${wt})`} else $("#waterLabel").textContent="Water (litres)";
+  const wt=waterFor(c);$("#waterLabel").textContent=wt?`Water (litres, your target ${wt})`:"Water (litres)";
   renderTape();renderCutCard();
   renderPortions();renderCalcOut(c);renderBand();renderMeters();renderFight();applyModules();
 }
 const OCT="M30,2 L70,2 L98,30 L98,70 L70,98 L30,98 L2,70 L2,30 Z";
 function ringSVG(p,color){const pct=Math.max(0,Math.min(1,p||0));return `<svg viewBox="0 0 100 100" aria-hidden="true"><path d="${OCT}" fill="none" stroke="var(--line)" stroke-width="5"/><path d="${OCT}" fill="none" stroke="${color}" stroke-width="5" pathLength="100" stroke-dasharray="${(pct*100).toFixed(1)} 100" stroke-linejoin="round"/></svg>`}
 function renderRings(){const c=calc(S.profile),el=$("#targets");el.hidden=!c;if(!c)return;const s=sumDay(cur),wt=waterFor(c),carbT=c.carb==="verylow"?30:todayCarbs(c);
-  const items=[["Calories",s.kcal,c.kcal,"kcal","var(--red)",{lose:"Lose fat",build:"Build muscle",maintain:"Maintain"}[S.profile.goal||"maintain"]+(c.adj?` · ${c.adj>0?"+":""}${c.adj} adj`:"")+(wearOf(cur).activeKcal?` · ${Math.round(wearOf(cur).activeKcal)} active burn`:"")],["Protein",s.protein,c.protein,"g","var(--blue)","Spread over 3–4 meals"],["Carbs",s.carbs,carbT,"g","var(--gold)",c.carb==="verylow"?"Keto: all day":cur.training?c.carbNote:"Rest day"],["Water",+cur.water||0,wt,"L","#4FC3F7",cur.training?"Includes training top-up":"More on training days"]].filter(i=>i[0]!=="Water"||fluidsOn());
+  const items=[["Calories",s.kcal,c.kcal,"kcal","var(--red)",{lose:"Lose fat",build:"Build muscle",maintain:"Maintain"}[S.profile.goal||"maintain"]+(c.adj?` · ${c.adj>0?"+":""}${c.adj} adj`:"")+(wearOf(cur).activeKcal?` · ${Math.round(wearOf(cur).activeKcal)} active burn`:"")],["Protein",s.protein,c.protein,"g","var(--blue)","Spread over 3–4 meals"],["Carbs",s.carbs,carbT,"g","var(--gold)",c.carb==="verylow"?"Keto: all day":cur.training?c.carbNote:"Rest day"],["Water",+cur.water||0,wt,"L","#4FC3F7",cur.training?"Includes training top-up":"More on training days"]].filter(i=>i[0]!=="Water"||(fluidsOn()&&wt));
   el.innerHTML=items.map(([l,v,t,u,col,sub])=>`<div class="ring"><span class="label">${l}</span><div class="oct">${ringSVG(t?v/t:0,col)}<div class="oct-in"><span class="v">${u==="L"?r1(v):Math.round(v)}</span><span class="of">of ${u==="L"?t:Math.round(t).toLocaleString("en-GB")}${u==="kcal"?"":u}</span></div></div><span class="s">${esc(sub)}</span></div>`).join("")}
 function streak(){const map=logMap();let n=0;for(let i=0;i<400;i++){const d=new Date();d.setDate(d.getDate()-i);if(isLogged(map[dayKey(d)]))n++;else if(i>0)break}return n}
 function renderTape(){const p=S.profile;const nm=(p.name||"Fighter").trim()||"Fighter";const parts=nm.split(/\s+/);
@@ -2090,7 +2098,11 @@ async function saveProfile(){
   try{await db.doc(userBase()+"/profile").set(clone(S.profile));profDirty=false;$("#profSaved").textContent="Saved"}
   catch(e){$("#profSaved").textContent="Not saved. Ask the owner for Contributor access."}
 }
-[["pName","name",0],["pAge","age",1],["pHeight","height",1],["pWeight","weight",1],["pSessions","sessions",1],["pQuit","quitDate",0],["pFight","fightDate",0],["pWeighIn","weighIn",1]].forEach(([id,k,num])=>$("#"+id).addEventListener("input",e=>{const v=e.target.value;S.profile[k]=v===""?null:(num?Number(v):v);profChanged()}));
+/* v419 (FB-083 finding 3, Codex's follow-on): the name shown to the club follows a renamed profile unless the member chose a different one
+   in "Name shown to your club" (before, the club card kept the old name while the sharing preview showed the new one). */
+[["pName","name",0],["pAge","age",1],["pHeight","height",1],["pWeight","weight",1],["pSessions","sessions",1],["pQuit","quitDate",0],["pFight","fightDate",0],["pWeighIn","weighIn",1]].forEach(([id,k,num])=>$("#"+id).addEventListener("input",e=>{const v=e.target.value;
+  if(k==="name"){const was=String(S.profile.name||"").trim().split(" ")[0],lg=String(S.profile.leagueName||"").trim(),nw=String(v||"").trim().split(" ")[0];if(nw&&(!lg||lg===was)){S.profile.leagueName=nw;const lgEl=document.getElementById("lgName");if(lgEl&&document.activeElement!==lgEl)lgEl.value=nw;try{scheduleLeague()}catch(x){}}}
+  S.profile[k]=v===""?null:(num?Number(v):v);profChanged()}));
 $("#pSex").addEventListener("click",e=>{const b=e.target.closest("button");if(!b)return;S.profile.sex=b.dataset.v;renderProfile();profChanged()});
 $("#pGoal").addEventListener("click",e=>{const b=e.target.closest("button");if(!b)return;S.profile.goal=b.dataset.v;renderProfile();profChanged()});
 $("#pDiet").addEventListener("click",e=>{const b=e.target.closest("[data-diet]");if(!b)return;S.profile.diet=b.dataset.diet;renderProfile();profChanged();renderLib()});
@@ -2344,7 +2356,7 @@ function renderProgress(){
     drawChart("cEnergy","bar",lab,val("energy"),{label:"Energy",min:0,max:5,zero:true});
     if(S.profile.mode==="pro"||(typeof tierNow==="function"&&tierNow()!=="free")){
       drawChart("cSleep","line",lab,val("sleep"),{label:"Sleep",unit:" h",min:4,max:10});
-      drawChart("cWater","bar",lab,val("water"),{label:"Water",unit:" L",zero:true,target:c?c.waterBase:null});
+      drawChart("cWater","bar",lab,val("water"),{label:"Water",unit:" L",zero:true,target:chosenWater()||null});
       const eat=f=>days.map(k=>{const e=map[k]&&map[k].eaten;return e&&e.length?Math.round(sumEaten(e)[f]):null});
       drawChart("cProt","bar",lab,eat("protein"),{label:"Protein",unit:" g",zero:true,target:c?c.protein:null});
       drawChart("cKcal","bar",lab,eat("kcal"),{label:"Calories",zero:true,target:c?c.kcal:null});
@@ -2873,7 +2885,7 @@ function weekStartKey(){const d=new Date();const day=(d.getDay()+6)%7;d.setDate(
 function monthStartKey(){const d=new Date();return dayKey(new Date(d.getFullYear(),d.getMonth(),1))}
 function periodStats(fromKey){const map=logMap(),c=calc(S.profile);let s={sessions:0,mins:0,checkins:0,wins:0,water:0,clubCheckins:0,points:0};
   Object.keys(map).filter(k=>k>=fromKey&&k<=TODAY).forEach(k=>{const l=map[k];const ss=(l.sessions||[]).length;s.sessions+=ss;s.mins+=(l.sessions||[]).reduce((a,x)=>a+(+x.mins||0),0);const ck=Object.values(l.checkinsDone||{}).filter(Boolean).length;s.checkins+=ck;
-    const r=dayResult(l);if(r==="W")s.wins++;if(c&&+l.water>=c.waterBase)s.water++;if(l.clubCheckin)s.clubCheckins++;
+    const r=dayResult(l);if(r==="W")s.wins++;if(chosenWater()&&+l.water>=chosenWater())s.water++;if(l.clubCheckin)s.clubCheckins++;
     s.points+=ss*10+(l.clubCheckin?5:0)+(r==="W"?5:0)+ck*2});return s}
 function challengeValue(ch,st){if(!ch)return 0;return ch.metric==="checkins"?st.clubCheckins:st[ch.metric]||0}
 let leagueTimer=null;function scheduleLeague(){clearTimeout(leagueTimer);leagueTimer=setTimeout(syncLeague,2500)}
@@ -2972,7 +2984,7 @@ const CHALLENGES=[
  {id:"smoke30",title:"Smoke-free 30",desc:"30 smoke-free days in a row",metric:"sf",target:30,days:30,icon:"leaf",scope:"personal",needs:"quit"}];
 const METRIC_UNIT={s:"sessions",h:"days",w:"target days",sl:"nights",ci:"days",pr:"days",ml:"days",st:"days",ck:"check-ins",sf:"days"};
 function dayMetrics(l){if(!l)return {};const c=calc(S.profile),w=l.wear||{},sl=+(w.sleepH??l.sleep)||0,eat=sumEaten(l.eaten);
-  return {s:(l.sessions||[]).length||(l.trained?1:0),ck:l.clubCheckin?1:0,w:dayResult(l)==="W"?1:0,h:c&&+l.water>=c.waterBase?1:0,sl:sl>=7?1:0,ci:Object.values(l.checkinsDone||{}).some(Boolean)||l.energy!=null?1:0,pr:c&&eat.protein>=c.protein*0.95?1:0,ml:(l.eaten||[]).length>=1?1:0,st:+w.steps>=10000?1:0,sf:l.smokeFree?1:0}}
+  return {s:(l.sessions||[]).length||(l.trained?1:0),ck:l.clubCheckin?1:0,w:dayResult(l)==="W"?1:0,h:chosenWater()&&+l.water>=chosenWater()?1:0,sl:sl>=7?1:0,ci:Object.values(l.checkinsDone||{}).some(Boolean)||l.energy!=null?1:0,pr:c&&eat.protein>=c.protein*0.95?1:0,ml:(l.eaten||[]).length>=1?1:0,st:+w.steps>=10000?1:0,sf:l.smokeFree?1:0}}
 function chProgress(ch,start,ext){ch={...ch,days:ch.days+(+ext||0)};const map=logMap();let v=0;for(let i=0;i<ch.days;i++){const k=addDays(start,i);if(k>TODAY)break;const m=dayMetrics(map[k]);v+=(ch.metric==="s"||ch.metric==="ck")?(m[ch.metric]||0):(m[ch.metric]?1:0)}
   const end=addDays(start,ch.days-1);return {v,done:v>=ch.target,ended:TODAY>end,end,left:Math.max(0,diffDays(TODAY,end))}}
 function myChallenges(){return (S.profile.challenges||[]).map(j=>({...j,ch:CHALLENGES.find(c=>c.id===j.id)})).filter(x=>x.ch)}
@@ -3023,7 +3035,7 @@ function renderJourney(){const el=$("#journeyCard");if(!el)return;if(!S.profile.
     const t=three(cur),done=[t.fuel,t.train,t.check].filter(Boolean).length,nx=nextCheckin(),ck=checkins();
     if(h<12){html=`<div class="jr"><span class="jr-kick">Morning brief</span><h2>${nm?`Morning, ${esc(nm)}`:"Good morning"}</h2><ul class="jr-list">
       <li><b>Train:</b> ${cur.training?`session at ${cur.trainTime}${c&&c.carb!=="verylow"?`, carbs around it (${c.pre}g before, ${c.post}g after)`:""}`:cur.restDay?"rest day: recover well":"tap Training or Rest in Today's three"}</li>
-      ${c?`<li><b>Fuel:</b> ${c.kcal.toLocaleString("en-GB")} kcal · ${c.protein}g protein · ${waterFor(c)} L water</li>`:""}
+      ${c?`<li><b>Fuel:</b> ${c.kcal.toLocaleString("en-GB")} kcal · ${c.protein}g protein${waterFor(c)?` · ${waterFor(c)} L water`:""}</li>`:""}
       ${nx?`<li><b>Next check-in:</b> ${CK_NAMES[nx].toLowerCase()} at ${ck[nx].t}</li>`:""}
       ${j.mode==="pre"?`<li><b>Fight booked:</b> ${j.weeksOut} weeks out. Camp mode starts at 8 weeks.</li>`:""}</ul></div>`}
     else if(h>=19){const s=sumEaten(cur.eaten);html=`<div class="jr"><span class="jr-kick">Evening wrap-up</span><h2>${done===3?"Day won 🏆":`${done}/3 done`}</h2><ul class="jr-list">
@@ -3093,7 +3105,7 @@ function madeWeight(){const c=S.profile.cut;if(!c||c.sim||c.weighDate>TODAY)retu
 function badgeList(){
   const map=logMap(),keys=Object.keys(map),p=S.profile,c=calc(p);
   const logged=keys.filter(k=>isLogged(map[k])).length,sess=keys.reduce((a,k)=>a+(map[k].sessions||[]).length,0),wins=keys.filter(k=>dayResult(map[k])==="W").length,st=bestStreak();
-  const waterHit=c?keys.filter(k=>+map[k].water>=c.waterBase).length:0,protHit=c?keys.filter(k=>sumEaten(map[k].eaten).protein>=c.protein*0.95).length:0;
+  const wT=chosenWater(),waterHit=wT?keys.filter(k=>+map[k].water>=wT).length:0,protHit=c?keys.filter(k=>sumEaten(map[k].eaten).protein>=c.protein*0.95).length:0;
   const sf=p.quitDate&&p.quitDate<=TODAY?diffDays(p.quitDate,TODAY)+1:0;
   const b=[["first","First bell","Log your first day","bell",logged>=1,"bronze"],["win1","First win","Complete all three in a day","star",wins>=1,"bronze"],["s3","Three-peat","3-day streak","flame",st>=3,"bronze"],["s7","Full week","7-day streak","flame",st>=7,"silver"],["s30","Iron month","30-day streak","flame",st>=30,"gold"],
     ["t1","Gloves on","Log your first session","glove",sess>=1,"bronze"],["t10","Ten rounds","10 sessions logged","glove",sess>=10,"silver"],["t50","Road warrior","50 sessions logged","glove",sess>=50,"gold"],["w10","Winning record","10 days won","belt",wins>=10,"silver"],["w50","Title form","50 days won","belt",wins>=50,"gold"],
@@ -4399,6 +4411,22 @@ var Y22=false;
 var PAY_PER={month:"a month",week:"a week",session:"a session",card:"per card",term:"up front"};
 function pyTerms(pl,first){var t=[];var fp=first!=null?first:(+pl.amt||0);if(pl.per==="term"){var tm=+pl.termM||6;t.push("Covers "+tm+" months, paid once. Ends "+pyAddMonths(TODAY,tm).slice(8,10)+"/"+pyAddMonths(TODAY,tm).slice(5,7)+"/"+pyAddMonths(TODAY,tm).slice(0,4)+(pl.renew==="ends"?"; then you choose again":"; renews automatically unless you cancel, and we remind you 7 days before and the day before"))}if(+pl.jf)t.push("Joining fee "+pyMoney(+pl.jf)+" once, so your first payment is "+pyMoney(fp+(+pl.jf)));if(+pl.minM)t.push("Minimum "+pl.minM+" months");if(+pl.notice)t.push(pl.notice+" days' notice to cancel");return t.length?'<p class="small" style="margin:2px 0 0">'+esc(t.join(". "))+'.</p>':""}
 function pyClub(){return (typeof clubState!=="undefined"&&clubState.club)||null}
+/* v415 (FB-079 item 1; ALL.md A-082, the UK subscription rules from 1 Jan 2027): the key information sits next to each Join button, together,
+   apart from everything else and never behind a link: the price and how often, what renews and when it stops, the least you'll pay in
+   total, any offer price and what it becomes, and how to cancel. All of it comes from that club's own plan settings and is shown as the
+   club's. Reminder lines are added only when the reminders themselves are built (FB-079 item 3), so nothing here promises what isn't there. */
+function pyKeyInfo(pl,q,c){var amt=+pl.amt||0,jf=+pl.jf||0,per=PAY_PER[pl.per]||pl.per,first=(q?Math.round(q.amt*100):amt),L=[];
+ if(q)L.push(['Price',pyMoney(first)+' '+per+(q.end?' until '+new Date(q.end+"T12:00").toLocaleDateString("en-GB",{day:"numeric",month:"short",year:"numeric"})+', then '+pyMoney(amt)+' '+per:' for as long as you stay (offer '+(q.p.name||"")+')')]);
+ else L.push(['Price',pyMoney(amt)+' '+per]);
+ if(pl.per==="month"||pl.per==="week")L.push(['Renews','Automatically every '+(pl.per==="week"?"week":"month")+' until you cancel']);
+ else if(pl.per==="term"){var tm=+pl.termM||6;L.push(['Renews',pl.renew==="ends"?'No. It covers '+tm+' months, paid once, then you choose again':'Automatically every '+tm+' months until you cancel'])}
+ else L.push(['Renews',pl.per==="session"?'No. You pay for each session':pl.per==="card"?'No. You buy a new card when you need one':'No']);
+ var min=first+jf;if(+pl.minM&&(pl.per==="month"||pl.per==="week"))min=jf+first*(+pl.minM);
+ L.push(['The least you\'ll pay',pyMoney(min)+(+pl.minM?' ('+pl.minM+(pl.per==="week"?" weeks":" months")+' minimum'+(jf?', joining fee included':'')+')':(jf?' (first payment, joining fee '+pyMoney(jf)+' included)':' (your first payment)'))]);
+ L.push(['To cancel','Any time, with Cancel membership in this panel'+(+pl.notice?'; '+pl.notice+' days\' notice':'; it stops before the next payment')]);
+ var cn=(c&&c.name)?esc(c.name):"your club";
+ return '<dl class="ki22" aria-label="Key information for '+esc(pl.name)+'"><div class="ki22h">Key information, set by '+cn+'</div>'+L.map(function(r){return '<div><dt>'+esc(r[0])+'</dt><dd>'+esc(r[1])+'</dd></div>'}).join("")+'</dl>'}
+(function(){if(document.getElementById("ki22css"))return;var st=document.createElement("style");st.id="ki22css";st.textContent=".ki22{margin:8px 0 0;padding:10px 12px;border:1px solid rgba(255,255,255,.18);border-radius:10px;background:rgba(255,255,255,.03);font-size:13px;line-height:1.45}.ki22h{font-weight:700;margin:0 0 6px}.ki22>div{display:grid;grid-template-columns:minmax(96px,34%) 1fr;gap:8px;padding:3px 0;border-top:1px solid rgba(255,255,255,.07)}.ki22 dt{opacity:.75}.ki22 dd{margin:0}";(document.head||document.documentElement).appendChild(st)})();
 function pyMoney(p){return "£"+(p/100).toFixed(2).replace(/\.00$/,"")}
 function pyAddMonths(key,n){var d=new Date(key+"T12:00:00"),day=d.getDate();d.setMonth(d.getMonth()+n,1);var last=new Date(d.getFullYear(),d.getMonth()+1,0).getDate();d.setDate(Math.min(day,last));return d.toISOString().slice(0,10)}
 function pyNext(per,from){return per==="week"?addDays(from,7):pyAddMonths(from,1)}
@@ -4441,7 +4469,7 @@ function pyClaimBox(c,st,ms){var cls=(ms.claims||[]).slice(-3).reverse(),so=((c.
  (cls.length?'<p class="small muted" style="margin:8px 0 0">'+cls.map(function(k){var r=pyRes(c,k.id);return 'Sent '+pyMoney(k.amt)+' ('+(k.m==="bank"?"bank":"cash")+', '+pyDShort(k.d)+'): <b>'+(r?(r.s==="ok"?"confirmed":"not confirmed, ask your club"):"waiting to confirm")+'</b>'}).join("<br>")+'</p>':'')+'</div>'}
 function pyMemberPanel(c){var plans=(c.pay&&c.pay.plans)||[];if(!plans.length)return "";var p=S.profile,ms=p.mship&&p.mship.clubId===p.clubId&&p.mship.status==="active"?p.mship:null;
  var h='<div class="panel"><div class="sec-h"><h2>Club membership</h2><span class="badge">Test mode</span></div>';
- if(!ms){var oc=(p.offer190||{}).code||"";h+='<p class="small muted" style="margin:0 0 8px">Pay your club directly. No money moves in this test.</p><div class="row" style="align-items:flex-end;margin:0 0 8px"><div class="field"><label class="label" for="pyOc">Offer code (if you have one)</label><input type="text" id="pyOc" maxlength="16" value="'+esc(oc)+'" style="max-width:160px"></div><button class="btn ghost sm" type="button" data-pyoc>Apply</button></div>'+plans.map(function(pl){var q=null;try{q=window.FH190&&FH190.on?FH190.quote(pl,oc):null}catch(x){}return '<div class="pladd"><div><b>'+esc(pl.name)+'</b><p class="small muted" style="margin:2px 0 0">'+(q?'<s>'+pyMoney(pl.amt)+'</s> <b style="color:var(--ok)">'+pyMoney(Math.round(q.amt*100))+'</b> '+(PAY_PER[pl.per]||pl.per)+' with '+esc(q.p.name)+(q.end?' until '+new Date(q.end+"T12:00").toLocaleDateString("en-GB",{day:"numeric",month:"short"})+', then '+pyMoney(pl.amt)+' '+(PAY_PER[pl.per]||pl.per):' for as long as you stay')+'. You will be reminded before the price changes.':pyMoney(pl.amt)+' '+(PAY_PER[pl.per]||pl.per))+'</p>'+pyTerms(pl,q?Math.round(q.amt*100):null)+'</div><button class="btn" type="button" data-pyjoin="'+esc(pl.id)+'">Join (test)</button></div>'}).join("")}
+ if(!ms){var oc=(p.offer190||{}).code||"";h+='<p class="small muted" style="margin:0 0 8px">Pay your club directly. No money moves in this test.</p><div class="row" style="align-items:flex-end;margin:0 0 8px"><div class="field"><label class="label" for="pyOc">Offer code (if you have one)</label><input type="text" id="pyOc" maxlength="16" value="'+esc(oc)+'" style="max-width:160px"></div><button class="btn ghost sm" type="button" data-pyoc>Apply</button></div>'+plans.map(function(pl){var q=null;try{q=window.FH190&&FH190.on?FH190.quote(pl,oc):null}catch(x){}return '<div class="pladd"><div><b>'+esc(pl.name)+'</b><p class="small muted" style="margin:2px 0 0">'+(q?'<s>'+pyMoney(pl.amt)+'</s> <b style="color:var(--ok)">'+pyMoney(Math.round(q.amt*100))+'</b> '+(PAY_PER[pl.per]||pl.per)+' with '+esc(q.p.name)+(q.end?' until '+new Date(q.end+"T12:00").toLocaleDateString("en-GB",{day:"numeric",month:"short"})+', then '+pyMoney(pl.amt)+' '+(PAY_PER[pl.per]||pl.per):' for as long as you stay')+'. You will be reminded before the price changes.':pyMoney(pl.amt)+' '+(PAY_PER[pl.per]||pl.per))+'</p>'+pyKeyInfo(pl,q,c)+'</div><button class="btn" type="button" data-pyjoin="'+esc(pl.id)+'">Join (test)</button></div>'}).join("")}
  else{var st=pyState(c,{uid:S.uid,ms:ms});if(!st||st.missing)h+='<p style="margin:0">Your plan is no longer offered. Ask your coach.</p><div class="row"><button class="btn ghost" type="button" data-pycancel>Cancel membership</button></div>';
   else{var tag=st.status==="payg"?"Pay as you go":st.status==="overdue"?"Overdue by "+st.days+" day"+(st.days===1?"":"s"):st.status==="due"?"Due "+(st.days===0?"today":st.days<0?"in "+(-st.days)+" day"+(st.days===-1?"":"s"):""):"Paid up";
    h+='<p style="margin:0 0 4px"><b>'+esc(st.pl.name)+'</b> · '+pyMoney(st.pl.amt)+' '+PAY_PER[st.pl.per]+'</p><p class="small" style="margin:0 0 8px">'+tag+(st.last?' · last paid '+st.last:'')+(st.due&&st.status==="ok"?' · next due '+st.due:'')+'</p>'+
@@ -14083,7 +14111,8 @@ function nutriHTML(it){var d={};try{d=FBE.diet()}catch(x){}var ea=(cur.eaten||[]
  var h='<div class="d112-top"><div><span class="fb-kick">'+e(new Date(TODAY+"T12:00").toLocaleDateString("en-GB",{weekday:"long",day:"numeric",month:"long"}))+'</span><h2>Your nutrition</h2></div><button class="linkbtn" type="button" data-goto="diary">Food diary</button></div>';
  var tiles=[];if(!kid())tiles.push(nTile("Calories",kc,kt," kcal","#E9A23B","kcal",kc>0,function(v){return Math.round(v).toLocaleString("en-GB")}));
  tiles.push(nTile("Protein",pr,d.protT||0," g","#FF9F6B","prot",ea.some(function(x){return x.protein!=null&&x.protein!==""}),function(v){return Math.round(v)}));
- tiles.push(nTile("Water",wa,d.waterT||0," L","#55C7D9","water",wa>0,function(v){return Math.round(v*100)/100}));
+ /* v417 (FB-084 item 1): no water target chosen and nothing logged: no Water tile (no goal, no row) */
+ if(d.waterT>0||wa>0)tiles.push(nTile("Water",wa,d.waterT||0," L","#55C7D9","water",wa>0,function(v){return Math.round(v*100)/100}));
  h+='<div class="d112-tiles">'+tiles.join("")+'</div>';
  /* v328 (Steve): one chart for protein, carbs and fat together, not just what was logged */
  try{if(window.FBV&&FBV.macros){var D=d7(),cc=null;try{cc=calc(S.profile)}catch(x){}var tr=(cur.sessions||[]).length>0;
@@ -18540,6 +18569,8 @@ var GD=[
 /* ---------------- member ---------------- */
 {id:"today",tab:"today",t:"Your Today page",m:1,why:"Your day on one page.",s:[
  ["^good (morning|afternoon|evening)","Your day, top to bottom","Today is your day on one page: what's next, your week and anything from your coach. Start here each day."],
+ /* v417 (FB-084, Help moved into the header; A-087: every feature gets its tour step) */
+ ["css:#hdr267help","Help, at the top of every page","Tap Help on any page to see how that page works, take a guided tour, report a problem or ask a question."],
  ["^check-in$","Log in one tap","Training, Food and Check-in log your day in a tap. Skip anything you don't track.",1],
  ["^main event","Your week against last week","This card compares your week with last week. Missing a day is never marked against you."],
  ["^edit my page$","You choose what shows","Choose which cards Today shows, including hiding weight or calories. You can bring them back any time."]]},
@@ -18602,7 +18633,11 @@ var GD=[
  ["at the gym","Check in","When you are at the gym, check in here. Your phone's location is used once to confirm it, and only the check-in is shared."],
  ["i.m coming","Say you are coming","Tap I'm coming on a class. It is a plan, not a payment."],
  ["^your attendance$","Your attendance","Your check-ins and classes this month. Only the check-in is shared, never where you are."],
- ["^membership$","Your membership","Your plan, what you owe and your payments. Check your club's notice terms before cancelling."]]},
+ ["^membership$","Your membership","Your plan, what you owe and your payments. Check your club's notice terms before cancelling."],
+ /* v415 (FB-079 item 1; A-087: every feature gets its tour step) */
+ ["css:.ki22","Key information before you join","Next to each Join button: the price, whether and how it renews, the least you'll pay in total and how to cancel, all set by your club. Read it before you join."],
+ /* v416 (FB-079 item 2; A-087: every feature gets its tour step) */
+ ["^cancel membership$","Cancel online, any time","Tap Cancel membership twice to cancel, with no need to call the club. A card or Direct Debit membership runs to the end of the period you've paid for, and no more payments are taken after that. Keep my membership undoes it."]]},
 {id:"clubpage",tab:"clubpage",t:"Club page",m:1,why:"Timetable, booking, news.",s:[
  ["timetable and booking","Timetable and booking","Pick a class and book it. Your plan shows whether it is covered."],
  ["your membership","Your membership","What you are on and what you owe."],
@@ -18798,7 +18833,7 @@ function find(g,s){var sc=sect(g);if(!sc)return null;var t=s[0],el=null;
   /* v374 A20 (Steve 14 Nov: "the tutorial here doesn't seem to match up with the highlighted box on the left"): a step's part is looked for
      on its own screen first; only if it isn't there is the rest of the page searched, and never the side menu or the top bar */
   for(var i=0;i<l.length&&!el;i++){var qa=sc.querySelectorAll(l[i]);for(var j=0;j<qa.length&&!el;j++)if(vis(qa[j]))el=qa[j]}
-  for(var i2=0;i2<l.length&&!el;i2++){var qb=document.querySelectorAll(l[i2]);for(var j2=0;j2<qb.length&&!el;j2++){var q=qb[j2];if(vis(q)&&!q.closest("#fbSide,#fb158,header,.topbar,nav"))el=q}}
+  for(var i2=0;i2<l.length&&!el;i2++){var qb=document.querySelectorAll(l[i2]);for(var j2=0;j2<qb.length&&!el;j2++){var q=qb[j2];if(vis(q)&&(!q.closest("#fbSide,#fb158,header,.topbar,nav")||(/^#[\w-]+$/.test(l[i2])&&q.id===l[i2].slice(1))))el=q}}/* v417: a step that names one element by its id may point into the top bar (Help) */
   if(!el&&s[4]){el=byText(sc,new RegExp(s[4],"i"))}}
  else el=byText(sc,new RegExp(t,"i"));
  }catch(x){}
@@ -20485,7 +20520,9 @@ function wipeAll(){applying=true;try{Object.keys(store).forEach(function(p){if(p
 function boundary(){if(!ses||ready())return false;var o=ownerOf();if(!o||o===ses.uid)return false;
  if(!backupLocal()){noBackup();return true}
  wipeAll();try{localStorage.removeItem("fb181last")}catch(e){}dirty={};sd();
- setTimeout(function(){location.reload()},800);return true}
+ /* v419 (FB-083 finding 3): saved and frozen until the reload, so nothing the page still holds from the last person lands after the wipe */
+ try{if(D.freeze)D.freeze()}catch(e){}
+ setTimeout(function(){location.reload()},300);return true}
 async function pull(first){if(!ses||hold)return;if(!ready())first=true;/* v398: until the first read has finished, every read is treated as the first */
  if(boundary())return;
  var g=gen,u=ses.uid;try{var rows=await api("GET","member_private?select=kind,data");if(g!==gen||!ses||ses.uid!==u)return;var cloud={};(rows||[]).forEach(function(r){cloud[r.kind]=r.data});
@@ -20497,9 +20534,15 @@ async function pull(first){if(!ses||hold)return;if(!ready())first=true;/* v398: 
   var changed=0;applying=true;
   Object.keys(cloud).forEach(function(k){var p=pathOf(k);if(dirty[p])return;if(canon(store[p])!==canon(cloud[k])){D.db.doc(p).set(cloud[k]);changed++}});
   applying=false;
+  /* v419 (FB-083 finding 3): the first read changed this phone's copy, so the page reloads to start from it. Until then the store is frozen:
+     a save the page had waiting (its profile or day log, still the old copy in memory) can't overwrite what just came from the cloud and
+     then be uploaded. Codex saw member B's name reach member A's cloud profile this way, on a slow connection. */
+  var rl=!!(changed&&!sessionStorage.getItem("fb181r"));
   setOwner(u);if(!ses.init){ses.init=true;sv()}/* v398: this account's data is sorted: uploads may start */
-  mine().forEach(function(p){var k=kindOf(p);if(!(k in cloud))dirty[p]=1});sd();await push();last=Date.now();
-  if(changed&&!sessionStorage.getItem("fb181r")){sessionStorage.setItem("fb181r","1");setTimeout(function(){keepPlace();location.reload()},400)}
+  mine().forEach(function(p){var k=kindOf(p);if(!(k in cloud))dirty[p]=1});sd();
+  if(rl){sessionStorage.setItem("fb181r","1");try{if(D.freeze)D.freeze()}catch(e){}}
+  await push();last=Date.now();
+  if(rl){setTimeout(function(){try{keepPlace()}catch(e){}location.reload()},400)}
   else sessionStorage.removeItem("fb181r")}
  catch(e){applying=false;err="Could not reach the database: "+e.message}paint()}
 /* ---- account actions ---- */
@@ -25692,7 +25735,29 @@ function memberBits(){if(!live())return;var b=document.querySelectorAll("[data-p
 /* the member's own membership card follows the server's payment record, the same as the club sees it */
 function ownPaid(){var sv=mine(),ms=S.profile&&S.profile.mship;if(!sv||!ms||ms.clubId!==cid())return;var p=(sv.pays||[]).filter(function(x){return x.st==="paid"||x.st==="part-refunded"}).map(function(x){return {d:x.d,amt:(+x.amt||0)-(+x.refunded||0),m:"card"}});
  if(JSON.stringify(ms.paid||[])!==JSON.stringify(p)){ms.paid=p;if(typeof profChanged==="function")profChanged()}}
-function paint(){clubCard();ownPaid();memberBits()}
+/* v416 (FB-079 item 2; ALL.md A-082: cancelling online as easy as joining). Before this, "Cancel membership" on a live club only changed the
+   app, and the Stripe subscription kept charging. Now, when the member has a card or Direct Debit membership running, Cancel (tap twice)
+   asks the payment server to end it at the end of the period they've paid for; the panel then says when it ends, with "Keep my membership"
+   to undo. Stripe's signed message updates the member's payment record, which both the member and the club see. */
+var CXARM=0,CXEND={};
+function runningSub(){var sv=mine(),s=sv&&sv.sub;return s&&s.id&&["active","pending","past_due","trialing","incomplete","unpaid","paused"].indexOf(String(s.status))>=0?s:null}
+function endsOn(){var s=runningSub();if(!s)return null;var k=cid();if(k in CXEND)return CXEND[k];return s.cancelAt||null}
+function dayTxt(d){try{return new Date(d+"T12:00:00").toLocaleDateString("en-GB",{day:"numeric",month:"long",year:"numeric"})}catch(x){return d}}
+async function cancelSub(undo){if(busy)return;busy=true;paint();
+ try{var r=await A.fn("stripe-pay",{club:cid(),back:back(),action:"cancel",undo:!!undo});CXEND[cid()]=undo?null:((r&&r.ends)||"the end of this period");
+  if(typeof toast==="function")toast(undo?"Membership kept":"Membership cancelled",undo?"Your payments carry on as before.":"It ends on "+(r&&r.ends?dayTxt(r.ends):"the last day you've paid for")+". No more payments are taken after that.");
+  try{if(window.FH240)FH240.pull()}catch(x){}}
+ catch(x){if(typeof toast==="function")toast("Couldn't change your membership",(x&&x.message||"")+" Nothing has changed; please try again.")}
+ busy=false;paint()}
+function cancelBits(){if(!live())return;var s=runningSub(),b=document.querySelectorAll("[data-pycancel]");if(!s||!b.length)return;var e0=endsOn();
+ b.forEach(function(x){var want=e0?"Keep my membership":(Date.now()-CXARM<6000?"Tap again to cancel":"Cancel membership");if(x.textContent!==want)x.textContent=want;
+  var p=x.closest(".panel"),n=p&&p.querySelector(".cx241");if(e0){if(!n&&p){n=document.createElement("p");n.className="small cx241";n.style.margin="8px 0 0";x.parentNode.parentNode.insertBefore(n,x.parentNode.nextSibling)}
+   var t="Your membership ends on "+(/^\d{4}-\d{2}-\d{2}$/.test(e0)?dayTxt(e0):e0)+". No more payments are taken after that.";if(n&&n.textContent!==t)n.textContent=t}else if(n)n.remove()})}
+function paint(){clubCard();ownPaid();memberBits();cancelBits()}
+document.addEventListener("click",function(ev){var cx=ev.target.closest&&ev.target.closest("[data-pycancel]");if(cx&&live()&&runningSub()&&cx.closest(".panel")&&cx.closest(".panel").querySelector("[data-pypay]")){ev.preventDefault();ev.stopImmediatePropagation();
+  if(endsOn()){cancelSub(true);return}
+  if(Date.now()-CXARM>6000){CXARM=Date.now();cancelBits();if(typeof toast==="function")toast("Cancel your membership?","Tap again to cancel. You keep it until the end of the period you've paid for, and no more payments are taken after that.");setTimeout(cancelBits,6100);return}
+  CXARM=0;cancelSub(false);return}},true);
 document.addEventListener("click",function(ev){var t=ev.target.closest&&ev.target.closest("[data-st241],[data-pypay]");if(!t||!live())return;
  if(t.hasAttribute("data-pypay")){ev.preventDefault();ev.stopImmediatePropagation();if(processing()){if(typeof toast==="function")toast("Your Direct Debit is set up","The first payment takes up to about 7 working days to confirm. You don't need to pay again.");return}if(!ready()){if(typeof toast==="function")toast("Card payments aren't on yet","Your club is still setting them up. Use \"I've paid (cash or bank)\" for now.");return}
   var ms=S.profile.mship;if(!ms||!ms.planId)return;go({action:"checkout",plan:ms.planId},"Opening secure payment…");return}
@@ -27455,6 +27520,53 @@ document.addEventListener("click",function(ev){var b=ev.target&&ev.target.closes
  setTimeout(poll,1500)})();
 setInterval(function(){if(!document.hidden)try{paint()}catch(x){}},1500);
 return {on:true,ask:ask,state:function(){return info[cid()]||null}}})();
+
+/* FighterBase v417 (FB-084; Council C-031, the Today screen; Steve 17 Nov 13:04: "make this visually more easy to read ... keep the premium
+   design and improve on it whilst improving user experience and flow"). The Council's quick fixes, before the bigger hero-card change:
+   1. the club's name in full in the header (two lines if it must, never cut to "WAR"), with the full name as its label;
+   2. nothing hides behind the bottom tabs, a phone's home-bar area included;
+   3. short labels ("Check-in", "Training") never break over two lines;
+   4. help sits in the header with a word on it, instead of a round "?" floating over the calendar and the cards;
+   5. one way to log a session on Today: the "Training" button in the Log row goes when Today already shows "Log a session";
+   6. no motion behind text: the embers go everywhere, and on Today the brush stroke under the greeting and the background film go
+      (the film stays on other pages, as Steve chose in v337, and stops anyway when the phone asks for less motion);
+   7. the light or dark switch moves from the header to Me. */
+(function(){
+var css=document.createElement("style");css.id="c031css";css.textContent=
+ "header.top{flex-wrap:wrap;row-gap:8px}header.top>.stack{flex-shrink:0;margin-left:auto}header.top>.brand{min-width:0;flex:1 1 170px}.cb-text{min-width:0}"+
+ ".cb-name{white-space:normal!important;overflow:hidden!important;text-overflow:clip!important;display:-webkit-box!important;-webkit-line-clamp:2;-webkit-box-orient:vertical;line-height:1.08!important;font-size:clamp(14px,4.3vw,19px)!important;height:auto!important;max-height:none!important;overflow-wrap:break-word}"+
+ "body{padding-bottom:calc(96px + env(safe-area-inset-bottom,0px))!important}"+
+ ".qa233 button,nav.bottom a,nav.bottom button{white-space:nowrap}"+
+ "#q251{display:none!important}"+
+ ".hdr267{display:inline-flex;align-items:center;gap:6px;min-height:44px;padding:0 12px;border-radius:999px;border:1px solid rgba(255,255,255,.18);background:transparent;color:inherit;font:inherit;font-weight:700;font-size:14px;cursor:pointer}"+
+ ".hdr267:focus-visible{outline:2px solid #E8DFC8;outline-offset:2px}.hdr267 b{display:inline-grid;place-items:center;width:20px;height:20px;border-radius:50%;border:1.5px solid currentColor;font-size:12px}"+
+ "@media (max-width:359px){.hdr267{padding:0 9px;gap:4px;font-size:13px}}"+
+ ".fb-ember{display:none!important}body.c031-today #bg236 video{display:none!important}#tab-today .pst>svg{display:none!important}"+
+ "#fbModeBtn{display:none!important}"+
+ ".qa233 [data-goto=train].c031-off{display:none!important}";
+(document.head||document.documentElement).appendChild(css);
+function onToday(){var t=document.getElementById("tab-today");return !!(t&&!t.hidden)}
+function help(){var bell=document.getElementById("fbBell");if(!bell||document.getElementById("hdr267help"))return;
+ var b=document.createElement("button");b.type="button";b.id="hdr267help";b.className="hdr267";b.setAttribute("aria-label","Help and report a problem");b.innerHTML='<b aria-hidden="true">?</b>Help';
+ b.addEventListener("click",function(){try{if(window.FH251&&FH251.help)FH251.help();else{var q=document.getElementById("q251");if(q)q.click()}}catch(x){}});
+ bell.parentNode.insertBefore(b,bell)}
+/* other modules set the header with !important rules, so these go on the elements themselves */
+function imp(e,o){if(!e)return;Object.keys(o).forEach(function(k){if(e.style.getPropertyValue(k)!==o[k]||e.style.getPropertyPriority(k)!=="important")e.style.setProperty(k,o[k],"important")})}
+function name(){var n=document.querySelector(".cb-name"),h=document.querySelector("header.top");if(!n)return;
+ if(n.textContent&&n.getAttribute("title")!==n.textContent.trim())n.setAttribute("title",n.textContent.trim());
+ imp(n,{"white-space":"normal","overflow":"hidden","text-overflow":"clip","display":"-webkit-box","-webkit-line-clamp":"2","-webkit-box-orient":"vertical","line-height":"1.08","height":"auto","max-height":"none","overflow-wrap":"break-word"});
+ if(h){imp(h,{"flex-wrap":"wrap","row-gap":"8px","height":"auto","max-height":"none"});imp(h.querySelector(".modebar"),{"flex-wrap":"wrap","justify-content":"flex-end","max-width":"100%","row-gap":"6px"});imp(h.querySelector(":scope>.brand"),{"min-width":"0","flex":"1 1 170px"});imp(h.querySelector(":scope>.stack"),{"flex-shrink":"0","margin-left":"auto"})}}
+function oneLog(){var t=document.getElementById("tab-today"),tr=t&&t.querySelector(".qa233 [data-goto=train]");if(!tr)return;
+ var other=[].slice.call(t.querySelectorAll("button,a")).some(function(x){return x!==tr&&!x.closest(".qa233")&&x.offsetParent&&/^\s*log a session\b/i.test(x.textContent||"")});
+ tr.classList.toggle("c031-off",other)}
+function theme(){var tab=document.getElementById("tab-profile"),mb=document.getElementById("fbModeBtn");if(!tab||!mb||document.getElementById("me267"))return;
+ var d=document.createElement("div");d.id="me267";d.className="panel";d.innerHTML='<div class="sec-h"><h2>Light or dark view</h2></div><div class="row"><button type="button" class="btn ghost sm" id="me267b"></button></div>';
+ tab.insertBefore(d,tab.firstChild);document.getElementById("me267b").addEventListener("click",function(){var m=document.getElementById("fbModeBtn");if(m)m.click();setTimeout(label,100)});label()}
+function label(){var b=document.getElementById("me267b"),m=document.getElementById("fbModeBtn");if(!b||!m)return;var t=(m.getAttribute("aria-label")||"Switch view");if(b.textContent!==t)b.textContent=t}
+function tick(){[function(){document.body.classList.toggle("c031-today",onToday())},help,name,oneLog,theme,label].forEach(function(f){try{f()}catch(x){}})}
+setTimeout(tick,500);setInterval(tick,1500);
+try{var st=showTab;showTab=function(){var r=st.apply(this,arguments);setTimeout(tick,0);return r}}catch(x){}
+})();
 
 /* FighterBase v44: always a way back, always a next step. */
 var N31=N31||false;
