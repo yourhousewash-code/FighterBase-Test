@@ -6984,7 +6984,7 @@ document.addEventListener("click",function(e){var t=e.target;if(!t.closest)retur
  if(b=t.closest("[data-cfok],[data-cfno]")){var k2=b.dataset.cfok||b.dataset.cfno,cf=Object.assign({},c.cfx||{});cf[k2]={s:b.dataset.cfok?"ok":"no",by:S.uid,at:TODAY};write({cfx:cf},b.dataset.cfok?"Fight confirmed":"Marked as not confirmed");return}});
 /* ---------- overview additions ---------- */
 function over(){var host=document.getElementById("huboverBody");if(!host||!isOwner())return;var R=reqs(),c=club(),g=c&&c.gci,w=document.getElementById("ciOver");
- var html='<div class="sec-h"><h3>Needs you</h3><button class="linkbtn" type="button" data-hub="hubins">Insights</button></div><div class="row ci-nb"><span class="badge'+(R.length?' bad-chip':'')+'">'+R.length+' request'+(R.length===1?"":"s")+'</span><span class="badge">'+(g&&g.id?"Goal check-in running":"No goal check-in")+'</span></div>'+(R.slice(0,3).map(function(r){return '<div class="item"><div class="info"><b>'+esc(r.m.name||"Member")+'</b><span class="muted small">'+(r.t==="help"?"Help: "+esc(r.x.goal):r.t==="rev"?"Review: "+esc(r.x.skill):"Fight to confirm: "+fmtD(r.x.date))+'</span></div></div>'}).join(""))+'<div class="row"><button class="btn sm" type="button" data-hub="hubins">'+(R.length?"Answer requests":"Open insights")+'</button></div>';
+ var html='<div class="sec-h"><h3>Needs you</h3><button class="linkbtn" type="button" data-hub="hubins">Insights</button></div><div class="row ci-nb">'+(function(){var J=0;try{J=((window.FH256&&FH256.state&&FH256.state().requests)||[]).length}catch(x){}return J?'<span class="badge bad-chip">'+J+' asking to join</span>':''})()+'<span class="badge'+(R.length?' bad-chip':'')+'">'+R.length+' coaching request'+(R.length===1?"":"s")+'</span><span class="badge">'+(g&&g.id?"Goal check-in running":"No goal check-in")+'</span></div>'+(R.slice(0,3).map(function(r){return '<div class="item"><div class="info"><b>'+esc(r.m.name||"Member")+'</b><span class="muted small">'+(r.t==="help"?"Help: "+esc(r.x.goal):r.t==="rev"?"Review: "+esc(r.x.skill):"Fight to confirm: "+fmtD(r.x.date))+'</span></div></div>'}).join(""))+'<div class="row"><button class="btn sm" type="button" data-hub="hubins">'+(R.length?"Answer requests":"Open insights")+'</button></div>';
  if(!w){w=document.createElement("div");w.id="ciOver";w.className="panel";var ps=host.querySelectorAll(".panel");host.insertBefore(w,ps[1]||null);if(!w.parentNode)host.appendChild(w)}
  if(w.dataset.sig!==html){w.innerHTML=html;w.dataset.sig=html}}
 var st=showTab;showTab=function(t){var r=st.apply(this,arguments);try{if(t==="hubins")page();if(t==="hubover")over();var nv=document.querySelector("nav.hubnav");if(nv)nv.querySelectorAll("[data-hub]").forEach(function(b){b.setAttribute("aria-current",String(b.dataset.hub===t))})}catch(e){console.error(e)}return r};
@@ -13936,7 +13936,7 @@ setInterval(function(){try{if(TS>=0||!window.__fbJustWelcomed||P().toured)return
 /* ---------- buttons at the bottom of Me ---------- */
 function link(){var tab=document.getElementById("tab-profile");if(!tab||document.getElementById("fbwlink"))return;var d=document.createElement("div");d.id="fbwlink";d.className="panel";
  d.innerHTML='<div class="sec-h"><h2>Guide</h2></div><div class="row" style="flex-wrap:wrap;gap:8px"><button class="btn ghost sm" type="button" data-fbw="intro">Show the welcome again</button><button class="btn ghost sm" type="button" data-fbw="tour">Take the tour again</button>'+(window.__FB_LOCAL?'<button class="btn ghost sm" type="button" data-fbw="reset">Start again as a new member</button>':"")+'</div>'+
- (window.__FB_LOCAL?'<p class="muted small" style="margin:8px 0 0">Test mode: your details are kept on this device only. "Start again" clears them so you can try the first-time journey from scratch.</p>':"");
+ (window.__FB_LOCAL?'<p class="muted small" style="margin:8px 0 0">'+(window.FH181&&FH181.signedIn&&FH181.signedIn()?'Test version: your details are saved on this device and in your account on our test database, so they follow you to another phone. "Start again" clears them from both, so you can try the first-time journey from scratch.':'Test version: you\'re not signed in, so your details are kept on this device only. "Start again" clears them so you can try the first-time journey from scratch.')+'</p>':"");/* v413 (Codex 17 Nov finding 6): say where the details really are */
  tab.appendChild(d)}
 document.addEventListener("click",function(e){var b=e.target.closest&&e.target.closest("[data-fbw]");if(!b)return;var a=b.dataset.fbw;
  if(a==="tour"){try{showTab("today");scrollTo(0,0)}catch(x){}tourStart()}
@@ -14439,12 +14439,18 @@ function css(){if(document.getElementById("fb116css"))return;var st=document.cre
 "#fb116 .cl b{display:block;font-size:16px}#fb116 .cl span{font-size:13px;opacity:.7}"+
 "#fb116 .row{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px;align-items:center}#fb116 .m{font-size:13px;margin:8px 0;min-height:18px}";
 document.head.appendChild(st)}
-function data(){return new Promise(function(res){try{if(typeof db==="undefined"||!db)return res([]);db.collection("clubs").limit(60).get().then(function(s){res(s.docs.map(function(d){var x=d.data();return{id:d.id,name:x.name||"",city:x.city||"",sports:x.sports||[],code:x.code||"",contact:x.contact||x.email||x.phone||"",lat:x.lat,lng:x.lng}}))},function(){res([])})}catch(e){res([])}})}
+function data(){return new Promise(function(res){try{if(typeof db==="undefined"||!db)return res([]);db.collection("clubs").limit(60).get().then(function(s){res(s.docs.map(function(d){var x=d.data();return{id:d.id,name:x.name||"",city:x.city||"",sports:x.sports||[],code:x.code||"",contact:contactOf(x),lat:x.lat,lng:x.lng}}))},function(){res([])})}catch(e){res([])}})}
+/* v413 (Codex 17 Nov finding 7): a club's contact is an object on the club page ({phone, email, address}); it showed as "[object Object]".
+   Only the phone and email are offered here, as links. */
+function contactOf(x){var c=x.contact,s=function(v){return typeof v==="string"?v.trim():""},o={email:"",phone:""};
+ if(c&&typeof c==="object"){o.email=s(c.email);o.phone=s(c.phone)}else if(typeof c==="string"){if(/@/.test(c))o.email=s(c);else o.phone=s(c)}
+ if(!o.email)o.email=s(x.email);if(!o.phone)o.phone=s(x.phone);if(!/^[^\s@<>"]+@[^\s@<>"]+\.[^\s@<>"]+$/.test(o.email))o.email="";if(!/^\+?[0-9 ()-]{6,20}$/.test(o.phone))o.phone="";return (o.email||o.phone)?o:null}
+function contactHTML(c){var a=[];if(c.phone)a.push('<a href="tel:'+esc(c.phone.replace(/[^0-9+]/g,""))+'">'+esc(c.phone)+'</a>');if(c.email)a.push('<a href="mailto:'+esc(c.email)+'">'+esc(c.email)+'</a>');return a.join(" or ")}
 function dist(a,b,c,d){var R=6371,r=Math.PI/180,x=(c-a)*r,y=(d-b)*r,h=Math.sin(x/2)*Math.sin(x/2)+Math.cos(a*r)*Math.cos(c*r)*Math.sin(y/2)*Math.sin(y/2);return 2*R*Math.asin(Math.sqrt(h))}
 function list(){var q=Q.toLowerCase(),r=ALL.filter(function(c){return !q||(c.name+" "+c.city+" "+c.sports.join(" ")).toLowerCase().indexOf(q)>-1});
  if(GEO)r.sort(function(a,b){return (a.lat!=null?dist(GEO.lat,GEO.lng,a.lat,a.lng):9e9)-(b.lat!=null?dist(GEO.lat,GEO.lng,b.lat,b.lng):9e9)});return r}
 function draw(){var el=document.getElementById("fb116");if(!el)return;var h;
- if(PICK){h='<h2>'+esc(PICK.name)+'</h2><p class="sub">'+esc([PICK.city,PICK.sports.join(", ")].filter(Boolean).join(" · "))+'</p><label class="sub" for="fb116code">Enter the club code from your coach to join</label><input class="q" id="fb116code" maxlength="16" autocapitalize="characters" placeholder="Club code" style="text-transform:uppercase"><p class="m" id="fb116m">'+esc(MSG)+'</p>'+(PICK.contact?'<p class="sub">No code? Ask the club: '+esc(PICK.contact)+'</p>':'<p class="sub">No code? Ask at the club. Coaches can find it in their club settings.</p>')+'<div class="row"><button class="btn gold sm" type="button" data-f116="join">Join this club</button><button class="btn ghost sm" type="button" data-f116="back">Back</button></div>';}
+ if(PICK){h='<h2>'+esc(PICK.name)+'</h2><p class="sub">'+esc([PICK.city,PICK.sports.join(", ")].filter(Boolean).join(" · "))+'</p><label class="sub" for="fb116code">Enter the club code from your coach to join</label><input class="q" id="fb116code" maxlength="16" autocapitalize="characters" placeholder="Club code" style="text-transform:uppercase"><p class="m" id="fb116m">'+esc(MSG)+'</p>'+(PICK.contact?'<p class="sub">No code? Ask the club: '+contactHTML(PICK.contact)+'</p>':'<p class="sub">No code? Ask at the club. Coaches can find it in their club settings.</p>')+'<div class="row"><button class="btn gold sm" type="button" data-f116="join">Join this club</button><button class="btn ghost sm" type="button" data-f116="back">Back</button></div>';}
  else{var r=list();h='<h2>Find a club</h2><p class="sub">Search by club name, town or sport. Clubs only show what they choose to make public.</p><input class="q" id="fb116q" placeholder="Name, town or sport" value="'+esc(Q)+'" autocomplete="off">'+
   '<div class="row"><button class="btn ghost sm" type="button" data-f116="near">Sort by distance</button><span class="small" style="opacity:.6">Only uses your location when you tap</span></div><div id="fb116l">'+
   (r.length?r.map(function(c){return '<button class="cl" type="button" data-f116pick="'+esc(c.id)+'"><b>'+esc(c.name)+'</b><span>'+esc([c.city,c.sports.join(", ")].filter(Boolean).join(" · "))+'</span></button>'}).join(""):'<p class="sub">'+(ALL.length?'No clubs match. Try fewer words.':'No clubs are listed yet. Ask your coach for a club code instead.')+'</p>')+'</div><div class="row"><button class="btn ghost sm" type="button" data-f116="close">Close</button></div>';}
@@ -20439,7 +20445,8 @@ function oauth(p){if(!prov[p]){err=p==="google"?"Google sign-in is not switched 
  location.href=URL_+"/auth/v1/authorize?provider="+p+"&redirect_to="+encodeURIComponent(location.origin+"/")}
 /* v403 (Codex finding 14; lesson S-009): a backup is a checked step. It is kept per account (fb_local_backup:<account>:<time>, the newest two
    per account), and if it can't be saved (a full phone) nothing is replaced or cleared: the switch stops and says why. */
-function backupLocal(){var o={};try{mine().forEach(function(p){o[p]=store[p]})}catch(e){return false}if(!Object.keys(o).length)return true;
+function pendingShared(){var a=[];try{a=a.concat((window.FH240&&FH240.state&&FH240.state().dirty)||[])}catch(e){}try{a=a.concat((window.FH242&&FH242.state&&FH242.state().dirty)||[])}catch(e){}return a}
+function backupLocal(){var o={};try{mine().forEach(function(p){o[p]=store[p]});pendingShared().forEach(function(p){if(p in store)o[p]=store[p]})}catch(e){return false}if(!Object.keys(o).length)return true;
  var who=ownerOf()||"anon",val=JSON.stringify({at:Date.now(),owner:who,docs:o}),key="fb_local_backup:"+who+":"+Date.now();
  function keys(){var a=[];try{for(var i=0;i<localStorage.length;i++){var k=localStorage.key(i);if(k&&k.indexOf("fb_local_backup")===0)a.push(k)}}catch(e){}return a.sort()}
  function prune(all){var mineK=keys().filter(function(k){return all||k.indexOf("fb_local_backup:"+who+":")===0});if(!all)mineK=mineK.slice(0,-1);mineK.forEach(function(k){if(k!==key)try{localStorage.removeItem(k)}catch(e){}})}
@@ -20467,7 +20474,20 @@ document.addEventListener("click",function(ev){var b=ev.target.closest&&ev.targe
  if(b.dataset.own181==="keep"){hold=false;setOwner(ses.uid);ses.init=true;sv();mine().forEach(function(p){dirty[p]=1});sd();if(el)el.hidden=true;push()}
  else{if(!backupLocal()){if(el)el.hidden=true;return noBackup()}wipe();dirty={};sd();hold=false;setOwner(ses.uid);if(el)el.hidden=true;setTimeout(function(){location.reload()},300)}});
 (function(){var c=document.createElement("style");c.textContent="#own181{position:fixed;inset:0;z-index:2147483001;background:#0B0C0F;display:flex;align-items:center;justify-content:center;padding:16px}#own181[hidden]{display:none}.o181{max-width:460px;background:#14151a;border:1px solid rgba(255,255,255,.12);border-radius:18px;padding:22px;color:#F4EFE6;display:flex;flex-direction:column;gap:10px}.o181 h2{margin:0;font-size:22px}.o181 p{margin:0;color:#C9C2B6}.o181 .g-btns{display:flex;flex-direction:column;gap:10px}.o181 .btn{width:100%}";document.head.appendChild(c)})();
+/* v413 (Codex, 17 Nov signed-in journey test, findings 1 and 2, P1): the browser's whole working store belongs to one account, not just the
+   documents with this phone's member id in their path. When a different account signs in, BEFORE its first read: keep the checked backup
+   of the previous account's own documents (and any club or chat change of theirs that hadn't uploaded), then clear every document except
+   the food library (club documents with staff fields, other members' cards, club photos, chats) and the club and board sync caches, and
+   reload, so nothing of the previous account stays in memory either. Club data comes back from the server for whoever is signed in, and
+   the database decides what they get. Until the new account's first read has worked, the opening screen covers the app (gNeeded). */
+function wipeAll(){applying=true;try{Object.keys(store).forEach(function(p){if(p.indexOf("library/")!==0)D.db.doc(p).delete()})}finally{applying=false}
+ ["fb240cm","fb240_removed","fb249seen"].forEach(function(k){try{localStorage.removeItem(k)}catch(e){}})}
+function boundary(){if(!ses||ready())return false;var o=ownerOf();if(!o||o===ses.uid)return false;
+ if(!backupLocal()){noBackup();return true}
+ wipeAll();try{localStorage.removeItem("fb181last")}catch(e){}dirty={};sd();
+ setTimeout(function(){location.reload()},800);return true}
 async function pull(first){if(!ses||hold)return;if(!ready())first=true;/* v398: until the first read has finished, every read is treated as the first */
+ if(boundary())return;
  var g=gen,u=ses.uid;try{var rows=await api("GET","member_private?select=kind,data");if(g!==gen||!ses||ses.uid!==u)return;var cloud={};(rows||[]).forEach(function(r){cloud[r.kind]=r.data});
   var owner=ownerOf(),nc=Object.keys(cloud).length;
   if(first&&owner&&owner!==ses.uid){if(!backupLocal())return noBackup();wipe();dirty={};sd()}/* another account's data: backed up (checked), not copied */
@@ -20537,12 +20557,13 @@ window.FH172UP=function(st){if(!ses)return;try{if(st&&st.on&&st.sub&&st.sub.endp
 /* ---- opening screen: everyone has an account before they get in (v243). Logo, three plain lines, then create account or log in.
    Skipped with #nogate in the address (for the developer). Demos and the Claude page never show it. ---- */
 var gEl=null,gMode="start",gLast="";
-function gNeeded(){try{if(/nogate|demo/.test(location.hash||"")||sessionStorage.getItem("fbDemo")||localStorage.getItem("fb_nogate"))return false}catch(e){}return !ses}
+function gNeeded(){try{if(/nogate|demo/.test(location.hash||"")||sessionStorage.getItem("fbDemo")||localStorage.getItem("fb_nogate"))return false}catch(e){}return !ses||(!ready()&&ownerOf()!==ses.uid)}
 /* v364 (Steve, 13 Nov 17:09: "club login link on the login page"): the opening screen has a club door. "Run a club? Club sign-in"
    adds #club to the address, so after the account is made (and the few questions), fh41 opens "Set up your club" straight away. */
 function gClub(){var c=/^#club\b/.test(location.hash||"");try{if(c)localStorage.setItem("fb_clubdoor","1")}catch(x){}return c}
 function gDoor(){return '<div class="g-row g-door">'+(gClub()?'<button class="linkbtn" type="button" data-g181="member">I train at a club, not run one</button>':'<span>Run a club or gym?</span><button class="linkbtn" type="button" data-g181="club">Club sign-in</button>')+'</div>'}
 function gHTML(){var logo=window.FB_LOGO_FULL||window.FB_LOGO||"",cl=gClub();
+ if(ses)return '<div class="g-in"><img class="g-logo sm" alt="FighterBase" src="'+(window.FB_LOGO_S||logo)+'"><h2 class="g-h">'+(err?"Couldn't open your account":"Opening your account")+'</h2><p class="g-small" style="margin:0 0 14px" aria-live="polite">'+(err?esc(err)+(hold?"":". Check your connection and try again."):"One moment while your data loads...")+'</p><div class="g-btns">'+(err&&!hold?'<button class="btn gold" type="button" data-g181="retry">Try again</button>':'')+'<button class="btn ghost" type="button" data-g181="signout">Sign out</button></div></div>';
  if(gMode==="start")return '<div class="g-in"><img class="g-logo" alt="FighterBase" src="'+escA(logo)+'"><p class="g-tag">'+(cl?"Club sign-in":"Train. Grow. Win.")+'</p><ul class="g-ul">'+(cl?'<li>Set up your club: page, timetable, memberships and members</li><li>Take card payments through Stripe if you want to</li><li>You get your own training profile too</li>':'<li>All your training in one place: any gym, any style, runs and lifts too</li><li>Your gym is optional and you choose what it sees</li><li>Quick self-logging, with voice to come</li>')+'</ul><p class="g-first">'+(cl?"First time? Create a club account. Already set up? Log in.":"First time here? Create an account. Been here before? Log in.")+'</p><div class="g-btns"><button class="btn gold" type="button" data-g181="up">'+(cl?"Create a club account":"Create account")+'</button><button class="btn ghost" type="button" data-g181="in">Log in</button></div>'+gDoor()+'<p class="g-small">Test version: use made-up details.</p></div>';
  var up=gMode==="up";
  return '<div class="g-in"><img class="g-logo sm" alt="FighterBase" src="'+(window.FB_LOGO_S||logo)+'"><h2 class="g-h">'+(cl?(up?"Create your club account":"Club sign-in"):(up?"Create your account":"Welcome back"))+'</h2><p class="g-small" style="margin:0 0 12px">'+(cl?(up?"Takes a minute. A few quick questions about you, then you set up your club.":"Log in to open your club."):(up?"Takes a minute. Then a few quick questions to set things up.":"Log in to pick up where you left off."))+'</p>'+
@@ -20560,6 +20581,7 @@ document.addEventListener("click",function(ev){var b=ev.target.closest&&ev.targe
  if(a==="up"||a==="in"){gMode=a;err="";msg="";gate()}else if(a==="back"){gMode="start";err="";msg="";gate()}
  else if(a==="club"){try{location.hash="club"}catch(x){}gLast="";gate()}
  else if(a==="member"){try{localStorage.removeItem("fb_clubdoor")}catch(x){}try{history.replaceState(null,"",location.pathname+location.search)}catch(x){location.hash=""}gLast="";gate()}
+ else if(a==="retry"){err="";gLast="";gate();pull(true)}else if(a==="signout"){out();gMode="start";gLast="";gate()}
  else if(a==="go")sign(gMode==="up"?"up":"in","g181");else if(a==="reset")reset("g181");else if(a==="google"||a==="apple")oauth(a)});
 document.addEventListener("keydown",function(ev){if(ev.key==="Enter"&&gEl&&ev.target&&/^g181[ep]$/.test(ev.target.id)){ev.preventDefault();sign(gMode==="up"?"up":"in","g181")}});
 if(oauthReturn())setTimeout(function(){pull(true)},800);loadProviders();gate();
@@ -26550,6 +26572,8 @@ function staffPanel(){var host=document.getElementById("huboverBody"),el=documen
 
   (note?'<p class="saved" aria-live="polite">'+e(note)+'</p>':'');
  if(!el){el=document.createElement("section");el.id="jr256s";el.className="panel";host.insertBefore(el,host.firstChild)}
+ /* v413 (Codex 17 Nov finding 5): people waiting to join are never folded away under "Show more"; they sit first on the Overview */
+ el.classList.toggle("f149keep",n>0);el.classList.remove("f149m");el.style.order=n>0?"-100":"";
  if(el.dataset.sig!==h){el.innerHTML=h;el.dataset.sig=h}}
 async function decide(u,ok){var a=A();if(!a||busy)return;busy=true;note="";
  try{await a.api("POST","rpc/decide_join",{c:cid(),u:u,ok:ok});var r=(REQ||[]).filter(function(x){return x.user_id===u})[0];
