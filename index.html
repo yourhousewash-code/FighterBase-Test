@@ -27019,14 +27019,19 @@ var PROG={
  fairtex:{n:"Fairtex",net:"uppromote",rate:"10%",site:"https://www.fairtexstore.com/"},
  venum:{n:"Venum",net:"uppromote",rate:"10%",site:"https://www.venum.com/"},
  rdx:{n:"RDX",net:"impact",rate:"up to 10%",site:"https://rdxsports.com/"},
- tbg:{n:"The Boxing Gloves",net:"awin",rate:"10%",site:""}};
-var ORDER=["blitz","fairtex","venum","rdx","tbg"];/* Steve 16 Nov 00:03: Blitz first, then Fairtex or Venum */
+ tbg:{n:"The Boxing Gloves",net:"awin",rate:"10%",site:""},
+ /* v410 (FB-074, Steve 16 Nov 21:11: "build and launch before contacting others ... placeholders ... for future adding of other affiliates"):
+    places ready for later partners, all off, no products and no links until each one approves us */
+ revgear:{n:"Revgear",net:"awin",rate:"",site:""},decathlon:{n:"Decathlon",net:"awin",rate:"",site:""},hayabusa:{n:"Hayabusa",net:"flexoffers",rate:"",site:""},boxraw:{n:"Boxraw",net:"awin",rate:"",site:""}};
+var ORDER=["blitz","fairtex","venum","rdx","tbg","revgear","decathlon","hayabusa","boxraw"];/* Steve 16 Nov 00:03: Blitz first, then Fairtex or Venum */
 /* Partner codes, filled in when each programme approves us (FB-068 register). Empty = no partner code: the link opens the shop's own site. */
 /* v407 (FB-071, Steve via Alfred 16 Nov 16:31: "it's been accepted"): our Awin publisher ID (an ID, not a secret). A brand only gets
    partner links once its own programme approves us: set APPROVED[brand] to true and fill its advertiser ID (awinMid) from the approval order.
    Until then its links stay plain links to the shop (links through a programme that hasn't approved us earn nothing and can break its terms). */
 var CODE={awinAff:"3157158",awinMid:{blitz:"",tbg:""},uppromote:{fairtex:"",venum:""},impact:{rdx:""}};
-var APPROVED={blitz:false,tbg:false,fairtex:false,venum:false,rdx:false};
+/* v410 (FB-074): Blitz applied 16 Nov 21:12 (Awin advertiser 12036; not approved yet); The Boxing Gloves' Awin programme is closed; nobody else
+   is contacted before launch. A brand that isn't approved shows no products and no link of any kind. */
+var APPROVED={blitz:false,tbg:false,fairtex:false,venum:false,rdx:false,revgear:false,decathlon:false,hayabusa:false,boxraw:false};
 var CAT={
  wraps:["Hand wraps","Protect your knuckles and wrists under gloves."],
  gloves:["Boxing gloves","14 to 16oz for pads and sparring."],
@@ -27101,6 +27106,8 @@ var PRODUCTS=[
  ["rdx-bagg","baggloves","rdx","RDX bag gloves","Gel padding",20,40,"box mt kick"],
  ["tbg-gloves","gloves","tbg","Revgear boxing gloves, 16oz","Sold by The Boxing Gloves",45,75,"box mt kick"]
 ].map(function(a){return {id:a[0],cat:a[1],prog:a[2],name:a[3],spec:a[4],lo:a[5],hi:a[6],sp:a[7],sample:true}});
+/* v410 (FB-074): the catalogue stays ready, but only products from approved brands are shown anywhere */
+var CATALOG=PRODUCTS;PRODUCTS=CATALOG.filter(function(p){return !!APPROVED[p.prog]});
 function prod(id){return PRODUCTS.filter(function(p){return p.id===id})[0]||null}
 
 /* ---------- what you need for what you train ---------- */
@@ -27143,7 +27150,7 @@ function clubRef(){var c=cid();return UUID.test(c)?"c"+fnv(c.toLowerCase()):"non
 /* v407: the link goes to the product's own page when we have it (real products from the feed), otherwise the shop's home page */
 function dest(p,pr){var u=safeUrl(p.url||"");return u&&/^https:/.test(u)?u:pr.site}
 function awinLink(mid,aff,ref,place,url){return "https://www.awin1.com/cread.php?awinmid="+encodeURIComponent(mid)+"&awinaffid="+encodeURIComponent(aff)+"&clickref="+encodeURIComponent(ref)+"&clickref2="+encodeURIComponent(place)+"&ued="+encodeURIComponent(url)}
-function linkOf(p,place){var pr=PROG[p.prog]||{},base=dest(p,pr);if(!base)return "";var ref=clubRef();if(!APPROVED[p.prog])return base;
+function linkOf(p,place){var pr=PROG[p.prog]||{};if(!APPROVED[p.prog])return "";/* v410: no link of any kind before approval */var base=dest(p,pr);if(!base)return "";var ref=clubRef();
  if(pr.net==="awin"&&CODE.awinAff&&CODE.awinMid[p.prog])return awinLink(CODE.awinMid[p.prog],CODE.awinAff,ref,place,base);
  if(pr.net==="uppromote"&&CODE.uppromote[p.prog])return base+"?sca_ref="+encodeURIComponent(CODE.uppromote[p.prog])+"&sca_source="+ref;
  if(pr.net==="impact"&&CODE.impact[p.prog])return CODE.impact[p.prog].replace("{url}",encodeURIComponent(base)).replace("{sub}",ref);
@@ -27204,7 +27211,7 @@ function bundles(){var sps=mySports();var B=[
  {id:"spar",n:"First sparring kit",sp:"",cats:["gumshield","gloves","shins","groin","head"],why:"For when your coach says you're ready to spar."}];
  return B.map(function(b){b.items=b.cats.map(function(c){return best(c,b.sp)}).filter(Boolean);b.lo=b.items.reduce(function(a,p){return a+p.lo},0);b.hi=b.items.reduce(function(a,p){return a+p.hi},0);b.mine=b.sp&&sps.indexOf(b.sp)>=0;b.left=b.items.filter(function(p){return !owned(p.cat)}).length;return b})
   .sort(function(a,b){return (b.mine?1:0)-(a.mine?1:0)})}
-function bundlesHTML(){var B=bundles();return '<div class="sec-h"><h3>Starter kits</h3></div><p class="muted small" style="margin:0 0 8px">Put together by kit type. Buy the lot or only what you\'re missing; each item is bought from its own shop.</p><div class="k263-bg">'+
+function bundlesHTML(){var B=bundles();if(!PRODUCTS.length)return '<div class="sec-h"><h3>Starter kits</h3></div><p class="muted small" style="margin:0 0 8px">What to get for each sport. Tick what you\'ve got in My kit bag.</p><div class="k263-bg">'+B.map(function(b){return '<div class="k263-b"><div class="k263-bh" style="cursor:default"><b>'+e(b.n)+'</b><span class="small muted">'+e(b.why)+'</span><span class="small">'+b.cats.map(function(c){return (owned(c)?'✓ ':'')+e(CAT[c][0])}).join(' · ')+'</span></div></div>'}).join('')+'</div>';return '<div class="sec-h"><h3>Starter kits</h3></div><p class="muted small" style="margin:0 0 8px">Put together by kit type. Buy the lot or only what you\'re missing; each item is bought from its own shop.</p><div class="k263-bg">'+
  B.map(function(b){var open=VIEW.open===b.id;return '<div class="k263-b'+(open?" open":"")+'"><button type="button" class="k263-bh" data-k263b="'+escA(b.id)+'" aria-expanded="'+open+'"><b>'+e(b.n)+'</b><span class="small muted">'+e(b.why)+'</span><span class="small">'+b.items.length+' items · typical total '+band(b.lo,b.hi)+(b.left<b.items.length?' · you have '+(b.items.length-b.left):'')+'</span></button>'+
   (open?'<div class="k263-g">'+b.items.map(function(p){return owned(p.cat)?'<article class="k263-p got"><div class="k263-pi">'+icon(p.cat)+'</div><div class="k263-pb"><b class="k263-pn">'+e(CAT[p.cat][0])+'</b><span class="k263-ps">You\'ve got this</span></div></article>':card(p,"bundle",CAT[p.cat][1])}).join("")+'</div>':'')+'</div>'}).join("")+'</div>'}
 function clubHTML(){var m=myClubShop();if(!m||(!m.s.picks.length&&!m.s.items.length))return "";
@@ -27222,11 +27229,11 @@ function bagHTML(){var own=K().own||{},n=Object.keys(own).length;return '<div cl
 function page(){var sec=ensureTab(),el=document.getElementById("kitBody");if(!sec||!el||sec.hidden)return;
  if(document.activeElement&&el.contains(document.activeElement)&&/INPUT|SELECT|TEXTAREA/.test(document.activeElement.tagName)&&document.activeElement.type!=="checkbox")return;
  var h;if(!adult())h='<div class="panel"><h2>Kit shop</h2><p class="muted">The Kit shop is for adult members. If you\'re 18 or over, add your age in Settings, About you.</p></div>';
- else h='<div class="panel plate"><div class="sec-h"><h2>Kit shop</h2></div>'+adLine()+sampleLine()+'</div>'+
+ else h='<div class="panel plate"><div class="sec-h"><h2>Kit shop</h2></div>'+(PRODUCTS.length?adLine()+sampleLine():'<p class="small" style="margin:0">Partner kit comes here soon. For now, use these lists to check what you need for each class and tick off what you\'ve got.</p>')+'</div>'+
   '<div class="panel" id="k263ready">'+readyHTML(true)+'</div>'+
   (clubHTML()?'<div class="panel">'+clubHTML()+'</div>':'')+
-  '<div class="panel">'+bundlesHTML()+'</div><div class="panel">'+browseHTML()+'</div><div class="panel">'+bagHTML()+'</div>'+
-  '<p class="muted small">Food and supplements come later, after our dietitian has checked them. Nothing in the Kit shop is shown to under-18s.</p>';
+  '<div class="panel">'+bundlesHTML()+'</div>'+(PRODUCTS.length?'<div class="panel">'+browseHTML()+'</div>':'')+'<div class="panel">'+bagHTML()+'</div>'+
+  '<p class="muted small">No food or supplements here. Nothing in the Kit shop is shown to under-18s.</p>';
  if(el.dataset.sig!==h){var y=window.scrollY;el.innerHTML=h;el.dataset.sig=h;if(VIEW.keep){window.scrollTo(0,y);VIEW.keep=false}}}
 
 /* ---------- the small card on Train and Learn ---------- */
@@ -27242,7 +27249,7 @@ function mini(id){var tb=document.getElementById(id),el=document.getElementById(
  if(!SEEN[id]){SEEN[id]=true;ROT++}
  var nb=nextBooked(3)[0],h="";
  if(nb){var miss=needs(nb.act,nb.sp).filter(function(n){return !owned(n.cat)&&n.lvl===1}).slice(0,3);
-  if(miss.length)h='<span class="label"><span class="k263-ad">Ad</span> Get ready</span><h2 class="k263-mh">Kit for '+e(nb.cl.title)+', '+e(whenText(nb))+'</h2>'+
+  if(miss.length)h='<span class="label">'+(miss.some(function(n){return best(n.cat,nb.sp)})?'<span class="k263-ad">Ad</span> ':'')+'Get ready</span><h2 class="k263-mh">Kit for '+e(nb.cl.title)+', '+e(whenText(nb))+'</h2>'+
    '<ul class="k263-ml">'+miss.map(function(n){var b=best(n.cat,nb.sp);return '<li><b>'+e(CAT[n.cat][0])+'</b> <span class="small muted">'+e(n.why)+'</span>'+(b?' '+buyBtn(b,"ready",true):'')+'</li>'}).join("")+'</ul>'+
    '<div class="row" style="margin-top:8px"><button type="button" class="linkbtn" data-goto="kit" data-k263act2="'+escA(nb.act)+'">I\'ve got some of this</button><button type="button" class="linkbtn" data-goto="kit">Open the Kit shop</button></div>'}
  if(!h){var L=pickList();if(!L.length){if(el)el.remove();return}var p=L[(dayNo()+ROT)%L.length];
@@ -27273,7 +27280,7 @@ function hub(){var el=document.getElementById("hubshopBody"),c=club();if(!el||!c
   '<label class="k263-sw"><input type="checkbox" data-k263hon'+(s.on?" checked":"")+'> Show our club shop to members</label>'+(ED.msg?'<p class="small" role="status">'+e(ED.msg)+'</p>':'')+'</div>';
  h+='<div class="panel"><div class="sec-h"><h3>Coach\'s picks</h3><span class="muted small">'+s.picks.length+' of 6</span></div><p class="muted small" style="margin:0 0 8px">The kit you\'d tell a new member to get. Shown first in your members\' Kit shop, with your reason.</p>'+
   (s.picks.length?s.picks.map(function(x,i){var p=prod(x.p);return '<div class="fb-row"><span><b>'+e(p.name)+'</b>'+(x.why?'<br><span class="muted small">'+e(x.why)+'</span>':'')+'</span><button class="linkbtn" type="button" data-k263hdelp="'+i+'">Remove</button></div>'}).join(""):'<p class="muted small">None yet.</p>')+
-  (s.picks.length<6?'<div class="grid2" style="margin-top:8px"><div class="field"><label class="label" for="k263hp">Product</label><select id="k263hp">'+opts+'</select></div><div class="field"><label class="label" for="k263hw">Why (optional)</label><input type="text" id="k263hw" maxlength="80" placeholder="e.g. Our sparring rule: 16oz gloves"></div></div><button class="btn sm" type="button" data-k263haddp>Add pick</button>':'')+'</div>';
+  (!PRODUCTS.length?'<p class="muted small">You can add picks once partner kit is in the shop.</p>':s.picks.length<6?'<div class="grid2" style="margin-top:8px"><div class="field"><label class="label" for="k263hp">Product</label><select id="k263hp">'+opts+'</select></div><div class="field"><label class="label" for="k263hw">Why (optional)</label><input type="text" id="k263hw" maxlength="80" placeholder="e.g. Our sparring rule: 16oz gloves"></div></div><button class="btn sm" type="button" data-k263haddp>Add pick</button>':'')+'</div>';
  h+='<div class="panel"><div class="sec-h"><h3>Club items</h3><span class="muted small">'+s.items.length+' of 12</span></div><p class="muted small" style="margin:0 0 8px">Your own T-shirts, hoodies, gloves or gym bags. Members buy at the desk or on your own website; paying in the app comes later.</p>'+
   (s.items.length?s.items.map(function(it,i){return '<div class="fb-row"><span><b>'+e(it.name)+'</b>'+(+it.price>0?' · £'+e(it.price):'')+'<br><span class="muted small">'+(it.how==="web"?"On your website":"At the desk")+(it.note?' · '+e(it.note):'')+'</span></span><button class="linkbtn" type="button" data-k263hdeli="'+i+'">Remove</button></div>'}).join(""):'<p class="muted small">None yet.</p>')+
   (s.items.length<12?'<div class="grid2" style="margin-top:8px"><div class="field"><label class="label" for="k263in">Item</label><input type="text" id="k263in" maxlength="50" placeholder="e.g. Club hoodie"></div><div class="field"><label class="label" for="k263ip">Price (£)</label><input type="number" id="k263ip" min="0" max="999" step="0.5"></div><div class="field"><label class="label" for="k263io">Note (optional)</label><input type="text" id="k263io" maxlength="60" placeholder="Sizes S to XXL"></div><div class="field"><label class="label" for="k263ih">How to buy</label><select id="k263ih"><option value="desk">At the desk</option><option value="web">On our website</option></select></div><div class="field"><label class="label" for="k263il">Website link (if on your website)</label><input type="url" id="k263il" maxlength="200" placeholder="https://"></div></div><button class="btn sm" type="button" data-k263hadd>Add item</button>':'')+'</div>';
@@ -27331,7 +27338,9 @@ var css=document.createElement("style");css.textContent=
 document.head.appendChild(css);
 function tick(){try{ensureTab();ensureHub();page();mini("tab-train");mini("tab-learn");hub()}catch(x){try{console.warn("fh263",x)}catch(y){}}}
 setInterval(tick,1500);setTimeout(tick,1300);
-return {on:true,products:PRODUCTS,prog:PROG,cat:CAT,act:ACT,needs:needs,best:best,adult:adult,linkOf:linkOf,awinLink:awinLink,approved:APPROVED,code:CODE,clubRef:clubRef,kitLine:kitLine,nextBooked:nextBooked,bundles:bundles,shopOf:shopOf,tick:tick}})();
+/* v410: after a brand is switched on (APPROVED), show its products without a reload */
+function refresh(){PRODUCTS=CATALOG.filter(function(p){return !!APPROVED[p.prog]});try{FH263.products=PRODUCTS}catch(x){}return PRODUCTS.length}
+return {on:true,refresh:refresh,products:PRODUCTS,catalog:CATALOG,prog:PROG,cat:CAT,act:ACT,needs:needs,best:best,adult:adult,linkOf:linkOf,awinLink:awinLink,approved:APPROVED,code:CODE,clubRef:clubRef,kitLine:kitLine,nextBooked:nextBooked,bundles:bundles,shopOf:shopOf,tick:tick}})();
 
 /* FighterBase v408 (Codex finding 4, m18; Steve's who-can-do-what table, 16 Nov 2026: "A member's name and photo on class lists and the
    club list: only if that member says yes"; asked once, when they join). Members of a live club are asked once whether other members may
